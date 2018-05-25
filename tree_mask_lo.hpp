@@ -1,9 +1,13 @@
 #pragma once
 
-#include <dtl/tree_mask.hpp>
-#include <sdsl/int_vector.hpp>
-#include <boost/dynamic_bitset>
 #include <queue>
+
+#include <boost/dynamic_bitset>
+#include <boost/dynamic_bitset.hpp>
+
+#include <dtl/tree_mask.hpp>
+
+#include <sdsl/int_vector.hpp>
 
 namespace dtl{
   /// Encodes a bitmap of length N as a binary tree.

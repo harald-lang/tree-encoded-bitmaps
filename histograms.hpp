@@ -11,13 +11,13 @@ namespace histo{
     std::string v_type(typeid(v).name());
 
     if(v_type == "d")
-      return nextafter(v, numeric_limits<T>::max());
+      return nextafter(v, std::numeric_limits<T>::max());
     if(v_type == "f")
-      return nextafter(v, numeric_limits<T>::max());
+      return nextafter(v, std::numeric_limits<T>::max());
     if(v_type == "e")
-      return nextafter(v, numeric_limits<T>::max());
+      return nextafter(v, std::numeric_limits<T>::max());
 
-    if(v == numeric_limits<T>::max())
+    if(v == std::numeric_limits<T>::max())
       return v; // TODO wie loese ich das am besten?
 
     return ++v;
@@ -28,13 +28,13 @@ namespace histo{
     std::string v_type(typeid(v).name());
 
     if(v_type == "d")
-      return nextafter(v, numeric_limits<T>::min());
+      return nextafter(v, std::numeric_limits<T>::min());
     if(v_type == "f")
-      return nextafter(v, numeric_limits<T>::min());
+      return nextafter(v, std::numeric_limits<T>::min());
     if(v_type == "e")
-      return nextafter(v, numeric_limits<T>::min());
+      return nextafter(v, std::numeric_limits<T>::min());
 
-    if(v == numeric_limits<T>::min())
+    if(v == std::numeric_limits<T>::min())
       return v; // TODO wie loese ich das am besten?
 
     return --v;
@@ -59,7 +59,7 @@ namespace histo{
     std::vector<value<T>> v;
 
     samples(const std::vector<T>& data){
-      vector<T> dist_val = data;
+      std::vector<T> dist_val = data;
       std::sort(dist_val.begin(), dist_val.end());
       auto last = std::unique(dist_val.begin(), dist_val.end());
       dist_val.erase(last, dist_val.end());
@@ -86,7 +86,7 @@ namespace histo{
         return t1.val < t2.val ? true : false;
       };
 
-      sort(v.begin(), v.end(), cmp);
+      std::sort(v.begin(), v.end(), cmp);
     }
 
     samples(const std::vector<samples<T>>& s){
@@ -114,7 +114,7 @@ namespace histo{
         return t1.val < t2.val ? true : false;
       };
 
-      sort(v.begin(), v.end(), cmp);
+      std::sort(v.begin(), v.end(), cmp);
     }
 
     void print_min(){
@@ -204,10 +204,10 @@ namespace histo{
       u64 size_data = data.v.size();
 
       $u32 i; // for the current position
-      bin_min[0] = numeric_limits<T>::min();
+      bin_min[0] = std::numeric_limits<T>::min();
       bin_max[0] = data.v[0].val;
       bin_min[BINS_CNT - 1] = next_greater_value(data.v[size_data - 1].val);
-      bin_max[BINS_CNT - 1] = numeric_limits<T>::max();
+      bin_max[BINS_CNT - 1] = std::numeric_limits<T>::max();
 
       $f64 y, y_step = static_cast<$f64>(size_data + 1) / static_cast<$f64>(BINS_CNT - 2);
       for(i = 1, y = y_step; y < size_data; y += y_step, i++) {
@@ -228,10 +228,10 @@ namespace histo{
 
       height = size_data / (size_data < BINS_CNT - 2 ? size_data : (BINS_CNT - 2));
 
-      bin_min[0] = numeric_limits<T>::min();
+      bin_min[0] = std::numeric_limits<T>::min();
       bin_max[0] = data.v[0].val;
       bin_min[BINS_CNT - 1] = next_greater_value(data.v[size_data - 1].val);
-      bin_max[BINS_CNT - 1] = numeric_limits<T>::max();
+      bin_max[BINS_CNT - 1] = std::numeric_limits<T>::max();
 
       $i64 normalizedCount[size_data];
       $i64 elements, normalized;
@@ -277,7 +277,7 @@ namespace histo{
 
       for(k++; k < BINS_CNT - 1; k++) {
         bin_min[k] = next_greater_value(data.v[size_data-1].val);
-        bin_max[k] = numeric_limits<T>::max();
+        bin_max[k] = std::numeric_limits<T>::max();
       }
     }
 
@@ -303,11 +303,11 @@ namespace histo{
 
       for(int k = i+1; k < BINS_CNT; k++){
         bin_min[k] = bin_max[i];
-        bin_max[k] = numeric_limits<T>::max();
+        bin_max[k] = std::numeric_limits<T>::max();
       }
 
       //Fill the first BIN: [-inf;??)
-      bin_min[0] = numeric_limits<T>::min();
+      bin_min[0] = std::numeric_limits<T>::min();
       bin_max[0] = bin_min[1];
     }
 
@@ -386,7 +386,7 @@ namespace histo{
 
       for(k++; k < BINS_CNT; k++) {
         bin_min[k] = next_greater_value(data.v[size_data-1].val);
-        bin_max[k] = numeric_limits<T>::max();
+        bin_max[k] = std::numeric_limits<T>::max();
       }
     }
 
@@ -426,8 +426,8 @@ namespace histo{
     void print(){
       std:: cout << "Histogram:     "
                  << (EQ_W ? "eq_width" : "eq_height") << (block_wise ? "-blockwise" : "") << std:: endl
-                 << "    Bins:      " << to_string(BINS_CNT) << std::endl
-                 << "    Used bins: " << to_string(bins_used) << std::endl;
+                 << "    Bins:      " << std::to_string(BINS_CNT) << std::endl
+                 << "    Used bins: " << std::to_string(bins_used) << std::endl;
 
       auto j = 0;
       for(auto i = 0; i < BINS_CNT; i += j) {
