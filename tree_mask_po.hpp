@@ -626,7 +626,7 @@ public:
     ret.structure_.clear();
     ret.labels_.clear();
 
-    // TODO determine and skip common prefix
+    // TODO optimize: determine and skip common prefix
     traversal traversal_a(*this);
     traversal traversal_b(other);
     do {
@@ -644,7 +644,7 @@ public:
           // copy the sub-tree of 'a'
           s_from = traversal_a.s_pos_;
           l_from = traversal_a.l_pos_;
-          while (!traversal_a.is_leaf_node()) {
+          while (!traversal_a.is_leaf_node()) { // TODO optimize goto parent -> right child
             traversal_a.goto_right_child();
           }
           for (std::size_t i = s_from; i <= traversal_a.s_pos_; i++) { // TODO optimize copy
