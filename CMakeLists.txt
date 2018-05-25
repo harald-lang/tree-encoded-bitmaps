@@ -26,6 +26,19 @@ set(SOURCE_FILES
         util.hpp
         wah.hpp
         main.cpp
+        bidirectional_mapping.hpp
+        column_container.hpp
+        column_imprints.hpp
+        container_iterator.hpp
+        file_parser.hpp
+        h_psma.hpp
+        histograms.hpp
+        tests.hpp
+        z_curve_runtime.hpp
+        zCurve_compiletime.hpp
         )
 add_executable(navin ${SOURCE_FILES})
 target_link_libraries(navin fastbit roaring)
+target_link_libraries(navin pthread)
+target_link_libraries(navin m)
+target_link_libraries(navin tbb)
