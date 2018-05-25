@@ -36,7 +36,7 @@ set(SOURCE_FILES
         tests.hpp
         z_curve_runtime.hpp
         zCurve_compiletime.hpp
-        )
+        tree_mask_lo.hpp)
 add_executable(navin ${SOURCE_FILES})
 target_link_libraries(navin fastbit roaring)
 target_link_libraries(navin pthread)
