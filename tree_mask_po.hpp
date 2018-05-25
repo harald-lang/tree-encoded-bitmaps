@@ -107,23 +107,29 @@ public:
   public:
 
     /// C'tor
+    __forceinline__
     traversal(const std::vector<$u1>& structure,
               const std::vector<$u1>& labels,
               const sdsl::int_vector<2>& skip)
         : structure_(structure), labels_(labels), skip_(skip), s_pos_(0), l_pos_(0), path_(1) {}
 
-    explicit
+    __forceinline__ explicit
     traversal(const tree_mask_po& tm) : traversal(tm.structure_, tm.labels_, tm.skip_) {}
 
+    __forceinline__
     ~traversal() = default;
 
+    __forceinline__
     traversal(const traversal& other) = default;
 
+    __forceinline__
     traversal(traversal&& other) noexcept = delete;
 
+    __forceinline__
     traversal&
     operator=(const traversal& other) = delete;
 
+    __forceinline__
     traversal&
     operator=(traversal&& other) noexcept = delete;
 
@@ -161,7 +167,7 @@ public:
 
     __forceinline__ bool
     end() const {
-      return s_pos_ == structure_.size() - 1;
+      return s_pos_ == structure_.size();
     }
 
     /// Return the level of the current node.
@@ -362,10 +368,10 @@ public:
         }
 
       }
-      std::cout << "seq_cntr: " << seq_cntr
-                << ", skip_cntr: " << skip_cntr
-                << " (" << (skip_cntr * skip_width) << ")"
-                << std::endl;
+//      std::cout << "seq_cntr: " << seq_cntr
+//                << ", skip_cntr: " << skip_cntr
+//                << " (" << (skip_cntr * skip_width) << ")"
+//                << std::endl;
     }
 
     /// Navigate to the right child. (Semi-naive implementation)
@@ -575,17 +581,13 @@ public:
 
   /// Conversion to a std::bitset.
   std::bitset<N>
-  to_bitset() {
+  to_bitset() const {
     std::bitset<N> ret; // the resulting bitset
     std::size_t label_pos = 0; // the current read position in the labels
     path_t path = 1; // a stack replacement, the highest set bit is a sentinel bit
     constexpr uint64_t tree_height = dtl::ct::log_2<N>::value;
     assert(tree_height < 64); // due to sentinel bit.
     for (std::size_t i = 0; i < structure_.size(); i++) {
-//      std::cout << "path: " << std::bitset<8>(path)
-//                << ", level: " << (sizeof(decltype(path)) * 8 - dtl::bits::lz_count(path)) - 1
-//                << ", #bits to set: " << (N >> (sizeof(decltype(path)) * 8 - dtl::bits::lz_count(path) - 1))
-//                << std::endl;
       if (structure_[i] /* is inner node */) {
         // go to left child
         path <<= 1;
@@ -613,15 +615,68 @@ public:
 //        }
       }
     }
-    std::cout << std::endl;
     return ret;
   }
 
   /// Bitwise XOR
   tree_mask_po
   operator^(const tree_mask_po& other) const {
+    // TODO: make sure the resulting TM is compressed.
     tree_mask_po ret(false);
+    ret.structure_.clear();
+    ret.labels_.clear();
 
+    // TODO determine and skip common prefix
+    traversal traversal_a(*this);
+    traversal traversal_b(other);
+    do {
+      u8 c = static_cast<u8>(traversal_a.is_inner_node()) | (static_cast<u8>(traversal_b.is_inner_node()) << 1);
+      $u1 bit;
+      $u32 s_from = 0;
+      $u32 l_from = 0;
+      switch (c) {
+        case 0b00: // a and b: leaf
+          ret.structure_.push_back(false); // push leaf node
+          bit = traversal_a.get_label() ^ traversal_b.get_label();
+          ret.labels_.push_back(bit); // push leaf node
+          break;
+        case 0b01: // a: inner, b: leaf
+          // copy the sub-tree of 'a'
+          s_from = traversal_a.s_pos_;
+          l_from = traversal_a.l_pos_;
+          while (!traversal_a.is_leaf_node()) {
+            traversal_a.goto_right_child();
+          }
+          for (std::size_t i = s_from; i <= traversal_a.s_pos_; i++) { // TODO optimize copy
+            ret.structure_.push_back(traversal_a.structure_[i]);
+          }
+          bit = traversal_b.get_label();
+          for (std::size_t i = l_from; i <= traversal_a.l_pos_; i++) { // TODO optimize copy
+            ret.labels_.push_back(traversal_a.labels_[i] ^ bit);
+          }
+          break;
+        case 0b10: // a: leaf, b: inner
+          // copy the sub-tree of 'b'
+          s_from = traversal_b.s_pos_;
+          l_from = traversal_b.l_pos_;
+          while (!traversal_b.is_leaf_node()) {
+            traversal_b.goto_right_child();
+          }
+          for (std::size_t i = s_from; i <= traversal_b.s_pos_; i++) { // TODO optimize copy
+            ret.structure_.push_back(traversal_b.structure_[i]);
+          }
+          bit = traversal_a.get_label();
+          for (std::size_t i = l_from; i <= traversal_b.l_pos_; i++) { // TODO optimize copy
+            ret.labels_.push_back(traversal_b.labels_[i] ^ bit);
+          }
+          break;
+        case 0b11: // a and b: inner
+          ret.structure_.push_back(true); // push inner node
+          break;
+      }
+      traversal_a.next();
+      traversal_b.next();
+    } while (! (traversal_a.end() && traversal_b.end()) );
     return ret;
   }
 

@@ -83,11 +83,12 @@ struct tree {
 
 };
 
+void test_tree_mask_po_xor();
 template<u64 N>
 __forceinline__ tree<N>
 operator&(const tree<N>& lhs, const tree<N>& rhs) noexcept {
   tree<N> ret_val(lhs);
-  static_stack<std::size_t, tree<N>::height + 2> stack;
+  static_stack<std::size_t, tree<N>::height * 2> stack;
   stack.push_back(0); // root node
   // Navigate
   while (!stack.empty()) {
@@ -118,7 +119,7 @@ operator&(const tree<N>& lhs, const tree<N>& rhs) noexcept {
         }
         else {
           // Walk the sub-tree.
-          static_stack<std::size_t, tree<N>::height + 2> s;
+          static_stack<std::size_t, tree<N>::height * 2> s;
           s.push_back(node_idx);
           while (!s.empty()) {
             std::size_t i = s.back();
@@ -383,11 +384,39 @@ int main() {
 //                  << ", actual node idx: " << actual_node_idx
 //                  << std::endl;
         assert(actual_node_idx == expected_node_idx);
-        if (it == 0) break;
-        it--;
+//        if (it == 0) break;
+//        it--;
       } while (tmt.next());
     }
 
   }
 
+
+  test_tree_mask_po_xor();
+
+}
+
+
+void test_tree_mask_po_xor() {
+  constexpr std::size_t LEN = 8;
+  for (std::size_t a = 0; a < (1u << LEN); a++) {
+    for (std::size_t b = 0; b < (1u << LEN); b++) {
+//      std::size_t a = 0b00110100;
+//      std::size_t b = 0b10111100;
+//      std::size_t a = 0b00000001;
+//      std::size_t b = 0b11110000;
+      std::bitset<LEN> bm_a(a);
+      std::bitset<LEN> bm_b(b);
+      std::bitset<LEN> bm_expected = bm_a ^ bm_b;
+      dtl::tree_mask_po<LEN> tm_a(bm_a);
+      dtl::tree_mask_po<LEN> tm_b(bm_b);
+      dtl::tree_mask_po<LEN> tm_c = tm_a ^ tm_b;
+      std::bitset<LEN> bm_actual = tm_c.to_bitset();
+      if (bm_actual != bm_expected) {
+        std::cout << "test: " << bm_a << " (" << a << ") XOR " << bm_b << " (" << b << ")" << std::endl;
+        std::cout << "Validation failed: expected=" << bm_expected << ", actual=" << bm_actual << std::endl;
+      }
+      assert(bm_actual == bm_expected);
+    }
+  }
 }
