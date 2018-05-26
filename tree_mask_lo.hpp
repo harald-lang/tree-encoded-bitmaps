@@ -13,8 +13,12 @@ namespace dtl{
   /// Encodes a bitmap of length N as a binary tree.
   /// The tree structure is encoded in level-order.
 
-  template<std::size_t N>
+  template<std::size_t _N>
   class tree_mask_lo{
+  public:
+    static constexpr auto N = _N;
+
+  private:
 
     /// C'tor
     explicit

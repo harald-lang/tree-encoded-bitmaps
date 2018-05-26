@@ -11,6 +11,7 @@
 #include <dtl/math.hpp>
 #include <dtl/tree.hpp>
 
+#include "tree_mask_util.hpp"
 
 namespace dtl {
 
@@ -31,8 +32,12 @@ static constexpr u8 tree_mask_po_lut[256] {
 //===----------------------------------------------------------------------===//
 /// Encodes a bitmap of length N as a full binary tree.
 /// The tree structure is encoded in pre-order.
-template<std::size_t N>
+template<std::size_t _N>
 class tree_mask_po {
+public:
+  static constexpr auto N = _N;
+
+private:
 
   // TODO remove tailing 0
   // TODO reduce memory footprint - only one bitvector + lengths
@@ -154,6 +159,14 @@ public:
     /// Return 'true' if the current node is leaf node, 'false' otherwise.
     __forceinline__ bool
     is_leaf_node() const { return !is_inner_node(); }
+
+    /// Return 'true' if the current node a left child, 'false' otherwise.
+    __forceinline__ bool
+    is_left_child() const { return (path_ & 1ull) == 0; }
+
+    /// Return 'true' if the current node a right child, 'false' otherwise.
+    __forceinline__ bool
+    is_right_child() const { return !is_left_child(); }
 
     /// Return the label of the current leaf node.
     /// The result is undefined, if the current node is an inner node.
@@ -603,6 +616,7 @@ public:
     tree_mask_po ret(false);
     ret.structure_.clear();
     ret.labels_.clear();
+    $u64 ret_level = 0;
 
     // TODO optimize: determine and skip common prefix
     traversal traversal_a(*this);
@@ -614,9 +628,20 @@ public:
       $u64 l_from = 0;
       switch (c) {
         case 0b00: // a and b: leaf
-          ret.structure_.push_back(false); // push leaf node
           bit = traversal_a.get_label() ^ traversal_b.get_label();
-          ret.labels_.push_back(bit); // push leaf node
+          if (ret.structure_.size() > 0 /* this is not the root */
+              && traversal_a.is_right_child() /* is right child */
+              && !ret.structure_.back() /* previous node is also a leaf*/
+              && ret.labels_.back() == bit /* labels are the same */
+              ) {
+            ret.structure_.pop_back(); // previous leaf
+            ret.structure_.pop_back(); // previous inner
+            ret.structure_.push_back(false); // push leaf node
+          }
+          else{
+            ret.structure_.push_back(false); // push leaf node
+            ret.labels_.push_back(bit); // push label
+          }
           break;
         case 0b01: // a: inner, b: leaf
           // copy the sub-tree of 'a'
@@ -632,6 +657,7 @@ public:
           for (std::size_t i = l_from; i <= traversal_a.l_pos_; i++) { // TODO optimize copy
             ret.labels_.push_back(traversal_a.labels_[i] ^ bit);
           }
+          ret_level = traversal_a.get_level();
           break;
         case 0b10: // a: leaf, b: inner
           // copy the sub-tree of 'b'
@@ -647,14 +673,23 @@ public:
           for (std::size_t i = l_from; i <= traversal_b.l_pos_; i++) { // TODO optimize copy
             ret.labels_.push_back(traversal_b.labels_[i] ^ bit);
           }
+          ret_level = traversal_b.get_level();
           break;
         case 0b11: // a and b: inner
           ret.structure_.push_back(true); // push inner node
+          ret_level++;
           break;
       }
+      std::cout << ret << std::endl;
       traversal_a.next();
       traversal_b.next();
     } while (! (traversal_a.end() && traversal_b.end()) );
+//    assert(is_compressed(ret));
+//    if (!is_compressed(ret)) {
+//      std::cerr << ret << std::endl;
+//      std::cerr << "BÄM" << std::endl;
+//      std::exit(1);
+//    }
     return ret;
   }
 
@@ -717,6 +752,7 @@ public:
       traversal_a.next();
       traversal_b.next();
     } while (! (traversal_a.end() && traversal_b.end()) );
+    assert(is_compressed(ret));
     return ret;
   }
 
