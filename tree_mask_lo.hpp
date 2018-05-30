@@ -22,8 +22,10 @@ public:
   static constexpr auto N = _N;
 
   // level-order encoding
-  boost::dynamic_bitset<> lo_structure;
-  boost::dynamic_bitset<> lo_labels;
+  sdsl::bit_vector lo_struc;
+  sdsl::bit_vector lo_label;
+
+  sdsl::rank_support_v5<> rank_support;
 
   /// C'tor
   explicit
@@ -67,13 +69,19 @@ public:
       }
     }
 
-    std::queue<$u64> fifo; // explored nodes set (fifo)
+    // Encode the tree into level-order
+
+    std::queue<$u64> fifo; // explored nodes set
+
+    // Allocate enough space for the structure and labels
+    lo_struc.resize(tree_structure.max_node_cnt);
+    lo_label.resize(labels.size());
+    $u64 struct_cnt = 0;
+    $u64 label_cnt = 0;
 
     std::function<void(u64)> add_node = [&](u64 idx){
       u1 is_inner = tree_structure.is_inner_node(idx);
-      //std::cout << "Node: " << idx << std::endl;
       if(is_inner){
-        //std::cout << "is inner node" << std::endl;
         // add the children of the current node to the structure
         u64 l_child = tree_structure.left_child_of(idx);
         u64 r_child = tree_structure.right_child_of(idx);
@@ -81,23 +89,18 @@ public:
         u1 l_child_is_inner = tree_structure.is_inner_node(l_child);
         u1 r_child_is_inner = tree_structure.is_inner_node(r_child);
 
-        lo_structure.push_back(l_child_is_inner);
-        lo_structure.push_back(r_child_is_inner);
+        lo_struc[struct_cnt++] = l_child_is_inner;
+        lo_struc[struct_cnt++] = r_child_is_inner;
 
         // push them to the fifo queue to traverse them later
         fifo.push(l_child);
         fifo.push(r_child);
 
-        //std::cout << "left child " << (l_child_is_inner ? "is inner node" : "is leaf ") << std::endl;
-        //std::cout << "right child " << (r_child_is_inner ? "is inner node" : "is leaf ") << std::endl;
-
         // done for this node
 
       } else { // leaf node
         // add the label of the leaf node
-
-        lo_labels.push_back(labels[idx]);
-        //std::cout << "is leaf node, added label: " << labels[idx] <<  std::endl;
+        lo_label[label_cnt++] = labels[idx];
 
         // no children, nothing to add to the fifo queue, done
       }
@@ -108,13 +111,13 @@ public:
         bool root_is_inner = tree_structure.is_inner_node(0);
 
       // add the root to the tree structure
-      lo_structure.push_back(root_is_inner);
+      lo_struc[struct_cnt++] = root_is_inner;
 
       if(root_is_inner){
         // add the root to the fifo to add the rest of the tree
         fifo.push(0);
       } else {
-        lo_labels.push_back(labels[0]);
+        lo_label[label_cnt++] = labels[0];
         // tree is only the root, we are done
       }
     }
@@ -124,45 +127,51 @@ public:
       add_node(next_node);
       fifo.pop();
     }
+
+    lo_struc.resize(struct_cnt);
+    lo_label.resize(label_cnt);
+
+    rank_support.set_vector(&lo_struc);
   }
 
   u1 is_inner_node(u64 node_idx){
-    return lo_structure[node_idx] == 1 ? true : false;
+    return lo_struc[node_idx] == 1 ? true : false;
   }
 
   u1 is_leaf_node(u64 node_idx){
-    return lo_structure[node_idx] == 0 ? true : false;
+    return lo_struc[node_idx] == 0 ? true : false;
   }
 
-  // naive rank for tests TODO replace by O(1) version
+  // naive rank for tests
   u64 rank(u64 node_idx){
     $u64 rank = 0;
 
     for(auto i = 0; i <= node_idx; i++)
-      if(lo_structure[i])
+      if(lo_struc[i])
         rank++;
 
     return rank;
   }
 
+  /// Important: rank_supportv5.rank() calculates the rank of the prefix -> we need idx + 1
   u64 left_child(u64 node_idx){
-    return 2*rank(node_idx)-1;
+    return 2* rank_support.rank(node_idx+1) -1;
   }
 
   u64 right_child(u64 node_idx){
-    return 2*rank(node_idx);
+    return 2* rank_support.rank(node_idx+1);
   }
 
 
-  ///
+  /// decodes the level-order encoding to a bitmap
   std::bitset<N>
   to_bitset(){
 
     std::bitset<N> ret; // the resulting bitset
 
     // special case if the tree is only a root node
-    if(lo_structure.size() == 1){
-      if(lo_labels[0]){
+    if(lo_struc.size() == 1){
+      if(lo_label[0]){
         ret.set();
       } else {
         ret.reset();
@@ -180,7 +189,6 @@ public:
     std::list<std::pair<$u64, $u64>> nodes;
 
     std::function<void(std::pair<u64, u64>)> decode_tree = [&](std::pair<u64, u64> n){
-
       u64 idx = n.first;
       u64 level = n.second;
 
@@ -192,9 +200,10 @@ public:
         nodes.push_front(std::make_pair(r_child, level+1)); // first push the right child to the front
         nodes.push_front(std::make_pair(l_child, level+1)); // then push the left child to the front
         // resulting list: {left child, right child, ...}
+
       } else {
         // write the label to the bitset
-        u1 label = lo_labels[idx - rank(idx)];
+        u1 label = lo_label[idx - rank_support.rank(idx+1)];
         u64 to_write = 1 << (tree_height - level) ;// number of tuples represented by the label
 
         for(auto i = 0; i < to_write; ++i){
@@ -218,5 +227,9 @@ public:
     return ret;
   }
 };
+
+//TODO size
+//XOR, XOR varianten
+//BP
 
 }; // namespace dtl
