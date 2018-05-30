@@ -11,14 +11,33 @@
 #include <dtl/math.hpp>
 #include <dtl/tree.hpp>
 
+#include "tree_mask_util.hpp"
 
 namespace dtl {
 
 //===----------------------------------------------------------------------===//
+static constexpr u8 tree_mask_po_lut[256] {
+    9,7,7,5,7,5,5,3,7,5,5,3,5,3,3,1,7,5,5,3,5,3,3,1,5,3,3,1,3,1,2,1,
+    7,5,5,3,5,3,3,1,5,3,3,1,3,1,2,1,5,3,3,1,3,1,2,1,4,2,2,1,3,1,2,1,
+    7,5,5,3,5,3,3,1,5,3,3,1,3,1,2,1,5,3,3,1,3,1,2,1,4,2,2,1,3,1,2,1,
+    6,4,4,2,4,2,2,1,4,2,2,1,3,1,2,1,5,3,3,1,3,1,2,1,4,2,2,1,3,1,2,1,
+    8,6,6,4,6,4,4,2,6,4,4,2,4,2,2,1,6,4,4,2,4,2,2,1,4,2,2,1,3,1,2,1,
+    6,4,4,2,4,2,2,1,4,2,2,1,3,1,2,1,5,3,3,1,3,1,2,1,4,2,2,1,3,1,2,1,
+    7,5,5,3,5,3,3,1,5,3,3,1,3,1,2,1,5,3,3,1,3,1,2,1,4,2,2,1,3,1,2,1,
+    6,4,4,2,4,2,2,1,4,2,2,1,3,1,2,1,5,3,3,1,3,1,2,1,4,2,2,1,3,1,2,1,
+};
+//===----------------------------------------------------------------------===//
+
+
+//===----------------------------------------------------------------------===//
 /// Encodes a bitmap of length N as a full binary tree.
 /// The tree structure is encoded in pre-order.
-template<std::size_t N>
+template<std::size_t _N>
 class tree_mask_po {
+public:
+  static constexpr auto N = _N;
+
+private:
 
   // TODO remove tailing 0
   // TODO reduce memory footprint - only one bitvector + lengths
@@ -140,6 +159,14 @@ public:
     /// Return 'true' if the current node is leaf node, 'false' otherwise.
     __forceinline__ bool
     is_leaf_node() const { return !is_inner_node(); }
+
+    /// Return 'true' if the current node a left child, 'false' otherwise.
+    __forceinline__ bool
+    is_left_child() const { return (path_ & 1ull) == 0; }
+
+    /// Return 'true' if the current node a right child, 'false' otherwise.
+    __forceinline__ bool
+    is_right_child() const { return !is_left_child(); }
 
     /// Return the label of the current leaf node.
     /// The result is undefined, if the current node is an inner node.
@@ -374,39 +401,13 @@ public:
 //                << std::endl;
     }
 
-    /// Navigate to the right child. (Semi-naive implementation)
+    /// Navigate to the right child. (Byte skipping using a lookup table)
     /// The current node must be an inner node.
     __forceinline__ void
-    goto_right_child_lut() {
+    goto_right_child_byte_skip_lut() {
       if (end()) {
         return;
       }
-
-      constexpr std::size_t skip_width_log2 = 4;
-      constexpr std::size_t skip_width = 1ull << skip_width_log2; // [bits]
-
-      constexpr std::size_t lut_size_log2 = 8;
-      constexpr std::size_t lut_size = 1ull << lut_size_log2;
-      constexpr std::size_t lut_mask = lut_size - 1;
-      std::vector<std::size_t> lut(lut_size, 0);
-      for (std::size_t i = 0; i < (1ull << skip_width) - 1; i++) {
-        std::bitset<skip_width> s(i);
-        int32_t c = 1;
-        for (std::size_t j = skip_width - 2; j < skip_width; j--) {
-          c = s[j] ? c - 1 : c + 1;
-        }
-        c = c < 0 ? 0 : c;
-        const std::size_t lut_idx = i & lut_mask;
-        lut[lut_idx] = std::max(lut[lut_idx], std::size_t(c));
-      }
-
-      std::cout << "LUT:" << std::endl;
-      for (std::size_t i = 0; i < lut_size; i++) {
-        std::cout << lut[i] << std::endl;
-      }
-      std::cout << "---" << std::endl;
-
-
       assert(is_inner_node());
       path_ <<= 1;
       path_++;
@@ -417,45 +418,35 @@ public:
 
       std::size_t cntr = 1;
 
+      constexpr std::size_t skip_width = 8; // [bits]
+
       while (cntr != 0) {
-
-        // load one word
-        uint64_t word = 0;
-        std::size_t p = 0;
-        for (std::size_t i = s_pos_; i < (s_pos_ + skip_width); i++) { // TODO optimize
-          word |= uint32_t(structure_[i]) << p;
-          p++;
-        }
-
-        if ((s_pos_ + skip_width) < structure_.size()) {
+        if (s_pos_ % skip_width == 0 && (s_pos_ + skip_width) < structure_.size()) {
           // try to 'fast forward'
+          uint64_t word = 0;
+          std::size_t p = 0;
+          for (std::size_t i = s_pos_; i < (s_pos_ + skip_width); i++) { // TODO optimize
+            word |= uint64_t(structure_[i]) << p;
+            p++;
+          }
+
           const int64_t inner_node_cnt = dtl::bits::pop_count(word);
           const int64_t leaf_node_cnt = skip_width - inner_node_cnt;
 
-//          std::cout << "skipping: "
-//                    << std::bitset<skip_width>(word)
-//                    << ", skip width=" << skip_width
-//                    << ", |1|=" << inner_node_cnt
-//                    << ", |0|=" << leaf_node_cnt
-//                    << ", cntr=" << cntr
-//                    << ", cntr_delta=" << (inner_node_cnt - leaf_node_cnt)
-//                    << std::endl;
-
-
-          if (lut[word & lut_mask] < cntr) { // otherwise, fast forward is not safe
+          if (tree_mask_po_lut[word] < cntr) { // otherwise, fast forward is not safe
             const auto cntr_delta = inner_node_cnt - leaf_node_cnt;
             if ((static_cast<int64_t>(cntr) + cntr_delta) >= 0) {
               s_pos_ += skip_width;
               l_pos_ += leaf_node_cnt;
               cntr += cntr_delta;
-//              std::cout << " - skipped " << skip_width << std::endl;
               skip_cntr += 1;
               continue; // while loop
             }
           }
         }
 
-        for (std::size_t i = 0; i < skip_width; i++) {
+        const std::size_t k = s_pos_ % skip_width == 0 ? skip_width : skip_width - s_pos_ % skip_width;
+        for (std::size_t i = 0; i < k; i++) {
           const auto is_inner_node = structure_[s_pos_++];
           cntr = is_inner_node ? cntr + 1 : cntr - 1;
           l_pos_ += !is_inner_node;
@@ -464,18 +455,17 @@ public:
         }
 
       }
-      if ((seq_cntr + skip_cntr) > 10)
-        std::cout << "seq_cntr: " << seq_cntr
-                  << ", skip_cntr: " << skip_cntr
-                  << " (" << (skip_cntr * skip_width) << ")"
-                  << std::endl;
+//      std::cout << "seq_cntr: " << seq_cntr
+//                << ", skip_cntr: " << skip_cntr
+//                << " (" << (skip_cntr * skip_width) << ")"
+//                << std::endl;
     }
 
     /// Navigate to the right child. (Semi-naive implementation)
     /// The current node must be an inner node.
     __forceinline__ void
     goto_right_child() {
-      goto_right_child_byte_skip();
+      goto_right_child_byte_skip_lut();
     }
 
     /// Compute and return the level-order node index of the current node.
@@ -622,6 +612,91 @@ public:
   tree_mask_po
   operator^(const tree_mask_po& other) const {
     // TODO: make sure the resulting TM is compressed.
+    // WARNING: This implementation works only in combination with range encoding!
+    tree_mask_po ret(false);
+    ret.structure_.clear();
+    ret.labels_.clear();
+    $u64 ret_level = 0;
+
+    // TODO optimize: determine and skip common prefix
+    traversal traversal_a(*this);
+    traversal traversal_b(other);
+    do {
+      u8 c = static_cast<u8>(traversal_a.is_inner_node()) | (static_cast<u8>(traversal_b.is_inner_node()) << 1);
+      $u1 bit;
+      $u64 s_from = 0;
+      $u64 l_from = 0;
+      switch (c) {
+        case 0b00: // a and b: leaf
+          bit = traversal_a.get_label() ^ traversal_b.get_label();
+          if (ret.structure_.size() > 0 /* this is not the root */
+              && traversal_a.is_right_child() /* is right child */
+              && !ret.structure_.back() /* previous node is also a leaf*/
+              && ret.labels_.back() == bit /* labels are the same */
+              ) {
+            ret.structure_.pop_back(); // previous leaf
+            ret.structure_.pop_back(); // previous inner
+            ret.structure_.push_back(false); // push leaf node
+          }
+          else{
+            ret.structure_.push_back(false); // push leaf node
+            ret.labels_.push_back(bit); // push label
+          }
+          break;
+        case 0b01: // a: inner, b: leaf
+          // copy the sub-tree of 'a'
+          s_from = traversal_a.s_pos_;
+          l_from = traversal_a.l_pos_;
+          while (!traversal_a.is_leaf_node()) { // TODO optimize goto parent -> right child
+            traversal_a.goto_right_child();
+          }
+          for (std::size_t i = s_from; i <= traversal_a.s_pos_; i++) { // TODO optimize copy
+            ret.structure_.push_back(traversal_a.structure_[i]);
+          }
+          bit = traversal_b.get_label();
+          for (std::size_t i = l_from; i <= traversal_a.l_pos_; i++) { // TODO optimize copy
+            ret.labels_.push_back(traversal_a.labels_[i] ^ bit);
+          }
+          ret_level = traversal_a.get_level();
+          break;
+        case 0b10: // a: leaf, b: inner
+          // copy the sub-tree of 'b'
+          s_from = traversal_b.s_pos_;
+          l_from = traversal_b.l_pos_;
+          while (!traversal_b.is_leaf_node()) {
+            traversal_b.goto_right_child();
+          }
+          for (std::size_t i = s_from; i <= traversal_b.s_pos_; i++) { // TODO optimize copy
+            ret.structure_.push_back(traversal_b.structure_[i]);
+          }
+          bit = traversal_a.get_label();
+          for (std::size_t i = l_from; i <= traversal_b.l_pos_; i++) { // TODO optimize copy
+            ret.labels_.push_back(traversal_b.labels_[i] ^ bit);
+          }
+          ret_level = traversal_b.get_level();
+          break;
+        case 0b11: // a and b: inner
+          ret.structure_.push_back(true); // push inner node
+          ret_level++;
+          break;
+      }
+      std::cout << ret << std::endl;
+      traversal_a.next();
+      traversal_b.next();
+    } while (! (traversal_a.end() && traversal_b.end()) );
+//    assert(is_compressed(ret));
+//    if (!is_compressed(ret)) {
+//      std::cerr << ret << std::endl;
+//      std::cerr << "BÄM" << std::endl;
+//      std::exit(1);
+//    }
+    return ret;
+  }
+
+  /// Bitwise XOR (Works only in combination with range encoding (RE),
+  /// i.e., the following must hold: this[i] == true => other[i] == true)
+  tree_mask_po
+  xor_re(const tree_mask_po& other) const {
     tree_mask_po ret(false);
     ret.structure_.clear();
     ret.labels_.clear();
@@ -632,8 +707,8 @@ public:
     do {
       u8 c = static_cast<u8>(traversal_a.is_inner_node()) | (static_cast<u8>(traversal_b.is_inner_node()) << 1);
       $u1 bit;
-      $u32 s_from = 0;
-      $u32 l_from = 0;
+      $u64 s_from = 0;
+      $u64 l_from = 0;
       switch (c) {
         case 0b00: // a and b: leaf
           ret.structure_.push_back(false); // push leaf node
@@ -677,6 +752,7 @@ public:
       traversal_a.next();
       traversal_b.next();
     } while (! (traversal_a.end() && traversal_b.end()) );
+    assert(is_compressed(ret));
     return ret;
   }
 
@@ -686,7 +762,6 @@ public:
   fused_xor_and(const tree_mask_po& a, const tree_mask_po& b) {
     // TODO
   }
-
 
   void
   print(std::ostream& os) const {

@@ -17,6 +17,8 @@
 
 #include "static_stack.hpp"
 #include "two_state_markov_process.hpp"
+#include "tree_mask_po.hpp"
+#include "tree_mask_util.hpp"
 #include "index.hpp"
 #include "util.hpp"
 
@@ -84,7 +86,7 @@ struct tree {
 
 };
 
-void test_tree_mask_po_xor();
+void test_tree_mask_po_xor_re();
 template<u64 N>
 __forceinline__ tree<N>
 operator&(const tree<N>& lhs, const tree<N>& rhs) noexcept {
@@ -383,7 +385,7 @@ int t_main() {
 
 
     {
-      std::size_t it = 15;
+      std::size_t it = 1;
       // test navigation
       constexpr std::size_t LEN = 1ull << 17;
       // create a bitmap with every second bit set (to prevent tree compression)
@@ -411,15 +413,15 @@ int t_main() {
 //                  << ", actual node idx: " << actual_node_idx
 //                  << std::endl;
         assert(actual_node_idx == expected_node_idx);
-//        if (it == 0) break;
-//        it--;
+        if (it == 0) break;
+        it--;
       } while (tmt.next());
     }
 
   }
 
-
-  test_tree_mask_po_xor();
+  std::cout << "xor_re:" << std::endl;
+  test_tree_mask_po_xor_re();
 
 }
 
@@ -427,24 +429,34 @@ int main(){
   test_treemask_lo_encoding_decoding<16>();
 }
 
-void test_tree_mask_po_xor() {
+void test_tree_mask_po_xor_re() {
   constexpr std::size_t LEN = 8;
-  for (std::size_t a = 0; a < (1u << LEN); a++) {
-    for (std::size_t b = 0; b < (1u << LEN); b++) {
-//      std::size_t a = 0b00110100;
-//      std::size_t b = 0b10111100;
-//      std::size_t a = 0b00000001;
-//      std::size_t b = 0b11110000;
+  for (std::size_t a = 1; a < (1u << LEN); a++) {
+    for (std::size_t b = 3; b < (1u << LEN); b++) {
+//  for (std::size_t a = 0; a < (1u << LEN); a++) {
+//    for (std::size_t b = 0; b < (1u << LEN); b++) {
+      // make sure, that all bit that are set in a are also set in b (as guaranteed in range encoding)
+      if ((a & b) != a) continue;
       std::bitset<LEN> bm_a(a);
       std::bitset<LEN> bm_b(b);
       std::bitset<LEN> bm_expected = bm_a ^ bm_b;
       dtl::tree_mask_po<LEN> tm_a(bm_a);
       dtl::tree_mask_po<LEN> tm_b(bm_b);
+      std::cout << "a:" << bm_a << " -> " << tm_a << std::endl;
+      std::cout << "b:" << bm_b << " -> " << tm_b << std::endl;
+
       dtl::tree_mask_po<LEN> tm_c = tm_a ^ tm_b;
       std::bitset<LEN> bm_actual = tm_c.to_bitset();
+      std::cout << "c:" << bm_actual << " -> " << tm_c << std::endl;
+      std::cout << std::endl;
       if (bm_actual != bm_expected) {
         std::cout << "test: " << bm_a << " (" << a << ") XOR " << bm_b << " (" << b << ")" << std::endl;
         std::cout << "Validation failed: expected=" << bm_expected << ", actual=" << bm_actual << std::endl;
+        std::exit(1);
+      }
+      if (!dtl::is_compressed(tm_c)) {
+        std::cout << "Validation failed: Resulting tree mask is not compressed." << std::endl;
+        std::exit(1);
       }
       assert(bm_actual == bm_expected);
     }

@@ -17,10 +17,16 @@ include_directories(../sdsl-lite/include)
 add_subdirectory(../dtl dtl)
 include_directories(../)
 
+set(TREE_MASK_SOURCE_FILES
+        tree_mask_lo.hpp
+        tree_mask_po.hpp
+        tree_mask_util.hpp
+        )
+
 set(SOURCE_FILES
+        ${TREE_MASK_SOURCE_FILES}
         index.hpp
         roaring_bitmap.hpp
-        tree_mask_po.hpp
         two_state_markov_process.hpp
         static_stack.hpp
         util.hpp
@@ -36,7 +42,7 @@ set(SOURCE_FILES
         tests.hpp
         z_curve_runtime.hpp
         zCurve_compiletime.hpp
-        tree_mask_lo.hpp)
+        )
 add_executable(navin ${SOURCE_FILES})
 target_link_libraries(navin fastbit roaring)
 target_link_libraries(navin pthread)
