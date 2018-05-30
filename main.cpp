@@ -20,6 +20,7 @@
 #include "index.hpp"
 #include "util.hpp"
 
+#include "tree_mask_lo.hpp"
 
 
 void a() {
@@ -152,7 +153,33 @@ not_set:
   return false;
 }
 
-int main() {
+template<u64 N>
+void test_treemask_lo_encoding_decoding(){
+
+  auto combinations = std::pow(2,N);
+  std::cout << combinations << std::endl;
+  for(auto i = 0; i < combinations; ++i) {
+    std::cout << "i: " << i << std::endl;
+    std::bitset<N> bs(i);
+    dtl::tree_mask_lo<N> t(bs);
+    std::bitset<N> dec = t.to_bitset();
+
+    if(dec != bs){
+      std::cout << "Wrong for:" << std::endl;
+      std::cout << "Bitset:  " << bs << std::endl;
+      std::cout << "Decoded: " << dec << std::endl;
+    }
+
+    if(N == 64){
+      if(i == std::numeric_limits<u64>::max()){
+        std::cout << "Reached the max" << std::endl;
+        break;
+      }
+    }
+  }
+}
+
+int t_main() {
 
 
 //  {
@@ -396,6 +423,9 @@ int main() {
 
 }
 
+int main(){
+  test_treemask_lo_encoding_decoding<16>();
+}
 
 void test_tree_mask_po_xor() {
   constexpr std::size_t LEN = 8;

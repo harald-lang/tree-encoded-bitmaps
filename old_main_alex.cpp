@@ -14,7 +14,6 @@
 #include <dtl/env.hpp>
 #include <dtl/storage.hpp>
 #include "histograms.hpp"
-//#include "column_imprints_simd/main.h"
 #include "column_imprints.hpp"
 
 #include "tests.hpp"
@@ -22,6 +21,7 @@
 #include "bidirectional_mapping.hpp"
 #include "dtl/index/psma_table.hpp"
 #include "dtl/index/psma_table_re.hpp"
+#include "tree_mask_lo.hpp"
 
 using namespace std;
 
@@ -259,6 +259,32 @@ void test_float_mapping(){
        << cvt_double::offset_norm_pos << "|"
        << cvt_double::offset_inf_pos << "|"
        << cvt_double::offset_NaN;
+}
+
+template<u64 N>
+int test_treemask_lo_encoding_decoding(){
+
+  auto combinations = std::pow(2,N);
+  std::cout << combinations << std::endl;
+  for(auto i = 0; i < combinations; ++i) {
+    std::cout << "i: " << i << std::endl;
+    std::bitset<N> bs(i);
+    dtl::tree_mask_lo<N> t(bs);
+    bitset<N> dec = t.to_bitset();
+
+    if(dec != bs){
+      std::cout << "Wrong for:" << std::endl;
+      std::cout << "Bitset:  " << bs << std::endl;
+      std::cout << "Decoded: " << dec << std::endl;
+    }
+
+    if(N == 64){
+      if(i == std::numeric_limits<u64>::max()){
+        std::cout << "Reached the max" << std::endl;
+        break;
+      }
+    }
+  }
 }
 
 int current_tests() {

@@ -1,8 +1,8 @@
+#pragma once
+
 #include "dtl/adept.hpp"
 #include <assert.h>
 #include <tuple>
-
-using namespace std;
 
 //abgewandelt von: https://stackoverflow.com/questions/28997271/c11-way-to-index-tuple-at-runtime-without-using-switch
 template<size_t I>
@@ -31,7 +31,7 @@ $u16 visit_at(std::tuple<Ts...>& tup, size_t idx, F fun) {
 }
 
 template <typename... T>
-bool cmp_z_coord(const tuple<T...>& tup1, const tuple<T...>& tup2){
+bool cmp_z_coord(const std::tuple<T...>& tup1, const std::tuple<T...>& tup2){
 
   auto attr_number = sizeof...(T);
   $u16 j = 0;
@@ -59,7 +59,7 @@ bool cmp_z_coord(const tuple<T...>& tup1, const tuple<T...>& tup2){
 
 struct Compare{
   template<typename... T>
-  bool operator()(const tuple<T...>& tup1, const tuple<T...>& tup2) const { return cmp_z_coord(tup1,tup2);}
+  bool operator()(const std::tuple<T...>& tup1, const std::tuple<T...>& tup2) const { return cmp_z_coord(tup1,tup2);}
 };
 
 
