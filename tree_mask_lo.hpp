@@ -2,7 +2,6 @@
 
 #include <queue>
 
-#include <boost/dynamic_bitset>
 #include <boost/dynamic_bitset.hpp>
 
 #include <dtl/tree_mask.hpp>
@@ -17,16 +16,10 @@ namespace dtl{
 /// Encodes a bitmap of length N as a binary tree.
 /// The tree structure is encoded in level-order.
 
-  template<std::size_t _N>
-  class tree_mask_lo{
-  public:
-    static constexpr auto N = _N;
-
-  private:
-template<std::size_t N>
+template<std::size_t _N>
 class tree_mask_lo{
-
 public:
+  static constexpr auto N = _N;
 
   // level-order encoding
   boost::dynamic_bitset<> lo_structure;
@@ -112,7 +105,7 @@ public:
 
       // Special case for the root node: if the tree is only the root, structure is 0
       {
-        bool root_is_inner = tree.is_inner_node(0);
+        bool root_is_inner = tree_structure.is_inner_node(0);
 
       // add the root to the tree structure
       lo_structure.push_back(root_is_inner);
@@ -223,10 +216,7 @@ public:
     }
 
     return ret;
-
   }
-
-
 };
 
-} // namespace dtl
+}; // namespace dtl
