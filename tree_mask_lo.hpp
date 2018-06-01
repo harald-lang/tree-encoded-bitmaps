@@ -134,11 +134,13 @@ public:
     rank_support.set_vector(&lo_struc);
   }
 
-  u1 is_inner_node(u64 node_idx){
+  __forceinline__ u1
+  is_inner_node(u64 node_idx){
     return lo_struc[node_idx] == 1 ? true : false;
   }
 
-  u1 is_leaf_node(u64 node_idx){
+  __forceinline__ u1
+  is_leaf_node(u64 node_idx){
     return lo_struc[node_idx] == 0 ? true : false;
   }
 
@@ -154,17 +156,19 @@ public:
   }
 
   /// Important: rank_supportv5.rank() calculates the rank of the prefix -> we need idx + 1
-  u64 left_child(u64 node_idx){
+  __forceinline__ u64
+  left_child(u64 node_idx){
     return 2* rank_support.rank(node_idx+1) -1;
   }
 
-  u64 right_child(u64 node_idx){
+  __forceinline__ u64
+  right_child(u64 node_idx){
     return 2* rank_support.rank(node_idx+1);
   }
 
 
   /// decodes the level-order encoding to a bitmap
-  std::bitset<N>
+  __forceinline__ std::bitset<N>
   to_bitset(){
 
     std::bitset<N> ret; // the resulting bitset
@@ -226,10 +230,53 @@ public:
 
     return ret;
   }
+
+  /// Return the size in bytes.
+  __forceinline__ std::size_t
+  size_in_byte() {
+    u64 lo_struct_size = lo_struc.bit_size();
+    u64 lo_labels_size = lo_label.bit_size();
+
+    // the required space of an int_vector with n bits: 64*ceil(n/64+1) bit = 8*ceil(n/64+1) byte
+    u64 lo_struct_bytes = 8 * std::ceil((lo_struct_size*1.0 / 64) +1);
+    u64 lo_labels_bytes = 8 * std::ceil((lo_labels_size*1.0 / 64) +1);
+
+    // the additional required space for the rank_support_v5 is: 0.0625*n bit
+    u64 rank_supp_bytes = ((rank_support.size() * 0.0625) + 7) / 8;
+
+    // std::cout << "Struct Bits: " << lo_struct_size << " Size: " << lo_struct_bytes << std::endl;
+    // std::cout << "Labels Bits: " << lo_labels_size << " Size: " << lo_labels_bytes << std::endl;
+    // std::cout << "R_Supp Size: " << rank_supp_bytes << std::endl;
+
+    return lo_struct_bytes + lo_labels_bytes + rank_supp_bytes;
+  }
+
+  /// Bitwise XOR
+  tree_mask_lo
+  operator^(const tree_mask_lo& other) const{
+    // TODO
+  }
+
+  /// Bitwise XOR (Works only in combination with range encoding (RE),
+  /// i.e., the following must hold: this[i] == true => other[i] == true)
+  tree_mask_lo
+  xor_re(const tree_mask_lo& other) const {
+    // TODO
+  }
+
+  /// Computes (a XOR b) & this
+  /// Note: this, a and b must be different instances. Otherwise, the behavior is undefined.
+  tree_mask_po&
+  fused_xor_and(const tree_mask_po& a, const tree_mask_po& b) {
+    // TODO
+  }
+
 };
 
-//TODO size
-//XOR, XOR varianten
-//BP
+//TODO:
+// 1. XOR
+// 2. XOR RE
+// 3. Fused XOR
+// 4. BP
 
 }; // namespace dtl
