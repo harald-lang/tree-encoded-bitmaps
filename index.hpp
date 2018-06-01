@@ -7,7 +7,7 @@
 
 // API:
 // 1) construct from bitset
-// 2) size() in bytes
+// 2) size_in_byte() in bytes
 // 3) binary op: a XOR b (range encoding, first predicate)
 // 4) ternary op: a & (b XOR c) (range encoding, second predicate)
 // 5) to position list (maybe batchwise)

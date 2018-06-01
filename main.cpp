@@ -181,6 +181,20 @@ void test_treemask_lo_encoding_decoding(){
   }
 }
 
+template<u64 N>
+void test_treemask_lo_size(){
+  std::bitset<N> bs;
+
+  for(auto i = 0; i < bs.size(); i++){
+    bs[i] = std::rand() % 2;
+  }
+
+  dtl::tree_mask_lo<N> t(bs);
+
+  std::cout << "Bitset: " << bs << std::endl;
+  t.size_in_byte();
+}
+
 int t_main() {
 
 
@@ -426,7 +440,7 @@ int t_main() {
 }
 
 int main(){
-  test_treemask_lo_encoding_decoding<16>();
+  test_treemask_lo_size<256>();
 }
 
 void test_tree_mask_po_xor_re() {

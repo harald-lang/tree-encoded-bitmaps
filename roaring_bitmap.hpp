@@ -41,7 +41,7 @@ struct roaring_bitmap {
 
   /// Return the size in bytes.
   std::size_t
-  size() {
+  size_in_byte() {
     return bitmap.getSizeInBytes(false);
   }
 

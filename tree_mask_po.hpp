@@ -565,7 +565,7 @@ public:
 
   /// Return the size in bytes.
   __forceinline__ std::size_t
-  size() {
+  size_in_byte() {
     return ((structure_.size() + labels_.size()) + 7) / 8; // TODO + labels offset skip
   }
 

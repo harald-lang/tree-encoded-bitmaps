@@ -233,6 +233,7 @@ public:
   /// Return the size in bytes.
   __forceinline__ std::size_t
   size_in_byte() {
+    // TODO check: currently the size is calculated like in the sdsl_cheat_sheet
     u64 lo_struct_size = lo_struc.bit_size();
     u64 lo_labels_size = lo_label.bit_size();
 
@@ -265,8 +266,8 @@ public:
 
   /// Computes (a XOR b) & this
   /// Note: this, a and b must be different instances. Otherwise, the behavior is undefined.
-  tree_mask_po&
-  fused_xor_and(const tree_mask_po& a, const tree_mask_po& b) {
+  tree_mask_lo&
+  fused_xor_and(const tree_mask_lo& a, const tree_mask_lo& b) {
     // TODO
   }
 
