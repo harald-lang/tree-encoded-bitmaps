@@ -1,23 +1,21 @@
 #pragma once
 
+#include <list>
 #include <queue>
-
-#include <boost/dynamic_bitset.hpp>
 
 #include <dtl/tree_mask.hpp>
 
 #include <sdsl/int_vector.hpp>
-// Boost
-#include "boost/dynamic_bitset.hpp"
-#include <queue>
-#include <list>
 
-namespace dtl{
+#include "boost/dynamic_bitset.hpp"
+
+
+namespace dtl {
+
 /// Encodes a bitmap of length N as a binary tree.
 /// The tree structure is encoded in level-order.
-
 template<std::size_t _N>
-class tree_mask_lo{
+class tree_mask_lo {
 public:
   static constexpr auto N = _N;
 
@@ -106,17 +104,18 @@ public:
       }
     };
 
-      // Special case for the root node: if the tree is only the root, structure is 0
-      {
-        bool root_is_inner = tree_structure.is_inner_node(0);
+    // Special case for the root node: if the tree is only the root, structure is 0
+    {
+      bool root_is_inner = tree_structure.is_inner_node(0);
 
       // add the root to the tree structure
       lo_struc[struct_cnt++] = root_is_inner;
 
-      if(root_is_inner){
+      if(root_is_inner) {
         // add the root to the fifo to add the rest of the tree
         fifo.push(0);
-      } else {
+      }
+      else {
         lo_label[label_cnt++] = labels[0];
         // tree is only the root, we are done
       }
