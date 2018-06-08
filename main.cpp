@@ -337,9 +337,9 @@ int t_main() {
   dtl::roaring_bitmap<N> b(mp2_out);
   dtl::roaring_bitmap<N> c(mp3_out);
   c.fused_xor_and(a, b);
-  std::cout << a.size() << std::endl;
-  std::cout << b.size() << std::endl;
-  std::cout << c.size() << std::endl;
+  std::cout << a.size_in_byte() << std::endl;
+  std::cout << b.size_in_byte() << std::endl;
+  std::cout << c.size_in_byte() << std::endl;
 
   auto val = c.to_bitset();
   if (val == ((mp_out^mp2_out)&mp3_out)) {
@@ -352,11 +352,11 @@ int t_main() {
   std::cout << mp_out << std::endl;
   dtl::tree_mask_po<N> tm(mp_out);
   std::cout << tm << std::endl;
-  std::cout << tm.size() << std::endl;
+  std::cout << tm.size_in_byte() << std::endl;
   std::cout << ~mp_out << std::endl;
   dtl::tree_mask_po<N> tmn(~mp_out);
   std::cout << tmn << std::endl;
-  std::cout << tmn.size() << std::endl;
+  std::cout << tmn.size_in_byte() << std::endl;
 
   auto word = ~0ll >> 1;
   for (uint32_t i = 0; i < 64; i++) {
@@ -440,7 +440,7 @@ int t_main() {
 }
 
 int main(){
-  test_treemask_lo_size<256>();
+  test_tree_mask_po_xor_re();
 }
 
 void test_tree_mask_po_xor_re() {
@@ -459,7 +459,11 @@ void test_tree_mask_po_xor_re() {
       std::cout << "a:" << bm_a << " -> " << tm_a << std::endl;
       std::cout << "b:" << bm_b << " -> " << tm_b << std::endl;
 
+
       dtl::tree_mask_po<LEN> tm_c = tm_a ^ tm_b;
+
+      //dtl::tree_mask_po<LEN> tm_c = tm_a.xor_test(tm_b);
+      //dtl::tree_mask_po<LEN> tm_c = tm_a.xor_re(tm_b);
       std::bitset<LEN> bm_actual = tm_c.to_bitset();
       std::cout << "c:" << bm_actual << " -> " << tm_c << std::endl;
       std::cout << std::endl;
@@ -470,6 +474,8 @@ void test_tree_mask_po_xor_re() {
       }
       if (!dtl::is_compressed(tm_c)) {
         std::cout << "Validation failed: Resulting tree mask is not compressed." << std::endl;
+        dtl::tree_mask_po<LEN> tm_res(bm_expected);
+        std::cout << "compressed treemask: " << tm_res << std::endl;
         std::exit(1);
       }
       assert(bm_actual == bm_expected);
