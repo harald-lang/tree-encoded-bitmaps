@@ -462,7 +462,6 @@ void test_tree_mask_po_xor_re() {
 
       dtl::tree_mask_po<LEN> tm_c = tm_a ^ tm_b;
 
-      //dtl::tree_mask_po<LEN> tm_c = tm_a.xor_test(tm_b);
       //dtl::tree_mask_po<LEN> tm_c = tm_a.xor_re(tm_b);
       std::bitset<LEN> bm_actual = tm_c.to_bitset();
       std::cout << "c:" << bm_actual << " -> " << tm_c << std::endl;

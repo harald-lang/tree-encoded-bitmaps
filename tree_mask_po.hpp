@@ -611,8 +611,6 @@ public:
   /// Bitwise XOR
   tree_mask_po
   operator^(const tree_mask_po& other) const {
-    // TODO: make sure the resulting TM is compressed.
-    // WARNING: This implementation works only in combination with range encoding!
     tree_mask_po ret(false);
     ret.structure_.clear();
     ret.labels_.clear();
@@ -628,22 +626,45 @@ public:
       $u64 l_from = 0;
       switch (c) {
         case 0b00: // a and b: leaf
+          std::cout << "Case: 0b00" << std::endl;
           bit = traversal_a.get_label() ^ traversal_b.get_label();
-          if (ret.structure_.size() > 0 /* this is not the root */
-              && traversal_a.is_right_child() /* is right child */
-              && !ret.structure_.back() /* previous node is also a leaf*/
-              && ret.labels_.back() == bit /* labels are the same */
-              ) {
-            ret.structure_.pop_back(); // previous leaf
-            ret.structure_.pop_back(); // previous inner
+
+          if (ret.structure_.size() > 2 // this is not the root
+              && ret.labels_.back() == bit // labels are the same
+              && !ret.structure_.back() // previous node is also a leaf
+              && ret.structure_[ret.structure_.size()-2] // second last node is a inner node
+          ) {
+            std::cout << "Compress" << std::endl;
+            ret.structure_.pop_back(); // remove the previous leaf
+            ret.structure_.pop_back(); // remove the previous inner
             ret.structure_.push_back(false); // push leaf node
           }
           else{
             ret.structure_.push_back(false); // push leaf node
             ret.labels_.push_back(bit); // push label
           }
+
+          // check if we need to compress the resulting tree,
+          // therefore we need to check if the last three structure_bits are: 100
+          // Then we have inner node, left leaf, right leaf
+          while(ret.structure_.size() >= 3 // do we have at least three nodes? (Root, Left child, right child)
+                && ret.labels_.size() >= 2
+                && ret.labels_[ret.labels_.size()-2] == ret.labels_.back() // the labels of the leafs are the same
+                && !ret.structure_.back() // last node is a leaf
+                && !ret.structure_[ret.structure_.size()-2] // node before is a leaf
+                && ret.structure_[ret.structure_.size()-3] // third-last node is a inner node
+                ){
+            std::cout << "Compress cascading" << std::endl;
+            ret.structure_.pop_back(); // remove previous right leaf
+            ret.structure_.pop_back(); // remove previous left leaf
+            ret.structure_.pop_back(); // remove previous inner
+            ret.structure_.push_back(false); // push the new leaf node
+            ret.labels_.pop_back(); // remove the label of the right leaf, label of the new leaf is the left leaf label
+          }
           break;
+
         case 0b01: // a: inner, b: leaf
+          std::cout << "Case: 0b01" << std::endl;
           // copy the sub-tree of 'a'
           s_from = traversal_a.s_pos_;
           l_from = traversal_a.l_pos_;
@@ -660,6 +681,7 @@ public:
           ret_level = traversal_a.get_level();
           break;
         case 0b10: // a: leaf, b: inner
+          std::cout << "Case: 0b10" << std::endl;
           // copy the sub-tree of 'b'
           s_from = traversal_b.s_pos_;
           l_from = traversal_b.l_pos_;
@@ -676,11 +698,13 @@ public:
           ret_level = traversal_b.get_level();
           break;
         case 0b11: // a and b: inner
+          std::cout << "Case: 0b11" << std::endl;
           ret.structure_.push_back(true); // push inner node
           ret_level++;
           break;
       }
       std::cout << ret << std::endl;
+
       traversal_a.next();
       traversal_b.next();
     } while (! (traversal_a.end() && traversal_b.end()) );
