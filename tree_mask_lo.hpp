@@ -274,7 +274,7 @@ public:
       for(auto e : nodes){
         std::cout << e.first << "|" << e.second << "  ,  ";
       }*/
-      std::cout << std::endl;
+      //std::cout << std::endl;
       // the function is always called for the first node in the list
       //remove the node for which this function is executed
       std::pair<$u64,$u64> node = nodes.front();
@@ -561,7 +561,7 @@ public:
 
       while(fifo_a.size() > 0 || fifo_b.size() > 0){
 
-        std::cout << std::endl << "Size queue_a: " << fifo_a.size() << " queue_b: " << fifo_b.size() << std::endl;
+        //std::cout << std::endl << "Size queue_a: " << fifo_a.size() << " queue_b: " << fifo_b.size() << std::endl;
 
         node curr_a;
         node curr_b;
@@ -587,7 +587,7 @@ public:
 
           switch (c) {
             case 0b00: // a and b: leaf
-              std::cout << "Case: 0b00" << std::endl;
+              //std::cout << "Case: 0b00" << std::endl;
 
               bit = this->get_label(curr_a.node_idx) ^ other.get_label(curr_b.node_idx);
 
@@ -599,7 +599,7 @@ public:
 
             case 0b01: // a: inner, b: leaf
             {
-              std::cout << "Case: 0b01" << std::endl;
+              //std::cout << "Case: 0b01" << std::endl;
 
               // add the inner node from a
               structure.push_back(true);
@@ -617,7 +617,7 @@ public:
             }
             case 0b10: // a: leaf, b: inner
             {
-              std::cout << "Case: 0b10" << std::endl;
+              //std::cout << "Case: 0b10" << std::endl;
 
               // add the inner node from b
               structure.push_back(true);
@@ -635,7 +635,7 @@ public:
             }
             case 0b11: // a and b: inner
             {
-              std::cout << "Case: 0b11" << std::endl;
+              //std::cout << "Case: 0b11" << std::endl;
 
               // add the inner node
               structure.push_back(true);
@@ -663,18 +663,18 @@ public:
 
         } else { // if we are in a subtree of one of the both nodes
 
-          std::cout << "Node a: " << curr_a.node_idx << " | " << curr_a.node_pos << " | " << curr_a.xor_bit << std::endl;
-          std::cout << "Node b: " << curr_b.node_idx << " | " << curr_b.node_pos << " | " << curr_b.xor_bit << std::endl;
+          //std::cout << "Node a: " << curr_a.node_idx << " | " << curr_a.node_pos << " | " << curr_a.xor_bit << std::endl;
+          //std::cout << "Node b: " << curr_b.node_idx << " | " << curr_b.node_pos << " | " << curr_b.xor_bit << std::endl;
 
           if((curr_a.node_pos < curr_b.node_pos && curr_a.node_pos != 0) || curr_b.node_pos == 0){ // add part of the subtree of a
 
-            std::cout << "Case: subtree_a" << std::endl;
+            //std::cout << "Case: subtree_a" << std::endl;
 
             fifo_a.pop();
 
             if(this->is_inner_node(curr_a.node_idx)){ // current node is an inner node -> add children to the queue
 
-              std::cout << "Is inner node" << std::endl;
+              //std::cout << "Is inner node" << std::endl;
               // add the inner node to the structure
               structure.push_back(true);
 
@@ -687,7 +687,7 @@ public:
 
             } else { // node is a leaf, add it to the structure
 
-              std::cout << "Is leaf node" << std::endl;
+              //std::cout << "Is leaf node" << std::endl;
               // add the leaf to the structure
               structure.push_back(false);
               labels.push_back(this->get_label(curr_a.node_idx) ^ curr_a.xor_bit);
@@ -695,13 +695,13 @@ public:
 
           } else { // add part of the subtree of b
 
-            std::cout << "Case: subtree_b" << std::endl;
+            //std::cout << "Case: subtree_b" << std::endl;
 
             fifo_b.pop();
 
             if(other.is_inner_node(curr_b.node_idx)){ // current node is an inner node -> add children to the queue
 
-              std::cout << "Is inner node" << std::endl;
+              //std::cout << "Is inner node" << std::endl;
 
               // add the inner node to the structure
               structure.push_back(true);
@@ -715,7 +715,7 @@ public:
 
             } else { // node is a leaf, add it to the structure
 
-              std::cout << "Is leaf node" << std::endl;
+              //std::cout << "Is leaf node" << std::endl;
 
               // add the leaf to the structure
               structure.push_back(false);
@@ -732,8 +732,8 @@ public:
           }
         }
 
-        tree_mask_lo<N> tmp(structure, labels);
-        std::cout << tmp << std::endl;
+        //tree_mask_lo<N> tmp(structure, labels);
+        //std::cout << tmp << std::endl;
       }
 
       tree_mask_lo<N> ret(structure, labels);

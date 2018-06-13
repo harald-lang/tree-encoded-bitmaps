@@ -605,27 +605,31 @@ void test_tree_mask_lo_xor_re(){
 
   constexpr std::size_t LEN = 16;
   for (std::size_t a = 0; a < (1u << LEN); a++) {
+    std::bitset<LEN> bm_a(a);
+    dtl::tree_mask_lo<LEN> tm_a(bm_a);
+    std::cout << "a:" << bm_a << std::endl;
+
     for (std::size_t b = 0; b < (1u << LEN); b++) {
 
-      std::cout << "-------------------" << std::endl;
+      //std::cout << "-------------------" << std::endl;
 
       // make sure, that all bit that are set in a are also set in b (as guaranteed in range encoding)
       if ((a & b) != a) continue;
-      std::bitset<LEN> bm_a(a);
       std::bitset<LEN> bm_b(b);
       std::bitset<LEN> bm_expected = bm_a ^ bm_b;
-      dtl::tree_mask_lo<LEN> tm_a(bm_a);
-      dtl::tree_mask_lo<LEN> tm_b(bm_b);
-      std::cout << "a:" << bm_a << " -> " << tm_a << std::endl;
-      std::cout << "b:" << bm_b << " -> " << tm_b << std::endl;
 
+      dtl::tree_mask_lo<LEN> tm_b(bm_b);
 
       dtl::tree_mask_lo<LEN> tm_c = tm_a ^ tm_b;
 
       std::bitset<LEN> bm_actual = tm_c.to_bitset();
-      std::cout << "c:" << bm_actual << " -> " << tm_c << std::endl;
-      std::cout << std::endl;
+
       if (bm_actual != bm_expected) {
+        std::cout << "a:" << bm_a << " -> " << tm_a << std::endl;
+        std::cout << "b:" << bm_b << " -> " << tm_b << std::endl;
+        std::cout << "c:" << bm_actual << " -> " << tm_c << std::endl;
+        std::cout << std::endl;
+
         std::cout << "test: " << bm_a << " (" << a << ") XOR " << bm_b << " (" << b << ")" << std::endl;
         std::cout << "Validation failed: expected=" << bm_expected << ", actual=" << bm_actual << std::endl;
         std::exit(1);
@@ -640,6 +644,7 @@ void test_tree_mask_lo_xor_re(){
         std::exit(1);
       }
       */
+
       assert(bm_actual == bm_expected);
     }
   }
