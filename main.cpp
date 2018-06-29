@@ -549,7 +549,7 @@ void run_parallel(){
 }
 
 int main(){
-  test_tree_mask_lo_xor_re_compressed_v2();
+  test_tree_mask_lo_and();
   return 0;
 }
 
@@ -1045,10 +1045,17 @@ void test_tree_mask_lo_xor_re_compressed_v2(){
         std::exit(1);
       }
 
+      dtl::tree_mask_lo<LEN> tm_comp(bm_expected);
+      if (tm_comp != tm_c) {
+        std::cout << "Validation failed: Resulting tree mask is not compressed." << std::endl;
+        std::cout << "compressed treemask: " << tm_comp << std::endl;
+        std::exit(1);
+      }
+
       assert(bm_actual == bm_expected);
     }
   }
 
 }
 
-// 0000000100000001
+

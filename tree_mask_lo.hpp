@@ -1336,8 +1336,6 @@ public:
           }
         }
       }
-      std::cout << "Not found" << std::endl;
-      return std::make_pair(false, std::vector<$u64>{0, 0, 0});
     };
 
     while(fifo_a.size() > 0 || fifo_b.size() > 0){
@@ -1386,6 +1384,9 @@ public:
             if (structure.size() > 1 && labels.size() > 0 &&
                 !structure.back() && labels.back() == bit &&
                 !(structure.size() & 1)) {
+
+              //TODO we could remove this to get a little bit more performance,
+              // but we could need to handle different compression cases
 
               structure.push_back(false); // insert the leaf
               labels.push_back(bit);
