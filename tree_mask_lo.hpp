@@ -1273,7 +1273,6 @@ public:
         labels.erase(labels.begin() + (node_idx - rank) - 1);
       }
 
-
       // now find the position of the parent, instead of a select we use a normal search
       auto level_above = level_offset[level-1]; // level_offset<structure_idx, rank>
       u64 level_begin = level_above.first;
@@ -1295,6 +1294,10 @@ public:
             // update the ranks of all higher levels
             for(auto l = level; l < level_offset.size(); l++) {
               level_offset[l].second--;
+
+              if(l > level){
+                level_offset[l].first -= 2;
+              }
             }
 
             /*
@@ -1305,9 +1308,9 @@ public:
             for(auto e : labels){
               std::cout << e;
             }
+            std::cout << std::endl;
+            std::cout << "Current rank: " << current_rank << " , i:" << i << std::endl;
             */
-            //std::cout << std::endl;
-            //std::cout << "Current rank: " << current_rank << " , i:" << i << std::endl;
 
             // check if we need to compress this new level as well
             if(is_right_child(i)) {
@@ -1333,7 +1336,7 @@ public:
           }
         }
       }
-      //std::cout << "Not found" << std::endl;
+      std::cout << "Not found" << std::endl;
       return std::make_pair(false, std::vector<$u64>{0, 0, 0});
     };
 
@@ -1397,6 +1400,7 @@ public:
               }
               std::cout << std::endl;
               */
+
               auto res = compression_function(structure.size()-1, level_offset.size()-1, structure.size() - labels.size());
 
               while(res.first) {
