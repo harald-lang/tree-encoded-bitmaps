@@ -21,8 +21,11 @@
 #include "tree_mask_util.hpp"
 #include "index.hpp"
 #include "util.hpp"
+#include <thread>
+#include <dtl/thread.hpp>
 
 #include "tree_mask_lo.hpp"
+
 
 
 void a() {
@@ -87,6 +90,18 @@ struct tree {
 };
 
 void test_tree_mask_po_xor_re();
+void test_tree_mask_po_and();
+void test_tree_mask_po_fused_xor();
+
+void test_treemask_lo_encoding_decoding();
+void test_treemask_lo_size();
+void test_tree_mask_lo_xor_re();
+void test_tree_mask_lo_and_re();
+void test_tree_mask_lo_and();
+void test_tree_mask_lo_fused_xor();
+void test_tree_mask_lo_xor_re_compressed();
+void test_tree_mask_lo_xor_re_compressed_v2();
+
 template<u64 N>
 __forceinline__ tree<N>
 operator&(const tree<N>& lhs, const tree<N>& rhs) noexcept {
@@ -153,46 +168,6 @@ bittest(const int64_t word, const uint32_t idx) {
   return true;
 not_set:
   return false;
-}
-
-template<u64 N>
-void test_treemask_lo_encoding_decoding(){
-
-  auto combinations = std::pow(2,N);
-  std::cout << combinations << std::endl;
-  for(auto i = 0; i < combinations; ++i) {
-    std::cout << "i: " << i << std::endl;
-    std::bitset<N> bs(i);
-    dtl::tree_mask_lo<N> t(bs);
-    std::bitset<N> dec = t.to_bitset();
-
-    if(dec != bs){
-      std::cout << "Wrong for:" << std::endl;
-      std::cout << "Bitset:  " << bs << std::endl;
-      std::cout << "Decoded: " << dec << std::endl;
-    }
-
-    if(N == 64){
-      if(i == std::numeric_limits<u64>::max()){
-        std::cout << "Reached the max" << std::endl;
-        break;
-      }
-    }
-  }
-}
-
-template<u64 N>
-void test_treemask_lo_size(){
-  std::bitset<N> bs;
-
-  for(auto i = 0; i < bs.size(); i++){
-    bs[i] = std::rand() % 2;
-  }
-
-  dtl::tree_mask_lo<N> t(bs);
-
-  std::cout << "Bitset: " << bs << std::endl;
-  t.size_in_byte();
 }
 
 int t_main() {
@@ -439,14 +414,151 @@ int t_main() {
 
 }
 
-int main(){
-  test_tree_mask_po_xor_re();
+static void test_tree_mask_lo_and(u32 begin, u32 end){
+
+    constexpr std::size_t LEN = 16;
+    for (std::size_t a = begin; a < end; a++) {
+      std::bitset<LEN> bm_a(a);
+      dtl::tree_mask_lo<LEN> tm_a(bm_a);
+      std::cout << "a:" << bm_a << std::endl;
+
+      for (std::size_t b = 0; b < (1u << LEN); b++) {
+
+        //std::cout << "-------------------" << std::endl;
+
+        // make sure, that all bit that are set in a are also set in b (as guaranteed in range encoding)
+        //if ((a & b) != a) continue;
+        std::bitset<LEN> bm_b(b);
+        std::bitset<LEN> bm_expected = bm_a & bm_b;
+
+        dtl::tree_mask_lo<LEN> tm_b(bm_b);
+
+        dtl::tree_mask_lo<LEN> tm_c = tm_a & tm_b;
+
+        std::bitset<LEN> bm_actual = tm_c.to_bitset();
+
+        if (bm_actual != bm_expected) {
+          std::cout << "a:" << bm_a << " -> " << tm_a << std::endl;
+          std::cout << "b:" << bm_b << " -> " << tm_b << std::endl;
+          std::cout << "c:" << bm_actual << " -> " << tm_c << std::endl;
+          std::cout << std::endl;
+
+          std::cout << "test: " << bm_a << " (" << a << ") AND " << bm_b << " (" << b << ")" << std::endl;
+          std::cout << "Validation failed: expected=" << bm_expected << ", actual=" << bm_actual << std::endl;
+          std::exit(1);
+        }
+
+        // TODO compression
+        /*
+        if (!dtl::is_compressed(tm_c)) {
+          std::cout << "Validation failed: Resulting tree mask is not compressed." << std::endl;
+          dtl::tree_mask_po<LEN> tm_res(bm_expected);
+          std::cout << "compressed treemask: " << tm_res << std::endl;
+          std::exit(1);
+        }
+        */
+
+        assert(bm_actual == bm_expected);
+      }
+    }
 }
 
+void run_parallel(){
+
+  u32 max = (1ul << 16);
+  u32 step_size = max/std::thread::hardware_concurrency();
+  std::mutex m;
+  $u32 begin = 0;
+  $u32 end = step_size;
+
+  auto func = [&](){
+
+      m.lock();
+      u32 this_begin = begin;
+      u32 this_end = end;
+      begin += step_size;
+      end += step_size;
+      m.unlock();
+
+      constexpr std::size_t LEN = 16;
+      for (std::size_t a = this_begin; a < this_end; a++) {
+        std::bitset<LEN> bm_a(a);
+        dtl::tree_mask_lo<LEN> tm_a(bm_a);
+
+        std::cout << "a: " << bm_a << std::endl;
+
+        for (std::size_t b = 0; b < (1u << LEN); b++) {
+
+          //std::cout << "-------------------" << std::endl;
+
+          // make sure, that all bit that are set in a are also set in b (as guaranteed in range encoding)
+          //if ((a & b) != a) continue;
+          std::bitset<LEN> bm_b(b);
+          std::bitset<LEN> bm_expected = bm_a & bm_b;
+
+          dtl::tree_mask_lo<LEN> tm_b(bm_b);
+
+          dtl::tree_mask_lo<LEN> tm_c = tm_a & tm_b;
+
+          std::bitset<LEN> bm_actual = tm_c.to_bitset();
+
+          if (bm_actual != bm_expected) {
+            std::cout << "a:" << bm_a << " -> " << tm_a << std::endl;
+            std::cout << "b:" << bm_b << " -> " << tm_b << std::endl;
+            std::cout << "c:" << bm_actual << " -> " << tm_c << std::endl;
+            std::cout << std::endl;
+
+            std::cout << "test: " << bm_a << " (" << a << ") AND " << bm_b << " (" << b << ")" << std::endl;
+            std::cout << "Validation failed: expected=" << bm_expected << ", actual=" << bm_actual << std::endl;
+            std::exit(1);
+          }
+
+          // TODO compression
+          /*
+          if (!dtl::is_compressed(tm_c)) {
+            std::cout << "Validation failed: Resulting tree mask is not compressed." << std::endl;
+            dtl::tree_mask_po<LEN> tm_res(bm_expected);
+            std::cout << "compressed treemask: " << tm_res << std::endl;
+            std::exit(1);
+          }
+          */
+
+          assert(bm_actual == bm_expected);
+        }
+      }
+  };
+
+  std::vector<std::thread> workers;
+
+  dtl::run_in_parallel_async(func, workers);
+  std::cout << "Number of threads: " << workers.size() << std::endl;
+  dtl::wait_for_threads(workers);
+
+  /*
+  std::cout << "waiting for threads to finish..." << std::endl;
+  t1.join();
+  std::cout << "t1 started" << std::endl;
+  t2.join();
+  std::cout << "t2 started" << std::endl;
+  t3.join();
+  std::cout << "t3 started" << std::endl;
+  t4.join();
+  std::cout << "t4 started" << std::endl;
+  std::cout << "done!" << std::endl;
+  */
+}
+
+int main(){
+  test_tree_mask_lo_and();
+  return 0;
+}
+
+/// treemask_po tests
+
 void test_tree_mask_po_xor_re() {
-  constexpr std::size_t LEN = 8;
-  for (std::size_t a = 1; a < (1u << LEN); a++) {
-    for (std::size_t b = 3; b < (1u << LEN); b++) {
+  constexpr std::size_t LEN = 16;
+  for (std::size_t a = 0; a < (1u << LEN); a++) {
+    for (std::size_t b = 0; b < (1u << LEN); b++) {
 //  for (std::size_t a = 0; a < (1u << LEN); a++) {
 //    for (std::size_t b = 0; b < (1u << LEN); b++) {
       // make sure, that all bit that are set in a are also set in b (as guaranteed in range encoding)
@@ -462,7 +574,6 @@ void test_tree_mask_po_xor_re() {
 
       dtl::tree_mask_po<LEN> tm_c = tm_a ^ tm_b;
 
-      //dtl::tree_mask_po<LEN> tm_c = tm_a.xor_test(tm_b);
       //dtl::tree_mask_po<LEN> tm_c = tm_a.xor_re(tm_b);
       std::bitset<LEN> bm_actual = tm_c.to_bitset();
       std::cout << "c:" << bm_actual << " -> " << tm_c << std::endl;
@@ -482,3 +593,469 @@ void test_tree_mask_po_xor_re() {
     }
   }
 }
+
+void test_tree_mask_po_and() {
+  constexpr std::size_t LEN = 16;
+  for (std::size_t a = 0; a < (1u << LEN); a++) {
+    for (std::size_t b = 0; b < (1u << LEN); b++) {
+
+      // make sure, that all bit that are set in a are also set in b (as guaranteed in range encoding)
+      if ((a & b) != a) continue;
+      std::bitset<LEN> bm_a(a);
+      std::bitset<LEN> bm_b(b);
+      std::bitset<LEN> bm_expected = bm_a & bm_b;
+      dtl::tree_mask_po<LEN> tm_a(bm_a);
+      dtl::tree_mask_po<LEN> tm_b(bm_b);
+      std::cout << "a:" << bm_a << " -> " << tm_a << std::endl;
+      std::cout << "b:" << bm_b << " -> " << tm_b << std::endl;
+
+      dtl::tree_mask_po<LEN> tm_c = tm_a & tm_b;
+
+      std::bitset<LEN> bm_actual = tm_c.to_bitset();
+      std::cout << "c:" << bm_actual << " -> " << tm_c << std::endl;
+      std::cout << std::endl;
+      if (bm_actual != bm_expected) {
+        std::cout << "test: " << bm_a << " (" << a << ") XOR " << bm_b << " (" << b << ")" << std::endl;
+        std::cout << "Validation failed: expected=" << bm_expected << ", actual=" << bm_actual << std::endl;
+        std::exit(1);
+      }
+      if (!dtl::is_compressed(tm_c)) {
+        std::cout << "Validation failed: Resulting tree mask is not compressed." << std::endl;
+        dtl::tree_mask_po<LEN> tm_res(bm_expected);
+        std::cout << "compressed treemask: " << tm_res << std::endl;
+        std::exit(1);
+      }
+      assert(bm_actual == bm_expected);
+    }
+  }
+}
+
+void test_tree_mask_po_fused_xor() {
+  // test for correctness of: (a XOR b) AND c
+
+  constexpr std::size_t LEN = 8;
+  for (std::size_t a = 0; a < (1u << LEN); a++) {
+    for (std::size_t b = 0; b < (1u << LEN); b++) {
+      // (a XOR b)
+      // make sure, that all bit that are set in a are also set in b (as guaranteed in range encoding)
+      if ((a & b) != a) continue;
+      std::bitset<LEN> bm_a(a);
+      std::bitset<LEN> bm_b(b);
+      std::bitset<LEN> bm_xor_expected = bm_a ^ bm_b;
+      dtl::tree_mask_po<LEN> tm_a(bm_a);
+      dtl::tree_mask_po<LEN> tm_b(bm_b);
+      std::cout << "a:" << bm_a << " -> " << tm_a << std::endl;
+      std::cout << "b:" << bm_b << " -> " << tm_b << std::endl;
+
+      dtl::tree_mask_po<LEN> tm_xor = tm_a ^ tm_b;
+      std::bitset<LEN> bm_xor_actual = tm_xor.to_bitset();
+
+      if (bm_xor_actual != bm_xor_expected) {
+        std::cout << "test: " << bm_a << " (" << a << ") XOR " << bm_b << " (" << b << ")" << std::endl;
+        std::cout << "Validation failed: expected=" << bm_xor_expected << ", actual=" << bm_xor_actual << std::endl;
+        std::exit(1);
+      }
+
+      std::cout << "xor:" << bm_xor_actual << " -> " << tm_xor << std::endl << "----- all values for c -----" << std::endl;
+      std::cout << std::endl;
+
+      if (!dtl::is_compressed(tm_xor)) {
+        std::cout << "Validation failed: Resulting tree mask is not compressed." << std::endl;
+        dtl::tree_mask_po<LEN> tm_xor_res(bm_xor_expected);
+        std::cout << "compressed treemask: " << tm_xor_res << std::endl;
+        std::exit(1);
+      }
+      assert(bm_xor_actual == bm_xor_expected);
+
+      for(std::size_t c = 0; c < (1u << LEN); c++){
+
+        std::bitset<LEN> bm_c(c);
+        std::bitset<LEN> bm_fused_expected = bm_xor_expected & bm_c;
+        dtl::tree_mask_po<LEN> tm_c(bm_c);
+        std::cout << "c:" << bm_c << " -> " << tm_c << std::endl;
+
+        dtl::tree_mask_po<LEN> tm_fused = tm_c & tm_xor;
+        std::bitset<LEN> bm_fused_actual = tm_fused.to_bitset();
+
+        if (bm_fused_actual != bm_fused_expected) {
+          std::cout << "test: " << bm_c << " (" << c << ") AND " << bm_xor_expected << std::endl;
+          std::cout << "Validation failed: expected=" << bm_fused_expected << ", actual=" << bm_fused_actual << std::endl;
+          std::exit(1);
+        }
+
+        std::cout << "fused:" << bm_fused_actual << " -> " << tm_fused << std::endl;
+        std::cout << std::endl;
+
+        if (!dtl::is_compressed(tm_fused)) {
+          std::cout << "Validation failed: Resulting tree mask is not compressed." << std::endl;
+          dtl::tree_mask_po<LEN> tm_fused_res(bm_xor_expected);
+          std::cout << "compressed treemask: " << tm_fused_res << std::endl;
+          std::exit(1);
+        }
+        assert(bm_fused_actual == bm_fused_expected);
+      }
+    }
+  }
+}
+
+/// treemask_lo tests
+
+void test_treemask_lo_encoding_decoding(){
+
+  constexpr std::size_t LEN = 16;
+
+  for(auto i = 0; i < (1u << LEN); ++i) {
+    std::cout << "i: " << i << std::endl;
+    std::bitset<LEN> bs(i);
+    dtl::tree_mask_lo<LEN> t(bs);
+    std::bitset<LEN> dec = t.to_bitset();
+
+    if(dec != bs){
+      std::cout << "Wrong for:" << std::endl;
+      std::cout << "Bitset:  " << bs << std::endl;
+      std::cout << "Decoded: " << dec << std::endl;
+    }
+
+    if(LEN == 64){
+      if(i == std::numeric_limits<u64>::max()){
+        std::cout << "Reached the max" << std::endl;
+        break;
+      }
+    }
+  }
+}
+
+template<u64 N>
+void test_treemask_lo_size(){
+  std::bitset<N> bs;
+
+  for(auto i = 0; i < bs.size(); i++){
+    bs[i] = std::rand() % 2;
+  }
+
+  dtl::tree_mask_lo<N> t(bs);
+
+  std::cout << "Bitset: " << bs << std::endl;
+  t.size_in_byte();
+}
+
+void test_tree_mask_lo_xor_re(){
+
+  constexpr std::size_t LEN = 16;
+  for (std::size_t a = 0; a < (1u << LEN); a++) {
+    std::bitset<LEN> bm_a(a);
+    dtl::tree_mask_lo<LEN> tm_a(bm_a);
+    std::cout << "a:" << bm_a << std::endl;
+
+    for (std::size_t b = 0; b < (1u << LEN); b++) {
+
+      //std::cout << "-------------------" << std::endl;
+
+      // make sure, that all bit that are set in a are also set in b (as guaranteed in range encoding)
+      if ((a & b) != a) continue;
+      std::bitset<LEN> bm_b(b);
+      std::bitset<LEN> bm_expected = bm_a ^ bm_b;
+
+      dtl::tree_mask_lo<LEN> tm_b(bm_b);
+
+      dtl::tree_mask_lo<LEN> tm_c = tm_a ^ tm_b;
+
+      std::bitset<LEN> bm_actual = tm_c.to_bitset();
+
+      if (bm_actual != bm_expected) {
+        std::cout << "a:" << bm_a << " -> " << tm_a << std::endl;
+        std::cout << "b:" << bm_b << " -> " << tm_b << std::endl;
+        std::cout << "c:" << bm_actual << " -> " << tm_c << std::endl;
+        std::cout << std::endl;
+
+        std::cout << "test: " << bm_a << " (" << a << ") XOR " << bm_b << " (" << b << ")" << std::endl;
+        std::cout << "Validation failed: expected=" << bm_expected << ", actual=" << bm_actual << std::endl;
+        std::exit(1);
+      }
+
+      // TODO compression
+      /*
+      if (!dtl::is_compressed(tm_c)) {
+        std::cout << "Validation failed: Resulting tree mask is not compressed." << std::endl;
+        dtl::tree_mask_po<LEN> tm_res(bm_expected);
+        std::cout << "compressed treemask: " << tm_res << std::endl;
+        std::exit(1);
+      }
+      */
+
+      assert(bm_actual == bm_expected);
+    }
+  }
+
+}
+
+void test_tree_mask_lo_and_re(){
+
+  constexpr std::size_t LEN = 16;
+  for (std::size_t a = 0; a < (1u << LEN); a++) {
+    std::bitset<LEN> bm_a(a);
+    dtl::tree_mask_lo<LEN> tm_a(bm_a);
+    std::cout << "a:" << bm_a << std::endl;
+
+    for (std::size_t b = 0; b < (1u << LEN); b++) {
+
+      //std::cout << "-------------------" << std::endl;
+
+      // make sure, that all bit that are set in a are also set in b (as guaranteed in range encoding)
+      if ((a & b) != a) continue;
+      std::bitset<LEN> bm_b(b);
+      std::bitset<LEN> bm_expected = bm_a & bm_b;
+
+      dtl::tree_mask_lo<LEN> tm_b(bm_b);
+
+      dtl::tree_mask_lo<LEN> tm_c = tm_a & tm_b;
+
+      std::bitset<LEN> bm_actual = tm_c.to_bitset();
+
+      if (bm_actual != bm_expected) {
+        std::cout << "a:" << bm_a << " -> " << tm_a << std::endl;
+        std::cout << "b:" << bm_b << " -> " << tm_b << std::endl;
+        std::cout << "c:" << bm_actual << " -> " << tm_c << std::endl;
+        std::cout << std::endl;
+
+        std::cout << "test: " << bm_a << " (" << a << ") AND " << bm_b << " (" << b << ")" << std::endl;
+        std::cout << "Validation failed: expected=" << bm_expected << ", actual=" << bm_actual << std::endl;
+        std::exit(1);
+      }
+
+      // TODO compression
+      /*
+      if (!dtl::is_compressed(tm_c)) {
+        std::cout << "Validation failed: Resulting tree mask is not compressed." << std::endl;
+        dtl::tree_mask_po<LEN> tm_res(bm_expected);
+        std::cout << "compressed treemask: " << tm_res << std::endl;
+        std::exit(1);
+      }
+      */
+
+      assert(bm_actual == bm_expected);
+    }
+  }
+
+}
+
+void test_tree_mask_lo_and(){
+
+  constexpr std::size_t LEN = 16;
+  for (std::size_t a = 0; a < (1u << LEN); a++) {
+    std::bitset<LEN> bm_a(a);
+    dtl::tree_mask_lo<LEN> tm_a(bm_a);
+    std::cout << "a:" << bm_a << std::endl;
+
+    for (std::size_t b = 0; b < (1u << LEN); b++) {
+
+      //std::cout << "-------------------" << std::endl;
+
+      // make sure, that all bit that are set in a are also set in b (as guaranteed in range encoding)
+      //if ((a & b) != a) continue;
+      std::bitset<LEN> bm_b(b);
+      std::bitset<LEN> bm_expected = bm_a & bm_b;
+
+      dtl::tree_mask_lo<LEN> tm_b(bm_b);
+
+      dtl::tree_mask_lo<LEN> tm_c = tm_a & tm_b;
+
+      std::bitset<LEN> bm_actual = tm_c.to_bitset();
+
+      if (bm_actual != bm_expected) {
+        std::cout << "a:" << bm_a << " -> " << tm_a << std::endl;
+        std::cout << "b:" << bm_b << " -> " << tm_b << std::endl;
+        std::cout << "c:" << bm_actual << " -> " << tm_c << std::endl;
+        std::cout << std::endl;
+
+        std::cout << "test: " << bm_a << " (" << a << ") AND " << bm_b << " (" << b << ")" << std::endl;
+        std::cout << "Validation failed: expected=" << bm_expected << ", actual=" << bm_actual << std::endl;
+        std::exit(1);
+      }
+
+      // TODO compression
+      /*
+      if (!dtl::is_compressed(tm_c)) {
+        std::cout << "Validation failed: Resulting tree mask is not compressed." << std::endl;
+        dtl::tree_mask_po<LEN> tm_res(bm_expected);
+        std::cout << "compressed treemask: " << tm_res << std::endl;
+        std::exit(1);
+      }
+      */
+
+      assert(bm_actual == bm_expected);
+    }
+  }
+
+}
+
+void test_tree_mask_lo_fused_xor() {
+  // test for correctness of: (a XOR b) AND c
+
+  constexpr std::size_t LEN = 8;
+  for (std::size_t a = 0; a < (1u << LEN); a++) {
+    for (std::size_t b = 0; b < (1u << LEN); b++) {
+      // (a XOR b)
+      // make sure, that all bit that are set in a are also set in b (as guaranteed in range encoding)
+      if ((a & b) != a) continue;
+      std::bitset<LEN> bm_a(a);
+      std::bitset<LEN> bm_b(b);
+      std::bitset<LEN> bm_xor_expected = bm_a ^ bm_b;
+      dtl::tree_mask_lo<LEN> tm_a(bm_a);
+      dtl::tree_mask_lo<LEN> tm_b(bm_b);
+      std::cout << "a:" << bm_a << " -> " << tm_a << std::endl;
+      std::cout << "b:" << bm_b << " -> " << tm_b << std::endl;
+
+      dtl::tree_mask_lo<LEN> tm_xor = tm_a ^ tm_b;
+      std::bitset<LEN> bm_xor_actual = tm_xor.to_bitset();
+
+      if (bm_xor_actual != bm_xor_expected) {
+        std::cout << "test: " << bm_a << " (" << a << ") XOR " << bm_b << " (" << b << ")" << std::endl;
+        std::cout << "Validation failed: expected=" << bm_xor_expected << ", actual=" << bm_xor_actual << std::endl;
+        std::exit(1);
+      }
+
+      std::cout << "xor:" << bm_xor_actual << " -> " << tm_xor << std::endl << "----- all values for c -----" << std::endl;
+      std::cout << std::endl;
+      /*
+      if (!dtl::is_compressed(tm_xor)) {
+        std::cout << "Validation failed: Resulting tree mask is not compressed." << std::endl;
+        dtl::tree_mask_po<LEN> tm_xor_res(bm_xor_expected);
+        std::cout << "compressed treemask: " << tm_xor_res << std::endl;
+        std::exit(1);
+      }
+      */
+      assert(bm_xor_actual == bm_xor_expected);
+
+      for(std::size_t c = 0; c < (1u << LEN); c++){
+
+        std::bitset<LEN> bm_c(c);
+        std::bitset<LEN> bm_fused_expected = bm_xor_expected & bm_c;
+        dtl::tree_mask_lo<LEN> tm_c(bm_c);
+        std::cout << "c:" << bm_c << " -> " << tm_c << std::endl;
+
+        dtl::tree_mask_lo<LEN> tm_fused = tm_c & tm_xor;
+        std::bitset<LEN> bm_fused_actual = tm_fused.to_bitset();
+
+        if (bm_fused_actual != bm_fused_expected) {
+          std::cout << "test: " << bm_c << " (" << c << ") AND " << bm_xor_expected << std::endl;
+          std::cout << "Validation failed: expected=" << bm_fused_expected << ", actual=" << bm_fused_actual << std::endl;
+          std::exit(1);
+        }
+
+        std::cout << "fused:" << bm_fused_actual << " -> " << tm_fused << std::endl;
+        std::cout << std::endl;
+        /*
+        if (!dtl::is_compressed(tm_fused)) {
+          std::cout << "Validation failed: Resulting tree mask is not compressed." << std::endl;
+          dtl::tree_mask_po<LEN> tm_fused_res(bm_xor_expected);
+          std::cout << "compressed treemask: " << tm_fused_res << std::endl;
+          std::exit(1);
+        }
+        */
+        assert(bm_fused_actual == bm_fused_expected);
+      }
+    }
+  }
+}
+
+void test_tree_mask_lo_xor_re_compressed(){
+
+  constexpr std::size_t LEN = 8;
+  for (std::size_t a = 0; a < (1u << LEN); a++) {
+    std::bitset<LEN> bm_a(a);
+    dtl::tree_mask_lo<LEN> tm_a(bm_a);
+
+    for (std::size_t b = 0; b < (1u << LEN); b++) {
+      //std::cout << "-------------------" << std::endl;
+
+      // make sure, that all bit that are set in a are also set in b (as guaranteed in range encoding)
+      if ((a & b) != a) continue;
+      std::bitset<LEN> bm_b(b);
+      std::bitset<LEN> bm_expected = bm_a ^ bm_b;
+
+      dtl::tree_mask_lo<LEN> tm_b(bm_b);
+
+      dtl::tree_mask_lo<LEN> tm_c = tm_a.xor_compressed(tm_b);
+
+      std::bitset<LEN> bm_actual = tm_c.to_bitset();
+
+      std::cout << "a:" << bm_a << " -> " << tm_a << std::endl;
+      std::cout << "b:" << bm_b << " -> " << tm_b << std::endl;
+      std::cout << "c:" << bm_actual << " -> " << tm_c << std::endl;
+      std::cout << "-------------------" << std::endl;
+
+      if (bm_actual != bm_expected) {
+        std::cout << "a:" << bm_a << " -> " << tm_a << std::endl;
+        std::cout << "b:" << bm_b << " -> " << tm_b << std::endl;
+        std::cout << "c:" << bm_actual << " -> " << tm_c << std::endl;
+        std::cout << std::endl;
+
+        std::cout << "test: " << bm_a << " (" << a << ") XOR " << bm_b << " (" << b << ")" << std::endl;
+        std::cout << "Validation failed: expected=" << bm_expected << ", actual=" << bm_actual << std::endl;
+        std::exit(1);
+      }
+
+      dtl::tree_mask_lo<LEN> tm_comp(bm_expected);
+      if (tm_comp != tm_c) {
+        std::cout << "Validation failed: Resulting tree mask is not compressed." << std::endl;
+        std::cout << "compressed treemask: " << tm_comp << std::endl;
+        std::exit(1);
+      }
+
+
+      assert(bm_actual == bm_expected);
+    }
+  }
+
+}
+
+void test_tree_mask_lo_xor_re_compressed_v2(){
+
+  constexpr std::size_t LEN = 16;
+  for (std::size_t a = 0; a < (1u << LEN); a++) {
+    std::bitset<LEN> bm_a(a);
+    dtl::tree_mask_lo<LEN> tm_a(bm_a);
+    std::cout << bm_a << std::endl;
+
+    for (std::size_t b = 0; b < (1u << LEN); b++) {
+      //std::cout << "-------------------" << std::endl;
+
+      // make sure, that all bit that are set in a are also set in b (as guaranteed in range encoding)
+      if ((a & b) != a) continue;
+      std::bitset<LEN> bm_b(b);
+      std::bitset<LEN> bm_expected = bm_a ^ bm_b;
+
+      dtl::tree_mask_lo<LEN> tm_b(bm_b);
+
+      //std::cout << "a:" << bm_a << " -> " << tm_a << std::endl;
+      //std::cout << "b:" << bm_b << " -> " << tm_b << std::endl;
+      dtl::tree_mask_lo<LEN> tm_c = tm_a.xor_compressed_v2(tm_b);
+      //std::cout << "c:" << bm_expected << " -> " << tm_c << std::endl;
+      std::bitset<LEN> bm_actual = tm_c.to_bitset();
+
+      if (bm_actual != bm_expected) {
+        std::cout << "a:" << bm_a << " -> " << tm_a << std::endl;
+        std::cout << "b:" << bm_b << " -> " << tm_b << std::endl;
+        std::cout << "c:" << bm_actual << " -> " << tm_c << std::endl;
+        std::cout << std::endl;
+
+        std::cout << "test: " << bm_a << " (" << a << ") XOR " << bm_b << " (" << b << ")" << std::endl;
+        std::cout << "Validation failed: expected=" << bm_expected << ", actual=" << bm_actual << std::endl;
+        std::exit(1);
+      }
+
+      dtl::tree_mask_lo<LEN> tm_comp(bm_expected);
+      if (tm_comp != tm_c) {
+        std::cout << "Validation failed: Resulting tree mask is not compressed." << std::endl;
+        std::cout << "compressed treemask: " << tm_comp << std::endl;
+        std::exit(1);
+      }
+
+      assert(bm_actual == bm_expected);
+    }
+  }
+
+}
+
+
