@@ -11,11 +11,20 @@ include_directories(../fastbit/src)
 add_subdirectory(../CRoaring CRoaring)
 include_directories(../CRoaring/include)
 
-add_subdirectory(../sdsl-lite sdsl)
+#add_subdirectory(../sdsl-lite sdsl)
 include_directories(../sdsl-lite/include)
 
 add_subdirectory(../dtl dtl)
 include_directories(../)
+
+add_subdirectory(thirdparty/gtest)
+include_directories(thirdparty/gtest/include lib/googletest)
+
+set(TEST_FILES
+        tree_mask_test.cpp
+        )
+add_executable(tester "${TEST_FILES}")
+target_link_libraries(tester gtest gtest_main)
 
 set(TREE_MASK_SOURCE_FILES
         tree_mask_lo.hpp
