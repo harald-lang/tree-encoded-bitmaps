@@ -21,10 +21,10 @@ add_subdirectory(thirdparty/gtest)
 include_directories(thirdparty/gtest/include lib/googletest)
 
 set(TEST_FILES
-        tree_mask_test.cpp
+        api_test.cpp
         )
 add_executable(tester "${TEST_FILES}")
-target_link_libraries(tester gtest gtest_main)
+target_link_libraries(tester gtest gtest_main fastbit roaring)
 
 set(TREE_MASK_SOURCE_FILES
         tree_mask_lo.hpp
