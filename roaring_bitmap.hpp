@@ -55,6 +55,14 @@ struct roaring_bitmap {
     return ret;
   }
 
+  /// Bitwise AND
+  roaring_bitmap
+  operator&(const roaring_bitmap& other) const {
+    roaring_bitmap ret(*this);
+    ret.bitmap &= other.bitmap;
+    return ret;
+  }
+
   /// Bitwise XOR
   roaring_bitmap
   operator^(const roaring_bitmap& other) const {

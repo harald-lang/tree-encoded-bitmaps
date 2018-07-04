@@ -62,14 +62,13 @@ struct wah {
     return ret;
   }
 
-//  /// Bitwise AND
-//  wah
-//  operator&(const wah& other) const {
-//    wah ret;
-//    ret.bv.copy(bv);
-//    ret.bv &= other.bv;
-//    return ret;
-//  }
+  /// Bitwise AND
+  wah
+  operator&(const wah& other) const {
+    wah ret(*this);
+    ret.bv &= other.bv;
+    return ret;
+  }
 
   /// Bitwise XOR
   wah
