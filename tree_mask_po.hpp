@@ -717,6 +717,12 @@ public:
     return ret;
   }
 
+  /// Bitwise XOR (range encoding)
+  tree_mask_po
+  xor_re(const tree_mask_po& other) const {
+    return *this ^ other; // TODO: find a way to exploit range encoding properties
+  }
+
   /// Bitwise AND
   tree_mask_po
   operator&(const tree_mask_po& other) const {
@@ -869,6 +875,12 @@ public:
 //    }
     return ret;
 
+  }
+
+  /// Bitwise AND (range encoding)
+  tree_mask_po
+  and_re(const tree_mask_po& other) const {
+    return *this & other; // TODO: find a way to exploit range encoding properties
   }
 
   /// Computes (a XOR b) & this

@@ -76,6 +76,35 @@ TYPED_TEST(api_test, bitwise_and) {
 
 
 //===----------------------------------------------------------------------===//
+// Bitwise AND (with range encoding).
+// Note: For range encoding the following must hold: (a[i] == true) => (b[i] == true)
+TYPED_TEST(api_test, bitwise_and_range_encoding) {
+  using T = TypeParam;
+
+  for (std::size_t a = 0; a < (1u << LEN); a++) {
+    std::bitset<LEN> bm_a(a);
+    T tm_a(bm_a);
+
+    for (std::size_t b = 0; b < (1u << LEN); b++) {
+      // make sure, that all bit that are set in a are also set in b (as guaranteed in range encoding)
+      if ((a & b) != a) continue;
+
+      std::bitset<LEN> bm_b(b);
+      std::bitset<LEN> bm_expected = bm_a & bm_b;
+
+      T tm_b(bm_b);
+      T tm_c = tm_a.and_re(tm_b);
+
+      std::bitset<LEN> bm_actual = tm_c.to_bitset();
+
+      ASSERT_EQ(bm_actual, bm_expected) << "Test (a and_re b) failed for a=" << a << " and b=" << b << std::endl;
+    }
+  }
+}
+//===----------------------------------------------------------------------===//
+
+
+//===----------------------------------------------------------------------===//
 // Bitwise XOR.
 TYPED_TEST(api_test, bitwise_xor) {
   using T = TypeParam;
@@ -98,3 +127,33 @@ TYPED_TEST(api_test, bitwise_xor) {
   }
 }
 //===----------------------------------------------------------------------===//
+
+
+//===----------------------------------------------------------------------===//
+// Bitwise XOR (with range encoding).
+// Note: For range encoding the following must hold: (a[i] == true) => (b[i] == true)
+TYPED_TEST(api_test, bitwise_xor_range_encoding) {
+  using T = TypeParam;
+
+  for (std::size_t a = 0; a < (1u << LEN); a++) {
+    std::bitset<LEN> bm_a(a);
+    T tm_a(bm_a);
+
+    for (std::size_t b = 0; b < (1u << LEN); b++) {
+      // make sure, that all bit that are set in a are also set in b (as guaranteed in range encoding)
+      if ((a & b) != a) continue;
+
+      std::bitset<LEN> bm_b(b);
+      std::bitset<LEN> bm_expected = bm_a ^ bm_b;
+
+      T tm_b(bm_b);
+      T tm_c = tm_a.xor_re(tm_b);
+
+      std::bitset<LEN> bm_actual = tm_c.to_bitset();
+
+      ASSERT_EQ(bm_actual, bm_expected) << "Test (a xor_re b) failed for a=" << a << " and b=" << b << std::endl;
+    }
+  }
+}
+//===----------------------------------------------------------------------===//
+

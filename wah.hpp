@@ -70,12 +70,24 @@ struct wah {
     return ret;
   }
 
+  /// Bitwise AND (range encoding)
+  wah
+  and_re(const wah& other) const {
+    return *this & other; // nothing special here. fall back to AND
+  }
+
   /// Bitwise XOR
   wah
   operator^(const wah& other) const {
-    wah ret;
-    ret.bv = bv ^ other.bv;
+    wah ret(*this);
+    ret.bv ^= other.bv;
     return ret;
+  }
+
+  /// Bitwise AND (range encoding)
+  wah
+  xor_re(const wah& other) const {
+    return *this ^ other; // nothing special here. fall back to XOR
   }
 
   /// Computes (a XOR b) & this

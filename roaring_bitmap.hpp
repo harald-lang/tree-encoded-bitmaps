@@ -63,6 +63,12 @@ struct roaring_bitmap {
     return ret;
   }
 
+  /// Bitwise AND (range encoding)
+  roaring_bitmap
+  and_re(const roaring_bitmap& other) const {
+    return *this & other; // nothing special here. fall back to AND
+  }
+
   /// Bitwise XOR
   roaring_bitmap
   operator^(const roaring_bitmap& other) const {
@@ -70,6 +76,12 @@ struct roaring_bitmap {
     ret.bitmap = bitmap;
     ret.bitmap ^= other.bitmap;
     return ret;
+  }
+
+  /// Bitwise XOR (range encoding)
+  roaring_bitmap
+  xor_re(const roaring_bitmap& other) const {
+    return *this ^ other; // nothing special here. fall back to XOR
   }
 
   /// Computes (a XOR b) & this

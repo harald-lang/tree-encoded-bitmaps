@@ -528,6 +528,12 @@ public:
     return ret;
   }
 
+  /// Bitwise XOR (range encoding)
+  tree_mask_lo
+  xor_re(const tree_mask_lo& other) const {
+    return *this ^ other; // TODO: find a way to exploit range encoding properties
+  }
+
   void
   print(std::ostream& os) const {
 
@@ -767,6 +773,12 @@ public:
 
     tree_mask_lo ret(structure, labels);
     return ret;
+  }
+
+  /// Bitwise AND (range encoding)
+  tree_mask_lo
+  and_re(const tree_mask_lo& other) const {
+    return *this & other; // TODO: find a way to exploit range encoding properties
   }
 
   /// Computes (a XOR b) & this
