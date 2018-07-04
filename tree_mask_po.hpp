@@ -11,6 +11,8 @@
 #include <dtl/math.hpp>
 #include <dtl/tree.hpp>
 
+#include <sdsl/bit_vectors.hpp>
+
 #include "tree_mask_util.hpp"
 
 namespace dtl {
