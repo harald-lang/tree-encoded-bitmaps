@@ -771,7 +771,7 @@ public:
       $u64 l_from = 0;
       switch (c) {
         case 0b00: // a and b: leaf
-          std::cout << "Case: 0b00" << std::endl;
+//          std::cout << "Case: 0b00" << std::endl;
 
           bit = traversal_a.get_label() & traversal_b.get_label();
           insert_and_compress(bit);
@@ -779,7 +779,7 @@ public:
           break;
 
         case 0b01: // a: inner, b: leaf
-          std::cout << "Case: 0b01" << std::endl;
+//          std::cout << "Case: 0b01" << std::endl;
 
           // check if the leaf of b is true or false:
           // -> if false we don't need to check the subtree s of a as 0 & x = 0
@@ -818,7 +818,7 @@ public:
           break;
 
         case 0b10: // a: leaf, b: inner
-          std::cout << "Case: 0b10" << std::endl;
+//          std::cout << "Case: 0b10" << std::endl;
 
           // like in case 0b01, just exchange a & b
 
@@ -851,12 +851,12 @@ public:
           break;
 
         case 0b11: // a and b: inner
-          std::cout << "Case: 0b11" << std::endl;
+//          std::cout << "Case: 0b11" << std::endl;
           ret.structure_.push_back(true); // push inner node
           ret_level++;
           break;
       }
-      std::cout << ret << std::endl;
+//      std::cout << ret << std::endl;
 
       traversal_a.next();
       traversal_b.next();
