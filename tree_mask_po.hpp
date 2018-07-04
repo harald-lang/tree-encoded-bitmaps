@@ -321,10 +321,10 @@ public:
         }
 
       }
-        std::cout << "seq_cntr: " << seq_cntr
-                  << ", skip_cntr: " << skip_cntr
-                  << " (" << (skip_cntr * skip_width) << ")"
-                  << std::endl;
+//        std::cout << "seq_cntr: " << seq_cntr
+//                  << ", skip_cntr: " << skip_cntr
+//                  << " (" << (skip_cntr * skip_width) << ")"
+//                  << std::endl;
     }
 
     /// Navigate to the right child.
@@ -627,7 +627,7 @@ public:
       $u64 l_from = 0;
       switch (c) {
         case 0b00: // a and b: leaf
-          std::cout << "Case: 0b00" << std::endl;
+//          std::cout << "Case: 0b00" << std::endl;
 
           bit = traversal_a.get_label() ^ traversal_b.get_label();
 
@@ -664,7 +664,7 @@ public:
           break;
 
         case 0b01: // a: inner, b: leaf
-          std::cout << "Case: 0b01" << std::endl;
+//          std::cout << "Case: 0b01" << std::endl;
           // copy the sub-tree of 'a'
           s_from = traversal_a.s_pos_;
           l_from = traversal_a.l_pos_;
@@ -681,7 +681,7 @@ public:
           ret_level = traversal_a.get_level();
           break;
         case 0b10: // a: leaf, b: inner
-          std::cout << "Case: 0b10" << std::endl;
+//          std::cout << "Case: 0b10" << std::endl;
           // copy the sub-tree of 'b'
           s_from = traversal_b.s_pos_;
           l_from = traversal_b.l_pos_;
@@ -698,12 +698,12 @@ public:
           ret_level = traversal_b.get_level();
           break;
         case 0b11: // a and b: inner
-          std::cout << "Case: 0b11" << std::endl;
+//          std::cout << "Case: 0b11" << std::endl;
           ret.structure_.push_back(true); // push inner node
           ret_level++;
           break;
       }
-      std::cout << ret << std::endl;
+//      std::cout << ret << std::endl;
 
       traversal_a.next();
       traversal_b.next();
