@@ -73,6 +73,12 @@ struct roaring_bitmap {
     return *this;
   }
 
+  void
+  print(std::ostream& os) const {
+    os << "n/a";
+  }
+
+
 };
 //===----------------------------------------------------------------------===//
 
