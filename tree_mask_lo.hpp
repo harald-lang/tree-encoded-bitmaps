@@ -6,6 +6,7 @@
 #include <dtl/tree_mask.hpp>
 
 #include <sdsl/int_vector.hpp>
+#include <sdsl/rank_support_v5.hpp>
 
 #include "boost/dynamic_bitset.hpp"
 
