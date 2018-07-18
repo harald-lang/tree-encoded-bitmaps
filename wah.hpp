@@ -104,6 +104,12 @@ struct wah {
     os << "n/a";
   }
 
+  static std::string
+  name() {
+    return "wah" + std::to_string(sizeof(typename bitvector_t::word_t) * 8);
+  }
+
+
 };
 //===----------------------------------------------------------------------===//
 

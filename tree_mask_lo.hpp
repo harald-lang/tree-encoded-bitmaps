@@ -1164,6 +1164,11 @@ public:
     return ret;
   }
 
+  static std::string
+  name() {
+    return "tree_mask_lo";
+  }
+
 };
 
 //TODO:

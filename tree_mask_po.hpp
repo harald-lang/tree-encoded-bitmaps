@@ -568,7 +568,7 @@ public:
   /// Return the size in bytes.
   __forceinline__ std::size_t
   size_in_byte() {
-    return ((structure_.size() + labels_.size()) + 7) / 8; // TODO + labels offset skip
+    return (((structure_.size() + labels_.size()) + 7) / 8) + 4; // TODO + labels offset skip
   }
 
   /// Conversion to a std::bitset.
@@ -911,6 +911,11 @@ public:
     for ($i64 i = 0; i < labels_.size(); i++) {
       os << (labels_[i] ? "1" : "0");
     }
+  }
+
+  static std::string
+  name() {
+    return "tree_mask_po";
   }
 
 };

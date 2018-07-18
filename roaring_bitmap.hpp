@@ -98,6 +98,11 @@ struct roaring_bitmap {
     os << "n/a";
   }
 
+  static std::string
+  name() {
+    return "roaring";
+  }
+
 
 };
 //===----------------------------------------------------------------------===//
