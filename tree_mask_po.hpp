@@ -467,7 +467,8 @@ public:
     /// The current node must be an inner node.
     __forceinline__ void
     goto_right_child() {
-      goto_right_child_byte_skip_lut();
+      goto_right_child_semi_naive();
+//      goto_right_child_byte_skip_lut();
     }
 
     /// Compute and return the level-order node index of the current node.
@@ -916,6 +917,29 @@ public:
   static std::string
   name() {
     return "tree_mask_po";
+  }
+
+  /// Returns the value of the bit at the position pos.
+  u1
+  test(const std::size_t pos) const {
+    traversal t(*this);
+    if (t.is_leaf_node()) {
+      return t.get_label();
+    }
+    constexpr auto n_log2 = dtl::ct::log_2<N>::value;
+    for ($u64 i = n_log2 - 1; i < n_log2; i--) {
+      u1 bit = dtl::bits::bit_test(pos, i);
+      if (bit) {
+        t.goto_right_child();
+      }
+      else {
+        t.goto_left_child();
+      }
+      if (t.is_leaf_node()) {
+        return t.get_label();
+      }
+    }
+    return false;
   }
 
 };

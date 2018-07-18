@@ -109,6 +109,12 @@ struct wah {
     return "wah" + std::to_string(sizeof(typename bitvector_t::word_t) * 8);
   }
 
+  /// Returns the value of the bit at the position pos.
+  u1
+  test(const std::size_t pos) const {
+    return bv.getBit(pos);
+  }
+
 
 };
 //===----------------------------------------------------------------------===//

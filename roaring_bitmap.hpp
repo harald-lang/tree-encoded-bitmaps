@@ -103,6 +103,11 @@ struct roaring_bitmap {
     return "roaring";
   }
 
+  /// Returns the value of the bit at the position pos.
+  u1
+  test(const std::size_t pos) const {
+    return bitmap.contains(pos);
+  }
 
 };
 //===----------------------------------------------------------------------===//

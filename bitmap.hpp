@@ -96,6 +96,12 @@ struct bitmap {
     return "bitmap";
   }
 
+  /// Returns the value of the bit at the position pos.
+  u1
+  test(const std::size_t pos) const {
+    return bitmap_.test(pos);
+  }
+
 
 };
 //===----------------------------------------------------------------------===//
