@@ -5,13 +5,12 @@ set(CMAKE_CXX_STANDARD 14)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 
-add_subdirectory(../fastbit Fastbit)
+add_subdirectory(../fastbit Fastbit) # Fastbit includes the WAH bitmap compression
 include_directories(../fastbit/src)
 
 add_subdirectory(../CRoaring CRoaring)
 include_directories(../CRoaring/include)
 
-#add_subdirectory(../sdsl-lite sdsl)
 include_directories(../sdsl-lite/include)
 
 add_subdirectory(../dtl dtl)
@@ -23,24 +22,30 @@ include_directories(thirdparty/gtest/include lib/googletest)
 set(TEST_FILES
         api_test.cpp
         )
-add_executable(tester "${TEST_FILES}")
+add_executable(tester ${TEST_FILES})
 target_link_libraries(tester gtest gtest_main fastbit roaring)
 
+# Treemask sources
 set(TREE_MASK_SOURCE_FILES
         tree_mask_lo.hpp
         tree_mask_po.hpp
         tree_mask_util.hpp
         )
 
+# Our third-party competitors
+set(COMPETITORS_SOURCE_FILES
+        bitmap.hpp # std::bitset
+        roaring_bitmap.hpp
+        wah.hpp
+        )
+
 set(SOURCE_FILES
         ${TREE_MASK_SOURCE_FILES}
+        ${COMPETITORS_SOURCE_FILES}
         index.hpp
-        roaring_bitmap.hpp
         two_state_markov_process.hpp
         static_stack.hpp
         util.hpp
-        wah.hpp
-        main.cpp
         bidirectional_mapping.hpp
         column_container.hpp
         column_imprints.hpp
@@ -52,8 +57,36 @@ set(SOURCE_FILES
         z_curve_runtime.hpp
         zCurve_compiletime.hpp
         )
-add_executable(navin ${SOURCE_FILES})
+
+add_executable(navin main.cpp ${SOURCE_FILES})
 target_link_libraries(navin fastbit roaring)
 target_link_libraries(navin pthread)
 target_link_libraries(navin m)
 target_link_libraries(navin tbb)
+
+
+set(EXPERIMENT_COMPRESSION_SOURCE_FILES
+        ${SOURCE_FILES}
+        ${TREE_MASK_SOURCE_FILES}
+        ${COMPETITORS_SOURCE_FILES}
+        experiments/compression/common.hpp
+        experiments/compression/main_compression.cpp
+        )
+
+add_executable(ex_compression ${EXPERIMENT_COMPRESSION_SOURCE_FILES})
+target_link_libraries(ex_compression fastbit roaring)
+
+
+set(EXPERIMENT_COMPRESSION_SKYLINE_SOURCE_FILES
+        ${SOURCE_FILES}
+        ${TREE_MASK_SOURCE_FILES}
+        ${COMPETITORS_SOURCE_FILES}
+        experiments/compression/common.hpp
+        experiments/compression/main_compression_skyline.cpp
+        )
+add_executable(ex_compression_skyline ${EXPERIMENT_COMPRESSION_SKYLINE_SOURCE_FILES})
+target_link_libraries(ex_compression_skyline fastbit roaring)
+
+
+# copy shell scripts
+configure_file(experiments/compression/compression.sh compression.sh COPYONLY)
