@@ -124,6 +124,7 @@ public:
     std::size_t l_pos_;
 
     path_t path_; // encodes the path to the current node (the highest set bit is a sentinel bit)
+    $u32 level_ = 0;
 
   public:
 
@@ -183,12 +184,15 @@ public:
       if (structure_[s_pos_] /* is inner node */) {
         // go to left child
         path_ <<= 1;
+        level_++;
       }
       else {
         // is leaf node
         path_++;
         l_pos_++;
-        path_ >>= dtl::bits::tz_count(path_);
+        const auto tzc = dtl::bits::tz_count(path_);
+        path_ >>= tzc;
+        level_ -= tzc;
       }
       s_pos_++;
       return true;
@@ -202,9 +206,10 @@ public:
     /// Return the level of the current node.
     __forceinline__ auto
     get_level() const {
-      const auto lz_cnt_path = dtl::bits::lz_count(path_);
-      const auto level = sizeof(path_t) * 8 - 1 - lz_cnt_path;
-      return level;
+      return level_;
+//      const auto lz_cnt_path = dtl::bits::lz_count(path_);
+//      const auto level = sizeof(path_t) * 8 - 1 - lz_cnt_path;
+//      return level;
     }
 
     /// Navigate to the left child.
@@ -213,6 +218,7 @@ public:
     goto_left_child() {
       assert(is_inner_node());
       s_pos_++;
+      level_++;
     }
 
     /// Navigate to the right child. (Naive implementation)
@@ -467,7 +473,8 @@ public:
     /// The current node must be an inner node.
     __forceinline__ void
     goto_right_child() {
-      goto_right_child_semi_naive();
+      goto_right_child_naive();
+//      goto_right_child_semi_naive();
 //      goto_right_child_byte_skip_lut();
     }
 
