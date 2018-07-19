@@ -2,11 +2,12 @@
 
 #include <list>
 #include <queue>
+#include <vector>
 
 #include <dtl/tree_mask.hpp>
 
-#include <sdsl/int_vector.hpp>
-#include <sdsl/rank_support_v5.hpp>
+//#include <sdsl/int_vector.hpp>
+//#include <sdsl/rank_support_v5.hpp>
 
 #include "boost/dynamic_bitset.hpp"
 
@@ -21,10 +22,12 @@ public:
   static constexpr auto N = _N;
 
   // level-order encoding
-  sdsl::bit_vector lo_struc;
-  sdsl::bit_vector lo_label;
+  std::vector<$u1> lo_struc;
+  std::vector<$u1> lo_label;
+//  sdsl::bit_vector lo_struc;
+//  sdsl::bit_vector lo_label;
 
-  sdsl::rank_support_v5<> rank_support;
+//  sdsl::rank_support_v5<> rank_support;
 
   /// C'tor
   explicit
@@ -131,34 +134,36 @@ public:
     lo_struc.resize(struct_cnt);
     lo_label.resize(label_cnt);
 
-    rank_support.set_vector(&lo_struc);
+//    rank_support.set_vector(&lo_struc);
   }
 
   explicit
   tree_mask_lo(const std::vector<$u1>& structure, const std::vector<$u1>& labels){
 
-    lo_struc = sdsl::bit_vector(structure.size());
-    lo_label = sdsl::bit_vector(labels.size());
-
-    for(auto i = 0; i < structure.size(); i++){
-      lo_struc[i] = structure[i];
-    }
-
-    for(auto i = 0; i < labels.size(); i++){
-      lo_label[i] = labels[i];
-    }
-
-    rank_support.set_vector(&lo_struc);
+    lo_struc = structure;
+    lo_label = labels;
+//    lo_struc = sdsl::bit_vector(structure.size());
+//    lo_label = sdsl::bit_vector(labels.size());
+//
+//    for(auto i = 0; i < structure.size(); i++){
+//      lo_struc[i] = structure[i];
+//    }
+//
+//    for(auto i = 0; i < labels.size(); i++){
+//      lo_label[i] = labels[i];
+//    }
+//
+//    rank_support.set_vector(&lo_struc);
   }
 
   __forceinline__ u1
   is_inner_node(u64 node_idx) const {
-    return lo_struc[node_idx] == 1 ? true : false;
+    return lo_struc[node_idx];
   }
 
   __forceinline__ u1
   is_leaf_node(u64 node_idx) const {
-    return lo_struc[node_idx] == 0 ? true : false;
+    return !lo_struc[node_idx];
   }
 
   __forceinline__ u1
@@ -177,32 +182,31 @@ public:
   }
 
   // naive rank for tests
-  u64 rank(u64 node_idx){
+  u64 rank(u64 node_idx) const {
     $u64 rank = 0;
-
-    for(auto i = 0; i <= node_idx; i++)
-      if(lo_struc[i])
-        rank++;
-
+    for(auto i = 0; i < node_idx; i++) {
+      rank += lo_struc[i];
+    }
     return rank;
   }
 
   /// Important: rank_supportv5.rank() calculates the rank of the prefix -> we need idx + 1
   __forceinline__ u64
   left_child(u64 node_idx) const {
-
-    return 2* rank_support.rank(node_idx+1) -1;
+//    return 2* rank_support.rank(node_idx+1) -1;
+    return 2 * rank(node_idx + 1) - 1;
   }
 
   __forceinline__ u64
   right_child(u64 node_idx) const {
-    return 2* rank_support.rank(node_idx+1);
+//    return 2* rank_support.rank(node_idx+1);
+    return 2 * rank(node_idx + 1);
   }
 
   __forceinline__ bool
   get_label(u64 node_idx) const {
-
-    u64 label_idx = node_idx - this->rank_support.rank(node_idx);
+//    u64 label_idx = node_idx - this->rank_support.rank(node_idx); // BUG in SDSL?
+    u64 label_idx = node_idx - rank(node_idx);
     return this->lo_label[label_idx];
   }
 
@@ -252,7 +256,8 @@ public:
       } else {
         //std::cout << "Leaf node" << std::endl;
         // write the label to the bitset
-        u1 label = lo_label[idx - rank_support.rank(idx+1)];
+//        u1 label = lo_label[idx - rank_support.rank(idx+1)];
+        u1 label = lo_label[idx - rank(idx + 1)];
         u64 to_write = 1 << (tree_height - level) ;// number of tuples represented by the label
 
         for(auto i = 0; i < to_write; ++i){
@@ -286,22 +291,27 @@ public:
   /// Return the size in bytes.
   __forceinline__ std::size_t
   size_in_byte() {
+    u64 lo_struct_size = (lo_struc.size() + 7) / 8;
+    u64 lo_labels_size = (lo_label.size() + 7) / 8;
+    u64 rank_supp_bytes = static_cast<u64>(((lo_struct_size * 0.0625) + 7) / 8);
+
+
     // TODO check: currently the size is calculated like in the sdsl_cheat_sheet
-    u64 lo_struct_size = lo_struc.bit_size();
-    u64 lo_labels_size = lo_label.bit_size();
+//    u64 lo_struct_size = lo_struc.bit_size();
+//    u64 lo_labels_size = lo_label.bit_size();
 
-    // the required space of an int_vector with n bits: 64*ceil(n/64+1) bit = 8*ceil(n/64+1) byte
-    u64 lo_struct_bytes = 8 * std::ceil((lo_struct_size*1.0 / 64) +1);
-    u64 lo_labels_bytes = 8 * std::ceil((lo_labels_size*1.0 / 64) +1);
-
-    // the additional required space for the rank_support_v5 is: 0.0625*n bit
-    u64 rank_supp_bytes = ((rank_support.size() * 0.0625) + 7) / 8;
-
-    // std::cout << "Struct Bits: " << lo_struct_size << " Size: " << lo_struct_bytes << std::endl;
-    // std::cout << "Labels Bits: " << lo_labels_size << " Size: " << lo_labels_bytes << std::endl;
-    // std::cout << "R_Supp Size: " << rank_supp_bytes << std::endl;
-
-    return lo_struct_bytes + lo_labels_bytes + rank_supp_bytes;
+//    // the required space of an int_vector with n bits: 64*ceil(n/64+1) bit = 8*ceil(n/64+1) byte
+//    u64 lo_struct_bytes = 8 * std::ceil((lo_struct_size*1.0 / 64) +1);
+//    u64 lo_labels_bytes = 8 * std::ceil((lo_labels_size*1.0 / 64) +1);
+//
+//    // the additional required space for the rank_support_v5 is: 0.0625*n bit
+//    u64 rank_supp_bytes = ((rank_support.size() * 0.0625) + 7) / 8;
+//
+//    // std::cout << "Struct Bits: " << lo_struct_size << " Size: " << lo_struct_bytes << std::endl;
+//    // std::cout << "Labels Bits: " << lo_labels_size << " Size: " << lo_labels_bytes << std::endl;
+//    // std::cout << "R_Supp Size: " << rank_supp_bytes << std::endl;
+//
+//    return lo_struct_bytes + lo_labels_bytes + rank_supp_bytes;
   }
 
   bool operator!=(tree_mask_lo& other) const {
@@ -1168,6 +1178,32 @@ public:
   name() {
     return "tree_mask_lo";
   }
+
+  /// Returns the value of the bit at the position pos.
+  u1
+  test(const std::size_t pos) const {
+    constexpr auto n_log2 = dtl::ct::log_2<N>::value;
+//    std::cout << "pos=" << pos << " " << std::bitset<n_log2>(pos) << std::endl;
+    $u64 node_idx = 0;
+    if (is_leaf_node(node_idx)) {
+      return get_label(node_idx);
+    }
+    for ($u64 i = n_log2 - 1; i < n_log2; i--) {
+      u1 bit = dtl::bits::bit_test(pos, i);
+      if (bit) {
+        node_idx = right_child(node_idx);
+      }
+      else {
+        node_idx = left_child(node_idx);
+      }
+      if (is_leaf_node(node_idx)) {
+        return get_label(node_idx);
+      }
+    }
+    std::cout << "BÄM" << std::endl;
+    std::exit(42);
+  }
+
 
 };
 
