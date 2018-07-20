@@ -182,7 +182,8 @@ public:
   }
 
   // naive rank for tests
-  u64 rank(u64 node_idx) const {
+  __forceinline__ u64
+  rank(u64 node_idx) const {
     $u64 rank = 0;
     for(auto i = 0; i < node_idx; i++) {
       rank += lo_struc[i];
