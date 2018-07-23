@@ -210,8 +210,7 @@ public:
 
   /// Decodes the level-order encoding to a bitmap.
   __forceinline__ boost::dynamic_bitset<$u32>
-  to_bitset(){
-
+  to_bitset() const {
     boost::dynamic_bitset<$u32> ret(N, false); // the resulting bitmap
 
     // special case if the tree is only a root node
@@ -288,7 +287,7 @@ public:
 
   /// Return the size in bytes.
   __forceinline__ std::size_t
-  size_in_byte() {
+  size_in_byte() const {
     u64 lo_struct_size = (lo_struc.size() + 7) / 8;
     u64 lo_labels_size = (lo_label.size() + 7) / 8;
     u64 rank_supp_bytes = rank_.size_in_bytes();

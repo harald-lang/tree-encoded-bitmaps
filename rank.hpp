@@ -70,7 +70,7 @@ struct rank1 {
     return bit_cntr;
   }
 
-  u64 size_in_bytes() {
+  u64 size_in_bytes() const {
     return lut.size() * sizeof(size_type) // lut size
            + 8;   // pointer to bitmap
   }

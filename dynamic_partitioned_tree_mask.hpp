@@ -45,7 +45,6 @@ public:
 
     for ($u64 pid = 0; pid < partition_cnt; pid++) {
       u64 offset = part_n * pid;
-//      std::bitset<part_n> part_bitmask;
       boost::dynamic_bitset<$u32> part_bitmask(part_n);
       for ($u64 i = 0; i < part_n; i++) { // TODO optimize later
         part_bitmask[i] = bitmask[i + offset];
@@ -61,7 +60,7 @@ public:
 
   /// Decodes the level-order encoding to a bitmap.
   boost::dynamic_bitset<$u32>
-  to_bitset(){
+  to_bitset() const {
     boost::dynamic_bitset<$u32> ret_val(N);
     for ($u64 pid = 0; pid < partition_cnt; pid++) {
       u64 offset = part_n * pid;
@@ -75,7 +74,7 @@ public:
 
   /// Return the size in bytes.
   std::size_t
-  size_in_byte() {
+  size_in_byte() const {
     $u64 size = 0;
     for ($u64 pid = 0; pid < partition_cnt; pid++) {
       size += tree_masks_[pid].size_in_byte();
