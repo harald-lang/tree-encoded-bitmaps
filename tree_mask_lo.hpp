@@ -6,11 +6,8 @@
 
 #include <dtl/tree_mask.hpp>
 
-//#include <sdsl/int_vector.hpp>
-//#include <sdsl/rank_support_v5.hpp>
-
 #include "boost/dynamic_bitset.hpp"
-
+#include "rank.hpp"
 
 namespace dtl {
 
@@ -28,6 +25,7 @@ public:
 //  sdsl::bit_vector lo_label;
 
 //  sdsl::rank_support_v5<> rank_support;
+  dtl::rank1 rank_;
 
   /// C'tor
   explicit
@@ -135,6 +133,7 @@ public:
     lo_label.resize(label_cnt);
 
 //    rank_support.set_vector(&lo_struc);
+    rank_.init(lo_struc);
   }
 
   explicit
@@ -142,6 +141,8 @@ public:
 
     lo_struc = structure;
     lo_label = labels;
+    rank_.init(lo_struc);
+
 //    lo_struc = sdsl::bit_vector(structure.size());
 //    lo_label = sdsl::bit_vector(labels.size());
 //
@@ -183,7 +184,7 @@ public:
 
   // naive rank for tests
   __forceinline__ u64
-  rank(u64 node_idx) const {
+  rank_off(u64 node_idx) const {
     $u64 rank = 0;
     for(auto i = 0; i < node_idx; i++) {
       rank += lo_struc[i];
@@ -191,22 +192,25 @@ public:
     return rank;
   }
 
+  // naive rank for tests
+  __forceinline__ u64
+  rank(u64 node_idx) const {
+    return rank_(node_idx);
+  }
+
   /// Important: rank_supportv5.rank() calculates the rank of the prefix -> we need idx + 1
   __forceinline__ u64
   left_child(u64 node_idx) const {
-//    return 2* rank_support.rank(node_idx+1) -1;
     return 2 * rank(node_idx + 1) - 1;
   }
 
   __forceinline__ u64
   right_child(u64 node_idx) const {
-//    return 2* rank_support.rank(node_idx+1);
     return 2 * rank(node_idx + 1);
   }
 
   __forceinline__ bool
   get_label(u64 node_idx) const {
-//    u64 label_idx = node_idx - this->rank_support.rank(node_idx); // BUG in SDSL?
     u64 label_idx = node_idx - rank(node_idx);
     return this->lo_label[label_idx];
   }
@@ -294,8 +298,9 @@ public:
   size_in_byte() {
     u64 lo_struct_size = (lo_struc.size() + 7) / 8;
     u64 lo_labels_size = (lo_label.size() + 7) / 8;
-    u64 rank_supp_bytes = static_cast<u64>(((lo_struct_size * 0.0625) + 7) / 8);
-
+//    u64 rank_supp_bytes = static_cast<u64>(((lo_struct_size * 0.0625) + 7) / 8);
+    u64 rank_supp_bytes = rank_.size_in_bytes();
+    return lo_struct_size + lo_labels_size + rank_supp_bytes;
 
     // TODO check: currently the size is calculated like in the sdsl_cheat_sheet
 //    u64 lo_struct_size = lo_struc.bit_size();
@@ -1586,20 +1591,29 @@ public:
     }
     for ($u64 i = n_log2 - 1; i < n_log2; i--) {
       u1 bit = dtl::bits::bit_test(pos, i);
-      if (bit) {
-        node_idx = right_child(node_idx);
-      }
-      else {
-        node_idx = left_child(node_idx);
-      }
+      auto r = rank(node_idx + 1);
+      node_idx = 2 * r - 1 + bit; // right child if bit is set, left child otherwise
       if (is_leaf_node(node_idx)) {
-        return get_label(node_idx);
+        u64 label_idx = node_idx - rank(node_idx);
+        auto label = lo_label[label_idx];
+        return label;
       }
     }
     std::cout << "BÄM" << std::endl;
     std::exit(42);
   }
 
+  u1
+  all() {
+    return lo_struc[0] == false // root is the only node (a leaf)
+        && lo_label[0] == true; // and the label is 1
+  }
+
+  u1
+  none() {
+    return lo_struc[0] == false // root is the only node (a leaf)
+        && lo_label[0] == false; // and the label is 0
+  }
 
 };
 
