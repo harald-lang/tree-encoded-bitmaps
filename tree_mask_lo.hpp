@@ -21,15 +21,12 @@ public:
   // level-order encoding
   std::vector<$u1> lo_struc;
   std::vector<$u1> lo_label;
-//  sdsl::bit_vector lo_struc;
-//  sdsl::bit_vector lo_label;
 
-//  sdsl::rank_support_v5<> rank_support;
   dtl::rank1 rank_;
 
   /// C'tor
   explicit
-  tree_mask_lo(const std::bitset<N>& bitmask){
+  tree_mask_lo(const std::bitset<N>& bitmask) {
 
     using tree_t = dtl::binary_tree_structure<N>;
 
@@ -142,19 +139,6 @@ public:
     lo_struc = structure;
     lo_label = labels;
     rank_.init(lo_struc);
-
-//    lo_struc = sdsl::bit_vector(structure.size());
-//    lo_label = sdsl::bit_vector(labels.size());
-//
-//    for(auto i = 0; i < structure.size(); i++){
-//      lo_struc[i] = structure[i];
-//    }
-//
-//    for(auto i = 0; i < labels.size(); i++){
-//      lo_label[i] = labels[i];
-//    }
-//
-//    rank_support.set_vector(&lo_struc);
   }
 
   __forceinline__ u1
@@ -198,7 +182,7 @@ public:
     return rank_(node_idx);
   }
 
-  /// Important: rank_supportv5.rank() calculates the rank of the prefix -> we need idx + 1
+  /// Important: rank() calculates the rank of the prefix -> we need idx + 1
   __forceinline__ u64
   left_child(u64 node_idx) const {
     return 2 * rank(node_idx + 1) - 1;
@@ -215,7 +199,7 @@ public:
     return this->lo_label[label_idx];
   }
 
-  /// decodes the level-order encoding to a bitmap
+  /// Decodes the level-order encoding to a bitmap.
   __forceinline__ std::bitset<N>
   to_bitset(){
 
@@ -298,26 +282,8 @@ public:
   size_in_byte() {
     u64 lo_struct_size = (lo_struc.size() + 7) / 8;
     u64 lo_labels_size = (lo_label.size() + 7) / 8;
-//    u64 rank_supp_bytes = static_cast<u64>(((lo_struct_size * 0.0625) + 7) / 8);
     u64 rank_supp_bytes = rank_.size_in_bytes();
     return lo_struct_size + lo_labels_size + rank_supp_bytes;
-
-    // TODO check: currently the size is calculated like in the sdsl_cheat_sheet
-//    u64 lo_struct_size = lo_struc.bit_size();
-//    u64 lo_labels_size = lo_label.bit_size();
-
-//    // the required space of an int_vector with n bits: 64*ceil(n/64+1) bit = 8*ceil(n/64+1) byte
-//    u64 lo_struct_bytes = 8 * std::ceil((lo_struct_size*1.0 / 64) +1);
-//    u64 lo_labels_bytes = 8 * std::ceil((lo_labels_size*1.0 / 64) +1);
-//
-//    // the additional required space for the rank_support_v5 is: 0.0625*n bit
-//    u64 rank_supp_bytes = ((rank_support.size() * 0.0625) + 7) / 8;
-//
-//    // std::cout << "Struct Bits: " << lo_struct_size << " Size: " << lo_struct_bytes << std::endl;
-//    // std::cout << "Labels Bits: " << lo_labels_size << " Size: " << lo_labels_bytes << std::endl;
-//    // std::cout << "R_Supp Size: " << rank_supp_bytes << std::endl;
-//
-//    return lo_struct_bytes + lo_labels_bytes + rank_supp_bytes;
   }
 
   bool operator!=(tree_mask_lo& other) const {
@@ -1584,7 +1550,6 @@ public:
   u1
   test(const std::size_t pos) const {
     constexpr auto n_log2 = dtl::ct::log_2<N>::value;
-//    std::cout << "pos=" << pos << " " << std::bitset<n_log2>(pos) << std::endl;
     $u64 node_idx = 0;
     if (is_leaf_node(node_idx)) {
       return get_label(node_idx);

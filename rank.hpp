@@ -56,9 +56,7 @@ struct rank1 {
     u64 bit_idx_from = lut_idx << dtl::ct::log_2<lut_entry_span>::value;
     u64 bit_idx_to = idx;
     size_type bit_cntr = lut[lut_idx];
-//    for ($u64 i = bit_idx_from; i < bit_idx_to; i++) {
-//      bit_cntr += (*bitmap_)[i];
-//    }
+
     u64* words_begin = &bitmap_[bit_idx_from / 64];
     u64* words_end = words_begin + ((bit_idx_to - bit_idx_from) / 64);
     for ($u64 const* word_iter = words_begin; word_iter != words_end; word_iter++) {

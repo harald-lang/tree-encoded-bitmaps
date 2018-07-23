@@ -38,6 +38,7 @@ public:
       tree_masks_.emplace_back(part_bitmask);
       std::cout << "is true: " << tree_masks_.back().all()
                 << ", is false: " << tree_masks_.back().none()
+                << ", size: " << tree_masks_.back().size_in_byte()
                 << std::endl;
     }
   }
