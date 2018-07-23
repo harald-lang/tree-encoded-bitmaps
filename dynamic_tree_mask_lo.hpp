@@ -209,16 +209,16 @@ public:
   }
 
   /// Decodes the level-order encoding to a bitmap.
-  __forceinline__ std::vector<$u1>
+  __forceinline__ boost::dynamic_bitset<$u32>
   to_bitset(){
 
-    std::vector<$u1> ret(N, false); // the resulting bitmap
+    boost::dynamic_bitset<$u32> ret(N, false); // the resulting bitmap
 
     // special case if the tree is only a root node
     if(lo_struc.size() == 1){
       //std::cout << "to_bitset() only root case" << std::endl;
       if(lo_label[0]){
-        return std::vector<$u1>(N, true);
+        return boost::dynamic_bitset<$u32>(N, true);
       } else {
         return ret;
       }
