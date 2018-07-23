@@ -3,7 +3,7 @@ project(navin)
 
 set(CMAKE_CXX_STANDARD 14)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -march=native")
 
 add_subdirectory(../fastbit Fastbit) # Fastbit includes the WAH bitmap compression
 include_directories(../fastbit/src)
@@ -27,6 +27,8 @@ target_link_libraries(tester gtest gtest_main fastbit roaring)
 
 # Treemask sources
 set(TREE_MASK_SOURCE_FILES
+        rank.hpp
+        partitioned_tree_mask.hpp
         tree_mask_lo.hpp
         tree_mask_po.hpp
         tree_mask_util.hpp
@@ -90,3 +92,13 @@ target_link_libraries(ex_compression_skyline fastbit roaring)
 
 # copy shell scripts
 configure_file(experiments/compression/compression.sh compression.sh COPYONLY)
+
+set(EXPERIMENT_PERFORMANCE_SOURCE_FILES
+        ${SOURCE_FILES}
+        ${TREE_MASK_SOURCE_FILES}
+        ${COMPETITORS_SOURCE_FILES}
+        experiments/performance/main_performance.cpp
+        )
+
+add_executable(ex_performance ${EXPERIMENT_PERFORMANCE_SOURCE_FILES})
+target_link_libraries(ex_performance fastbit roaring)
