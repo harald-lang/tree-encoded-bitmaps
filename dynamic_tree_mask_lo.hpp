@@ -574,18 +574,18 @@ public:
     fifo_b.push(node(0, node_pos));
     node_pos++;
 
-    while(fifo_a.size() > 0 || fifo_b.size() > 0){
+    while(!fifo_a.empty() || !fifo_b.empty()) {
 
       //std::cout << std::endl << "Size queue_a: " << fifo_a.size() << " queue_b: " << fifo_b.size() << std::endl;
 
       node curr_a;
       node curr_b;
 
-      if(fifo_a.size() > 0){
+      if (fifo_a.empty()) {
         curr_a = fifo_a.front();
       }
 
-      if(fifo_b.size() > 0){
+      if (fifo_b.empty()) {
         curr_b = fifo_b.front();
       }
 
@@ -778,7 +778,7 @@ public:
     // get this & (a XOR b)
     dynamic_tree_mask_lo tree_mask_and = *this & tree_mask_xor;
 
-    return tree_mask_and;
+    return tree_mask_and; // FIXME: reference to local variable ‘tree_mask_and’ returned
   }
 
   /// Bitwise XOR with compression of the resulting tree

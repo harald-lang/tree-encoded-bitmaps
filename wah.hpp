@@ -46,7 +46,7 @@ struct wah {
 
   /// Return the size in bytes.
   std::size_t
-  size_in_byte() {
+  size_in_byte() const {
     return bv.bytes();
   }
 
