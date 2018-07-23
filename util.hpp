@@ -3,6 +3,8 @@
 #include <bitset>
 #include <cstddef>
 
+#include <boost/dynamic_bitset.hpp>
+
 //===----------------------------------------------------------------------===//
 // Utility functions for bitsets.
 //===----------------------------------------------------------------------===//
@@ -35,5 +37,26 @@ count_0fills(const bitset_t& b) {
     last_bit = current_bit;
   }
   return cntr;
+}
+
+template<typename bitset_t>
+std::vector<$u1>
+to_vector(const bitset_t& b) {
+  std::vector<$u1> ret(b.size(), false);
+  for (std::size_t i = 0; i < b.size(); i++) {
+    ret[i] = b[i];
+  }
+  return ret;
+}
+
+
+template<typename bitset_t>
+boost::dynamic_bitset<$u32>
+to_dynamic_bitset(const bitset_t& b) {
+  boost::dynamic_bitset<$u32> ret(b.size(), false);
+  for (std::size_t i = 0; i < b.size(); i++) {
+    ret[i] = b[i];
+  }
+  return ret;
 }
 //===----------------------------------------------------------------------===//

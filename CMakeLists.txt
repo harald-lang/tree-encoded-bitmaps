@@ -29,6 +29,8 @@ target_link_libraries(tester gtest gtest_main fastbit roaring)
 set(TREE_MASK_SOURCE_FILES
         rank.hpp
         partitioned_tree_mask.hpp
+        dynamic_tree.hpp
+        dynamic_tree_mask_lo.hpp
         tree_mask_lo.hpp
         tree_mask_po.hpp
         tree_mask_util.hpp
