@@ -1046,7 +1046,6 @@ public:
       const auto a_xor_b = a ^ b;
       const auto common_prefix_len = a_xor_b == 0 ? 0 : dtl::bits::lz_count(a_xor_b);
 
-
       // walk up the tree to the common ancestor
 //      stack_.pop(); // requires the TM to be compressed?
       const auto level_of_common_ancestor = common_prefix_len;
@@ -1083,6 +1082,7 @@ public:
             const auto lz_cnt_path = dtl::bits::lz_count(path);
             pos_ = (path ^ (path_msb >> lz_cnt_path)) << (tree_height - level_); // toggle sentinel bit (= highest bit set) and add offset
             length_ = tm_.N >> level_; // the length of the 1-fill
+            // adjust the current position and fill-length
             length_ -= to_pos - pos_;
             pos_ = to_pos;
             return;
@@ -1097,8 +1097,8 @@ public:
         // navigate downwards the tree
         u1 bit = dtl::bits::bit_test(to_pos, i--); // 0 -> goto left child, 1 -> goto right child
         const auto r = tm_.rank(node_idx + 1);
-        const auto left_child = 2 * r - 1;
         const auto right_child = 2 * r;
+        const auto left_child = right_child - 1;
         level_++;
         if (!bit) {
           // goto left child
