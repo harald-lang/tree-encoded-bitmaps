@@ -1,15 +1,18 @@
 #pragma once
 
+#include <bitset>
 #include <list>
 #include <queue>
 #include <vector>
 
 #include <dtl/tree_mask.hpp>
+#include <stack>
 
 #include "boost/dynamic_bitset.hpp"
 
 #include "rank.hpp"
 #include "dynamic_tree.hpp"
+#include "static_stack.hpp"
 
 namespace dtl {
 
@@ -18,12 +21,152 @@ namespace dtl {
 class dynamic_tree_mask_lo {
 public:
 
+  using bitmap_t = boost::dynamic_bitset<$u32>;
+
+
+//  //===----------------------------------------------------------------------===//
+//  /// Helper structure to navigate within the tree structure.
+//  class traversal {
+////  private:
+//  public:
+//
+//    using path_t = uint64_t;
+//    static constexpr path_t path_msb = path_t(1) << (sizeof(path_t) * 8 - 1);
+//
+//    const bitmap_t& structure_;
+//    const bitmap_t& labels_;
+//    const rank1& rank_;
+//
+//    std::size_t s_pos_;
+//    std::size_t l_pos_;
+//
+//    path_t path_; // encodes the path to the current node (the highest set bit is a sentinel bit)
+//    $u32 level_ = 0;
+//
+//  public:
+//
+//    /// C'tor
+//    __forceinline__
+//    traversal(const bitmap_t& structure,
+//              const bitmap_t& labels,
+//              const rank1& rank)
+//        : structure_(structure), labels_(labels), rank_(rank), s_pos_(0), l_pos_(0), path_(1) {}
+//
+//    __forceinline__ explicit
+//    traversal(const dynamic_tree_mask_lo& tm) : traversal(tm.structure_, tm.labels_, tm.rank_) {}
+//
+//    __forceinline__
+//    ~traversal() = default;
+//
+//    __forceinline__
+//    traversal(const traversal& other) = default;
+//
+//    __forceinline__
+//    traversal(traversal&& other) noexcept = delete;
+//
+//    __forceinline__
+//    traversal&
+//    operator=(const traversal& other) = delete;
+//
+//    __forceinline__
+//    traversal&
+//    operator=(traversal&& other) noexcept = delete;
+//
+//    /// Return 'true' if the current node is an inner node, 'false' otherwise.
+//    __forceinline__ u1
+//    is_inner_node() const { return structure_[s_pos_]; }
+//
+//    /// Return 'true' if the current node is leaf node, 'false' otherwise.
+//    __forceinline__ u1
+//    is_leaf_node() const { return !is_inner_node(); }
+//
+//    /// Return 'true' if the current node a left child, 'false' otherwise.
+//    __forceinline__ u1
+//    is_left_child() const { return (path_ & 1ull) == 0; }
+//
+//    /// Return 'true' if the current node a right child, 'false' otherwise.
+//    __forceinline__ u1
+//    is_right_child() const { return !is_left_child(); }
+//
+//    /// Return the label of the current leaf node.
+//    /// The result is undefined, if the current node is an inner node.
+//    __forceinline__ u1
+//    get_label() const { assert(is_leaf_node()); return labels_[l_pos_]; }
+//
+//    /// Navigate to the next node (in level-order).
+//    __forceinline__ u1
+//    next() {
+//      if (end()) return false;
+//      assert(l_pos_ < labels_.size());
+//      if (structure_[s_pos_] /* is inner node */) {
+//        // go to left child
+//        path_ <<= 1;
+//        level_++;
+//      }
+//      else {
+//        // is leaf node
+//        path_++;
+//        l_pos_++;
+//        const auto tzc = dtl::bits::tz_count(path_);
+//        path_ >>= tzc;
+//        level_ -= tzc;
+//      }
+//      s_pos_++;
+//      return true;
+//    }
+//
+//    __forceinline__ u1
+//    end() const {
+//      return s_pos_ == structure_.size();
+//    }
+//
+//    /// Return the level of the current node.
+//    __forceinline__ auto
+//    get_level() const {
+//      return level_;
+//    }
+//
+//    /// Navigate to the left child.
+//    /// The current node must be an inner node.
+//    __forceinline__ void
+//    goto_left_child() {
+//      assert(is_inner_node());
+//      s_pos_++;
+//      level_++;
+//    }
+//
+//    /// Navigate to the right child. (Naive implementation)
+//    /// The current node must be an inner node.
+//    __forceinline__ void
+//    goto_right_child() {
+//      if (end()) return;
+//      assert(is_inner_node());
+//      // navigate to the left hand side child
+//      next();
+//      // determine the level of the left child
+//      const auto level = get_level();
+//      // traverse left sub tree until the level is reached again
+//      next();
+//      while (get_level() != level) {
+//        next();
+//      }
+//    }
+//
+//    /// Compute and return the level-order node index of the current node.
+//    __forceinline__ std::size_t
+//    get_node_idx() {
+//      return tree_mask_po::get_node_idx(path_);
+//    }
+//  };
+//  //===----------------------------------------------------------------------===//
+
+
   // the number of bits
   u64 N;
 
   // level-order encoding
-  std::vector<$u1> lo_struc;
-  std::vector<$u1> lo_label;
+  bitmap_t structure_;
+  bitmap_t labels_;
 
   dtl::rank1 rank_;
 
@@ -41,8 +184,7 @@ public:
     tree_t tree_structure(N);
     u64 length = tree_structure.max_node_cnt;
     u64 height = tree_structure.height;
-//    std::bitset<length> labels;
-    std::vector<$u1> labels(length, false);
+    bitmap_t labels(length, false);
 
     // initialize a complete binary tree
     // ... all the inner nodes have two children
@@ -79,8 +221,8 @@ public:
     std::queue<$u64> fifo; // explored nodes set
 
     // Allocate enough space for the structure and labels
-    lo_struc.resize(tree_structure.max_node_cnt);
-    lo_label.resize(labels.size());
+    structure_.resize(tree_structure.max_node_cnt);
+    labels_.resize(labels.size());
     $u64 struct_cnt = 0;
     $u64 label_cnt = 0;
 
@@ -94,8 +236,8 @@ public:
         u1 l_child_is_inner = tree_structure.is_inner_node(l_child);
         u1 r_child_is_inner = tree_structure.is_inner_node(r_child);
 
-        lo_struc[struct_cnt++] = l_child_is_inner;
-        lo_struc[struct_cnt++] = r_child_is_inner;
+        structure_[struct_cnt++] = l_child_is_inner;
+        structure_[struct_cnt++] = r_child_is_inner;
 
         // push them to the fifo queue to traverse them later
         fifo.push(l_child);
@@ -105,7 +247,7 @@ public:
 
       } else { // leaf node
         // add the label of the leaf node
-        lo_label[label_cnt++] = labels[idx];
+        labels_[label_cnt++] = labels[idx];
 
         // no children, nothing to add to the fifo queue, done
       }
@@ -113,17 +255,17 @@ public:
 
     // Special case for the root node: if the tree is only the root, structure is 0
     {
-      bool root_is_inner = tree_structure.is_inner_node(0);
+      u1 root_is_inner = tree_structure.is_inner_node(0);
 
       // add the root to the tree structure
-      lo_struc[struct_cnt++] = root_is_inner;
+      structure_[struct_cnt++] = root_is_inner;
 
       if(root_is_inner) {
         // add the root to the fifo to add the rest of the tree
         fifo.push(0);
       }
       else {
-        lo_label[label_cnt++] = labels[0];
+        labels_[label_cnt++] = labels[0];
         // tree is only the root, we are done
       }
     }
@@ -134,30 +276,30 @@ public:
       fifo.pop();
     }
 
-    lo_struc.resize(struct_cnt);
-    lo_label.resize(label_cnt);
+    structure_.resize(struct_cnt);
+    labels_.resize(label_cnt);
 
-//    rank_support.set_vector(&lo_struc);
-    rank_.init(lo_struc);
+//    rank_support.set_vector(&structure_);
+    rank_.init(structure_);
   }
 
   explicit
-  dynamic_tree_mask_lo(u64 N, const std::vector<$u1>& structure, const std::vector<$u1>& labels)
+  dynamic_tree_mask_lo(u64 N, const bitmap_t& structure, const bitmap_t& labels)
       : N(N) {
 
-    lo_struc = structure;
-    lo_label = labels;
-    rank_.init(lo_struc);
+    structure_ = structure;
+    labels_ = labels;
+    rank_.init(structure_);
   }
 
   __forceinline__ u1
   is_inner_node(u64 node_idx) const {
-    return lo_struc[node_idx];
+    return structure_[node_idx];
   }
 
   __forceinline__ u1
   is_leaf_node(u64 node_idx) const {
-    return !lo_struc[node_idx];
+    return !structure_[node_idx];
   }
 
   __forceinline__ u1
@@ -180,7 +322,7 @@ public:
   rank_off(u64 node_idx) const {
     $u64 rank = 0;
     for(auto i = 0; i < node_idx; i++) {
-      rank += lo_struc[i];
+      rank += structure_[i];
     }
     return rank;
   }
@@ -202,10 +344,10 @@ public:
     return 2 * rank(node_idx + 1);
   }
 
-  __forceinline__ bool
+  __forceinline__ u1
   get_label(u64 node_idx) const {
     u64 label_idx = node_idx - rank(node_idx);
-    return this->lo_label[label_idx];
+    return this->labels_[label_idx];
   }
 
   /// Decodes the level-order encoding to a bitmap.
@@ -214,15 +356,13 @@ public:
     boost::dynamic_bitset<$u32> ret(N, false); // the resulting bitmap
 
     // special case if the tree is only a root node
-    if(lo_struc.size() == 1){
+    if(structure_.size() == 1){
       //std::cout << "to_bitset() only root case" << std::endl;
-      if(lo_label[0]){
+      if(labels_[0]){
         return boost::dynamic_bitset<$u32>(N, true);
       } else {
         return ret;
       }
-
-      return ret;
     }
 
     // normal cases: construct the tree using the lo_construction and a level counter
@@ -253,8 +393,8 @@ public:
       } else {
         //std::cout << "Leaf node" << std::endl;
         // write the label to the bitset
-//        u1 label = lo_label[idx - rank_support.rank(idx+1)];
-        u1 label = lo_label[idx - rank(idx + 1)];
+//        u1 label = labels_[idx - rank_support.rank(idx+1)];
+        u1 label = labels_[idx - rank(idx + 1)];
         u64 to_write = 1 << (tree_height - level) ;// number of tuples represented by the label
 
         for(auto i = 0; i < to_write; ++i){
@@ -288,42 +428,43 @@ public:
   /// Return the size in bytes.
   __forceinline__ std::size_t
   size_in_byte() const {
-    u64 lo_struct_size = (lo_struc.size() + 7) / 8;
-    u64 lo_labels_size = (lo_label.size() + 7) / 8;
+    u64 lo_struct_size = (structure_.size() + 7) / 8;
+    u64 lo_labels_size = (labels_.size() + 7) / 8;
     u64 rank_supp_bytes = rank_.size_in_bytes();
     return lo_struct_size + lo_labels_size + rank_supp_bytes;
   }
 
-  bool operator!=(dynamic_tree_mask_lo& other) const {
-    return (this->lo_struc != other.lo_struc || this->lo_label != other.lo_label);
+  u1 operator!=(dynamic_tree_mask_lo& other) const {
+    return (this->structure_ != other.structure_ || this->labels_ != other.labels_);
   }
 
-  bool operator==(dynamic_tree_mask_lo& other) const {
-    return (this->lo_struc == other.lo_struc && this->lo_label == other.lo_label);
+  u1 operator==(dynamic_tree_mask_lo& other) const {
+    return (this->structure_ == other.structure_ && this->labels_ == other.labels_);
   }
 
   /// Bitwise XOR without compression of the resulting tree
   dynamic_tree_mask_lo
   operator^(const dynamic_tree_mask_lo& other) const{
 
-    struct node{
+    struct node {
         $u64 node_idx;
         $u64 node_pos; // position in the more full of both trees
-        bool xor_bit;
+        $u1 xor_bit;
 
         node() : node_idx(0), node_pos(0), xor_bit(false) {};
 
-        node(u64 idx, u64 pos , bool bit) : node_idx(idx), node_pos(pos), xor_bit(bit) {};
+        node(u64 idx, u64 pos , u1 bit) : node_idx(idx), node_pos(pos), xor_bit(bit) {};
 
-        void operator=(node& other){
+        void
+        operator=(node& other) {
           this->node_idx = other.node_idx;
           this->node_pos = other.node_pos;
           this->xor_bit = other.xor_bit;
         }
     };
 
-    std::vector<$u1> structure;
-    std::vector<$u1> labels;
+    bitmap_t structure;
+    bitmap_t labels;
     std::vector<std::pair<$u64, $u64>> level_offset; // to keep track of the different level begins
 
     // TODO optimize: determine and skip common prefix
@@ -527,20 +668,26 @@ public:
   void
   print(std::ostream& os) const {
 
-    for ($i64 i = 0; i < lo_struc.size(); i++) {
-      os << (lo_struc[i] ? "1" : "0");
+    for ($i64 i = 0; i < structure_.size(); i++) {
+      os << (structure_[i] ? "1" : "0");
     }
     os << " | ";
-    for ($i64 i = 0; i < lo_label.size(); i++) {
-      os << (lo_label[i] ? "1" : "0");
+    for ($i64 i = 0; i < labels_.size(); i++) {
+      os << (labels_[i] ? "1" : "0");
     }
   }
+
+
 
   /// Bitwise AND without compression of the resulting tree
   dynamic_tree_mask_lo
   operator&(const dynamic_tree_mask_lo& other) const {
 
-    struct node{
+    // the output
+    bitmap_t out_structure;
+    bitmap_t out_labels;
+
+    struct node {
       $u64 node_idx;
       $u64 node_pos; // position in the more full of both trees
 
@@ -554,16 +701,7 @@ public:
       }
     };
 
-    std::vector<$u1> structure;
-    std::vector<$u1> labels;
 
-    // needed for compression
-    // store for each level the offset of the first node of the level and the max_rank of all previous nodes
-    //std::vector<std::pair<$u64,$u64>> level_meta;
-
-    // TODO optimize: determine and skip common prefix
-
-    // a XOR b : a = this, b = other
     std::queue<node> fifo_a; // nodes of the next level of a
     std::queue<node> fifo_b; // nodes of the next level of b
 
@@ -574,18 +712,16 @@ public:
     fifo_b.push(node(0, node_pos));
     node_pos++;
 
-    while(!fifo_a.empty() || !fifo_b.empty()) {
-
-      //std::cout << std::endl << "Size queue_a: " << fifo_a.size() << " queue_b: " << fifo_b.size() << std::endl;
+    while (!fifo_a.empty() || !fifo_b.empty()) {
 
       node curr_a;
       node curr_b;
 
-      if (fifo_a.empty()) {
+      if (!fifo_a.empty()) {
         curr_a = fifo_a.front();
       }
 
-      if (fifo_b.empty()) {
+      if (!fifo_b.empty()){
         curr_b = fifo_b.front();
       }
 
@@ -596,31 +732,28 @@ public:
 
         // both nodes are no fillers
         u8 c = static_cast<u8>(this->is_inner_node(curr_a.node_idx) |
-                               (static_cast<u8>(other.is_inner_node(curr_b.node_idx)) << 1));
+            (static_cast<u8>(other.is_inner_node(curr_b.node_idx)) << 1));
 
         $u1 bit;
 
         switch (c) {
           case 0b00: // a and b: leaf
-            //std::cout << "Case: 0b00" << std::endl;
-
             bit = this->get_label(curr_a.node_idx) & other.get_label(curr_b.node_idx);
 
-            structure.push_back(false); // insert the leaf
-            labels.push_back(bit);
+            out_structure.push_back(false); // insert the leaf
+            out_labels.push_back(bit);
             break;
 
           case 0b01: // a: inner, b: leaf
           {
             //std::cout << "Case: 0b01" << std::endl;
 
-            if(!other.get_label(curr_b.node_idx)){ // a & 0 -> leaf 0
-              structure.push_back(false);
-              labels.push_back(false);
-
+            if (!other.get_label(curr_b.node_idx)) { // a & 0 -> leaf 0
+              out_structure.push_back(false);
+              out_labels.push_back(false);
             } else {
               // add the inner node from a
-              structure.push_back(true);
+              out_structure.push_back(true);
 
               // add the children of a to the queue
               node left_child(this->left_child(curr_a.node_idx), node_pos++);
@@ -636,13 +769,12 @@ public:
           {
             //std::cout << "Case: 0b10" << std::endl;
 
-            if(!this->get_label(curr_a.node_idx)){ // 0 & b -> leaf 0
-              structure.push_back(false);
-              labels.push_back(false);
-
+            if (!this->get_label(curr_a.node_idx)) { // 0 & b -> leaf 0
+              out_structure.push_back(false);
+              out_labels.push_back(false);
             } else {
               // add the inner node from a
-              structure.push_back(true);
+              out_structure.push_back(true);
 
               // add the children of a to the queue
               node left_child(other.left_child(curr_b.node_idx), node_pos++);
@@ -659,7 +791,7 @@ public:
             //std::cout << "Case: 0b11" << std::endl;
 
             // add the inner node
-            structure.push_back(true);
+            out_structure.push_back(true);
 
             // add the left child of a and b
             node left_child_a(this->left_child(curr_a.node_idx), node_pos);
@@ -680,24 +812,27 @@ public:
 
             break;
           }
-        }
 
-      } else { // if we are in a subtree of one of the both nodes
+
+
+        }
+      }
+      else { // if we are in a subtree of one of the both nodes
 
         //std::cout << "Node a: " << curr_a.node_idx << " | " << curr_a.node_pos << std::endl;
         //std::cout << "Node b: " << curr_b.node_idx << " | " << curr_b.node_pos << std::endl;
 
-        if((curr_a.node_pos < curr_b.node_pos && curr_a.node_pos != 0) || curr_b.node_pos == 0){ // add part of the subtree of a
+        if ((curr_a.node_pos < curr_b.node_pos && curr_a.node_pos != 0) || curr_b.node_pos == 0) { // add part of the subtree of a
 
           //std::cout << "Case: subtree_a" << std::endl;
 
           fifo_a.pop();
 
-          if(this->is_inner_node(curr_a.node_idx)){ // current node is an inner node -> add children to the queue
+          if (this->is_inner_node(curr_a.node_idx)) { // current node is an inner node -> add children to the queue
 
             //std::cout << "Is inner node" << std::endl;
             // add the inner node to the structure
-            structure.push_back(true);
+            out_structure.push_back(true);
 
             // add the children of a to the queue
             node left_child(this->left_child(curr_a.node_idx), node_pos++);
@@ -710,22 +845,23 @@ public:
 
             //std::cout << "Is leaf node" << std::endl;
             // add the leaf to the structure
-            structure.push_back(false);
-            labels.push_back(this->get_label(curr_a.node_idx));
+            out_structure.push_back(false);
+            out_labels.push_back(this->get_label(curr_a.node_idx));
           }
 
-        } else { // add part of the subtree of b
+        }
+        else { // add part of the subtree of b
 
           //std::cout << "Case: subtree_b" << std::endl;
 
           fifo_b.pop();
 
-          if(other.is_inner_node(curr_b.node_idx)){ // current node is an inner node -> add children to the queue
+          if (other.is_inner_node(curr_b.node_idx)) { // current node is an inner node -> add children to the queue
 
             //std::cout << "Is inner node" << std::endl;
 
             // add the inner node to the structure
-            structure.push_back(true);
+            out_structure.push_back(true);
 
             // add the children of b to the queue
             node left_child(other.left_child(curr_b.node_idx), node_pos++);
@@ -734,13 +870,14 @@ public:
             fifo_b.push(left_child);
             fifo_b.push(right_child);
 
-          } else { // node is a leaf, add it to the structure
+          }
+          else { // node is a leaf, add it to the structure
 
             //std::cout << "Is leaf node" << std::endl;
 
             // add the leaf to the structure
-            structure.push_back(false);
-            labels.push_back(other.get_label(curr_b.node_idx));
+            out_structure.push_back(false);
+            out_labels.push_back(other.get_label(curr_b.node_idx));
           }
         }
 
@@ -753,11 +890,11 @@ public:
         }
       }
 
-      //dynamic_tree_mask_lo tmp(structure, labels);
+      //tree_mask_lo tmp(structure, labels);
       //std::cout << tmp << std::endl;
     }
 
-    dynamic_tree_mask_lo ret(N, structure, labels);
+    dynamic_tree_mask_lo ret(N, out_structure, out_labels);
     return ret;
   }
 
@@ -781,774 +918,7 @@ public:
     return tree_mask_and; // FIXME: reference to local variable ‘tree_mask_and’ returned
   }
 
-  /// Bitwise XOR with compression of the resulting tree
-  dynamic_tree_mask_lo
-  xor_compressed(const dynamic_tree_mask_lo& other) const {
-
-    struct node{
-        $u64 node_idx;
-        $u64 node_pos; // position in the more full of both trees
-        bool xor_bit;
-
-        node() : node_idx(0), node_pos(0), xor_bit(false) {};
-
-        node(u64 idx, u64 pos , bool bit) : node_idx(idx), node_pos(pos), xor_bit(bit) {};
-
-        void operator=(node& other){
-          this->node_idx = other.node_idx;
-          this->node_pos = other.node_pos;
-          this->xor_bit = other.xor_bit;
-        }
-    };
-
-    std::vector<$u1> structure;
-    std::vector<$u1> labels;
-    // keep track of the different level begins <structure_idx, rank>
-    std::vector<std::pair<$u64, $u64>> level_offset;
-    $u64 next_level = 0;
-
-    // TODO optimize: determine and skip common prefix
-
-    // a XOR b : a = this, b = other
-    std::queue<node> fifo_a; // nodes of the next level of a
-    std::queue<node> fifo_b; // nodes of the next level of b
-
-    $u64 node_pos = 1; // needed to keep track of the corresponding nodes of tree a & b
-
-    // push the root-nodes into the queues
-    fifo_a.push(node(0, node_pos, this->is_inner_node(0) ? false : this->get_label(0)));
-    fifo_b.push(node(0, node_pos, other.is_inner_node(0) ? false : other.get_label(0)));
-    level_offset.push_back(std::make_pair(0, structure.size()-labels.size()));
-    node_pos++;
-    next_level = node_pos;
-    //std::cout << "   next_level: " << next_level << std::endl;
-
-    auto compression_function = [&](u64 node_idx, u64 level, u64 rank){
-
-      //std::cout << "Apply compression: " << node_idx << ", " << level << ", " << rank << std::endl;
-      // get the label of the two leafs
-      $u1 label = labels[node_idx - rank];
-      // calculate the rank of the parent so we can find it at the level above
-      u64 parent_rank = node_idx/2;
-
-      if(node_idx == structure.size()-1){ // Operations in O(1)
-        // delete the leaves from the structure
-        structure.pop_back(); // right leaf
-        structure.pop_back(); // left leaf
-
-        // delete the labels of those two leaves
-        labels.pop_back();
-        labels.pop_back();
-      } else {
-        // delete the leaves from the structure
-        //std::cout << "delete node: " << node_idx-1 << ", " << node_idx << std::endl;
-        structure.erase(structure.begin()+ node_idx); // right leaf
-        structure.erase(structure.begin()+ node_idx - 1); // left leaf
-
-        // delete the labels of those two leaves
-        //std::cout << "delete labels: " << node_idx-rank-1 << ", " << (node_idx - rank) << std::endl;
-        labels.erase(labels.begin() + (node_idx - rank));
-        labels.erase(labels.begin() + (node_idx - rank) - 1);
-      }
-
-      // now find the position of the parent, instead of a select we use a normal search
-      auto level_above = level_offset[level-1]; // level_offset<structure_idx, rank>
-      u64 level_begin = level_above.first;
-      $u64 current_rank = level_above.second;
-
-      for (auto i = level_begin; i < level_offset[level].first; i++) {
-
-        if (structure[i]) { // if the current node is a inner node -> increment the rank
-
-          current_rank++;
-
-          if(current_rank == parent_rank) {
-
-            structure[i] = 0;
-
-            //std::cout << "Insert at position: " << (i - current_rank +1) << " i: " << i << " curr_rank: " << current_rank << " +1 " << " label: " << label << std::endl;
-            labels.insert(labels.begin()+(i - current_rank + 1), label); // insert the new label at the right position
-
-            // update the ranks of all higher levels
-            for(auto l = level; l < level_offset.size(); l++) {
-              level_offset[l].second--;
-
-              if(l > level){
-                level_offset[l].first -= 2;
-              }
-            }
-
-            /*
-            for(auto e : structure){
-              std::cout << e;
-            }
-            std::cout << " | ";
-            for(auto e : labels){
-              std::cout << e;
-            }
-            std::cout << std::endl;
-            std::cout << "Current rank: " << current_rank << " , i:" << i << std::endl;
-            */
-
-            // check if we need to compress this new level as well
-            if(is_right_child(i)) {
-
-              //std::cout << "Is right child" << std::endl;
-              if (structure.size() > 2 && labels.size() > 1 &&
-                  !structure[i-1] && labels[i - current_rank] == label) {
-
-                return std::make_pair(true, std::vector<$u64>{i, level-1, current_rank-1});
-
-              }
-            } else { // left child
-              //std::cout << "Is left child" << std::endl;
-              if (structure.size() > 2 && labels.size() > 1 &&
-                  !structure[i+1] && labels[i+1 - (current_rank-1)] == label) {
-
-                return std::make_pair(true, std::vector<$u64>{i+1, level-1, current_rank-1});
-
-              }
-            }
-
-            return std::make_pair(false, std::vector<$u64>{0, 0, 0});
-          }
-        }
-      }
-    };
-
-    while(fifo_a.size() > 0 || fifo_b.size() > 0){
-
-      //std::cout << std::endl << "Size queue_a: " << fifo_a.size() << " queue_b: " << fifo_b.size() << std::endl;
-      //std::cout << "node_pos: " << node_pos << std::endl;
-
-      node curr_a;
-      node curr_b;
-
-      if(fifo_a.size() > 0){
-        curr_a = fifo_a.front();
-      }
-
-      if(fifo_b.size() > 0){
-        curr_b = fifo_b.front();
-      }
-
-      if(curr_a.node_pos == curr_b.node_pos && curr_a.node_pos != 0){
-
-        fifo_a.pop();
-        fifo_b.pop();
-
-        // both nodes are no fillers
-        u8 c = static_cast<u8>(this->is_inner_node(curr_a.node_idx) |
-                               (static_cast<u8>(other.is_inner_node(curr_b.node_idx)) << 1));
-        $u1 bit;
-
-        // update the level-helper variables
-        if(curr_a.node_pos == next_level || curr_b.node_pos == next_level){
-
-          level_offset.push_back(std::make_pair(structure.size(), structure.size()-labels.size()));
-          next_level = node_pos;
-          //std::cout << "   a:" << curr_a.node_idx << " b: " << curr_b.node_idx << " next_level: " << next_level
-          //          << " Stored tuple: " << level_offset.back().first << " | " << level_offset.back().second << std::endl;
-        }
-
-        switch (c) {
-          case 0b00: // a and b: leaf
-            //std::cout << "Case: 0b00" << std::endl;
-
-            bit = this->get_label(curr_a.node_idx) ^ other.get_label(curr_b.node_idx);
-
-            // check if we later need to compress it
-            // therefore check: is the last node also a leaf && the label is identical && right child -> idx is even
-            if (structure.size() > 1 && labels.size() > 0 &&
-                !structure.back() && labels.back() == bit &&
-                !(structure.size() & 1)) {
-
-              //TODO we could remove this to get a little bit more performance,
-              // but we could need to handle different compression cases
-
-              structure.push_back(false); // insert the leaf
-              labels.push_back(bit);
-
-              /*
-              for(auto e : structure){
-                std::cout << e;
-              }
-              std::cout << " | ";
-              for(auto e : labels){
-                std::cout << e;
-              }
-              std::cout << std::endl;
-              */
-
-              auto res = compression_function(structure.size()-1, level_offset.size()-1, structure.size() - labels.size());
-
-              while(res.first) {
-                res = compression_function(res.second[0], res.second[1], res.second[2]);
-              }
-            } else {
-              structure.push_back(false); // insert the leaf
-              labels.push_back(bit);
-            }
-
-            break;
-
-          case 0b01: // a: inner, b: leaf
-          {
-            //std::cout << "Case: 0b01" << std::endl;
-
-            // add the inner node from a
-            structure.push_back(true);
-
-            u1 bit_b = other.get_label(curr_b.node_idx);
-
-            // add the children of a to the queue
-            node left_child(this->left_child(curr_a.node_idx), node_pos++, bit_b);
-            node right_child(this->right_child(curr_a.node_idx), node_pos++, bit_b);
-
-            fifo_a.push(left_child);
-            fifo_a.push(right_child);
-
-            break;
-          }
-          case 0b10: // a: leaf, b: inner
-          {
-            //std::cout << "Case: 0b10" << std::endl;
-
-            // add the inner node from b
-            structure.push_back(true);
-
-            u1 bit_a = this->get_label(curr_a.node_idx);
-
-            // add the children of b to the queue
-            node left_child(other.left_child(curr_b.node_idx), node_pos++, bit_a);
-            node right_child(other.right_child(curr_b.node_idx), node_pos++, bit_a);
-
-            fifo_b.push(left_child);
-            fifo_b.push(right_child);
-
-            break;
-          }
-          case 0b11: // a and b: inner
-          {
-            //std::cout << "Case: 0b11" << std::endl;
-
-            // add the inner node
-            structure.push_back(true);
-
-            // add the left child of a and b
-            node left_child_a(this->left_child(curr_a.node_idx), node_pos, false);
-            node left_child_b(other.left_child(curr_b.node_idx), node_pos, false);
-            node_pos++;
-
-            node right_child_a(this->right_child(curr_a.node_idx), node_pos, false);
-            node right_child_b(other.right_child(curr_b.node_idx), node_pos, false);
-            node_pos++;
-
-            // add the children of a
-            fifo_a.push(left_child_a);
-            fifo_a.push(right_child_a);
-
-            // add the children of b
-            fifo_b.push(left_child_b);
-            fifo_b.push(right_child_b);
-
-            break;
-          }
-        }
-
-      } else { // if we are in a subtree of one of the both nodes
-
-        //std::cout << "Node a: " << curr_a.node_idx << " | " << curr_a.node_pos << " | " << curr_a.xor_bit << std::endl;
-        //std::cout << "Node b: " << curr_b.node_idx << " | " << curr_b.node_pos << " | " << curr_b.xor_bit << std::endl;
-
-        if ((curr_a.node_pos < curr_b.node_pos && curr_a.node_pos != 0) || curr_b.node_pos == 0) { // add part of the subtree of a
-
-          //std::cout << "Case: subtree_a" << std::endl;
-
-          fifo_a.pop();
-
-          if (curr_a.node_pos == next_level) {
-            level_offset.push_back(std::make_pair(structure.size(), structure.size()-labels.size()));
-            next_level = node_pos;
-            //std::cout << "   a:" << curr_a.node_idx << " next_level: " << next_level
-            //          << " Stored tuple: " << level_offset.back().first << " | " << level_offset.back().second << std::endl;
-          }
-
-          if (this->is_inner_node(curr_a.node_idx)) { // current node is an inner node -> add children to the queue
-
-            //std::cout << "Is inner node" << std::endl;
-            // add the inner node to the structure
-            structure.push_back(true);
-
-            // add the children of a to the queue
-            node left_child(this->left_child(curr_a.node_idx), node_pos++, curr_a.xor_bit);
-            node right_child(this->right_child(curr_a.node_idx), node_pos++, curr_a.xor_bit);
-
-            fifo_a.push(left_child);
-            fifo_a.push(right_child);
-
-          } else { // node is a leaf, add it to the structure
-
-            //std::cout << "Is leaf node" << std::endl;
-            // add the leaf to the structure
-            structure.push_back(false);
-            labels.push_back(this->get_label(curr_a.node_idx) ^ curr_a.xor_bit);
-          }
-
-        } else { // add part of the subtree of b
-
-          //std::cout << "Case: subtree_b" << std::endl;
-
-          fifo_b.pop();
-
-          if (curr_b.node_pos == next_level) {
-            level_offset.push_back(std::make_pair(structure.size(), structure.size()-labels.size()));
-            next_level = node_pos;
-            //std::cout << "   b: " << curr_b.node_idx << " next_level: " << next_level
-            //          << " Stored tuple: " << level_offset.back().first << " | " << level_offset.back().second << std::endl;
-          }
-
-          if (other.is_inner_node(curr_b.node_idx)) { // current node is an inner node -> add children to the queue
-
-            //std::cout << "Is inner node" << std::endl;
-
-            // add the inner node to the structure
-            structure.push_back(true);
-
-            // add the children of b to the queue
-            node left_child(other.left_child(curr_b.node_idx), node_pos++, curr_b.xor_bit);
-            node right_child(other.right_child(curr_b.node_idx), node_pos++, curr_b.xor_bit);
-
-            fifo_b.push(left_child);
-            fifo_b.push(right_child);
-
-          } else { // node is a leaf, add it to the structure
-
-            //std::cout << "Is leaf node" << std::endl;
-
-            // add the leaf to the structure
-            structure.push_back(false);
-            labels.push_back(other.get_label(curr_b.node_idx) ^ curr_b.xor_bit);
-          }
-        }
-
-        if (curr_a.node_pos == 0 && fifo_a.size() == 1) {
-          fifo_a.pop();
-        }
-
-        if (curr_b.node_pos == 0 && fifo_b.size() == 1 ) {
-          fifo_b.pop();
-        }
-      }
-
-      //dynamic_tree_mask_lo<N> tmp(structure, labels);
-      //std::cout << tmp << std::endl;
-    }
-
-    dynamic_tree_mask_lo ret(N, structure, labels);
-    //std::cout << std::endl << "Final Tree: " << ret << std::endl;
-    return ret;
-  }
-
-  /// Bitwise AND with compression of the resulting tree
-  dynamic_tree_mask_lo
-  and_compressed(const dynamic_tree_mask_lo& other) const {
-
-    struct node{
-      $u64 node_idx;
-      $u64 node_pos; // position in the more full of both trees
-
-      node() : node_idx(0), node_pos(0) {};
-
-      node(u64 idx, u64 pos) : node_idx(idx), node_pos(pos) {};
-
-      ~node() = default;
-
-      void operator=(node& other){
-        this->node_idx = other.node_idx;
-        this->node_pos = other.node_pos;
-      }
-    };
-
-    std::vector<$u1> structure;
-    std::vector<$u1> labels;
-
-    // keep track of the different level begins <structure_idx, rank>
-    std::vector<std::pair<$u64, $u64>> level_offset;
-    $u64 next_level = 0;
-
-    // TODO optimize: determine and skip common prefix
-
-    // a AND b : a = this, b = other
-    std::queue<node> fifo_a; // nodes of the next level of a
-    std::queue<node> fifo_b; // nodes of the next level of b
-
-    $u64 node_pos = 1;
-
-    // push the root-nodes into the queues
-    fifo_a.push(node(0, node_pos));
-    fifo_b.push(node(0, node_pos));
-    level_offset.push_back(std::make_pair(0, structure.size()-labels.size()));
-    node_pos++;
-    next_level = node_pos;
-
-    auto compression_function = [&](u64 node_idx, u64 level, u64 rank){
-
-      //std::cout << "Apply compression: " << node_idx << ", " << level << ", " << rank << std::endl;
-      // get the label of the two leafs
-      $u1 label = labels[node_idx - rank];
-      // calculate the rank of the parent so we can find it at the level above
-      u64 parent_rank = node_idx/2;
-
-      if(node_idx == structure.size()-1){ // Operations in O(1)
-        // delete the leaves from the structure
-        structure.pop_back(); // right leaf
-        structure.pop_back(); // left leaf
-
-        // delete the labels of those two leaves
-        labels.pop_back();
-        labels.pop_back();
-      } else {
-        // delete the leaves from the structure
-        //std::cout << "delete node: " << node_idx-1 << ", " << node_idx << std::endl;
-        structure.erase(structure.begin()+ node_idx); // right leaf
-        structure.erase(structure.begin()+ node_idx - 1); // left leaf
-
-        // delete the labels of those two leaves
-        //std::cout << "delete labels: " << node_idx-rank-1 << ", " << (node_idx - rank) << std::endl;
-        labels.erase(labels.begin() + (node_idx - rank));
-        labels.erase(labels.begin() + (node_idx - rank) - 1);
-      }
-
-      // now find the position of the parent, instead of a select we use a normal search
-      auto level_above = level_offset[level-1]; // level_offset<structure_idx, rank>
-      u64 level_begin = level_above.first;
-      $u64 current_rank = level_above.second;
-
-      for (auto i = level_begin; i < level_offset[level].first; i++) {
-
-        if (structure[i]) { // if the current node is a inner node -> increment the rank
-
-          current_rank++;
-
-          if(current_rank == parent_rank) {
-
-            structure[i] = 0;
-
-            //std::cout << "Insert at position: " << (i - current_rank +1) << " i: " << i << " curr_rank: " << current_rank << " +1 " << " label: " << label << std::endl;
-            labels.insert(labels.begin()+(i - current_rank + 1), label); // insert the new label at the right position
-
-            // update the ranks of all higher levels
-            for(auto l = level; l < level_offset.size(); l++) {
-              level_offset[l].second--;
-
-              if(l > level){
-                level_offset[l].first -= 2;
-              }
-            }
-
-            /*
-            for(auto e : structure){
-              std::cout << e;
-            }
-            std::cout << " | ";
-            for(auto e : labels){
-              std::cout << e;
-            }
-            std::cout << std::endl;
-            std::cout << "Current rank: " << current_rank << " , i:" << i << std::endl;
-            */
-
-            // check if we need to compress this new level as well
-            if(is_right_child(i)) {
-
-              //std::cout << "Is right child" << std::endl;
-              if (structure.size() > 2 && labels.size() > 1 &&
-                  !structure[i-1] && labels[i - current_rank] == label) {
-
-                return std::make_pair(true, std::vector<$u64>{i, level-1, current_rank-1});
-
-              }
-            } else { // left child
-              //std::cout << "Is left child" << std::endl;
-              if (structure.size() > 2 && labels.size() > 1 &&
-                  !structure[i+1] && labels[i+1 - (current_rank-1)] == label) {
-
-                return std::make_pair(true, std::vector<$u64>{i+1, level-1, current_rank-1});
-
-              }
-            }
-
-            return std::make_pair(false, std::vector<$u64>{0, 0, 0});
-          }
-        }
-      }
-    };
-
-    while(fifo_a.size() > 0 || fifo_b.size() > 0){
-
-      //std::cout << std::endl << "Size queue_a: " << fifo_a.size() << " queue_b: " << fifo_b.size() << std::endl;
-
-      node curr_a;
-      node curr_b;
-
-      if(fifo_a.size() > 0){
-        curr_a = fifo_a.front();
-      }
-
-      if(fifo_b.size() > 0){
-        curr_b = fifo_b.front();
-      }
-
-      if(curr_a.node_pos == curr_b.node_pos && curr_a.node_pos != 0){
-
-        fifo_a.pop();
-        fifo_b.pop();
-
-        // both nodes are no fillers
-        u8 c = static_cast<u8>(this->is_inner_node(curr_a.node_idx) |
-                               (static_cast<u8>(other.is_inner_node(curr_b.node_idx)) << 1));
-
-        $u1 bit;
-
-        // update the level-helper variables
-        if(curr_a.node_pos == next_level || curr_b.node_pos == next_level){
-
-          level_offset.push_back(std::make_pair(structure.size(), structure.size()-labels.size()));
-          next_level = node_pos;
-          //std::cout << "   a:" << curr_a.node_idx << " b: " << curr_b.node_idx << " next_level: " << next_level
-          //          << " Stored tuple: " << level_offset.back().first << " | " << level_offset.back().second << std::endl;
-        }
-
-        switch (c) {
-          case 0b00: // a and b: leaf
-            //std::cout << "Case: 0b00" << std::endl;
-
-            bit = this->get_label(curr_a.node_idx) & other.get_label(curr_b.node_idx);
-
-            // check if we later need to compress it
-            // therefore check: is the last node also a leaf && the label is identical && right child -> idx is even
-            if (structure.size() > 1 && labels.size() > 0 &&
-                !structure.back() && labels.back() == bit &&
-                !(structure.size() & 1)) {
-
-              //TODO we could remove this to get a little bit more performance,
-              // but we could need to handle different compression cases
-
-              structure.push_back(false); // insert the leaf
-              labels.push_back(bit);
-
-              auto res = compression_function(structure.size()-1, level_offset.size()-1, structure.size() - labels.size());
-
-              while(res.first) {
-                res = compression_function(res.second[0], res.second[1], res.second[2]);
-              }
-            } else {
-              structure.push_back(false); // insert the leaf
-              labels.push_back(bit);
-            }
-            break;
-
-          case 0b01: // a: inner, b: leaf
-          {
-            //std::cout << "Case: 0b01" << std::endl;
-
-            if(!other.get_label(curr_b.node_idx)){ // a & 0 -> leaf 0
-
-              // check if we later need to compress it
-              // therefore check: is the last node also a leaf && the label is identical && right child -> idx is even
-              if (structure.size() > 1 && labels.size() > 0 &&
-                  !structure.back() && !labels.back() &&
-                  !(structure.size() & 1)) {
-
-                structure.push_back(false); // insert the leaf
-                labels.push_back(false);
-
-                auto res = compression_function(structure.size()-1, level_offset.size()-1, structure.size() - labels.size());
-
-                while(res.first) {
-                  res = compression_function(res.second[0], res.second[1], res.second[2]);
-                }
-              } else {
-                structure.push_back(false); // insert the leaf
-                labels.push_back(false);
-              }
-
-            } else {
-              // add the inner node from a
-              structure.push_back(true);
-
-              // add the children of a to the queue
-              node left_child(this->left_child(curr_a.node_idx), node_pos++);
-              node right_child(this->right_child(curr_a.node_idx), node_pos++);
-
-              fifo_a.push(left_child);
-              fifo_a.push(right_child);
-            }
-
-            break;
-          }
-          case 0b10: // a: leaf, b: inner
-          {
-            //std::cout << "Case: 0b10" << std::endl;
-
-            if(!this->get_label(curr_a.node_idx)){ // 0 & b -> leaf 0
-
-              // check if we later need to compress it
-              // therefore check: is the last node also a leaf && the label is identical && right child -> idx is even
-              if (structure.size() > 1 && labels.size() > 0 &&
-                  !structure.back() && !labels.back() &&
-                  !(structure.size() & 1)) {
-
-                structure.push_back(false); // insert the leaf
-                labels.push_back(false);
-
-                auto res = compression_function(structure.size()-1, level_offset.size()-1, structure.size() - labels.size());
-
-                while(res.first) {
-                  res = compression_function(res.second[0], res.second[1], res.second[2]);
-                }
-              } else {
-                structure.push_back(false); // insert the leaf
-                labels.push_back(false);
-              }
-
-            } else {
-              // add the inner node from a
-              structure.push_back(true);
-
-              // add the children of a to the queue
-              node left_child(other.left_child(curr_b.node_idx), node_pos++);
-              node right_child(other.right_child(curr_b.node_idx), node_pos++);
-
-              fifo_b.push(left_child);
-              fifo_b.push(right_child);
-            }
-
-            break;
-          }
-          case 0b11: // a and b: inner
-          {
-            //std::cout << "Case: 0b11" << std::endl;
-
-            // add the inner node
-            structure.push_back(true);
-
-            // add the left child of a and b
-            node left_child_a(this->left_child(curr_a.node_idx), node_pos);
-            node left_child_b(other.left_child(curr_b.node_idx), node_pos);
-            node_pos++;
-
-            node right_child_a(this->right_child(curr_a.node_idx), node_pos);
-            node right_child_b(other.right_child(curr_b.node_idx), node_pos);
-            node_pos++;
-
-            // add the children of a
-            fifo_a.push(left_child_a);
-            fifo_a.push(right_child_a);
-
-            // add the children of b
-            fifo_b.push(left_child_b);
-            fifo_b.push(right_child_b);
-
-            break;
-          }
-        }
-
-      } else { // if we are in a subtree of one of the both nodes
-
-        //std::cout << "Node a: " << curr_a.node_idx << " | " << curr_a.node_pos << std::endl;
-        //std::cout << "Node b: " << curr_b.node_idx << " | " << curr_b.node_pos << std::endl;
-
-        if((curr_a.node_pos < curr_b.node_pos && curr_a.node_pos != 0) || curr_b.node_pos == 0){ // add part of the subtree of a
-
-          //std::cout << "Case: subtree_a" << std::endl;
-
-          fifo_a.pop();
-
-          if (curr_a.node_pos == next_level) {
-            level_offset.push_back(std::make_pair(structure.size(), structure.size()-labels.size()));
-            next_level = node_pos;
-            //std::cout << "   a:" << curr_a.node_idx << " next_level: " << next_level
-            //          << " Stored tuple: " << level_offset.back().first << " | " << level_offset.back().second << std::endl;
-          }
-
-          if(this->is_inner_node(curr_a.node_idx)){ // current node is an inner node -> add children to the queue
-
-            //std::cout << "Is inner node" << std::endl;
-            // add the inner node to the structure
-            structure.push_back(true);
-
-            // add the children of a to the queue
-            node left_child(this->left_child(curr_a.node_idx), node_pos++);
-            node right_child(this->right_child(curr_a.node_idx), node_pos++);
-
-            fifo_a.push(left_child);
-            fifo_a.push(right_child);
-
-          } else { // node is a leaf, add it to the structure
-
-            //std::cout << "Is leaf node" << std::endl;
-            // add the leaf to the structure
-            structure.push_back(false);
-            labels.push_back(this->get_label(curr_a.node_idx));
-          }
-
-        } else { // add part of the subtree of b
-
-          //std::cout << "Case: subtree_b" << std::endl;
-
-          fifo_b.pop();
-
-          if (curr_b.node_pos == next_level) {
-            level_offset.push_back(std::make_pair(structure.size(), structure.size()-labels.size()));
-            next_level = node_pos;
-            //std::cout << "   b: " << curr_b.node_idx << " next_level: " << next_level
-            //          << " Stored tuple: " << level_offset.back().first << " | " << level_offset.back().second << std::endl;
-          }
-
-          if(other.is_inner_node(curr_b.node_idx)){ // current node is an inner node -> add children to the queue
-
-            //std::cout << "Is inner node" << std::endl;
-
-            // add the inner node to the structure
-            structure.push_back(true);
-
-            // add the children of b to the queue
-            node left_child(other.left_child(curr_b.node_idx), node_pos++);
-            node right_child(other.right_child(curr_b.node_idx), node_pos++);
-
-            fifo_b.push(left_child);
-            fifo_b.push(right_child);
-
-          } else { // node is a leaf, add it to the structure
-
-            //std::cout << "Is leaf node" << std::endl;
-
-            // add the leaf to the structure
-            structure.push_back(false);
-            labels.push_back(other.get_label(curr_b.node_idx));
-          }
-        }
-
-        if(curr_a.node_pos == 0 && fifo_a.size() == 1){
-          fifo_a.pop();
-        }
-
-        if(curr_b.node_pos == 0 && fifo_b.size() == 1 ){
-          fifo_b.pop();
-        }
-      }
-
-      //dynamic_tree_mask_lo tmp(structure, labels);
-      //std::cout << tmp << std::endl;
-    }
-
-    dynamic_tree_mask_lo ret(N, structure, labels);
-
-    return ret;
-  }
-
+  /// Return the name of the implementation.
   static std::string
   name() {
     return "dynamic_tree_mask_lo";
@@ -1568,7 +938,7 @@ public:
       node_idx = 2 * r - 1 + bit; // right child if bit is set, left child otherwise
       if (is_leaf_node(node_idx)) {
         u64 label_idx = node_idx - rank(node_idx);
-        auto label = lo_label[label_idx];
+        auto label = labels_[label_idx];
         return label;
       }
     }
@@ -1578,15 +948,186 @@ public:
 
   u1
   all() {
-    return lo_struc[0] == false // root is the only node (a leaf)
-        && lo_label[0] == true; // and the label is 1
+    return structure_[0] == false // root is the only node (a leaf)
+        && labels_[0] == true; // and the label is 1
   }
 
   u1
   none() {
-    return lo_struc[0] == false // root is the only node (a leaf)
-        && lo_label[0] == false; // and the label is 0
+    return structure_[0] == false // root is the only node (a leaf)
+        && labels_[0] == false; // and the label is 0
   }
+
+
+  //===----------------------------------------------------------------------===//
+  /// 1-fill iterator, with skip support.
+  struct iter {
+
+    using path_t = uint64_t;
+    static constexpr path_t path_msb = path_t(1) << (sizeof(path_t) * 8 - 1);
+
+    const dynamic_tree_mask_lo& tm_;
+    u64 tree_height = dtl::log_2(tm_.N);
+
+
+    //===----------------------------------------------------------------------===//
+    // Iterator state
+    //===----------------------------------------------------------------------===//
+
+    std::stack<std::pair<$u64, path_t>> stack_;
+
+    /// encodes the path to the current node (the highest set bit is a sentinel bit)
+    path_t path_ = 1;
+    /// the level of the current tree node
+    $u64 level_ = 0; // FIXME somewhat redundant with path and length
+    /// points to the beginning of a 1-fill
+    $u64 pos_ = 0;
+    /// the length of the current 1-fill
+    $u64 length_ = tm_.N;
+    //===----------------------------------------------------------------------===//
+
+    void
+    next() {
+      while (!stack_.empty()) {
+        u64 node_idx = stack_.top().first;
+        u64 path = stack_.top().second;
+        stack_.pop();
+        if (!tm_.is_leaf_node(node_idx)) {
+          // goto left child
+          auto r = tm_.rank(node_idx + 1);
+          const auto left_child = 2 * r - 1;
+          const auto right_child = 2 * r;
+          stack_.push(std::make_pair(right_child, (path << 1) | 1));
+          stack_.push(std::make_pair(left_child, path << 1));
+        }
+        else {
+          u1 label = tm_.get_label(node_idx);
+          if (label) {
+            // produce output (a 1-fill)
+            const auto lz_cnt_path = dtl::bits::lz_count(path);
+            level_ = sizeof(path_t) * 8 - 1 - lz_cnt_path;
+            pos_ = (path ^ (path_msb >> lz_cnt_path)) << (tree_height - level_); // toggle sentinel bit (= highest bit set) and add offset
+            length_ = tm_.N >> level_; // the length of the 1-fill
+            path_ = path;
+            return;
+          }
+        }
+      }
+      pos_ = tm_.N;
+    }
+
+    explicit
+    iter(const dynamic_tree_mask_lo& tm) : tm_(tm) {
+      const auto n_log2 = dtl::log_2(tm_.N);
+      u64 root_node_idx = 0;
+      if (tm.is_leaf_node(root_node_idx)) {
+        u1 label = tm.get_label(root_node_idx);
+        if (label) {
+          pos_ = 0;
+          length_ = tm.N;
+          level_ = 0;
+        }
+        else {
+          pos_ = tm.N;
+        }
+        return;
+      }
+      stack_.push(std::make_pair(root_node_idx, path_t(1)));
+      next();
+    }
+
+    void skip_to(std::size_t to_pos) {
+      assert(to_pos >= pos_ + length_);
+
+      // determine the common ancestor
+      const auto shift_amount = ((sizeof(path_t) * 8) - level_);
+      const auto a = path_ << shift_amount;
+      const auto b = to_pos << shift_amount;
+      const auto a_xor_b = a ^ b;
+      const auto common_prefix_len = a_xor_b == 0 ? 0 : dtl::bits::lz_count(a_xor_b);
+
+
+      // walk up the tree to the common ancestor
+//      stack_.pop(); // requires the TM to be compressed?
+      const auto level_of_common_ancestor = common_prefix_len;
+      while (true) {
+        $u64 node_idx = stack_.top().first;
+        $u64 path = stack_.top().second;
+        const auto lz_cnt_path = dtl::bits::lz_count(path);
+        const auto level = sizeof(path_t) * 8 - 1 - lz_cnt_path;
+        if (level_of_common_ancestor + 1 == level) {
+          level_ = level;
+          break;
+        }
+        stack_.pop();
+        if (stack_.empty()) {
+          // end
+          pos_ = tm_.N;
+        }
+      }
+
+      // common ancestor
+      $u64 node_idx = stack_.top().first;
+      $u64 path = stack_.top().second;
+      stack_.pop();
+
+      // walk down the tree to the desired position
+      std::size_t i = tree_height - level_ - 1;
+      while (true) {
+
+        // first check, if this is already a leaf node
+        if (tm_.is_leaf_node(node_idx)) {
+          // reached the desired position
+          if (tm_.get_label(node_idx)) {
+            // done
+            const auto lz_cnt_path = dtl::bits::lz_count(path);
+            pos_ = (path ^ (path_msb >> lz_cnt_path)) << (tree_height - level_); // toggle sentinel bit (= highest bit set) and add offset
+            length_ = tm_.N >> level_; // the length of the 1-fill
+            length_ -= to_pos - pos_;
+            pos_ = to_pos;
+            return;
+          }
+          else {
+            // search forward to the next 1-fill
+            next();
+            return;
+          }
+        }
+
+        // navigate downwards the tree
+        u1 bit = dtl::bits::bit_test(to_pos, i--); // 0 -> goto left child, 1 -> goto right child
+        const auto r = tm_.rank(node_idx + 1);
+        const auto left_child = 2 * r - 1;
+        const auto right_child = 2 * r;
+        level_++;
+        if (!bit) {
+          // goto left child
+          stack_.push(std::make_pair(right_child, (path << 1) | 1));
+          path <<= 1;
+          node_idx = left_child;
+        }
+        else {
+          // goto right child
+          path = (path << 1) | 1;
+          node_idx = right_child;
+        }
+
+      }
+    }
+
+    u1
+    end() {
+      return pos_ == tm_.N;
+    }
+
+  };
+
+  iter
+  it() const {
+    return iter(*this);
+  }
+
+
 
 };
 
