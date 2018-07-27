@@ -12,7 +12,8 @@ struct rank1 {
 
   using size_type = $u32;
   std::vector<size_type> lut;
-  static constexpr u64 lut_entry_span = 4096; // bits
+//  static constexpr u64 lut_entry_span = 4096; // bits
+  static constexpr u64 lut_entry_span = 512; // bits
 
   std::vector<$u64> bitmap_;
 
@@ -31,8 +32,42 @@ struct rank1 {
     std::swap(bitmap_, clone);
   }
 
+  // TODO remove redundancy (for testing purposes only)
+  void
+  copy(boost::dynamic_bitset<$u32>& bitmap) {
+    std::vector<$u64> clone;
+    clone.resize((bitmap.size() + 63) / 64);
+    for (std::size_t i = 0; i < bitmap.size(); i++) {
+      if (bitmap[i]) {
+        u64 word_idx = i / 64;
+        u64 bit_idx = i % 64;
+        clone[word_idx] |= u64(1) << bit_idx;
+      }
+    }
+    std::swap(bitmap_, clone);
+  }
+
+  // TODO remove the first LuT entry (to save 4 byte)
   void
   init(std::vector<$u1>& bitmap) {
+    copy(bitmap);
+    u64 bitmap_size = bitmap.size();
+    u64 lut_entry_cnt = (bitmap_size + (lut_entry_span - 1)) / lut_entry_span;
+    lut.resize(lut_entry_cnt, 0);
+    size_type bit_cntr = 0;
+    $u64 lut_write_pos = 0;
+    for ($u64 i = 0; i < bitmap_size; i++) {
+      if (i % lut_entry_span == 0) {
+        assert(lut_write_pos < lut_entry_cnt);
+        lut[lut_write_pos] = bit_cntr;
+        lut_write_pos++;
+      }
+      bit_cntr += bitmap[i];
+    }
+  }
+
+  void
+  init(boost::dynamic_bitset<$u32>& bitmap) {
     copy(bitmap);
     u64 bitmap_size = bitmap.size();
     u64 lut_entry_cnt = (bitmap_size + (lut_entry_span - 1)) / lut_entry_span;
