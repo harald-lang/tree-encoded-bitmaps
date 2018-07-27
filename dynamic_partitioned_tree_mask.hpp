@@ -25,6 +25,14 @@ public:
 
   std::vector<tree_mask_t> tree_masks_;
 
+private:
+
+  dynamic_partitioned_tree_mask(u64 n, u64 partition_cnt, u64 part_n, u64 part_n_log2, u64 part_n_mask)
+      : N(n), partition_cnt(partition_cnt),
+        part_n(part_n), part_n_log2(part_n_log2), part_n_mask(part_n_mask) { }
+
+public:
+
   /// C'tor
   explicit
   dynamic_partitioned_tree_mask(const boost::dynamic_bitset<$u32>& bitmask, u64 partition_cnt = 8)
@@ -50,10 +58,10 @@ public:
         part_bitmask[i] = bitmask[i + offset];
       }
       tree_masks_.emplace_back(part_bitmask);
-      std::cout << "is true: " << tree_masks_.back().all()
-                << ", is false: " << tree_masks_.back().none()
-                << ", size: " << tree_masks_.back().size_in_byte()
-                << std::endl;
+//      std::cout << "is true: " << tree_masks_.back().all()
+//                << ", is false: " << tree_masks_.back().none()
+//                << ", size: " << tree_masks_.back().size_in_byte()
+//                << std::endl;
     }
   }
 
@@ -111,7 +119,11 @@ public:
   /// Bitwise AND without compression of the resulting tree
   dynamic_partitioned_tree_mask
   operator&(const dynamic_partitioned_tree_mask& other) const {
-    // TODO
+    dynamic_partitioned_tree_mask ret_val(N, partition_cnt, part_n, part_n_log2, part_n_mask);
+    for ($u64 pid = 0; pid < partition_cnt; pid++) {
+      ret_val.tree_masks_.emplace_back(tree_masks_[pid] & other.tree_masks_[pid]);
+    }
+    return ret_val;
   }
 
   /// Bitwise AND (range encoding)
