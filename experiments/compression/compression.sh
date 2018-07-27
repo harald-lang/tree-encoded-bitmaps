@@ -130,8 +130,8 @@ echo "considering $f_cnt different values for f."
 
 # adjust y scale for plot
 #yscale=`echo "scale=5; 0.0305/$n_cnt" |bc`
-xscale="0.5"
-yscale="0.5"
+xscale="0.7"
+yscale="0.7"
 
 # Bitmap types
 bitmaps=`$SQL "select distinct name as name from raw_results order by name;"`
@@ -295,7 +295,7 @@ select d, f,
                                  'ratio', (((r1.n  + 7) / 8 + 4) * 1.0) / r1.size_avg
                                  ) as info
                 from results r1 where r1.d = d_values.d and r1.f = f_values.f
-                 and (r1.name like 'tree_mask%' or r1.name like 'wah%')
+                 and (r1.name like 'tree_mask%' or r1.name like 'wah%' or r1.name like 'bitmap')
                order by r1.size_avg limit 1)
           ) as info
          from d_values, f_values
@@ -310,8 +310,8 @@ echo "writing plot file: `basename $PLOTFILE`"
 plotcolor=0
 
 for f in $bitmaps; do
-plotcolor=$((plotcolor + 1))
-
+plotcolor=$(get_color $f)
+mark=$(get_mark $f)
 tmpfile=`mktemp`
 echo ".mode tab
 select d, f, 'def' from skyline_treemask_vs_wah where name = '$f' order by d, f;" | $SQL > $tmpfile
@@ -324,7 +324,7 @@ echo "
   only marks,
   point meta=explicit symbolic,
   scatter/classes={
-    def={mark=square*,xscale=$xscale,yscale=$yscale,plotcolor$plotcolor}
+    def={mark=$mark,xscale=$xscale,yscale=$yscale,$plotcolor}
   }%
 ]
 table[meta=label] {
@@ -333,18 +333,7 @@ d f label
 
 cat $tmpfile >> $PLOTFILE
 
-f_name="n/a"
-if [[ $f == *"roaring"* ]]; then
-    f_name="Roaring"
-elif [[ $f == *"tree_mask_lo"* ]]; then
-    f_name="TEB-lo"
-elif [[ $f == "tree_mask_po" ]]; then
-    f_name="TEB-po"
-elif [[ $f == *"wah"* ]]; then
-    f_name="WAH"
-elif [[ $f == "bitmap" ]]; then
-    f_name="uncompressed bitmap"
-fi
+f_name=$(get_print_name $f)
 echo "
 }; % end of table
 \addlegendentry{$f_name}
@@ -375,7 +364,7 @@ select d, f,
                                  'ratio', (((r1.n  + 7) / 8 + 4) * 1.0) / r1.size_avg
                                  ) as info
                 from results r1 where r1.d = d_values.d and r1.f = f_values.f
-                 and (r1.name like 'tree_mask%' or r1.name like 'roaring%')
+                 and (r1.name like 'tree_mask%' or r1.name like 'roaring%' or r1.name like 'bitmap')
                order by r1.size_avg limit 1)
           ) as info
          from d_values, f_values
@@ -386,9 +375,8 @@ select d, f,
 PLOTFILE="skyline_compression_treemask_vs_roaring.tex"
 echo -n "" > $PLOTFILE
 echo "writing plot file: `basename $PLOTFILE`"
-
-plotcolor=0
-
+plotcolor=$(get_color $f)
+mark=$(get_mark $f)
 for f in $bitmaps; do
 plotcolor=$((plotcolor + 1))
 
@@ -404,7 +392,7 @@ echo "
   only marks,
   point meta=explicit symbolic,
   scatter/classes={
-    def={mark=square*,xscale=$xscale,yscale=$yscale,plotcolor$plotcolor}
+    def={mark=$mark,xscale=$xscale,yscale=$yscale,$plotcolor}
   }%
 ]
 table[meta=label] {
@@ -413,18 +401,7 @@ d f label
 
 cat $tmpfile >> $PLOTFILE
 
-f_name="n/a"
-if [[ $f == *"roaring"* ]]; then
-    f_name="Roaring"
-elif [[ $f == *"tree_mask_lo"* ]]; then
-    f_name="TEB-lo"
-elif [[ $f == "tree_mask_po" ]]; then
-    f_name="TEB-po"
-elif [[ $f == *"wah"* ]]; then
-    f_name="WAH"
-elif [[ $f == "bitmap" ]]; then
-    f_name="uncompressed bitmap"
-fi
+f_name=$(get_print_name $f)
 echo "
 }; % end of table
 \addlegendentry{$f_name}
@@ -455,7 +432,7 @@ select d, f,
                                  'ratio', (((r1.n  + 7) / 8 + 4) * 1.0) / r1.size_avg
                                  ) as info
                 from results r1 where r1.d = d_values.d and r1.f = f_values.f
-                 and (r1.name like 'wah%' or r1.name like 'roaring%')
+                 and (r1.name like 'wah%' or r1.name like 'roaring%' or r1.name like 'bitmap')
                order by r1.size_avg limit 1)
           ) as info
          from d_values, f_values
@@ -470,8 +447,8 @@ echo "writing plot file: `basename $PLOTFILE`"
 plotcolor=0
 
 for f in $bitmaps; do
-plotcolor=$((plotcolor + 1))
-
+plotcolor=$(get_color $f)
+mark=$(get_mark $f)
 tmpfile=`mktemp`
 echo ".mode tab
 select d, f, 'def' from skyline_roaring_vs_wah where name = '$f' order by d, f;" | $SQL > $tmpfile
@@ -484,7 +461,7 @@ echo "
   only marks,
   point meta=explicit symbolic,
   scatter/classes={
-    def={mark=square*,xscale=$xscale,yscale=$yscale,plotcolor$plotcolor}
+    def={mark=$mark,xscale=$xscale,yscale=$yscale,$plotcolor}
   }%
 ]
 table[meta=label] {
@@ -493,20 +470,7 @@ d f label
 
 cat $tmpfile >> $PLOTFILE
 
-f_name="n/a"
-if [[ $f == *"roaring"* ]]; then
-    f_name="Roaring"
-elif [[ $f == *"tree_mask_lo"* ]]; then
-    f_name="TEB-lo"
-elif [[ $f == "tree_mask_po" ]]; then
-    f_name="TEB-po"
-elif [[ $f == *"wah"* ]]; then
-    f_name="WAH"
-elif [[ $f == "bitmap" ]]; then
-    f_name="uncompressed bitmap"
-elif [[ $f == "bitmap" ]]; then
-    f_name="uncompressed bitmap"
-fi
+f_name=$(get_print_name $f)
 echo "
 }; % end of table
 \addlegendentry{$f_name}

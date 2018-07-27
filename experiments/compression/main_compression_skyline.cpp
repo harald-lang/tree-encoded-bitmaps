@@ -11,65 +11,6 @@
 
 $i32 main() {
 
-//  //===----------------------------------------------------------------------===//
-//  // Bit density
-//  u64 d_lo = dtl::next_power_of_two(dtl::env<$u64>::get("D_LO", 1ull << 10));
-//  u64 d_lo_log2 = dtl::log_2(d_lo);
-//  u64 d_hi = dtl::next_power_of_two(dtl::env<$u64>::get("D_HI", 1ull << 28));
-//  u64 d_hi_log2 = dtl::log_2(d_hi);
-//  //===----------------------------------------------------------------------===//
-//
-//  //===----------------------------------------------------------------------===//
-//  // Clustering factor
-//  u64 f_lo = dtl::next_power_of_two(dtl::env<$u64>::get("F_LO", 1ull));
-//  u64 f_lo_log2 = dtl::log_2(d_lo);
-//  u64 f_hi = dtl::next_power_of_two(dtl::env<$u64>::get("F_HI", 1ull << 28));
-//  u64 f_hi_log2 = dtl::log_2(d_hi);
-//  //===----------------------------------------------------------------------===//
-//
-//  // all valid n's
-//  const std::set<$u64> n_s = [&]() {
-//    std::set<$u64> n_s;
-//
-//    for ($u64 d_log2 = d_lo_log2; d_log2 <= d_hi_log2; d_log2++) {
-//      const std::vector<$f64> exp {
-//          d_log2 +  0 * 0.0625,
-//          d_log2 +  1 * 0.0625,
-//          d_log2 +  2 * 0.0625,
-//          d_log2 +  3 * 0.0625,
-//          d_log2 +  4 * 0.0625,
-//          d_log2 +  5 * 0.0625,
-//          d_log2 +  6 * 0.0625,
-//          d_log2 +  7 * 0.0625,
-//          d_log2 +  8 * 0.0625,
-//          d_log2 +  9 * 0.0625,
-//          d_log2 + 10 * 0.0625,
-//          d_log2 + 11 * 0.0625,
-//          d_log2 + 12 * 0.0625,
-//          d_log2 + 13 * 0.0625,
-//          d_log2 + 14 * 0.0625,
-//          d_log2 + 15 * 0.0625,
-//          d_log2 + 16 * 0.0625,
-//      };
-//
-//      for (auto e : exp) {
-//        u64 n = std::pow(2, e);
-//        if ((n * b_lo) > m_hi) continue; // make sure to not exceed the max filter size
-//        n_s.insert(n);
-//      }
-//    }
-//    return n_s;
-//  }();
-//
-//  std::cout << "---------------------" << std::endl;
-//  std::cout << "d's:" << std::endl;
-//  for (auto d : n_s) {
-//    std::cout << d << " " << std::endl;
-//  }
-//  std::cout << "---------------------" << std::endl;
-//
-
-
   std::cerr << "run_id=" << RUN_ID << std::endl;
   std::vector<$f64> clustering_factors;
   std::cerr << "f:" << std::endl;
