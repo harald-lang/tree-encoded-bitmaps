@@ -1127,7 +1127,77 @@ public:
     return iter(*this);
   }
 
+  struct iter_alex {
 
+      const dynamic_tree_mask_lo& tm;
+      u64 tree_height = dtl::log_2(tm.N);
+
+      //===----------------------------------------------------------------------===//
+      // Iterator state
+      //===----------------------------------------------------------------------===//
+
+      /// <level, node position in struct>
+      using node = std::pair<$u64, u64>;
+
+      std::list<node> state;
+
+      /// points to the beginning of a 1-fill
+      $u64 pos = 0; //
+
+      /// the length of the current 1-fill
+      $u64 length = tm.N;
+
+
+      void next() {
+
+        while (!state.empty()) {
+          u64 level = state.front().first;
+          u64 node_idx = state.front().second;
+          state.pop_front();
+
+          if (!tm.is_leaf_node(node_idx)) {
+
+            const auto rank = tm.rank(node_idx);
+            const auto l_child = 2 * rank - 1;
+            const auto r_child = 2 * rank;
+
+            state.push_front(std::make_pair(level + 1, r_child));
+            state.push_front(std::make_pair(level + 1, l_child));
+          } else {
+
+            u1 label = tm.get_label(node_idx);
+
+            if (label) { // true
+
+              //TODO
+              length = 1 << (tree_height - level); // // todo nachrechnen ob das stimmt
+
+              return;
+            } else {
+              // increment the pos and proceed
+              pos +=  1 << (tree_height - level); // todo nachrechnen ob das stimmt
+            }
+          }
+
+        }
+
+        pos = tm.N;
+      }
+
+      explicit
+      iter(const dynamic_tree_mask_lo& tm){
+      }
+
+
+      void skip_to() {
+
+      }
+      
+      u1 end() {
+        return pos == tm.N;
+      }
+
+  };
 
 };
 
