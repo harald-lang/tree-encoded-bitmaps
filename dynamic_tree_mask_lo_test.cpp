@@ -139,5 +139,18 @@ TEST(dynamic_tree_mask_lo, skip_beyond_last_1fill) {
 TEST(dynamic_tree_mask_lo, skip_into_a_1fill) {
   skip_test(8, 0b11111101, 6, 6, 2);
 }
+
+TEST(dynamic_tree_mask_lo, skip_multiple_times) {
+  dtl::bitmap b(8, 0b11001101);
+  dtl::dynamic_tree_mask_lo tm(b);
+  std::cout << tm << std::endl;
+  auto it = tm.it();
+  it.skip_to(2);
+  ASSERT_EQ(it.pos_, 2);
+  ASSERT_EQ(it.length_, 2);
+  it.skip_to(6);
+  ASSERT_EQ(it.pos_, 6);
+  ASSERT_EQ(it.length_, 2);
+}
 //===----------------------------------------------------------------------===//
 

@@ -5,7 +5,7 @@
 #include <queue>
 #include <vector>
 
-#include <dtl/tree_mask.hpp>
+#include <dtl_storage/tree_mask.hpp>
 #include <stack>
 
 #include "boost/dynamic_bitset.hpp"
@@ -974,7 +974,8 @@ public:
     // Iterator state
     //===----------------------------------------------------------------------===//
 
-    std::stack<std::pair<$u64, path_t>> stack_;
+//    std::stack<std::pair<$u64, path_t>> stack_;
+    std::stack<$u64> stack_;
 
     /// encodes the path to the current node (the highest set bit is a sentinel bit)
     path_t path_ = 1;
@@ -989,16 +990,21 @@ public:
     void
     next() {
       while (!stack_.empty()) {
-        u64 node_idx = stack_.top().first;
-        u64 path = stack_.top().second;
+        u64 pair = stack_.top();
+        u64 node_idx = pair >> 32;
+        u64 path = pair & ((u64(1) << 32) - 1);
         stack_.pop();
-        if (!tm_.is_leaf_node(node_idx)) {
+        if (likely(!tm_.is_leaf_node(node_idx))) {
           // goto left child
-          auto r = tm_.rank(node_idx + 1);
-          const auto left_child = 2 * r - 1;
+          const auto r = tm_.rank(node_idx + 1);
           const auto right_child = 2 * r;
-          stack_.push(std::make_pair(right_child, (path << 1) | 1));
-          stack_.push(std::make_pair(left_child, path << 1));
+          const auto left_child = right_child - 1;
+          const auto left_child_path = path << 1;
+          const auto right_child_path = left_child_path | 1;
+          stack_.push((right_child << 32) | right_child_path);
+          stack_.push((left_child << 32) | left_child_path);
+//          stack_.push(std::make_pair(right_child, right_child_path));
+//          stack_.push(std::make_pair(left_child, left_child_path));
         }
         else {
           u1 label = tm_.get_label(node_idx);
@@ -1032,7 +1038,9 @@ public:
         }
         return;
       }
-      stack_.push(std::make_pair(root_node_idx, path_t(1)));
+//      stack_.push(std::make_pair(root_node_idx, path_t(1)));
+      stack_.push((root_node_idx << 32) | 1);
+
       next();
     }
 
@@ -1050,8 +1058,11 @@ public:
 //      stack_.pop(); // requires the TM to be compressed?
       const auto level_of_common_ancestor = common_prefix_len;
       while (true) {
-        $u64 node_idx = stack_.top().first;
-        $u64 path = stack_.top().second;
+        u64 pair = stack_.top();
+        u64 node_idx = pair >> 32;
+        u64 path = pair & ((u64(1) << 32) - 1);
+//        $u64 node_idx = stack_.top().first;
+//        $u64 path = stack_.top().second;
         const auto lz_cnt_path = dtl::bits::lz_count(path);
         const auto level = sizeof(path_t) * 8 - 1 - lz_cnt_path;
         if (level_of_common_ancestor + 1 == level) {
@@ -1066,8 +1077,11 @@ public:
       }
 
       // common ancestor
-      $u64 node_idx = stack_.top().first;
-      $u64 path = stack_.top().second;
+      u64 pair = stack_.top();
+      $u64 node_idx = pair >> 32;
+      $u64 path = pair & ((u64(1) << 32) - 1);
+//      $u64 node_idx = stack_.top().first;
+//      $u64 path = stack_.top().second;
       stack_.pop();
 
       // walk down the tree to the desired position
@@ -1102,7 +1116,8 @@ public:
         level_++;
         if (!bit) {
           // goto left child
-          stack_.push(std::make_pair(right_child, (path << 1) | 1));
+//          stack_.push(std::make_pair(right_child, (path << 1) | 1));
+          stack_.push((right_child << 32) | ((path << 1) | 1));
           path <<= 1;
           node_idx = left_child;
         }

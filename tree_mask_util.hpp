@@ -3,7 +3,7 @@
 #include <bitset>
 
 #include <dtl/dtl.hpp>
-#include <dtl/tree.hpp>
+#include <dtl_storage/tree.hpp>
 
 namespace dtl {
 

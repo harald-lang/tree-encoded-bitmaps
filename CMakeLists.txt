@@ -14,13 +14,16 @@ include_directories(../CRoaring/include)
 include_directories(../sdsl-lite/include)
 
 add_subdirectory(../dtl dtl)
-include_directories(../)
+include_directories(../dtl/src)
+include_directories(dtl_storage/src)
+include_directories(../) #TODO remove
 
 add_subdirectory(thirdparty/gtest)
 include_directories(thirdparty/gtest/include lib/googletest)
 
 set(TEST_FILES
         api_test.cpp
+        bitmap_view_test.cpp
         dynamic_tree_mask_lo_test.cpp
         )
 add_executable(tester ${TEST_FILES})
@@ -48,6 +51,7 @@ set(COMPETITORS_SOURCE_FILES
 set(SOURCE_FILES
         ${TREE_MASK_SOURCE_FILES}
         ${COMPETITORS_SOURCE_FILES}
+        bitmap_view.hpp
         index.hpp
         two_state_markov_process.hpp
         static_stack.hpp

@@ -261,7 +261,7 @@ int t_main() {
   two_state_markov_process mp(10, 0.01);
 //  dtl::bitset<N> mp_out;
   std::bitset<N> mp_out;
-//  boost::dynamic_bitset<> mp_out(N);
+//  boost::bitmap_view<> mp_out(N);
 //  sdsl::bit_vector mp_out(N); // does not have a count() function
   for (std::size_t i = 0; i < N; i++) {
     mp_out[i] = mp.next();

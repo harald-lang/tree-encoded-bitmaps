@@ -15,7 +15,7 @@
 #include <navin/util.hpp>
 
 // The number of independent runs.
-static constexpr u64 RUNS = 10;
+static constexpr u64 RUNS = 100000;
 //static constexpr u64 N = 1u << 20;
 static constexpr u64 N = 1u << 17;
 
@@ -238,7 +238,7 @@ $i32 main() {
 
   std::cerr << "run_id=" << std::endl;
 
-  point_queries();
+//  point_queries();
 //
 //  const auto f_a = 200;
 //  const auto d_a = 0.15;
@@ -254,5 +254,51 @@ $i32 main() {
 ////  run_and<dtl::tree_mask_o<N>>              (f_a, d_a, f_b, d_b, bitmap_a, bitmap_b, std::cout);
 //  run_and<dtl::dynamic_tree_mask_lo>         (f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout);
 //  run_and<dtl::dynamic_partitioned_tree_mask>(f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout);
+
+  const auto f_a = 60;
+  const auto d_a = 0.05;
+  const auto bitmap_a = gen_bitmap(f_a, d_a);
+  const auto dynamic_bitmap_a = to_dynamic_bitset(bitmap_a);
+  const auto one_fill_cnt = count_1fills(bitmap_a);
+
+  {
+
+    dtl::dynamic_tree_mask_lo tm(dynamic_bitmap_a);
+
+    const auto nanos_begin = now_nanos();
+    $u64 pos = 0;
+    $u64 len = 0;
+    for (std::size_t r = 0; r < RUNS; r++) {
+      auto it = tm.it();
+      while (!it.end()) {
+        pos += it.pos_;
+        len += it.length_;
+        it.next();
+      }
+    }
+    const auto nanos_end = now_nanos();
+    std::cout << "size=" << tm.size_in_byte() << " (" << (dynamic_bitmap_a.size() + 7 / 8) << ")" <<  std::endl;
+    std::cout << "1fill count=" << one_fill_cnt << std::endl;
+    std::cout << pos << ", " << len << std::endl;
+    std::cout << ((nanos_end - nanos_begin) * 1.0) / (N * RUNS) << " [ns/elem]" << std::endl;
+    std::cout << ((nanos_end - nanos_begin) * 1.0) / (N * RUNS * d_a) << " [ns/1bit]" << std::endl;
+    std::cout << ((nanos_end - nanos_begin) * 1.0) / (one_fill_cnt * RUNS) << " [ns/1fill]" << std::endl;
+  }
+
+//    {
+//      const auto nanos_begin = now_nanos();
+//      $u64 pos = 0;
+//      pos = dynamic_bitmap_a.find_first();
+//      while (true) {
+//        pos = dynamic_bitmap_a.find_next(pos);
+//        if (pos >= N)
+//          break;
+//      }
+//      const auto nanos_end = now_nanos();
+//      std::cout << "size=" << (dynamic_bitmap_a.size() + 7 / 8) << std::endl;
+//      std::cout << pos <<  std::endl;
+//      std::cout << ((nanos_end - nanos_begin) * 1.0) / N << " [ns/elem]" << std::endl;
+//      std::cout << ((nanos_end - nanos_begin) * 1.0) / (N * d_a) << " [ns/1bit]" << std::endl;
+//    }
 
 }

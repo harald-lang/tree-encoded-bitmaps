@@ -9,7 +9,7 @@
 
 #include <dtl/dtl.hpp>
 #include <dtl/math.hpp>
-#include <dtl/tree.hpp>
+#include <dtl_storage/tree.hpp>
 
 #include <sdsl/bit_vectors.hpp>
 
