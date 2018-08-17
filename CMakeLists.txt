@@ -23,7 +23,7 @@ include_directories(thirdparty/gtest/include lib/googletest)
 
 set(TEST_FILES
         api_test.cpp
-        bitmap_view_test.cpp
+#        bitmap_view_test.cpp
         dynamic_tree_mask_lo_test.cpp
         )
 add_executable(tester ${TEST_FILES})

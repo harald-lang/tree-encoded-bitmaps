@@ -7,7 +7,7 @@
 #include <dtl/dtl.hpp>
 #include <dtl/bits.hpp>
 #include <dtl/bitset.hpp>
-#include <dtl/tree_mask.hpp>
+#include <dtl_storage/tree_mask.hpp>
 
 #include <fastbit/bitvector.h>
 #include <fastbit/bitvector64.h>
