@@ -982,9 +982,9 @@ public:
     /// the level of the current tree node
     $u64 level_ = 0; // FIXME somewhat redundant with path and length
     /// points to the beginning of a 1-fill
-    $u64 pos_ = 0;
+    $u64 pos_;
     /// the length of the current 1-fill
-    $u64 length_ = tm_.N;
+    $u64 length_;
     //===----------------------------------------------------------------------===//
 
   public:
@@ -1037,6 +1037,7 @@ public:
         }
         else {
           pos_ = tm.N;
+          length_ = 0;
         }
         return;
       }
