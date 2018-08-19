@@ -3,6 +3,7 @@
 #include <cstddef>
 
 #include <dtl/dtl.hpp>
+#include <dtl/math.hpp>
 
 #include <boost/dynamic_bitset.hpp>
 
@@ -24,7 +25,13 @@ struct dynamic_bitmap {
 
   explicit
   dynamic_bitmap(const boost::dynamic_bitset<_block_type>& in)
-    : bitmap_(in), n_(in.size()) { }
+    : bitmap_(in), n_(in.size()) {
+
+    if (!dtl::is_power_of_two(n_)) {
+      throw std::invalid_argument("The length of the bitmask must be a power of two.");
+    }
+
+  }
 
   ~dynamic_bitmap() = default;
 
