@@ -961,7 +961,7 @@ public:
 
   //===----------------------------------------------------------------------===//
   /// 1-fill iterator, with skip support.
-  struct iter {
+  class iter {
 
     using path_t = uint64_t;
     static constexpr path_t path_msb = path_t(1) << (sizeof(path_t) * 8 - 1);
@@ -986,6 +986,8 @@ public:
     /// the length of the current 1-fill
     $u64 length_ = tm_.N;
     //===----------------------------------------------------------------------===//
+
+  public:
 
     void
     next() {
@@ -1044,7 +1046,7 @@ public:
       next();
     }
 
-    void skip_to(std::size_t to_pos) {
+    void skip_to(const std::size_t to_pos) {
       assert(to_pos >= pos_ + length_);
 
       // determine the common ancestor
@@ -1131,8 +1133,18 @@ public:
     }
 
     u1
-    end() {
+    end() const noexcept {
       return pos_ == tm_.N;
+    }
+
+    u64
+    pos() const noexcept {
+      return pos_;
+    }
+
+    u64
+    length() const noexcept {
+      return length_;
     }
 
   };
