@@ -1,9 +1,42 @@
 #include "gtest/gtest.h"
 
-#include <bitset>
+#include <dtl/dtl.hpp>
 
+#include "dynamic_bitmap.hpp"
 #include "dynamic_tree_mask_lo.hpp"
 #include "two_state_markov_process.hpp"
+#include "roaring_bitmap.hpp"
+#include "tree_mask_lo.hpp"
+#include "tree_mask_po.hpp"
+#include "wah.hpp"
+
+//===----------------------------------------------------------------------===//
+// Typed API tests for loss-less compressed bitmaps.
+//===----------------------------------------------------------------------===//
+
+// Instantiate the type templates to a fixed length.
+constexpr std::size_t LEN = 8;
+using roaring_bitmap = dtl::roaring_bitmap<LEN>;
+using tree_mask_lo = dtl::tree_mask_lo<LEN>;
+using tree_mask_po = dtl::tree_mask_po<LEN>;
+using wah32 = dtl::wah32<LEN>;
+using wah64 = dtl::wah64<LEN>;
+
+// Fixture for the parameterized test case.
+template<typename T>
+class iterate_1fills_test : public ::testing::Test {};
+
+// Specify the types for which we want to run the API tests.
+using types_under_test = ::testing::Types<
+    dtl::dynamic_tree_mask_lo,
+    dtl::dynamic_bitmap<$u32>
+//    roaring_bitmap,
+//    tree_mask_lo,
+//    tree_mask_po,
+//    wah32
+//    wah64 // FIXME: Position iterator does not work with 64-bit impl.
+>;
+TYPED_TEST_CASE(iterate_1fills_test, types_under_test);
 
 namespace dtl {
 using bitmap = boost::dynamic_bitset<$u32>;
@@ -33,12 +66,13 @@ gen(u64 n, $f64 f, $f64 d) {
 
 
 //===----------------------------------------------------------------------===//
-TEST(dynamic_tree_mask_lo, all_bits_set) {
+TYPED_TEST(iterate_1fills_test, all_bits_set) {
+  using T = TypeParam;
   dtl::bitmap b(64);
   b.set();
-  dtl::dynamic_tree_mask_lo tm(b);
-  std::cout << tm << std::endl;
-  auto it = tm.it();
+  T t(b);
+  std::cout << t << std::endl;
+  auto it = t.it();
   ASSERT_TRUE(!it.end());
   ASSERT_EQ(it.pos(), 0);
   ASSERT_EQ(it.length(), 64);
@@ -49,22 +83,24 @@ TEST(dynamic_tree_mask_lo, all_bits_set) {
 
 
 //===----------------------------------------------------------------------===//
-TEST(dynamic_tree_mask_lo, no_bits_set) {
+TYPED_TEST(iterate_1fills_test, no_bits_set) {
+  using T = TypeParam;
   dtl::bitmap b(64);
-  dtl::dynamic_tree_mask_lo tm(b);
-  std::cout << tm << std::endl;
-  auto it = tm.it();
+  T t(b);
+  std::cout << t << std::endl;
+  auto it = t.it();
   ASSERT_TRUE(it.end());
 }
 //===----------------------------------------------------------------------===//
 
 
 //===----------------------------------------------------------------------===//
-TEST(dynamic_tree_mask_lo, single_1fill) {
+TYPED_TEST(iterate_1fills_test, single_1fill) {
+  using T = TypeParam;
   dtl::bitmap b(64, 0b11110000);
-  dtl::dynamic_tree_mask_lo tm(b);
-  std::cout << tm << std::endl;
-  auto it = tm.it();
+  T t(b);
+  std::cout << t << std::endl;
+  auto it = t.it();
   ASSERT_TRUE(!it.end());
   ASSERT_EQ(it.pos(), 4);
   ASSERT_EQ(it.length(), 4);
@@ -75,9 +111,10 @@ TEST(dynamic_tree_mask_lo, single_1fill) {
 
 
 //===----------------------------------------------------------------------===//
-TEST(dynamic_tree_mask_lo, multiple_1fills_at_different_levels) {
+TYPED_TEST(iterate_1fills_test, multiple_1fills_at_different_levels) {
+  using T = TypeParam;
   dtl::bitmap b(64, 0b0011000011110000);
-  dtl::dynamic_tree_mask_lo tm(b);
+  T tm(b);
   std::cout << tm << std::endl;
   auto it = tm.it();
   ASSERT_TRUE(!it.end());
@@ -94,11 +131,12 @@ TEST(dynamic_tree_mask_lo, multiple_1fills_at_different_levels) {
 
 
 //===----------------------------------------------------------------------===//
+template<typename T>
 void
 skip_test(u64 n, u64 bitmap, u64 skip_to_pos, u64 expected_pos, u64 expected_len) {
   assert(n <= 64);
   dtl::bitmap b(n, bitmap);
-  dtl::dynamic_tree_mask_lo tm(b);
+  T tm(b);
   std::cout << tm << std::endl;
   auto it = tm.it();
   it.skip_to(skip_to_pos);
@@ -114,35 +152,41 @@ skip_test(u64 n, u64 bitmap, u64 skip_to_pos, u64 expected_pos, u64 expected_len
   }
 }
 
-TEST(dynamic_tree_mask_lo, skip_to_1fill) {
-  skip_test(8, 0b00001001, 3, 3, 1);
-  skip_test(8, 0b00000101, 2, 2, 1);
+TYPED_TEST(iterate_1fills_test, skip_to_1fill) {
+  using T = TypeParam;
+  skip_test<T>(8, 0b00001001, 3, 3, 1);
+  skip_test<T>(8, 0b00000101, 2, 2, 1);
 }
 
-TEST(dynamic_tree_mask_lo, skip_to_1fill_passing_the_root_node) {
-  skip_test(8, 0b01000001, 6, 6, 1);
-  skip_test(8, 0b10000001, 7, 7, 1);
+TYPED_TEST(iterate_1fills_test, skip_to_1fill_passing_the_root_node) {
+  using T = TypeParam;
+  skip_test<T>(8, 0b01000001, 6, 6, 1);
+  skip_test<T>(8, 0b10000001, 7, 7, 1);
 }
 
-TEST(dynamic_tree_mask_lo, skip_before_1fill) {
-  skip_test(8, 0b01000001, 5, 6, 1);
-  skip_test(8, 0b01000001, 4, 6, 1);
-  skip_test(8, 0b01000001, 3, 6, 1);
-  skip_test(8, 0b01000001, 2, 6, 1);
-  skip_test(8, 0b01000001, 1, 6, 1);
+TYPED_TEST(iterate_1fills_test, skip_before_1fill) {
+  using T = TypeParam;
+  skip_test<T>(8, 0b01000001, 5, 6, 1);
+  skip_test<T>(8, 0b01000001, 4, 6, 1);
+  skip_test<T>(8, 0b01000001, 3, 6, 1);
+  skip_test<T>(8, 0b01000001, 2, 6, 1);
+  skip_test<T>(8, 0b01000001, 1, 6, 1);
 }
 
-TEST(dynamic_tree_mask_lo, skip_beyond_last_1fill) {
-  skip_test(8, 0b01000001, 7, 8, 0);
+TYPED_TEST(iterate_1fills_test, skip_beyond_last_1fill) {
+  using T = TypeParam;
+  skip_test<T>(8, 0b01000001, 7, 8, 0);
 }
 
-TEST(dynamic_tree_mask_lo, skip_into_a_1fill) {
-  skip_test(8, 0b11111101, 6, 6, 2);
+TYPED_TEST(iterate_1fills_test, skip_into_a_1fill) {
+  using T = TypeParam;
+  skip_test<T>(8, 0b11111101, 6, 6, 2);
 }
 
-TEST(dynamic_tree_mask_lo, skip_multiple_times) {
+TYPED_TEST(iterate_1fills_test, skip_multiple_times) {
+  using T = TypeParam;
   dtl::bitmap b(8, 0b11001101);
-  dtl::dynamic_tree_mask_lo tm(b);
+  T tm(b);
   std::cout << tm << std::endl;
   auto it = tm.it();
   it.skip_to(2);
