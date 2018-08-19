@@ -165,6 +165,102 @@ public:
     return tree_masks_[tree_mask_idx].test(in_part_pos);
   }
 
+  //===----------------------------------------------------------------------===//
+  /// 1-fill iterator, with skip support.
+  class iter {
+
+    const dynamic_partitioned_tree_mask& tm_;
+    using iter_t = dynamic_partitioned_tree_mask::tree_mask_t::iter;
+
+    //===----------------------------------------------------------------------===//
+    // Iterator state
+    //===----------------------------------------------------------------------===//
+    /// points to the beginning of a 1-fill
+    $u64 pos_;
+    /// the current partition number
+    $u64 part_no_;
+    /// the iterator of the current partition
+    iter_t iter_;
+    //===----------------------------------------------------------------------===//
+
+  public:
+
+    void
+    next() {
+      iter_.next();
+      while (iter_.end() && part_no_ < (tm_.partition_cnt - 1)) {
+        part_no_++;
+        new(&iter_) iter_t(tm_.tree_masks_[part_no_]);
+      }
+      if (iter_.end()) {
+        pos_ = tm_.N;
+      }
+      else {
+        pos_ = iter_.pos() + tm_.part_n * part_no_;
+      }
+    }
+
+    explicit
+    iter(const dynamic_partitioned_tree_mask& tm)
+        : tm_(tm), part_no_(0), iter_(tm_.tree_masks_[0]) {
+      while (iter_.end() && part_no_ < (tm_.partition_cnt  - 1)) {
+        part_no_++;
+        new(&iter_) iter_t(tm_.tree_masks_[part_no_]);
+      }
+      if (iter_.end()) {
+        pos_ = tm_.N;
+      }
+      else {
+        pos_ = iter_.pos() + tm_.part_n * part_no_;
+      }
+    }
+
+    void
+    skip_to(const std::size_t to_pos) {
+      const auto to_part_no = to_pos >> tm_.part_n_log2;
+      if (to_part_no == part_no_) {
+        iter_.skip_to(to_pos & tm_.part_n_mask);
+      }
+      else {
+        part_no_ = to_part_no;
+        new(&iter_) iter_t(tm_.tree_masks_[part_no_]);
+        while (iter_.end() && part_no_ < (tm_.partition_cnt  - 1)) {
+          part_no_++;
+          new(&iter_) iter_t(tm_.tree_masks_[part_no_]);
+        }
+        if (iter_.end()) {
+          pos_ = tm_.N;
+        }
+        else {
+          pos_ = iter_.pos() + tm_.part_n * part_no_;
+        }
+      }
+    }
+
+    u1
+    end() const noexcept {
+      return pos_ == tm_.N;
+    }
+
+    u64
+    pos() const noexcept {
+      return pos_;
+    }
+
+    u64
+    length() const noexcept {
+      return iter_.length();
+    }
+
+  };
+  //===----------------------------------------------------------------------===//
+
+  iter
+  it() const {
+    return iter(*this);
+  }
+
+
 };
 //===----------------------------------------------------------------------===//
 
