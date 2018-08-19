@@ -31,6 +31,7 @@ target_link_libraries(tester gtest gtest_main fastbit roaring)
 
 # Treemask sources
 set(TREE_MASK_SOURCE_FILES
+        dynamic_bitmap.hpp
         dynamic_partitioned_tree_mask.hpp
         dynamic_tree.hpp
         dynamic_tree_mask_lo.hpp

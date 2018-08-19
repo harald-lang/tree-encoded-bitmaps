@@ -13,11 +13,13 @@
 #include <navin/dynamic_partitioned_tree_mask.hpp>
 #include <navin/dynamic_tree_mask_lo.hpp>
 #include <navin/util.hpp>
+#include <navin/dynamic_bitmap.hpp>
 
 // The number of independent runs.
-static constexpr u64 RUNS = 100000;
+static constexpr u64 RUNS = 100;
+//static constexpr u64 RUNS = 1;
 //static constexpr u64 N = 1u << 20;
-static constexpr u64 N = 1u << 17;
+static constexpr u64 N = 1u << 22;
 
 static constexpr u64 M = 1024;
 
@@ -61,7 +63,6 @@ gen_bitmap(f64 f, f64 d) {
 
 template<typename T, typename B>
 void run(f64 f, f64 d, const B& bitmap, const std::vector<$u32>& lookup_pos, std::ostream& os) {
-
 
   T enc_bitmap(bitmap);
 
@@ -233,6 +234,37 @@ void run_and(f64 f_a, f64 d_a, f64 f_b, f64 d_b,
      << std::endl;
 }
 
+template<typename _bitmap_t = dtl::dynamic_bitmap<$u32>>
+void __noinline__
+iterate_1fills(const boost::dynamic_bitset<$u32>& input) {
+
+  // encode the input bitmap
+  _bitmap_t tm(input);
+
+  // iterate over 1fills
+  const auto nanos_begin = now_nanos();
+  $u64 pos = 0;
+  $u64 len = 0;
+  for (std::size_t r = 0; r < RUNS; r++) {
+    auto it = tm.it();
+    while (!it.end()) {
+      pos += it.pos();
+      len += it.length();
+      it.next();
+    }
+  }
+  const auto nanos_end = now_nanos();
+
+  const auto one_fill_cnt = count_1fills(input);
+  const auto pop_count = input.count();
+  const auto density = (input.count() * 1.0) / input.size();
+  std::cout << "size=" << tm.size_in_byte() << " (" << (input.size() + 7 / 8) << ")" <<  std::endl;
+  std::cout << "1fill count=" << one_fill_cnt << std::endl;
+  std::cout << pos << ", " << len << std::endl;
+  std::cout << ((nanos_end - nanos_begin) * 1.0) / (N * RUNS) << " [ns/elem]" << std::endl;
+  std::cout << ((nanos_end - nanos_begin) * 1.0) / (N * RUNS * density) << " [ns/1bit]" << std::endl;
+  std::cout << ((nanos_end - nanos_begin) * 1.0) / (one_fill_cnt * RUNS) << " [ns/1fill]" << std::endl;
+}
 
 $i32 main() {
 
@@ -255,50 +287,21 @@ $i32 main() {
 //  run_and<dtl::dynamic_tree_mask_lo>         (f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout);
 //  run_and<dtl::dynamic_partitioned_tree_mask>(f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout);
 
-  const auto f_a = 60;
+  const auto f_a = 18;
   const auto d_a = 0.05;
   const auto bitmap_a = gen_bitmap(f_a, d_a);
   const auto dynamic_bitmap_a = to_dynamic_bitset(bitmap_a);
-  const auto one_fill_cnt = count_1fills(bitmap_a);
+  const auto one_fill_cnt = count_1fills(dynamic_bitmap_a);
 
-  {
+  std::cout << "input:"
+            << " popcnt=" << bitmap_a.count()
+            << " 1-fill cnt=" << one_fill_cnt
+            << std::endl;
 
-    dtl::dynamic_tree_mask_lo tm(dynamic_bitmap_a);
 
-    const auto nanos_begin = now_nanos();
-    $u64 pos = 0;
-    $u64 len = 0;
-    for (std::size_t r = 0; r < RUNS; r++) {
-      auto it = tm.it();
-      while (!it.end()) {
-        pos += it.pos_;
-        len += it.length_;
-        it.next();
-      }
-    }
-    const auto nanos_end = now_nanos();
-    std::cout << "size=" << tm.size_in_byte() << " (" << (dynamic_bitmap_a.size() + 7 / 8) << ")" <<  std::endl;
-    std::cout << "1fill count=" << one_fill_cnt << std::endl;
-    std::cout << pos << ", " << len << std::endl;
-    std::cout << ((nanos_end - nanos_begin) * 1.0) / (N * RUNS) << " [ns/elem]" << std::endl;
-    std::cout << ((nanos_end - nanos_begin) * 1.0) / (N * RUNS * d_a) << " [ns/1bit]" << std::endl;
-    std::cout << ((nanos_end - nanos_begin) * 1.0) / (one_fill_cnt * RUNS) << " [ns/1fill]" << std::endl;
-  }
-
-//    {
-//      const auto nanos_begin = now_nanos();
-//      $u64 pos = 0;
-//      pos = dynamic_bitmap_a.find_first();
-//      while (true) {
-//        pos = dynamic_bitmap_a.find_next(pos);
-//        if (pos >= N)
-//          break;
-//      }
-//      const auto nanos_end = now_nanos();
-//      std::cout << "size=" << (dynamic_bitmap_a.size() + 7 / 8) << std::endl;
-//      std::cout << pos <<  std::endl;
-//      std::cout << ((nanos_end - nanos_begin) * 1.0) / N << " [ns/elem]" << std::endl;
-//      std::cout << ((nanos_end - nanos_begin) * 1.0) / (N * d_a) << " [ns/1bit]" << std::endl;
-//    }
+  iterate_1fills<dtl::dynamic_tree_mask_lo>(dynamic_bitmap_a);
+  std::cout << std::endl;
+  iterate_1fills<dtl::dynamic_bitmap<$u32>>(dynamic_bitmap_a);
+  std::cout << std::endl;
 
 }
