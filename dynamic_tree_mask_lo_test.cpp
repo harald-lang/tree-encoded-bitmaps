@@ -40,8 +40,8 @@ TEST(dynamic_tree_mask_lo, all_bits_set) {
   std::cout << tm << std::endl;
   auto it = tm.it();
   ASSERT_TRUE(!it.end());
-  ASSERT_EQ(it.pos_, 0);
-  ASSERT_EQ(it.length_, 64);
+  ASSERT_EQ(it.pos(), 0);
+  ASSERT_EQ(it.length(), 64);
   it.next();
   ASSERT_TRUE(it.end());
 }
@@ -66,8 +66,8 @@ TEST(dynamic_tree_mask_lo, single_1fill) {
   std::cout << tm << std::endl;
   auto it = tm.it();
   ASSERT_TRUE(!it.end());
-  ASSERT_EQ(it.pos_, 4);
-  ASSERT_EQ(it.length_, 4);
+  ASSERT_EQ(it.pos(), 4);
+  ASSERT_EQ(it.length(), 4);
   it.next();
   ASSERT_TRUE(it.end());
 }
@@ -81,11 +81,11 @@ TEST(dynamic_tree_mask_lo, multiple_1fills_at_different_levels) {
   std::cout << tm << std::endl;
   auto it = tm.it();
   ASSERT_TRUE(!it.end());
-  ASSERT_EQ(it.pos_, 4);
-  ASSERT_EQ(it.length_, 4);
+  ASSERT_EQ(it.pos(), 4);
+  ASSERT_EQ(it.length(), 4);
   it.next();
-  ASSERT_EQ(it.pos_, 12);
-  ASSERT_EQ(it.length_, 2);
+  ASSERT_EQ(it.pos(), 12);
+  ASSERT_EQ(it.length(), 2);
   ASSERT_TRUE(!it.end());
   it.next();
   ASSERT_TRUE(it.end());
@@ -108,9 +108,9 @@ skip_test(u64 n, u64 bitmap, u64 skip_to_pos, u64 expected_pos, u64 expected_len
   else {
     ASSERT_TRUE(!it.end());
   }
-  ASSERT_EQ(it.pos_, expected_pos);
+  ASSERT_EQ(it.pos(), expected_pos);
   if (expected_pos != n) {
-    ASSERT_EQ(it.length_, expected_len);
+    ASSERT_EQ(it.length(), expected_len);
   }
 }
 
@@ -146,11 +146,11 @@ TEST(dynamic_tree_mask_lo, skip_multiple_times) {
   std::cout << tm << std::endl;
   auto it = tm.it();
   it.skip_to(2);
-  ASSERT_EQ(it.pos_, 2);
-  ASSERT_EQ(it.length_, 2);
+  ASSERT_EQ(it.pos(), 2);
+  ASSERT_EQ(it.length(), 2);
   it.skip_to(6);
-  ASSERT_EQ(it.pos_, 6);
-  ASSERT_EQ(it.length_, 2);
+  ASSERT_EQ(it.pos(), 6);
+  ASSERT_EQ(it.length(), 2);
 }
 //===----------------------------------------------------------------------===//
 
