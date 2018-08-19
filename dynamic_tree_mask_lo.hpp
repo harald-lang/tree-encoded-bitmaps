@@ -1046,7 +1046,8 @@ public:
       next();
     }
 
-    void skip_to(const std::size_t to_pos) {
+    void
+    skip_to(const std::size_t to_pos) {
       assert(to_pos >= pos_ + length_);
 
       // determine the common ancestor
