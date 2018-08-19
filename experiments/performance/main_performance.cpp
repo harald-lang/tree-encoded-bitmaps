@@ -234,12 +234,12 @@ void run_and(f64 f_a, f64 d_a, f64 f_b, f64 d_b,
      << std::endl;
 }
 
-template<typename _bitmap_t = dtl::dynamic_bitmap<$u32>>
+template<typename _bitmap_t = dtl::dynamic_bitmap<$u32>, typename ...params>
 void __noinline__
-iterate_1fills(const boost::dynamic_bitset<$u32>& input) {
+iterate_1fills(const boost::dynamic_bitset<$u32>& input, params&&... constructor_params) {
 
   // encode the input bitmap
-  _bitmap_t tm(input);
+  _bitmap_t tm(input, std::forward<params>(constructor_params)...);
 
   // iterate over 1fills
   const auto nanos_begin = now_nanos();
@@ -302,6 +302,8 @@ $i32 main() {
   iterate_1fills<dtl::dynamic_tree_mask_lo>(dynamic_bitmap_a);
   std::cout << std::endl;
   iterate_1fills<dtl::dynamic_bitmap<$u32>>(dynamic_bitmap_a);
+  std::cout << std::endl;
+  iterate_1fills<dtl::dynamic_partitioned_tree_mask>(dynamic_bitmap_a, 64);
   std::cout << std::endl;
 
 }
