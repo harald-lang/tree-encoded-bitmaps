@@ -135,6 +135,10 @@ struct dynamic_bitmap {
           length_++;
         }
       }
+      else {
+        pos_ = outer_.n_;
+        length_ = 0;
+      }
     }
 
     explicit
@@ -147,11 +151,29 @@ struct dynamic_bitmap {
           length_++;
         }
       }
+      else {
+        pos_ = outer_.n_;
+        length_ = 0;
+      }
     }
 
     void
     skip_to(const std::size_t to_pos) {
-      // TODO implement
+      pos_ = to_pos;
+      length_ = 0;
+      if (!outer_.bitmap_.test(pos_)) {
+        pos_ = outer_.bitmap_.find_next(pos_);
+      }
+      if (pos_ < outer_.n_) {
+        length_ = 1;
+        while (outer_.bitmap_.test(pos_ + length_)) {
+          length_++;
+        }
+      }
+      else {
+        pos_ = outer_.n_;
+        length_ = 0;
+      }
     }
 
     u1
