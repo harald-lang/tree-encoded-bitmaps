@@ -1047,6 +1047,8 @@ public:
       next();
     }
 
+    iter(iter&&) = default;
+
     void
     skip_to(const std::size_t to_pos) {
       assert(to_pos >= pos_ + length_);
