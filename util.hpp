@@ -3,6 +3,8 @@
 #include <bitset>
 #include <cstddef>
 
+#include <dtl/dtl.hpp>
+
 #include <boost/dynamic_bitset.hpp>
 
 //===----------------------------------------------------------------------===//
