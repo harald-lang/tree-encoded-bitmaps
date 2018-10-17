@@ -18,8 +18,8 @@
 // The number of independent runs.
 static constexpr u64 RUNS = 100;
 //static constexpr u64 RUNS = 1;
-//static constexpr u64 N = 1u << 20;
-static constexpr u64 N = 1u << 22;
+static constexpr u64 N = 1u << 17;
+//static constexpr u64 N = 1u << 22;
 
 static constexpr u64 M = 1024;
 
@@ -287,8 +287,8 @@ $i32 main() {
 //  run_and<dtl::dynamic_tree_mask_lo>         (f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout);
 //  run_and<dtl::dynamic_partitioned_tree_mask>(f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout);
 
-  const auto f_a = 18;
-  const auto d_a = 0.05;
+  const auto f_a = 30;
+  const auto d_a = 0.005;
   const auto bitmap_a = gen_bitmap(f_a, d_a);
   const auto dynamic_bitmap_a = to_dynamic_bitset(bitmap_a);
   const auto one_fill_cnt = count_1fills(dynamic_bitmap_a);
@@ -303,7 +303,7 @@ $i32 main() {
   std::cout << std::endl;
   iterate_1fills<dtl::dynamic_bitmap<$u32>>(dynamic_bitmap_a);
   std::cout << std::endl;
-  iterate_1fills<dtl::dynamic_partitioned_tree_mask>(dynamic_bitmap_a, 64);
-  std::cout << std::endl;
+//  iterate_1fills<dtl::dynamic_partitioned_tree_mask>(dynamic_bitmap_a, 64);
+//  std::cout << std::endl;
 
 }

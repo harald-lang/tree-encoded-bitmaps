@@ -138,7 +138,7 @@ struct dynamic_bitmap {
       // determine the length of the current 1fill
       if (pos_ < outer_.n_) {
         length_ = 1;
-        while (outer_.bitmap_.test(pos_ + length_)) {
+        while (outer_.bitmap_.test(pos_ + length_)) { // TODO optimize
           length_++;
         }
       }
