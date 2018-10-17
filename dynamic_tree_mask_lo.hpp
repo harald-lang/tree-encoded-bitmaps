@@ -975,7 +975,8 @@ public:
     //===----------------------------------------------------------------------===//
 
 //    std::stack<std::pair<$u64, path_t>> stack_;
-    std::stack<$u64> stack_;
+//    std::stack<$u64> stack_;
+    static_stack<$u64, 32> stack_;
 
     /// encodes the path to the current node (the highest set bit is a sentinel bit)
     path_t path_ = 1;

@@ -49,10 +49,20 @@ public:
   }
 
   __forceinline__ void
+  push(const T& item) {
+    push_back(item);
+  }
+
+  __forceinline__ void
   push_back(const T&& item) {
     stack_[cnt_] = item;
     cnt_++;
     assert(cnt_ <= N);
+  }
+
+  __forceinline__ void
+  push(const T&& item) {
+    push_back(item);
   }
 
   __forceinline__ T
@@ -61,10 +71,20 @@ public:
     assert(cnt_ >= 0 && cnt_ <= N);
   }
 
+  __forceinline__ T
+  top() const {
+    return back();
+  }
+
   __forceinline__ void
   pop_back() {
     cnt_--;
     assert(cnt_ >= 0 && cnt_ <= N);
+  }
+
+  __forceinline__ void
+  pop() {
+    pop_back();
   }
 
 };
