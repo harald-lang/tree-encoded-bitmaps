@@ -25,7 +25,7 @@
 #include <dtl/thread.hpp>
 
 #include "tree_mask_lo.hpp"
-
+#include "dynamic_tree_mask_lo.hpp"
 
 
 void a() {
@@ -547,8 +547,106 @@ void run_parallel(){
   */
 }
 
+template<u64 S>
+void test_iterator(double f, double d){
+
+  boost::dynamic_bitset<$u32> bitset{S,0};
+  two_state_markov_process p(f, d);
+
+  for(auto i = 0; i < S; i++)
+    bitset[i] = p.next();
+
+  std::cout << "Printing the bitset" << std::endl;
+  for(auto i = 0; i < S; i++)
+    std::cout << bitset[i];
+  std::cout << std::endl;
+
+  dtl::dynamic_tree_mask_lo tm_test(bitset);
+  tm_test.print(std::cout);
+  std::cout << "\n" << std::endl;
+
+  dtl::dynamic_tree_mask_lo::iter it(tm_test);
+
+  while(!it.end()){
+    std::cout << "pos: " << it.pos() << " length: " << it.length() << std::endl;
+    it.next();
+  }
+
+}
+
+
+
+template<u64 S>
+void test_iterator(double f_1, double d_1, double f_2, double d_2){
+
+  boost::dynamic_bitset<$u32> bs_1{S,0};
+  boost::dynamic_bitset<$u32> bs_2{S,0};
+
+  two_state_markov_process p_1(f_1, d_1);
+  two_state_markov_process p_2(f_2, d_2);
+
+  for(auto i = 0; i < S; i++)
+    bs_1[i] = p_1.next();
+
+  for(auto i = 0; i < S; i++)
+    bs_2[i] = p_2.next();
+
+
+  std::cout << "Printing the bitset_1: ";
+  for(auto i = 0; i < S; i++)
+    std::cout << bs_1[i];
+  std::cout << std::endl;
+
+  std::cout << "Printing the bitset_2: ";
+  for(auto i = 0; i < S; i++)
+    std::cout << bs_2[i];
+  std::cout << std::endl;
+
+  boost::dynamic_bitset<$u32> bs_and = bs_1 & bs_2;
+  std::cout << "Printing the bitset_and: ";
+  for(auto i = 0; i < S; i++)
+    std::cout << bs_and[i];
+  std::cout << std::endl;
+
+  dtl::dynamic_tree_mask_lo tm_1(bs_1);
+  tm_1.print(std::cout);
+  std::cout << std::endl;
+
+  dtl::dynamic_tree_mask_lo tm_2(bs_2);
+  tm_2.print(std::cout);
+  std::cout << "\n" << std::endl;
+
+
+  std::cout << "Iterator 1" << std::endl;
+  dtl::dynamic_tree_mask_lo::iter it_1(tm_1);
+
+  while(!it_1.end()){
+    std::cout << "pos: " << it_1.pos() << " length: " << it_1.length() << std::endl;
+    it_1.next();
+  }
+
+  std::cout << std::endl << "Iterator 2" << std::endl;
+  dtl::dynamic_tree_mask_lo::iter it_2(tm_2);
+
+  while(!it_2.end()){
+    std::cout << "pos: " << it_2.pos() << " length: " << it_2.length() << std::endl;
+    it_2.next();
+  }
+
+  dtl::dynamic_tree_mask_lo::iter_and_simple it_s(tm_1, tm_2);
+
+  std::cout << std::endl << "Matches" << std::endl;
+  while(!it_s.end()){
+    std::cout << "interval: ";
+    it_s.matches().print();
+    it_s.next();
+  }
+
+}
+
 int main(){
-  test_tree_mask_lo_and();
+  test_iterator<16>(5, 0.5, 4, 0.4);
+  //test_tree_mask_lo_and();
   return 0;
 }
 
@@ -1005,5 +1103,4 @@ void test_tree_mask_lo_xor_re_compressed(){
   }
 
 }
-
 

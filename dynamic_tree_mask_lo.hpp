@@ -1159,6 +1159,141 @@ public:
     return iter(*this);
   }
 
+  struct range {
+            // [first;last)
+            $u64 first = 0;
+            $u64 last = 0;
+
+            range() : first(0), last(0) {};
+
+            range(u64 start, u64 last) : first(start), last(last) {}
+
+            range(u64 start_1, u64 length_1, u64 start_2, u64 length_2){
+              u64 tmp_first = std::max(start_1, start_2);
+              u64 tmp_last = std::min(start_1 + length_1, start_2 + length_2);
+              if (tmp_first >= tmp_last) {
+                first = 0;
+                last = 0;
+              } else {
+                first = tmp_first;
+                last = tmp_last;
+              }
+            }
+
+            void set(u64 start, u64 length) {
+              first = start;
+              last = first + length;
+            }
+
+            void print() const {
+              std::cout << "[" << first << ";" << last << ")" << std::endl;
+            }
+
+            __forceinline__ u1
+            is_empty() const {
+              return first == last;
+            }
+
+            __forceinline__ range range_and(u64 start_1, u64 length_1, u64 start_2, u64 length_2){
+              u64 tmp_first = std::max(start_1, start_2);
+              u64 tmp_last = std::min(start_1 + length_1, start_2 + length_2);
+              if (tmp_first >= tmp_last)
+                return range(0,0);
+
+              return range(tmp_first, tmp_last);
+            }
+
+            __forceinline__ range
+            operator&(const range& other){
+              if(is_empty())
+                return range(0,0);
+
+              if(other.is_empty())
+                return range(0,0);
+
+              range r(std::max(first, other.first),std::min(last, other.last));
+              if(r.first >= r.last)
+                return range(0,0);
+
+              return r;
+            }
+        };
+
+  class iter_and_simple {
+
+      using tm_lo = dynamic_tree_mask_lo;
+
+      iter it_1;
+      iter it_2;
+      bool end_it_1 = false;
+      bool end_it_2 = false;
+
+      $u1 side = false; // false -> consume from it_1, true -> consume from it_2
+
+      range r;
+      range r_1;
+      range r_2;
+
+      bool first = true;
+  public:
+
+      explicit
+      iter_and_simple(const tm_lo& tm_1, const tm_lo& tm_2) : it_1(tm_1), it_2(tm_2) {
+        next();
+      };
+
+      void next() {
+
+        while(!end()){
+
+          if(!side | r_1.is_empty()) {
+            end_it_1 = it_1.end();
+
+            if(!end_it_1)
+              r_1.set(it_1.pos(), it_1.length());
+            else
+              r_1.set(it_1.pos(),0);
+            it_1.next();
+          }
+
+          if(side | r_2.is_empty()) {
+            end_it_2 = it_2.end();
+            if(!end_it_2)
+              r_2.set(it_2.pos(), it_2.length());
+            else
+              r_2.set(it_2.pos(), 0);
+            it_2.next();
+          }
+
+          r = r_1 & r_2;
+
+          if(r_1.last < r_2.last){
+            side = false;
+          } else {
+            side = true;
+          }
+
+          // we have an overlapping interval
+          if(!r.is_empty()){
+            return; // end search
+          }
+        }
+
+        r.set(it_1.pos(),0);
+      }
+
+      u1
+      end() const noexcept {
+        return end_it_1 | end_it_2;
+      }
+
+      const range
+      matches() const noexcept {
+        return r;
+      }
+
+  };
+
 //  struct iter_alex {
 //
 //      const dynamic_tree_mask_lo& tm;

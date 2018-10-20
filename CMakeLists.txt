@@ -29,6 +29,11 @@ set(TEST_FILES
 add_executable(tester ${TEST_FILES})
 target_link_libraries(tester gtest gtest_main fastbit roaring)
 
+set(TEST_ITER_FILES
+        iter_tester.cpp)
+add_executable(tester_iter ${TEST_ITER_FILES})
+target_link_libraries(tester_iter gtest gtest_main)
+
 # Treemask sources
 set(TREE_MASK_SOURCE_FILES
         dynamic_bitmap.hpp
@@ -52,7 +57,7 @@ set(COMPETITORS_SOURCE_FILES
 set(SOURCE_FILES
         ${TREE_MASK_SOURCE_FILES}
         ${COMPETITORS_SOURCE_FILES}
-        bitmap_view.hpp
+        #bitmap_view.hpp
         index.hpp
         two_state_markov_process.hpp
         static_stack.hpp
