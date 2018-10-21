@@ -14,6 +14,8 @@
 #include "dynamic_tree.hpp"
 #include "static_stack.hpp"
 
+#define VERBOSE_OUT true
+
 namespace dtl {
 
 /// Encodes a bitmap of length N as a binary tree.
@@ -1164,9 +1166,9 @@ public:
             $u64 first = 0;
             $u64 last = 0;
 
-            range() : first(0), last(0) {};
+            range() = default;
 
-            range(u64 start, u64 last) : first(start), last(last) {}
+            range(u64 start, u64 length) : first(start), last(start + length) {}
 
             range(u64 start_1, u64 length_1, u64 start_2, u64 length_2){
               u64 tmp_first = std::max(start_1, start_2);
@@ -1180,45 +1182,63 @@ public:
               }
             }
 
-            void set(u64 start, u64 length) {
+            __forceinline__ void
+            set(u64 start, u64 length) noexcept {
               first = start;
               last = first + length;
             }
 
-            void print() const {
+            __forceinline__ void
+            set_first_last(u64 start_, u64 last_) noexcept {
+              first = start_;
+              last = last_;
+            }
+
+            void
+            print() const noexcept {
               std::cout << "[" << first << ";" << last << ")" << std::endl;
             }
 
             __forceinline__ u1
-            is_empty() const {
+            is_empty() const noexcept {
               return first == last;
             }
 
-            __forceinline__ range range_and(u64 start_1, u64 length_1, u64 start_2, u64 length_2){
+            __forceinline__ range
+            range_and(u64 start_1, u64 length_1, u64 start_2, u64 length_2) const noexcept {
               u64 tmp_first = std::max(start_1, start_2);
               u64 tmp_last = std::min(start_1 + length_1, start_2 + length_2);
-              if (tmp_first >= tmp_last)
-                return range(0,0);
+              range r;
 
-              return range(tmp_first, tmp_last);
+              if (tmp_first >= tmp_last)
+                return r;
+
+              r.set_first_last(tmp_first, tmp_last);
+              return r;
             }
 
             __forceinline__ range
-            operator&(const range& other){
+            operator&(const range& other) const noexcept {
+              range r;
+
               if(is_empty())
-                return range(0,0);
+                return r;
 
               if(other.is_empty())
-                return range(0,0);
+                return r;
 
-              range r(std::max(first, other.first),std::min(last, other.last));
-              if(r.first >= r.last)
-                return range(0,0);
+              r.set_first_last(std::max(first, other.first),std::min(last, other.last));
+
+              if(r.first >= r.last) // empty range
+                r.set(0,0);
 
               return r;
             }
         };
 
+  // simple iterator without skip_to, only using next
+  // always returns the first next possible range -> i.e.: [4;9), [9;13)...
+  // (is skip_to sufficient? test it...)
   class iter_and_simple {
 
       using tm_lo = dynamic_tree_mask_lo;
@@ -1234,7 +1254,6 @@ public:
       range r_1;
       range r_2;
 
-      bool first = true;
   public:
 
       explicit
@@ -1249,33 +1268,158 @@ public:
           if(!side | r_1.is_empty()) {
             end_it_1 = it_1.end();
 
-            if(!end_it_1)
+            if(!end_it_1) {
               r_1.set(it_1.pos(), it_1.length());
-            else
+              it_1.next();
+            } else
               r_1.set(it_1.pos(),0);
-            it_1.next();
           }
 
           if(side | r_2.is_empty()) {
             end_it_2 = it_2.end();
-            if(!end_it_2)
+            if(!end_it_2) {
               r_2.set(it_2.pos(), it_2.length());
-            else
+              it_2.next();
+            } else
               r_2.set(it_2.pos(), 0);
-            it_2.next();
           }
 
           r = r_1 & r_2;
 
-          if(r_1.last < r_2.last){
+          if(r_1.last < r_2.last)
             side = false;
-          } else {
+          else
             side = true;
-          }
+
 
           // we have an overlapping interval
-          if(!r.is_empty()){
+          if(!r.is_empty())
             return; // end search
+
+        }
+
+        r.set(it_1.pos(),0);
+      }
+
+      u1
+      end() const noexcept {
+        return end_it_1 | end_it_2;
+      }
+
+      const range
+      matches() const noexcept {
+        return r;
+      }
+
+  };
+
+  /*
+  // simple iterator with skip_to
+  // always returns the first next possible range -> i.e.: [4;9), [9;13)...
+  class iter_and_with_skip_to {
+
+      using tm_lo = dynamic_tree_mask_lo;
+
+      iter it_1;
+      iter it_2;
+      bool end_it_1 = false;
+      bool end_it_2 = false;
+
+      $u1 side = false; // false -> consume from it_1, true -> consume from it_2
+
+      range r;
+      range r_1;
+      range r_2;
+
+  public:
+
+      explicit
+      iter_and_with_skip_to(const tm_lo& tm_1, const tm_lo& tm_2) : it_1(tm_1), it_2(tm_2) {
+        next();
+      };
+
+      void next() {
+
+        while(!end()){
+
+          if(!side) {
+            end_it_1 = it_1.end();
+
+            if(!end_it_1) {
+              r_1.set(it_1.pos(), it_1.length());
+              it_1.next();
+            }else
+              r_1.set(it_1.pos(),0);
+          }
+
+          if(side) {
+            end_it_2 = it_2.end();
+
+            if(!end_it_2) {
+              r_2.set(it_2.pos(), it_2.length());
+              it_2.next();
+            } else
+              r_2.set(it_2.pos(), 0);
+          }
+
+          if(r_1.is_empty()) {
+            end_it_1 = it_1.end();
+
+            if(!end_it_1) {
+              r_1.set(it_1.pos(), it_1.length());
+              it_1.next();
+            }else
+              r_1.set(it_1.pos(),0);
+          }
+
+          if(r_2.is_empty()) {
+            end_it_2 = it_2.end();
+
+            if(!end_it_2) {
+              r_2.set(it_2.pos(), it_2.length());
+              it_2.next();
+            } else
+              r_2.set(it_2.pos(), 0);
+          }
+
+          r = r_1 & r_2;
+
+          #if VERBOSE_OUT
+            std::cout << "     r_1: "; r_1.print();
+            std::cout << "     r_2: "; r_2.print();
+            std::cout << "     r  : "; r.print();
+            std::cout << std::endl;
+          #endif
+
+          if(!r.is_empty()){
+            if(r_1.last < r_2.last)
+              side = false;
+            else
+              side = true;
+
+            return;
+
+          } else {
+
+            if(r_1.last < r_2.first && !it_2.end()){
+              if(it_1.end()){
+                it_1.skip_to(r_2.first);
+                end_it_1 = it_1.end();
+              }
+            } else {
+              if(r_2.last < r_1.first && !it_1.end()){
+                if(!it_2.end()){
+                  it_2.skip_to(r_1.first);
+                  end_it_2 = it_2.end();
+                }
+              }
+            }
+
+            if(r_1.last < r_2.last) {
+              side = false;
+            } else {
+              side = true;
+            }
           }
         }
 
@@ -1293,6 +1437,94 @@ public:
       }
 
   };
+  */
+
+  // iterator without skip_to, only using next
+  // returns the largest possible range -> i.e.: [4;9), [9;13) = [4;13)
+  class iter_and {
+
+            using tm_lo = dynamic_tree_mask_lo;
+
+            iter it_1;
+            iter it_2;
+            bool end_it_1 = false;
+            bool end_it_2 = false;
+
+            $u1 side = false; // false -> consume from it_1, true -> consume from it_2
+
+            range r;
+            range r_1;
+            range r_2;
+
+        public:
+
+            explicit
+            iter_and(const tm_lo& tm_1, const tm_lo& tm_2) : it_1(tm_1), it_2(tm_2) {
+              next();
+            };
+
+            void next() {
+
+              while(!end()){
+
+                if(!side | r_1.is_empty()) {
+                  end_it_1 = it_1.end();
+
+                  if(!end_it_1) {
+                      r_1.set(it_1.pos(), it_1.length());
+                      it_1.next();
+
+                      while(!it_1.end() && it_1.pos() == r_1.last){
+                        r_1.set_first_last(r_1.first, it_1.pos() + it_1.length());
+                        it_1.next();
+                      }
+                  } else
+                    r_1.set(it_1.pos(),0);
+                }
+
+                if(side | r_2.is_empty()) {
+                  end_it_2 = it_2.end();
+
+                  if(!end_it_2) {
+                    r_2.set(it_2.pos(), it_2.length());
+                    it_2.next();
+
+                    while(!it_2.end() && it_2.pos() == r_2.last){
+                      r_2.set_first_last(r_2.first, it_2.pos() + it_2.length());
+                      it_2.next();
+                    }
+                  } else
+                    r_2.set(it_2.pos(), 0);
+                }
+
+                r = r_1 & r_2;
+
+                if(r_1.last < r_2.last)
+                  side = false;
+                else
+                  side = true;
+
+
+                // we have an overlapping interval
+                if(!r.is_empty())
+                  return; // end search
+
+              }
+
+              r.set(it_1.pos(),0);
+            }
+
+            u1
+            end() const noexcept {
+              return end_it_1 | end_it_2;
+            }
+
+            const range
+            matches() const noexcept {
+              return r;
+            }
+
+        };
 
 //  struct iter_alex {
 //
