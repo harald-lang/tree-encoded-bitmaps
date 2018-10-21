@@ -198,5 +198,10 @@ TYPED_TEST(iterate_1fills_test, skip_multiple_times) {
   ASSERT_EQ(it.pos(), 6);
 //  ASSERT_EQ(it.length(), 2);
 }
+
+TYPED_TEST(iterate_1fills_test, skip_into_a_1fill_length_one) {
+  using T = TypeParam;
+  skip_test<T>(16, 0b1100000110001111, 6, 7, 1);
+}
 //===----------------------------------------------------------------------===//
 
