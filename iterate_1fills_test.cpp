@@ -203,5 +203,72 @@ TYPED_TEST(iterate_1fills_test, skip_into_a_1fill_length_one) {
   using T = TypeParam;
   skip_test<T>(16, 0b1100000110001111, 6, 7, 1);
 }
+
+TEST(iterate_1fills_full_8bit_test, skip_to_test_all_combinations) {
+  using T = dtl::dynamic_tree_mask_lo;
+  using range = dtl::dynamic_tree_mask_lo::range;
+  #define N 8
+
+  for($u64 i = 0; i < 256; i++){
+
+    assert(N <= 64);
+    dtl::bitmap b(N, i);
+
+    std::bitset<N> b_set(static_cast<u8>(i));
+
+    std::cout << std::endl << "bitmap: " << b_set << std::endl;
+
+    std::vector<dtl::dynamic_tree_mask_lo::range> r;
+    T tm(b);
+    std::cout << tm << std::endl;
+
+    auto it_1 = tm.it();
+    while(!it_1.end()){
+      range tmp(it_1.pos(), it_1.length());
+      r.push_back(tmp);
+      it_1.next();
+    }
+
+    std::cout << "All possible ranges: ";
+
+    for(range e : r){
+      e.print();
+      std::cout << " ";
+    }
+    std::cout << std::endl;
+
+
+    for($u8 p = 0; p < N; p++){
+      auto it_2 = tm.it();
+
+      if(!it_2.end()){
+        it_2.skip_to(p);
+
+        std::cout << "Pos: " << it_2.pos() << " Len: " << it_2.length() << std::endl;
+
+        if (it_2.length() == 0 || it_2.pos() == N) {
+          ASSERT_TRUE(it_2.end());
+        }
+        else {
+          ASSERT_TRUE(!it_2.end());
+        }
+
+        if(!it_2.end()){
+          bool found_range = false;
+
+          for(range e: r){
+            if(e.first == it_2.pos() && (e.last-e.first) == it_2.length()){
+              found_range = true;
+              break;
+            }
+          }
+
+          ASSERT_TRUE(found_range);
+        }
+      }
+    }
+  }
+}
+
 //===----------------------------------------------------------------------===//
 
