@@ -551,10 +551,17 @@ template<u64 S>
 void test_iterator(double f, double d){
 
   boost::dynamic_bitset<$u32> bitset{S,0};
-  two_state_markov_process p(f, d);
+  /*two_state_markov_process p(f, d);
 
   for(auto i = 0; i < S; i++)
     bitset[i] = p.next();
+  */
+
+  std::bitset<S> bs_1(0b1111100110111111);
+
+  for(auto i = 0; i < S; i++){
+    bitset[i] = bs_1[i];
+  }
 
   std::cout << "Printing the bitset" << std::endl;
   for(auto i = 0; i < S; i++)
@@ -567,14 +574,52 @@ void test_iterator(double f, double d){
 
   dtl::dynamic_tree_mask_lo::iter it(tm_test);
 
-  while(!it.end()){
-    std::cout << "pos: " << it.pos() << " length: " << it.length() << std::endl;
-    it.next();
+  dtl::dynamic_tree_mask_lo::iter it_ranges(tm_test);
+
+  while(!it_ranges.end()){
+    std::cout << " ["<< it_ranges.pos() << ";" << it_ranges.pos() + it_ranges.length() << "), ";
+    it_ranges.next();
+  }
+  std::cout << std::endl << std::endl;
+
+  for(auto i = it.pos(); i < S; i++){
+    std::cout << "Test skipping to: " << i << std::endl;
+    dtl::dynamic_tree_mask_lo::iter it_tmp(tm_test);
+
+    std::cout << "Current range: [" << it_tmp.pos() << ";" << it_tmp.length() << ")" << std::endl;
+
+    it_tmp.skip_to(i);
+    std::cout << "pos: " << it_tmp.pos() << " length: " << it_tmp.length() << std::endl;
+    boost::dynamic_bitset<$u32> tmp{S,0};
+
+    for(auto j = it_tmp.pos(); j < it_tmp.pos() + it_tmp.length(); j++){
+      tmp.set(j);
+    }
+
+    std::cout << "Resulting bitmap: ";
+    for(auto e = 0; e < S; e++){
+      std::cout << tmp[e];
+    }
+    std::cout << std::endl;
+    std::cout << "Input bitmap:     ";
+    for(auto e = 0; e < S; e++){
+      std::cout << bs_1[e];
+    }
+    std::cout << std::endl;
+
+    std::cout << "Result after next(): ";
+    it_tmp.next();
+    std::cout << "[" << it_tmp.pos() << ";" << it_tmp.pos()+it_tmp.length() << ")" << std::endl;
+
+    if((tmp | bitset) != bitset){
+      std::cout << "Skip to is incorrect" << std::endl;
+    }
+
+    std::cout << std::endl << std::endl;
   }
 
+  std::cout << "Done" << std::endl;
 }
-
-
 
 template<u64 S>
 void test_iterator(double f_1, double d_1, double f_2, double d_2){
@@ -645,7 +690,8 @@ void test_iterator(double f_1, double d_1, double f_2, double d_2){
 }
 
 int main(){
-  test_iterator<16>(5, 0.5, 4, 0.4);
+  test_iterator<16>(5, 0.5);
+  //test_iterator<16>(5, 0.5, 4, 0.4);
   //test_tree_mask_lo_and();
   return 0;
 }

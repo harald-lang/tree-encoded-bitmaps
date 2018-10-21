@@ -13,10 +13,10 @@
 // Instantiate the type templates to a fixed length.
 constexpr std::size_t LEN = 8;
 using iter_simple = dtl::dynamic_tree_mask_lo::iter_and_simple;
-//using iter_with_skip_to = dtl::dynamic_tree_mask_lo::iter_and_with_skip_to;
+using iter_with_skip_to = dtl::dynamic_tree_mask_lo::iter_and_with_skip_to;
 using iter_and = dtl::dynamic_tree_mask_lo::iter_and;
 
-#define VERBOSE false
+#define VERBOSE true
 
 // Fixture for the parameterized test case.
 template<typename T>
@@ -24,8 +24,8 @@ class iter_test : public ::testing::Test {};
 
 // Specify the types for which we want to run the API tests.
 using types_under_test = ::testing::Types<
-    //iter_simple,
-    //iter_with_skip_to,
+    iter_simple,
+    iter_with_skip_to,
     iter_and
 >;
 TYPED_TEST_CASE(iter_test, types_under_test);

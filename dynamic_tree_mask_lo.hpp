@@ -1313,9 +1313,9 @@ public:
 
   };
 
-  /*
   // simple iterator with skip_to
   // always returns the first next possible range -> i.e.: [4;9), [9;13)...
+  // TODO does not work, as skip_to is not working properly
   class iter_and_with_skip_to {
 
       using tm_lo = dynamic_tree_mask_lo;
@@ -1342,42 +1342,20 @@ public:
 
         while(!end()){
 
-          if(!side) {
+          if(!side | r_1.is_empty()) {
             end_it_1 = it_1.end();
 
             if(!end_it_1) {
               r_1.set(it_1.pos(), it_1.length());
-              it_1.next();
             }else
               r_1.set(it_1.pos(),0);
           }
 
-          if(side) {
+          if(side | r_2.is_empty()) {
             end_it_2 = it_2.end();
 
             if(!end_it_2) {
               r_2.set(it_2.pos(), it_2.length());
-              it_2.next();
-            } else
-              r_2.set(it_2.pos(), 0);
-          }
-
-          if(r_1.is_empty()) {
-            end_it_1 = it_1.end();
-
-            if(!end_it_1) {
-              r_1.set(it_1.pos(), it_1.length());
-              it_1.next();
-            }else
-              r_1.set(it_1.pos(),0);
-          }
-
-          if(r_2.is_empty()) {
-            end_it_2 = it_2.end();
-
-            if(!end_it_2) {
-              r_2.set(it_2.pos(), it_2.length());
-              it_2.next();
             } else
               r_2.set(it_2.pos(), 0);
           }
@@ -1391,34 +1369,48 @@ public:
             std::cout << std::endl;
           #endif
 
-          if(!r.is_empty()){
-            if(r_1.last < r_2.last)
+          if(!r.is_empty()) {
+            std::cout << "Normal case" << std::endl;
+            if (r_1.last < r_2.last) {
+              it_1.next();
               side = false;
-            else
+            } else {
+              it_2.next();
               side = true;
+            }
+            std::cout << "Current state: it_1.end: " << (it_1.end() ? "True" : "False") <<
+            " it_2.end: " << (it_2.end() ? "True" : "False") << std::endl;
 
             return;
-
           } else {
 
-            if(r_1.last < r_2.first && !it_2.end()){
-              if(it_1.end()){
-                it_1.skip_to(r_2.first);
-                end_it_1 = it_1.end();
-              }
-            } else {
-              if(r_2.last < r_1.first && !it_1.end()){
-                if(!it_2.end()){
-                  it_2.skip_to(r_1.first);
-                  end_it_2 = it_2.end();
-                }
-              }
+            if(it_1.end() | it_2.end()){
+              return;
             }
 
-            if(r_1.last < r_2.last) {
+            std::cout << "Check skipping" << std::endl;
+
+
+            if(r_1.last <= r_2.first){
+              std::cout << "it_1 is smaller" << std::endl;
+              if(!it_2.end()){
+                std::cout << "it_1 skip to: " << r_2.first << std::endl;
+                it_1.skip_to(r_2.first);
+                std::cout << "New pos: " << it_1.pos() << std::endl;
+              }
               side = false;
             } else {
-              side = true;
+
+              if(r_2.last <= r_1.first){
+                std::cout << "it_2 is smaller" << std::endl;
+
+                if(!it_1.end()){
+                  std::cout << "it_2 skip to: " << r_1.first << std::endl;
+                  it_2.skip_to(r_1.first);
+                  std::cout << "New pos: " << it_2.pos() << std::endl;
+                }
+                side = true;
+              }
             }
           }
         }
@@ -1437,7 +1429,7 @@ public:
       }
 
   };
-  */
+
 
   // iterator without skip_to, only using next
   // returns the largest possible range -> i.e.: [4;9), [9;13) = [4;13)
