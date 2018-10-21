@@ -5,6 +5,7 @@
 #include <queue>
 #include <vector>
 
+#include <dtl/bits.hpp>
 #include <dtl_storage/tree_mask.hpp>
 #include <stack>
 
@@ -1052,14 +1053,21 @@ public:
 
     iter(iter&&) = default;
 
+    static path_t toggle_msb(path_t i) {
+      return i ^ (path_t(1) << (sizeof i * CHAR_BIT - dtl::bits::lz_count(i) - 1));
+    }
+
     void
     skip_to(const std::size_t to_pos) {
       assert(to_pos >= pos_ + length_);
 
       // determine the common ancestor
-      const auto shift_amount = ((sizeof(path_t) * 8) - level_);
-      const auto a = path_ << shift_amount;
+      const auto shift_amount = ((sizeof(path_t) * 8) - tree_height);
+//      std::cout << "path=" << std::bitset<64>(path_) << std::endl;
+      const auto a = toggle_msb(path_) << shift_amount;
+//      std::cout << "   a=" << std::bitset<64>(a) << std::endl;
       const auto b = to_pos << shift_amount;
+//      std::cout << "   b=" << std::bitset<64>(b) << std::endl;
       const auto a_xor_b = a ^ b;
       const auto common_prefix_len = a_xor_b == 0 ? 0 : dtl::bits::lz_count(a_xor_b);
 

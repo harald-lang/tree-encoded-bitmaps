@@ -156,8 +156,12 @@ skip_test(u64 n, u64 bitmap, u64 skip_to_pos, u64 expected_pos, u64 expected_len
 
 TYPED_TEST(iterate_1fills_test, skip_to_1fill) {
   using T = TypeParam;
-  skip_test<T>(8, 0b00001001, 3, 3, 1);
   skip_test<T>(8, 0b00000101, 2, 2, 1);
+  skip_test<T>(8, 0b00001001, 3, 3, 1);
+  skip_test<T>(8, 0b00010001, 4, 4, 1);
+  skip_test<T>(8, 0b00100001, 5, 5, 1);
+  skip_test<T>(8, 0b01000001, 6, 6, 1);
+  skip_test<T>(8, 0b10000001, 7, 7, 1);
 }
 
 TYPED_TEST(iterate_1fills_test, skip_to_1fill_passing_the_root_node) {
