@@ -18,8 +18,8 @@
 // The number of independent runs.
 static constexpr u64 RUNS = 100;
 //static constexpr u64 RUNS = 1;
-//static constexpr u64 N = 1u << 20;
-static constexpr u64 N = 1u << 22;
+static constexpr u64 N = 1u << 20;
+//static constexpr u64 N = 1u << 22;
 
 static constexpr u64 M = 1024;
 
@@ -220,22 +220,93 @@ void run_and(f64 f_a, f64 d_a, f64 f_b, f64 d_b,
      << "," << N
      << "," << T::name()
      << "," << d_a
-     << "," << d_actual_a
+     //<< "," << d_actual_a
      << "," << f_a
-     << "," << f_actual_a
-     << "," << size_in_bytes_a
+     //<< "," << f_actual_a
+     //<< "," << size_in_bytes_a
      << "," << d_b
-     << "," << d_actual_b
+     //<< "," << d_actual_b
      << "," << f_b
-     << "," << f_actual_b
-     << "," << size_in_bytes_b
-     << "," << dep / repetition_cntr
+     //<< "," << f_actual_b
+     //<< "," << size_in_bytes_b
+     //<< "," << dep / repetition_cntr
+     << "," << (nanos_cnt * 1.0) / ((bitmap_a.size() * 1.0) * repetition_cntr)
+     << std::endl;
+}
+
+template<typename T, typename B>
+void run_and_iter(f64 f_a, f64 d_a, f64 f_b, f64 d_b,
+             const B& bitmap_a, const B& bitmap_b,
+             std::ostream& os) {
+
+  const T enc_bitmap_a(bitmap_a);
+  const T enc_bitmap_b(bitmap_b);
+
+  const auto size_in_bytes_a = enc_bitmap_a.size_in_byte();
+  const auto size_in_bytes_b = enc_bitmap_b.size_in_byte();
+
+  std::vector<dtl::dynamic_tree_mask_lo::range> res;
+
+  // performance measurement
+  u64 nanos_begin = now_nanos();
+  $u64 repetition_cntr = 0;
+  $u64 dep = 0;
+
+  while (now_nanos() - nanos_begin < 2000000000ull) {
+    for (std::size_t r = 0; r < 10; r++) {
+
+      dtl::dynamic_tree_mask_lo::iter_and it_and(enc_bitmap_a, enc_bitmap_b);
+      while(!it_and.end()){
+        //res.push_back(it_and.matches());
+        it_and.next();
+      }
+
+      dep += res.size();
+      //res.clear();
+    }
+    repetition_cntr += 10;
+  }
+  u64 nanos_end = now_nanos();
+  u64 nanos_cnt = nanos_end - nanos_begin;
+
+  // validation code
+  {
+    const T res = enc_bitmap_a & enc_bitmap_b;
+    const B res_valid = bitmap_a & bitmap_b;
+    for ($u32 i = 0; i < res_valid.size(); i++) {
+      //TODO
+      //if (res_valid.test(i) != res.test(i)) {
+      //  std::cerr << "validation failed" << std::endl;
+      //  std::exit(1);
+      //}
+    }
+  }
+
+  const auto d_actual_a = (bitmap_a.count() * 1.0) / bitmap_a.size();
+  const auto d_actual_b = (bitmap_b.count() * 1.0) / bitmap_b.size();
+  const auto f_actual_a = (bitmap_a.count() * 1.0) / count_1fills(bitmap_a);
+  const auto f_actual_b = (bitmap_b.count() * 1.0) / count_1fills(bitmap_b);
+
+  os << RUN_ID
+     << "," << N
+     << "," << T::name() << " via Iterator"
+     //<< "," << d_a
+     //<< "," << d_actual_a
+     //<< "," << f_a
+     //<< "," << f_actual_a
+     //<< "," << size_in_bytes_a
+     //<< "," << d_b
+     //<< "," << d_actual_b
+     //<< "," << f_b
+     //<< "," << f_actual_b
+     //<< "," << size_in_bytes_b
+     //<< "," << dep / repetition_cntr
      << "," << (nanos_cnt * 1.0) / ((bitmap_a.size() * 1.0) * repetition_cntr)
      << std::endl;
 }
 
 template<typename _bitmap_t = dtl::dynamic_bitmap<$u32>, typename ...params>
-void __noinline__
+void
 iterate_1fills(const boost::dynamic_bitset<$u32>& input, params&&... constructor_params) {
 
   // encode the input bitmap
@@ -266,6 +337,47 @@ iterate_1fills(const boost::dynamic_bitset<$u32>& input, params&&... constructor
   std::cout << ((nanos_end - nanos_begin) * 1.0) / (one_fill_cnt * RUNS) << " [ns/1fill]" << std::endl;
 }
 
+$i32 main() {
+
+  std::cerr << "run_id=" << std::endl;
+
+  //point_queries();
+
+  for(auto i = 0; i < 400; i += 16){
+
+    const auto f_a = i;
+    const auto d_a = 0.05;
+    const auto f_b = 8;
+    const auto d_b = 0.27;
+    const auto bitmap_a = gen_bitmap(f_a, d_a);
+    const auto dynamic_bitmap_a = to_dynamic_bitset(bitmap_a);
+    const auto bitmap_b = gen_bitmap(f_b, d_b);
+    const auto dynamic_bitmap_b = to_dynamic_bitset(bitmap_b);
+
+    run_and<dtl::roaring_bitmap<N>>                 (f_a, d_a, f_b, d_b, bitmap_a, bitmap_b, std::cout);
+    run_and<dtl::wah32<N>>                          (f_a, d_a, f_b, d_b, bitmap_a, bitmap_b, std::cout);
+    run_and<dtl::dynamic_tree_mask_lo>              (f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout);
+  }
+
+
+  /*
+  const auto f_a = 20;
+  const auto d_a = 0.05;
+  const auto f_b = 8;
+  const auto d_b = 0.27;
+  const auto bitmap_a = gen_bitmap(f_a, d_a);
+  const auto dynamic_bitmap_a = to_dynamic_bitset(bitmap_a);
+  const auto bitmap_b = gen_bitmap(f_b, d_b);
+  const auto dynamic_bitmap_b = to_dynamic_bitset(bitmap_b);
+
+  run_and<dtl::roaring_bitmap<N>>                 (f_a, d_a, f_b, d_b, bitmap_a, bitmap_b, std::cout);
+  run_and<dtl::wah32<N>>                          (f_a, d_a, f_b, d_b, bitmap_a, bitmap_b, std::cout);
+  run_and<dtl::dynamic_tree_mask_lo>              (f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout);
+  //run_and_iter<dtl::dynamic_tree_mask_lo>         (f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout);
+   */
+}
+
+/*
 $i32 main() {
 
   std::cerr << "run_id=" << std::endl;
@@ -307,3 +419,4 @@ $i32 main() {
   std::cout << std::endl;
 
 }
+*/

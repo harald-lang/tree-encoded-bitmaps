@@ -909,7 +909,7 @@ public:
 
   /// Computes (a XOR b) & this
   /// Note: this, a and b must be different instances. Otherwise, the behavior is undefined.
-  dynamic_tree_mask_lo&
+  dynamic_tree_mask_lo
   fused_xor_and(const dynamic_tree_mask_lo& a, const dynamic_tree_mask_lo& b) const {
 
     // get (a XOR b)
@@ -918,7 +918,7 @@ public:
     // get this & (a XOR b)
     dynamic_tree_mask_lo tree_mask_and = *this & tree_mask_xor;
 
-    return tree_mask_and; // FIXME: reference to local variable ‘tree_mask_and’ returned
+    return tree_mask_and;
   }
 
   /// Return the name of the implementation.
@@ -1000,6 +1000,13 @@ public:
         u64 node_idx = pair >> 32;
         u64 path = pair & ((u64(1) << 32) - 1);
         stack_.pop();
+
+        //std::cout << "structure size: " << tm_.structure_.size() << " label_size: " << tm_.labels_.size() << std::endl;
+        //std::cout << "node index: " << node_idx << std::endl;
+        if(node_idx >= tm_.structure_.size()){
+          break;
+        }
+
         if (likely(!tm_.is_leaf_node(node_idx))) {
           // goto left child
           const auto r = tm_.rank(node_idx + 1);
@@ -1159,7 +1166,7 @@ public:
 
     u64
     length() const noexcept {
-      return length_;
+      return (length_ > tm_.N ? 0 : length_);
     }
 
   };
@@ -1192,8 +1199,12 @@ public:
 
             __forceinline__ void
             set(u64 start, u64 length) noexcept {
+              //std::cout << "start: " << start << " length: " << length << std::endl;
+
               first = start;
-              last = first + length;
+              last = start + length;
+
+              //std::cout << "set bits: " << first << " length: " << last << std::endl;
             }
 
             __forceinline__ void
@@ -1229,13 +1240,10 @@ public:
             operator&(const range& other) const noexcept {
               range r;
 
-              if(is_empty())
+              if(is_empty() | other.is_empty())
                 return r;
 
-              if(other.is_empty())
-                return r;
-
-              r.set_first_last(std::max(first, other.first),std::min(last, other.last));
+              r.set_first_last(std::max(first, other.first), std::min(last, other.last));
 
               if(r.first >= r.last) // empty range
                 r.set(0,0);
@@ -1323,7 +1331,7 @@ public:
 
   // simple iterator with skip_to
   // always returns the first next possible range -> i.e.: [4;9), [9;13)...
-  // TODO does not work, as skip_to is not working properly
+  // TODO does not work, as skip_to is not working properly (-> skips to the wrong intervals, above the end, etc. ...
   class iter_and_with_skip_to {
 
       using tm_lo = dynamic_tree_mask_lo;
@@ -1351,24 +1359,33 @@ public:
         while(!end()){
 
           if(!side | r_1.is_empty()) {
-            end_it_1 = it_1.end();
+            end_it_1 = it_1.end(); // check if we are at the end of the TEB
 
-            if(!end_it_1) {
-              r_1.set(it_1.pos(), it_1.length());
+            //std::cout << "     r_1: "; r_1.print();
+
+            if(!end_it_1) { // if we are not at the end
+              r_1.set(it_1.pos(), it_1.length()); // set the range to be the current interval
             }else
-              r_1.set(it_1.pos(),0);
+              r_1.set(it_1.pos(),0); // set the last range to be [pos;pos) -> empty
+
+            //std::cout << "     r_1: "; r_1.print();
           }
 
           if(side | r_2.is_empty()) {
-            end_it_2 = it_2.end();
+            end_it_2 = it_2.end(); // check if we are at the end of the TEB
 
-            if(!end_it_2) {
-              r_2.set(it_2.pos(), it_2.length());
+            //std::cout << "     r_2: "; r_2.print();
+
+            if(!end_it_2) { // if we are not at the end
+              r_2.set(it_2.pos(), it_2.length()); // set the range to be the current interval
             } else
-              r_2.set(it_2.pos(), 0);
+              r_2.set(it_2.pos(), 0); // set the last range to be [pos;pos) -> empty
+
+            //std::cout << "     r_2: "; r_2.print();
+
           }
 
-          r = r_1 & r_2;
+          r = r_1 & r_2; // perform an end of the two current intervals
 
           #if VERBOSE_OUT
             std::cout << "     r_1: "; r_1.print();
@@ -1377,47 +1394,57 @@ public:
             std::cout << std::endl;
           #endif
 
-          if(!r.is_empty()) {
+          if(!r.is_empty()) { // if we have a matching subinterval
             std::cout << "Normal case" << std::endl;
-            if (r_1.last < r_2.last) {
-              it_1.next();
-              side = false;
+            if (r_1.last < r_2.last) { // if r_1 ends before r_2
+              it_1.next(); // go to the next interval in r_1
+              side = false; // next iteration update the interval for r_1
             } else {
-              it_2.next();
-              side = true;
+              it_2.next(); // go to the next interval in r_2
+              side = true;  // next iteration update the interval for r_2
             }
             std::cout << "Current state: it_1.end: " << (it_1.end() ? "True" : "False") <<
             " it_2.end: " << (it_2.end() ? "True" : "False") << std::endl;
 
-            return;
+            return; // return as we found the next matching interval
           } else {
 
-            if(it_1.end() | it_2.end()){
+            std::cout << "r was empty, check if one of the two TEBs is at the end" << std::endl;
+            std::cout << "it_1: " << it_1.end() << " it_2: " << it_2.end() << std::endl;
+
+            if(it_1.end() | it_2.end()){ // check if both TEBs are fully iterated
               return;
             }
 
             std::cout << "Check skipping" << std::endl;
 
+            if(r_1.first == r_1.last || r_2.first == r_2.last){
+              // we reached the end of an input
+              end_it_1 = (r_1.first == r_1.last);
+              end_it_2 = (r_2.first == r_2.last);
+              return;
 
-            if(r_1.last <= r_2.first){
-              std::cout << "it_1 is smaller" << std::endl;
-              if(!it_2.end()){
-                std::cout << "it_1 skip to: " << r_2.first << std::endl;
-                it_1.skip_to(r_2.first);
-                std::cout << "New pos: " << it_1.pos() << std::endl;
-              }
-              side = false;
-            } else {
-
-              if(r_2.last <= r_1.first){
-                std::cout << "it_2 is smaller" << std::endl;
-
-                if(!it_1.end()){
-                  std::cout << "it_2 skip to: " << r_1.first << std::endl;
-                  it_2.skip_to(r_1.first);
-                  std::cout << "New pos: " << it_2.pos() << std::endl;
+            }else{
+              if(r_1.last <= r_2.first){
+                std::cout << "it_1 is smaller" << std::endl;
+                if(!it_2.end()){
+                  std::cout << "it_1 skip to: " << r_2.first << std::endl;
+                  it_1.skip_to(r_2.first);
+                  std::cout << "New pos: " << it_1.pos() << std::endl;
                 }
-                side = true;
+                side = false;
+              } else {
+
+                if(r_2.last <= r_1.first){
+                  std::cout << "it_2 is smaller" << std::endl;
+
+                  if(!it_1.end()){
+                    std::cout << "it_2 skip to: " << r_1.first << std::endl;
+                    it_2.skip_to(r_1.first);
+                    std::cout << "New pos: " << it_2.pos() << std::endl;
+                  }
+                  side = true;
+                }
               }
             }
           }
@@ -1525,78 +1552,6 @@ public:
             }
 
         };
-
-//  struct iter_alex {
-//
-//      const dynamic_tree_mask_lo& tm;
-//      u64 tree_height = dtl::log_2(tm.N);
-//
-//      //===----------------------------------------------------------------------===//
-//      // Iterator state
-//      //===----------------------------------------------------------------------===//
-//
-//      /// <level, node position in struct>
-//      using node = std::pair<$u64, u64>;
-//
-//      std::list<node> state;
-//
-//      /// points to the beginning of a 1-fill
-//      $u64 pos = 0; //
-//
-//      /// the length of the current 1-fill
-//      $u64 length = tm.N;
-//
-//
-//      void next() {
-//
-//        while (!state.empty()) {
-//          u64 level = state.front().first;
-//          u64 node_idx = state.front().second;
-//          state.pop_front();
-//
-//          if (!tm.is_leaf_node(node_idx)) {
-//
-//            const auto rank = tm.rank(node_idx);
-//            const auto l_child = 2 * rank - 1;
-//            const auto r_child = 2 * rank;
-//
-//            state.push_front(std::make_pair(level + 1, r_child));
-//            state.push_front(std::make_pair(level + 1, l_child));
-//          } else {
-//
-//            u1 label = tm.get_label(node_idx);
-//
-//            if (label) { // true
-//
-//              //TODO
-//              length = 1 << (tree_height - level); // // todo nachrechnen ob das stimmt
-//
-//              return;
-//            } else {
-//              // increment the pos and proceed
-//              pos +=  1 << (tree_height - level); // todo nachrechnen ob das stimmt
-//            }
-//          }
-//
-//        }
-//
-//        pos = tm.N;
-//      }
-//
-//      explicit
-//      iter(const dynamic_tree_mask_lo& tm){
-//      }
-//
-//
-//      void skip_to() {
-//
-//      }
-//
-//      u1 end() {
-//        return pos == tm.N;
-//      }
-//
-//  };
 
 };
 
