@@ -10,6 +10,7 @@
 #include "tree_mask_lo.hpp"
 #include "tree_mask_po.hpp"
 #include "wah.hpp"
+#include "test_utils.hpp"
 
 //===----------------------------------------------------------------------===//
 // Typed API tests for loss-less compressed bitmaps.
@@ -30,8 +31,8 @@ class iterate_1fills_test : public ::testing::Test {};
 // Specify the types for which we want to run the API tests.
 using types_under_test = ::testing::Types<
     dtl::dynamic_tree_mask_lo,
-    dtl::dynamic_bitmap<$u32>,
-    dtl::dynamic_partitioned_tree_mask
+    dtl::dynamic_bitmap<$u32>
+//    dtl::dynamic_partitioned_tree_mask
 //    roaring_bitmap,
 //    tree_mask_lo,
 //    tree_mask_po,
@@ -40,31 +41,6 @@ using types_under_test = ::testing::Types<
 >;
 TYPED_TEST_CASE(iterate_1fills_test, types_under_test);
 
-namespace dtl {
-using bitmap = boost::dynamic_bitset<$u32>;
-} // namespace dtl
-
-//===----------------------------------------------------------------------===//
-dtl::bitmap
-gen(u64 n, $f64 f, $f64 d) {
-
-  // init bitset
-  f64 f_min = d >= 1.0 ? n : d/(1-d);
-  f64 f_actual = std::max(f, f_min);
-  two_state_markov_process mp(f_actual, d);
-  dtl::bitmap bs(n);
-  for ($u64 i = 0; i < n; i++) {
-    bs[i] = mp.next();
-  }
-
-  $f64 d_actual = (bs.count() * 1.0) / n;
-  if (std::abs(d - d_actual) > 1
-      || std::abs(f - f_actual) > 0.25) {
-    throw std::invalid_argument("Failed to construct a random bitmap with the given parameters.");
-  }
-  return bs;
-}
-//===----------------------------------------------------------------------===//
 
 
 //===----------------------------------------------------------------------===//
@@ -244,6 +220,7 @@ TEST(iterate_1fills_full_8bit_test, skip_to_test_all_combinations) {
 
     for($u8 p = 0; p < N; p++){
       auto it_2 = tm.it();
+      std::cout << "pos=" << it_2.pos() << std::endl;
 
       if(!it_2.end()){
         it_2.skip_to(p);
@@ -252,8 +229,7 @@ TEST(iterate_1fills_full_8bit_test, skip_to_test_all_combinations) {
 
         if (it_2.length() == 0 || it_2.pos() == N) {
           ASSERT_TRUE(it_2.end());
-        }
-        else {
+        }       else {
           ASSERT_TRUE(!it_2.end());
         }
 

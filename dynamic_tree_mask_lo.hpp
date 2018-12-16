@@ -961,6 +961,10 @@ public:
         && labels_[0] == false; // and the label is 0
   }
 
+  std::size_t
+  size() const {
+    return N;
+  }
 
   //===----------------------------------------------------------------------===//
   /// 1-fill iterator, with skip support.
@@ -1067,6 +1071,10 @@ public:
     void
     skip_to(const std::size_t to_pos) {
       assert(to_pos >= pos_ + length_);
+      if (to_pos >= tm_.N) {
+        pos_ = tm_.N;
+        return;
+      }
 
       // determine the common ancestor
       const auto shift_amount = ((sizeof(path_t) * 8) - tree_height);
@@ -1173,7 +1181,7 @@ public:
 
   iter
   it() const {
-    return iter(*this);
+    return std::move(iter(*this));
   }
 
   struct range {

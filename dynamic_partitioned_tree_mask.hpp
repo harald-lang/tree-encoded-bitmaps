@@ -152,9 +152,14 @@ public:
   }
 
   /// Return the name of the implementation.
-  static std::string
-  name() {
-    return "dynamic_partitioned_tree_mask";
+  std::string
+  name() const {
+    return "dynamic_partitioned_tree_mask_" + std::to_string(partition_cnt);
+  }
+
+  std::size_t
+  size() const {
+    return N;
   }
 
   /// Returns the value of the bit at the position pos.

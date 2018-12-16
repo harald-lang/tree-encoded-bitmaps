@@ -22,9 +22,13 @@ add_subdirectory(thirdparty/gtest)
 include_directories(thirdparty/gtest/include lib/googletest)
 
 set(TEST_FILES
+        test_utils.hpp
+        test_utils.cpp
+
         api_test.cpp
 #        bitmap_view_test.cpp
         iterate_1fills_test.cpp
+        iterate_test.cpp
         )
 add_executable(tester ${TEST_FILES})
 target_link_libraries(tester gtest gtest_main fastbit roaring)

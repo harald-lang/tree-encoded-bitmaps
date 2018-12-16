@@ -107,7 +107,8 @@ void run(f64 f, f64 d, const B& bitmap, const std::vector<$u32>& lookup_pos, std
   const auto f_actual = (bitmap.count() * 1.0) / count_1fills(bitmap);
   os << RUN_ID
      << "," << N
-     << "," << T::name()
+     << "," << enc_bitmap.name()
+//     << "," << T::name()
      << "," << d
      << "," << d_actual
      << "," << f
@@ -173,13 +174,14 @@ void point_queries() {
 
 
 
-template<typename T, typename B>
+template<typename T, typename B, typename ...Params>
 void run_and(f64 f_a, f64 d_a, f64 f_b, f64 d_b,
              const B& bitmap_a, const B& bitmap_b,
-             std::ostream& os) {
+             std::ostream& os,
+             Params&&... constructor_params) {
 
-  const T enc_bitmap_a(bitmap_a);
-  const T enc_bitmap_b(bitmap_b);
+  const T enc_bitmap_a(bitmap_a, std::forward<Params>(constructor_params)...);
+  const T enc_bitmap_b(bitmap_b, std::forward<Params>(constructor_params)...);
 
   const auto size_in_bytes_a = enc_bitmap_a.size_in_byte();
   const auto size_in_bytes_b = enc_bitmap_b.size_in_byte();
@@ -189,7 +191,7 @@ void run_and(f64 f_a, f64 d_a, f64 f_b, f64 d_b,
   u64 nanos_begin = now_nanos();
   $u64 repetition_cntr = 0;
   $u64 dep = 0;
-  while (now_nanos() - nanos_begin < 2000000000ull) {
+  while (now_nanos() - nanos_begin < 200000000ull) {
     for (std::size_t r = 0; r < 5; r++) {
       const T res = enc_bitmap_a & enc_bitmap_b;
       dep += res.size_in_byte();
@@ -218,7 +220,8 @@ void run_and(f64 f_a, f64 d_a, f64 f_b, f64 d_b,
 
   os << RUN_ID
      << "," << N
-     << "," << T::name()
+     << "," << enc_bitmap_a.name()
+//     << "," << T::name()
      << "," << d_a
      //<< "," << d_actual_a
      << "," << f_a
@@ -354,9 +357,14 @@ $i32 main() {
     const auto bitmap_b = gen_bitmap(f_b, d_b);
     const auto dynamic_bitmap_b = to_dynamic_bitset(bitmap_b);
 
-    run_and<dtl::roaring_bitmap<N>>                 (f_a, d_a, f_b, d_b, bitmap_a, bitmap_b, std::cout);
-    run_and<dtl::wah32<N>>                          (f_a, d_a, f_b, d_b, bitmap_a, bitmap_b, std::cout);
-    run_and<dtl::dynamic_tree_mask_lo>              (f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout);
+    run_and<dtl::roaring_bitmap<N>>            (f_a, d_a, f_b, d_b, bitmap_a, bitmap_b, std::cout);
+//    run_and<dtl::wah32<N>>                     (f_a, d_a, f_b, d_b, bitmap_a, bitmap_b, std::cout);
+    run_and<dtl::dynamic_tree_mask_lo>         (f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout);
+    run_and<dtl::dynamic_partitioned_tree_mask>(f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout,   8);
+    run_and<dtl::dynamic_partitioned_tree_mask>(f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout,  16);
+    run_and<dtl::dynamic_partitioned_tree_mask>(f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout,  32);
+    run_and<dtl::dynamic_partitioned_tree_mask>(f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout,  64);
+    run_and<dtl::dynamic_partitioned_tree_mask>(f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout, 128);
   }
 
 
