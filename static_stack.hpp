@@ -42,6 +42,11 @@ public:
   }
 
   __forceinline__ void
+  clear() {
+    cnt_ = 0;
+  }
+
+  __forceinline__ void
   push_back(const T& item) {
     stack_[cnt_] = item;
     cnt_++;

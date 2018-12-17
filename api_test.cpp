@@ -25,10 +25,10 @@ class api_test : public ::testing::Test {};
 
 // Specify the types for which we want to run the API tests.
 using types_under_test = ::testing::Types<
-    roaring_bitmap,
-    tree_mask_lo,
-    tree_mask_po,
-    wah32
+//    roaring_bitmap,
+    tree_mask_lo //,
+//    tree_mask_po,
+//    wah32
 //    wah64 // FIXME: Position iterator does not work with 64-bit impl.
 >;
 TYPED_TEST_CASE(api_test, types_under_test);

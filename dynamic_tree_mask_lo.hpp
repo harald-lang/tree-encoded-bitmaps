@@ -951,12 +951,14 @@ public:
 
   u1
   all() {
+    // TODO: this works only if the tree mask is in a compressed state
     return structure_[0] == false // root is the only node (a leaf)
         && labels_[0] == true; // and the label is 1
   }
 
   u1
   none() {
+    // TODO: this works only if the tree mask is in a compressed state
     return structure_[0] == false // root is the only node (a leaf)
         && labels_[0] == false; // and the label is 0
   }
@@ -997,7 +999,7 @@ public:
 
   public:
 
-    void
+    void __forceinline__
     next() {
       while (!stack_.empty()) {
         u64 pair = stack_.top();
@@ -1011,7 +1013,7 @@ public:
           break;
         }
 
-        if (likely(!tm_.is_leaf_node(node_idx))) {
+        if (!tm_.is_leaf_node(node_idx)) {
           // goto left child
           const auto r = tm_.rank(node_idx + 1);
           const auto right_child = 2 * r;
@@ -1037,6 +1039,7 @@ public:
         }
       }
       pos_ = tm_.N;
+      length_ = 0;
     }
 
     explicit
@@ -1064,15 +1067,83 @@ public:
 
     iter(iter&&) = default;
 
-    static path_t toggle_msb(path_t i) {
+    static path_t __forceinline__
+    toggle_msb(path_t i) {
       return i ^ (path_t(1) << (sizeof i * CHAR_BIT - dtl::bits::lz_count(i) - 1));
     }
 
-    void
+    void __forceinline__
+    nav_to(const std::size_t to_pos) {
+      if (to_pos >= tm_.N) {
+        pos_ = tm_.N;
+        length_ = 0;
+        return;
+      }
+      level_ = 0;
+      stack_.clear();
+      $u64 node_idx = 0;
+      path_ = 1;
+//      std::cout << "to_pos=" << std::bitset<64>(to_pos) << std::endl;
+      // walk down the tree to the desired position
+      std::size_t i = tree_height - 1;
+      while (true) {
+//        std::cout << "path=" << std::bitset<64>(path_) << std::endl;
+        // first check, if this is already a leaf node
+        if (tm_.is_leaf_node(node_idx)) {
+          // reached the desired position
+          if (tm_.get_label(node_idx)) {
+            // done
+            const auto lz_cnt_path = dtl::bits::lz_count(path_);
+            pos_ = (path_ ^ (path_msb >> lz_cnt_path)) << (tree_height - level_); // toggle sentinel bit (= highest bit set) and add offset
+            length_ = tm_.N >> level_; // the length of the 1-fill
+            // adjust the current position and fill-length
+            length_ -= to_pos - pos_;
+            pos_ = to_pos;
+            return;
+          }
+          else {
+            // search forward to the next 1-fill
+            next();
+            return;
+          }
+        }
+
+        // navigate downwards the tree
+        u1 bit = dtl::bits::bit_test(to_pos, i); // 0 -> goto left child, 1 -> goto right child
+        i--;
+        const auto r = tm_.rank(node_idx + 1);
+        const auto right_child = 2 * r;
+        const auto left_child = right_child - 1;
+        level_++;
+        if (!bit) {
+          // goto left child
+          stack_.push((right_child << 32) | ((path_ << 1) | 1));
+          path_ <<= 1;
+          node_idx = left_child;
+        }
+        else {
+          // goto right child
+          path_ = (path_ << 1) | 1;
+          node_idx = right_child;
+        }
+      }
+    }
+
+    void __forceinline__
     skip_to(const std::size_t to_pos) {
+      nav_to(to_pos);
+    }
+
+    // FIXME: buggy
+    void __forceinline__
+    skip_to_OFF(const std::size_t to_pos) {
       assert(to_pos >= pos_ + length_);
       if (to_pos >= tm_.N) {
         pos_ = tm_.N;
+        return;
+      }
+      if (to_pos == pos_ + length_) {
+        next();
         return;
       }
 
@@ -1105,6 +1176,7 @@ public:
         if (stack_.empty()) {
           // end
           pos_ = tm_.N;
+          break;
         }
       }
 
@@ -1162,24 +1234,24 @@ public:
       }
     }
 
-    u1
+    u1 __forceinline__
     end() const noexcept {
       return pos_ == tm_.N;
     }
 
-    u64
+    u64 __forceinline__
     pos() const noexcept {
       return pos_;
     }
 
-    u64
+    u64 __forceinline__
     length() const noexcept {
       return (length_ > tm_.N ? 0 : length_);
     }
 
   };
 
-  iter
+  iter __forceinline__
   it() const {
     return std::move(iter(*this));
   }

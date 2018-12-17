@@ -173,10 +173,61 @@ void point_queries() {
 }
 
 
+//===----------------------------------------------------------------------===//
+template<typename T, typename F>
+void __forceinline__
+bitwise_and_using_skip_iterator(T bitmap_a, T bitmap_b, F consumer) {
+  auto it_a = bitmap_a.it();
+  auto it_b = bitmap_b.it();
+  while (!(it_a.end() || it_b.end())) { // TODO should be ||
+    const auto a_begin = it_a.pos();
+    const auto a_end   = it_a.pos() + it_a.length();
+    const auto b_begin = it_b.pos();
+    const auto b_end   = it_b.pos() + it_b.length();
 
-template<typename T, typename B, typename ...Params>
+    const auto begin_max = std::max(a_begin, b_begin);
+    const auto end_min   = std::min(a_end,   b_end);
+
+    u1 overlap = begin_max < end_min;
+
+    if (overlap) {
+      if (a_end == b_end) {
+        it_a.next();
+        it_b.next();
+      }
+      else if (a_end <= b_end) {
+        it_a.next();
+      }
+      else {
+        it_b.next();
+      }
+    }
+    else {
+      // no overlap
+      if (a_end == b_end) {
+        it_a.next();
+        it_b.next();
+      }
+      else if (a_end < b_end) {
+        it_a.nav_to(b_begin);
+      }
+      else {
+        it_b.nav_to(a_begin);
+      }
+    }
+
+    if (overlap) {
+      consumer(begin_max, end_min);
+    }
+  }
+}
+//===----------------------------------------------------------------------===//
+
+
+template<typename T, typename ...Params>
 void run_and(f64 f_a, f64 d_a, f64 f_b, f64 d_b,
-             const B& bitmap_a, const B& bitmap_b,
+             const boost::dynamic_bitset<$u32>& bitmap_a,
+             const boost::dynamic_bitset<$u32>& bitmap_b,
              std::ostream& os,
              Params&&... constructor_params) {
 
@@ -190,26 +241,33 @@ void run_and(f64 f_a, f64 d_a, f64 f_b, f64 d_b,
   // performance measurement
   u64 nanos_begin = now_nanos();
   $u64 repetition_cntr = 0;
-  $u64 dep = 0;
+  $u64 match_cnt = 0;
   while (now_nanos() - nanos_begin < 200000000ull) {
-    for (std::size_t r = 0; r < 5; r++) {
-      const T res = enc_bitmap_a & enc_bitmap_b;
-      dep += res.size_in_byte();
+    static constexpr std::size_t MIN_REP = 50;
+    for (std::size_t r = 0; r < MIN_REP; r++) {
+      bitwise_and_using_skip_iterator(enc_bitmap_a, enc_bitmap_b, [&](u64 begin, u64 end) { match_cnt += end - begin; });
     }
-    repetition_cntr += 10;
+    repetition_cntr += MIN_REP;
   }
   u64 nanos_end = now_nanos();
   u64 nanos_cnt = nanos_end - nanos_begin;
 
-  // validation code
   {
-    const T res = enc_bitmap_a & enc_bitmap_b;
-    const B res_valid = bitmap_a & bitmap_b;
-    for ($u32 i = 0; i < res_valid.size(); i++) {
-      if (res_valid.test(i) != res.test(i)) {
-        std::cerr << "validation failed" << std::endl;
-        std::exit(1);
-      }
+    // Validation code
+    const auto expected = bitmap_a & bitmap_b;
+    auto actual = expected;
+    actual.reset();
+    bitwise_and_using_skip_iterator(enc_bitmap_a, enc_bitmap_b,
+        [&](u64 begin, u64 end) {
+          for (std::size_t i = begin; i < end; ++i) {
+            actual[i] = true;
+          }
+        });
+    if (actual != expected) {
+      std::cerr << "expected: " << expected << std::endl;
+      std::cerr << "actual:   " << actual << std::endl;
+      std::cerr << "validation failed" << std::endl;
+      std::exit(1);
     }
   }
 
@@ -223,19 +281,22 @@ void run_and(f64 f_a, f64 d_a, f64 f_b, f64 d_b,
      << "," << enc_bitmap_a.name()
 //     << "," << T::name()
      << "," << d_a
-     //<< "," << d_actual_a
+     << "," << d_actual_a
      << "," << f_a
-     //<< "," << f_actual_a
-     //<< "," << size_in_bytes_a
+     << "," << f_actual_a
+     << "," << size_in_bytes_a
      << "," << d_b
-     //<< "," << d_actual_b
+     << "," << d_actual_b
      << "," << f_b
-     //<< "," << f_actual_b
-     //<< "," << size_in_bytes_b
-     //<< "," << dep / repetition_cntr
+     << "," << f_actual_b
+     << "," << size_in_bytes_b
+     << "," << repetition_cntr
      << "," << (nanos_cnt * 1.0) / ((bitmap_a.size() * 1.0) * repetition_cntr)
      << std::endl;
 }
+
+
+
 
 template<typename T, typename B>
 void run_and_iter(f64 f_a, f64 d_a, f64 f_b, f64 d_b,
@@ -346,18 +407,18 @@ $i32 main() {
 
   //point_queries();
 
-  for(auto i = 0; i < 400; i += 16){
+  for(auto i = 1; i < 400; i += 16){
 
     const auto f_a = i;
-    const auto d_a = 0.05;
+    const auto d_a = 0.01;
     const auto f_b = 8;
-    const auto d_b = 0.27;
+    const auto d_b = 0.10;
     const auto bitmap_a = gen_bitmap(f_a, d_a);
     const auto dynamic_bitmap_a = to_dynamic_bitset(bitmap_a);
     const auto bitmap_b = gen_bitmap(f_b, d_b);
     const auto dynamic_bitmap_b = to_dynamic_bitset(bitmap_b);
 
-    run_and<dtl::roaring_bitmap<N>>            (f_a, d_a, f_b, d_b, bitmap_a, bitmap_b, std::cout);
+    run_and<dtl::dynamic_roaring_bitmap>            (f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout);
 //    run_and<dtl::wah32<N>>                     (f_a, d_a, f_b, d_b, bitmap_a, bitmap_b, std::cout);
     run_and<dtl::dynamic_tree_mask_lo>         (f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout);
     run_and<dtl::dynamic_partitioned_tree_mask>(f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout,   8);

@@ -35,9 +35,10 @@ public:
 
   /// C'tor
   explicit
-  dynamic_partitioned_tree_mask(const boost::dynamic_bitset<$u32>& bitmask, u64 partition_cnt = 8)
+  dynamic_partitioned_tree_mask(const boost::dynamic_bitset<$u32>& bitmask, u64 partition_cnt = 2)
       : N(bitmask.size()), partition_cnt(partition_cnt),
-        part_n(N / partition_cnt), part_n_log2(dtl::log_2(part_n)), part_n_mask(u64(-1) >> (64 - dtl::log_2(part_n))) {
+        part_n(N / partition_cnt), part_n_log2(dtl::log_2(part_n)),
+        part_n_mask((part_n ==1) ?  u64(0) : u64(-1) >> (64 - dtl::log_2(part_n))) {
 
     if (!dtl::is_power_of_two(N)) {
       throw std::invalid_argument("The length of the bitmask must be a power of two.");
@@ -113,7 +114,9 @@ public:
 
   void
   print(std::ostream& os) const {
-    // TODO
+    for ($u64 pid = 0; pid < partition_cnt; pid++) {
+      os << pid << ":" << tree_masks_[pid] << " ";
+    }
   }
 
   /// Bitwise AND without compression of the resulting tree
@@ -190,7 +193,7 @@ public:
 
   public:
 
-    void
+    void __forceinline__
     next() {
       iter_.next();
       while (iter_.end() && part_no_ < (tm_.partition_cnt - 1)) {
@@ -220,11 +223,25 @@ public:
       }
     }
 
-    void
+    void __forceinline__
+    nav_to(const std::size_t to_pos) {
+      skip_to(to_pos);
+    }
+
+    void __forceinline__
     skip_to(const std::size_t to_pos) {
       const auto to_part_no = to_pos >> tm_.part_n_log2;
+      if (to_part_no >= tm_.partition_cnt) {
+        part_no_ = tm_.partition_cnt;
+        pos_ = tm_.N;
+        return;
+      }
       if (to_part_no == part_no_) {
         iter_.skip_to(to_pos & tm_.part_n_mask);
+        if (iter_.end()) {
+          next();
+        }
+        pos_ = iter_.pos() + tm_.part_n * part_no_;
       }
       else {
         part_no_ = to_part_no;
@@ -242,25 +259,25 @@ public:
       }
     }
 
-    u1
+    u1 __forceinline__
     end() const noexcept {
       return pos_ == tm_.N;
     }
 
-    u64
+    u64 __forceinline__
     pos() const noexcept {
       return pos_;
     }
 
-    u64
+    u64 __forceinline__
     length() const noexcept {
-      return iter_.length();
+      return (pos_ == tm_.N) ? 0 : iter_.length();
     }
 
   };
   //===----------------------------------------------------------------------===//
 
-  iter
+  iter __forceinline__
   it() const {
     return iter(*this);
   }
