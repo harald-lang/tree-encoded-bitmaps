@@ -6,6 +6,7 @@
 
 #include <dtl/dtl.hpp>
 
+namespace dtl {
 //===----------------------------------------------------------------------===//
 /// A statically sized stack.
 template<typename T, std::size_t N>
@@ -18,7 +19,7 @@ private:
 
 public:
 
-  __forceinline__ explicit
+  __forceinline__
   static_stack() : cnt_(0) { }
 
   __forceinline__
@@ -94,3 +95,4 @@ public:
 
 };
 //===----------------------------------------------------------------------===//
+} // namespace dtl

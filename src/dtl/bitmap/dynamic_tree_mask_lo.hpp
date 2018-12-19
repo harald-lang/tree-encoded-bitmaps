@@ -11,9 +11,9 @@
 
 #include "boost/dynamic_bitset.hpp"
 
-#include "rank.hpp"
+#include "navin/rank.hpp"
 #include "dynamic_tree.hpp"
-#include "static_stack.hpp"
+#include "navin/static_stack.hpp"
 
 #define VERBOSE_OUT true
 

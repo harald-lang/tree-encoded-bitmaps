@@ -7,7 +7,7 @@
 #include <dtl_storage/tree_mask.hpp>
 
 #include "boost/dynamic_bitset.hpp"
-#include "rank.hpp"
+#include "navin/rank.hpp"
 
 namespace dtl {
 
