@@ -4,16 +4,18 @@
 
 #include <dtl/dtl.hpp>
 
-#include <navin/two_state_markov_process.hpp>
-#include <navin/roaring_bitmap.hpp>
-#include <navin/tree_mask_po.hpp>
-#include <navin/wah.hpp>
-#include <navin/tree_mask_lo.hpp>
-#include <navin/partitioned_tree_mask.hpp>
-#include <navin/dynamic_partitioned_tree_mask.hpp>
-#include <navin/dynamic_tree_mask_lo.hpp>
+#include <dtl/bitmap/util/two_state_markov_process.hpp>
+#include <dtl/bitmap/dynamic_roaring_bitmap.hpp>
+#include <dtl/bitmap/static/tree_mask_po.hpp>
+#include <dtl/bitmap/static/wah.hpp>
+#include <dtl/bitmap/static/roaring_bitmap.hpp>
+#include <dtl/bitmap/static/tree_mask_lo.hpp>
+#include <dtl/bitmap/static/partitioned_tree_mask.hpp>
+#include <dtl/bitmap/dynamic_partitioned_tree_mask.hpp>
+#include <dtl/bitmap/dynamic_tree_mask_lo.hpp>
 #include <navin/util.hpp>
-#include <navin/dynamic_bitmap.hpp>
+#include <dtl/bitmap/dynamic_bitmap.hpp>
+#include <dtl/thread.hpp>
 
 // The number of independent runs.
 static constexpr u64 RUNS = 100;
@@ -403,30 +405,51 @@ iterate_1fills(const boost::dynamic_bitset<$u32>& input, params&&... constructor
 
 $i32 main() {
 
+  dtl::this_thread::set_cpu_affinity(0);
+
   std::cerr << "run_id=" << std::endl;
 
   //point_queries();
 
-  for(auto i = 1; i < 400; i += 16){
+  //static constexpr u64 N = 1u << 20;
+  std::vector<std::size_t> n_values { 1u << 10, 1u << 12, 1u << 14, 1u << 16, 1u << 18, 1u << 20 };
+  std::vector<double> densities {0.0001, 0.001, 0.01, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.9, 0.9, 1};
 
-    const auto f_a = i;
-    const auto d_a = 0.01;
-    const auto f_b = 8;
-    const auto d_b = 0.10;
-    const auto bitmap_a = gen_bitmap(f_a, d_a);
-    const auto dynamic_bitmap_a = to_dynamic_bitset(bitmap_a);
-    const auto bitmap_b = gen_bitmap(f_b, d_b);
-    const auto dynamic_bitmap_b = to_dynamic_bitset(bitmap_b);
+  for(auto f_a = 1; f_a < 400; f_a += 10) {
+    for(auto f_b = 1; f_b < 400; f_b += 10) {
+      for (auto d_a : densities) {
+        for (auto d_b : densities) {
 
-    run_and<dtl::dynamic_roaring_bitmap>            (f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout);
-//    run_and<dtl::wah32<N>>                     (f_a, d_a, f_b, d_b, bitmap_a, bitmap_b, std::cout);
-    run_and<dtl::dynamic_tree_mask_lo>         (f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout);
-    run_and<dtl::dynamic_partitioned_tree_mask>(f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout,   8);
-    run_and<dtl::dynamic_partitioned_tree_mask>(f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout,  16);
-    run_and<dtl::dynamic_partitioned_tree_mask>(f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout,  32);
-    run_and<dtl::dynamic_partitioned_tree_mask>(f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout,  64);
-    run_and<dtl::dynamic_partitioned_tree_mask>(f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout, 128);
+          const auto bitmap_a = gen_bitmap(f_a, d_a);
+          const auto dynamic_bitmap_a = to_dynamic_bitset(bitmap_a);
+          const auto bitmap_b = gen_bitmap(f_b, d_b);
+          const auto dynamic_bitmap_b = to_dynamic_bitset(bitmap_b);
+          run_and<dtl::dynamic_roaring_bitmap>(f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout);
+          run_and<dtl::dynamic_tree_mask_lo>  (f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout);
+          run_and<dtl::dynamic_partitioned_tree_mask>(f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout,  64);
+        }
+      }
+    }
   }
+//      const auto f_a = i;
+//      const auto d_a = 0.05;
+//      const auto f_b = j;
+//      const auto d_b = 0.27;
+//      const auto bitmap_a = gen_bitmap(f_a, d_a);
+//      const auto dynamic_bitmap_a = to_dynamic_bitset(bitmap_a);
+//      const auto bitmap_b = gen_bitmap(f_b, d_b);
+//      const auto dynamic_bitmap_b = to_dynamic_bitset(bitmap_b);
+
+//      run_and<dtl::dynamic_roaring_bitmap>            (f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout);
+  //    run_and<dtl::wah32<N>>                     (f_a, d_a, f_b, d_b, bitmap_a, bitmap_b, std::cout);
+//      run_and<dtl::dynamic_tree_mask_lo>         (f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout);
+  //    run_and<dtl::dynamic_partitioned_tree_mask>(f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout,   8);
+  //    run_and<dtl::dynamic_partitioned_tree_mask>(f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout,  16);
+  //    run_and<dtl::dynamic_partitioned_tree_mask>(f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout,  32);
+  //    run_and<dtl::dynamic_partitioned_tree_mask>(f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout,  64);
+  //    run_and<dtl::dynamic_partitioned_tree_mask>(f_a, d_a, f_b, d_b, dynamic_bitmap_a, dynamic_bitmap_b, std::cout, 128);
+//    }
+//  }
 
 
   /*

@@ -5,6 +5,9 @@ set(CMAKE_CXX_STANDARD 14)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -march=native")
 
+include_directories(src)
+
+
 add_subdirectory(../fastbit Fastbit) # Fastbit includes the WAH bitmap compression
 include_directories(../fastbit/src)
 
@@ -22,40 +25,38 @@ add_subdirectory(thirdparty/gtest)
 include_directories(thirdparty/gtest/include lib/googletest)
 
 set(TEST_FILES
-        test_utils.hpp
-        test_utils.cpp
-
-        api_test.cpp
+        test/dtl/bitmap/api_test.cpp
 #        bitmap_view_test.cpp
-        iterate_1fills_test.cpp
-        iterate_test.cpp
+        test/dtl/bitmap/iterate_1fills_test.cpp
+        test/dtl/bitmap/iterate_test.cpp
         )
 add_executable(tester ${TEST_FILES})
 target_link_libraries(tester gtest gtest_main fastbit roaring)
 
 set(TEST_ITER_FILES
-        iter_tester.cpp)
+        test/dtl/bitmap/iter_tester.cpp)
 add_executable(tester_iter ${TEST_ITER_FILES})
 target_link_libraries(tester_iter gtest gtest_main)
 
 # Treemask sources
 set(TREE_MASK_SOURCE_FILES
-        dynamic_bitmap.hpp
-        dynamic_partitioned_tree_mask.hpp
-        dynamic_tree.hpp
-        dynamic_tree_mask_lo.hpp
-        partitioned_tree_mask.hpp
-        rank.hpp
-        tree_mask_lo.hpp
-        tree_mask_po.hpp
-        tree_mask_util.hpp
+        src/dtl/bitmap/dynamic_bitmap.hpp
+        src/dtl/bitmap/dynamic_partitioned_tree_mask.hpp
+        src/dtl/bitmap/dynamic_tree.hpp
+        src/dtl/bitmap/dynamic_tree_mask_lo.hpp
+        src/dtl/bitmap/static/partitioned_tree_mask.hpp
+        src/dtl/bitmap/util/rank1.hpp
+        src/dtl/bitmap/static/tree_mask_lo.hpp
+        src/dtl/bitmap/static/tree_mask_po.hpp
+        src/dtl/bitmap/tree_mask_util.hpp
         )
 
 # Our third-party competitors
 set(COMPETITORS_SOURCE_FILES
-        bitmap.hpp # std::bitset
-        roaring_bitmap.hpp
-        wah.hpp
+        src/dtl/bitmap/static/bitmap.hpp # std::bitset
+        src/dtl/bitmap/dynamic_roaring_bitmap.hpp
+        src/dtl/bitmap/dynamic_wah.hpp
+        src/dtl/bitmap/static/wah.hpp
         )
 
 set(SOURCE_FILES
@@ -63,19 +64,19 @@ set(SOURCE_FILES
         ${COMPETITORS_SOURCE_FILES}
         #bitmap_view.hpp
         index.hpp
-        two_state_markov_process.hpp
-        static_stack.hpp
+        src/dtl/bitmap/util/two_state_markov_process.hpp
+        src/dtl/static_stack.hpp
         util.hpp
-        bidirectional_mapping.hpp
-        column_container.hpp
-        column_imprints.hpp
-        container_iterator.hpp
-        file_parser.hpp
-        h_psma.hpp
-        histograms.hpp
-        tests.hpp
-        z_curve_runtime.hpp
-        zCurve_compiletime.hpp
+        src/dtl/storage/bidirectional_mapping.hpp
+        src/dtl/storage/column_container.hpp
+        src/dtl/storage/column_imprints.hpp
+        src/dtl/storage/container_iterator.hpp
+        src/dtl/storage/file_parser.hpp
+        src/dtl/storage/h_psma.hpp
+        src/dtl/storage/histograms.hpp
+        test/dtl/storage/tests.hpp
+        src/dtl/storage/z_curve_runtime.hpp
+        src/dtl/storage/zCurve_compiletime.hpp
         )
 
 add_executable(navin main.cpp ${SOURCE_FILES})
@@ -120,3 +121,14 @@ set(EXPERIMENT_PERFORMANCE_SOURCE_FILES
 
 add_executable(ex_performance ${EXPERIMENT_PERFORMANCE_SOURCE_FILES})
 target_link_libraries(ex_performance fastbit roaring)
+
+
+set(EXPERIMENT_LOSSY_COMPRESSION_SOURCE_FILES
+        ${SOURCE_FILES}
+        ${TREE_MASK_SOURCE_FILES}
+        ${COMPETITORS_SOURCE_FILES}
+        experiments/compression/main_lossycompression.cpp
+        )
+
+add_executable(ex_lossycompression ${EXPERIMENT_LOSSY_COMPRESSION_SOURCE_FILES})
+target_link_libraries(ex_lossycompression fastbit roaring)

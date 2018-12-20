@@ -12,28 +12,28 @@ namespace dtl {
 /// -UN-compressed representation of a bitmap of length N.
 /// Wraps a standard bitset. (used for comparisons)
 template<std::size_t N>
-struct bitmap {
+struct uncompressed_bitmap {
 
   std::bitset<N> bitmap_;
 
-  bitmap() = default;
+  uncompressed_bitmap() = default;
 
   explicit
-  bitmap(const std::bitset<N>& in) {
+  uncompressed_bitmap(const std::bitset<N>& in) {
     bitmap_ = in;
   }
 
-  ~bitmap() = default;
+  ~uncompressed_bitmap() = default;
 
-  bitmap(const bitmap& other) = default;
+  uncompressed_bitmap(const uncompressed_bitmap& other) = default;
 
-  bitmap(bitmap&& other) noexcept = default;
+  uncompressed_bitmap(uncompressed_bitmap&& other) noexcept = default;
 
-  bitmap&
-  operator=(const bitmap& other) = default;
+  uncompressed_bitmap&
+  operator=(const uncompressed_bitmap& other) = default;
 
-  bitmap&
-  operator=(bitmap&& other) noexcept = default;
+  uncompressed_bitmap&
+  operator=(uncompressed_bitmap&& other) noexcept = default;
 
   /// Return the size in bytes.
   std::size_t
@@ -49,38 +49,38 @@ struct bitmap {
   }
 
   /// Bitwise AND
-  bitmap
-  operator&(const bitmap& other) const {
-    bitmap ret(*this);
+  uncompressed_bitmap
+  operator&(const uncompressed_bitmap& other) const {
+    uncompressed_bitmap ret(*this);
     ret.bitmap_ &= other.bitmap_;
     return ret;
   }
 
   /// Bitwise AND (range encoding)
-  bitmap
-  and_re(const bitmap& other) const {
+  uncompressed_bitmap
+  and_re(const uncompressed_bitmap& other) const {
     return *this & other; // nothing special here. fall back to AND
   }
 
   /// Bitwise XOR
-  bitmap
-  operator^(const bitmap& other) const {
-    bitmap ret;
+  uncompressed_bitmap
+  operator^(const uncompressed_bitmap& other) const {
+    uncompressed_bitmap ret;
     ret.bitmap_ = bitmap_;
     ret.bitmap_ ^= other.bitmap_;
     return ret;
   }
 
   /// Bitwise XOR (range encoding)
-  bitmap
-  xor_re(const bitmap& other) const {
+  uncompressed_bitmap
+  xor_re(const uncompressed_bitmap& other) const {
     return *this ^ other; // nothing special here. fall back to XOR
   }
 
   /// Computes (a XOR b) & this
   /// Note: this, a and b must be different instances. Otherwise, the behavior is undefined.
-  bitmap&
-  fused_xor_and(const bitmap& a, const bitmap& b) {
+  uncompressed_bitmap&
+  fused_xor_and(const uncompressed_bitmap& a, const uncompressed_bitmap& b) {
     auto x = a ^ b;
     bitmap_ &= x.bitmap_;
     return *this;

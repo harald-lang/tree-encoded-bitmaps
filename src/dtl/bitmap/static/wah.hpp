@@ -10,7 +10,7 @@
 
 namespace dtl {
 
-namespace internal {
+namespace dynamic_wah_internal {
 
 static const auto& filemanager_instance = ibis::fileManager::instance(); // initialize file manager, which is responsible for memory management in IBIS.
 
@@ -124,13 +124,13 @@ struct wah {
 //===----------------------------------------------------------------------===//
 /// WAH compressed representation of a bitmap of length N using 32-bit words.
 template<std::size_t N>
-using wah32 = internal::wah<N, ibis::bitvector>;
+using wah32 = dynamic_wah_internal::wah<N, ibis::bitvector>;
 //===----------------------------------------------------------------------===//
 
 //===----------------------------------------------------------------------===//
 /// WAH compressed representation of a bitmap of length N using 64-bit words.
 template<std::size_t N>
-using wah64 = internal::wah<N, ibis::bitvector64>;
+using wah64 = dynamic_wah_internal::wah<N, ibis::bitvector64>;
 //===----------------------------------------------------------------------===//
 
 } // namespace dtl

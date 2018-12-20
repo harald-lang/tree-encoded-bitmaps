@@ -38,6 +38,21 @@ namespace dtl {
       }
     }
 
+    u64
+    subtree_size(u64 node_idx) {
+      if (!is_inner_node(node_idx)) return 1;
+      return 1
+           + subtree_size(left_child_of(node_idx))
+           + subtree_size(right_child_of(node_idx));
+    };
+
+    u64
+    count_leaf_nodes(u64 node_idx) {
+      if (!is_inner_node(node_idx)) return 1;
+      return count_leaf_nodes(left_child_of(node_idx))
+           + count_leaf_nodes(right_child_of(node_idx));
+    };
+
     static inline u64
     root() {
       return 0;
@@ -71,6 +86,17 @@ namespace dtl {
     inline u1
     is_leaf_node(u64 node_idx) const {
       return ! _is_inner_node[node_idx];
+    }
+
+
+    void
+    set_leaf_rec(u64 node_idx) {
+      const auto recurse = _is_inner_node[node_idx];
+      _is_inner_node[node_idx] = false;
+      if (recurse) {
+        set_leaf_rec(left_child_of(node_idx));
+        set_leaf_rec(right_child_of(node_idx));
+      }
     }
 
     inline void

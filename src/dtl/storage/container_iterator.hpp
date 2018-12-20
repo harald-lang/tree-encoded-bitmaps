@@ -2,7 +2,7 @@
 
 #include <dtl/adept.hpp>
 #include <iterator>
-#include "column_container.hpp"
+#include "dtl/storage/column_container.hpp"
 
 
 class cont_iter : public std::iterator<std::random_access_iterator_tag, cont::cont_elem>{

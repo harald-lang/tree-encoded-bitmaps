@@ -10,13 +10,13 @@
 #include <dtl/env.hpp>
 #include <dtl/thread.hpp>
 
-#include <navin/roaring_bitmap.hpp>
-#include <navin/tree_mask_po.hpp>
-#include <navin/tree_mask_lo.hpp>
-#include <navin/wah.hpp>
+#include <bitmap/dynamic_roaring_bitmap.hpp>
+#include <bitmap/static/tree_mask_po.hpp>
+#include <bitmap/static/tree_mask_lo.hpp>
+#include <bitmap/static/wah.hpp>
 
-#include <navin/two_state_markov_process.hpp>
-#include <navin/bitmap.hpp>
+#include <util/two_state_markov_process.hpp>
+#include <bitmap/static/bitmap.hpp>
 
 // The number of independent runs.
 static constexpr u64 RUNS = 10;

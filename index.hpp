@@ -1,8 +1,8 @@
 #pragma once
 
-#include "roaring_bitmap.hpp"
-#include "tree_mask_po.hpp"
-#include "wah.hpp"
+#include "bitmap/dynamic_roaring_bitmap.hpp"
+#include "bitmap/static/tree_mask_po.hpp"
+#include "bitmap/static/wah.hpp"
 
 
 // API:

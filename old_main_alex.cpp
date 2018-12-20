@@ -1,7 +1,7 @@
 #include <bitset>
 #include <iostream>
-#include "zCurve_compiletime.hpp"
-#include "z_curve_runtime.hpp"
+#include "dtl/storage/zCurve_compiletime.hpp"
+#include "dtl/storage/z_curve_runtime.hpp"
 #include <algorithm>
 #include <limits>
 
@@ -13,15 +13,15 @@
 #include <dtl/thread.hpp>
 #include <dtl/env.hpp>
 #include <dtl/storage.hpp>
-#include "histograms.hpp"
-#include "column_imprints.hpp"
+#include "dtl/storage/histograms.hpp"
+#include "dtl/storage/column_imprints.hpp"
 
-#include "tests.hpp"
-#include "h_psma.hpp"
-#include "bidirectional_mapping.hpp"
+#include "navin/test/dtl/storage/tests.hpp"
+#include "dtl/storage/h_psma.hpp"
+#include "dtl/storage/bidirectional_mapping.hpp"
 #include "dtl/index/psma_table.hpp"
 #include "dtl/index/psma_table_re.hpp"
-#include "tree_mask_lo.hpp"
+#include "bitmap/static/tree_mask_lo.hpp"
 
 using namespace std;
 

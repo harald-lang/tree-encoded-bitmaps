@@ -13,7 +13,7 @@
 
 #include <sdsl/bit_vectors.hpp>
 
-#include "bitmap/tree_mask_util.hpp"
+#include "dtl/bitmap/tree_mask_util.hpp"
 
 namespace dtl {
 

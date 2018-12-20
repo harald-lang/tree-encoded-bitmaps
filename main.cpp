@@ -15,17 +15,17 @@
 #include <sdsl/bit_vectors.hpp>
 #include <sdsl/bp_support_gg.hpp>
 
-#include "static_stack.hpp"
-#include "two_state_markov_process.hpp"
-#include "tree_mask_po.hpp"
-#include "tree_mask_util.hpp"
+#include "dtl/static_stack.hpp"
+#include "util/two_state_markov_process.hpp"
+#include "bitmap/static/tree_mask_po.hpp"
+#include "bitmap/tree_mask_util.hpp"
 #include "index.hpp"
 #include "util.hpp"
 #include <thread>
 #include <dtl/thread.hpp>
 
-#include "tree_mask_lo.hpp"
-#include "dynamic_tree_mask_lo.hpp"
+#include "bitmap/static/tree_mask_lo.hpp"
+#include "bitmap/dynamic_tree_mask_lo.hpp"
 
 
 void a() {

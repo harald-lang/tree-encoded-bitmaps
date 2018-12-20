@@ -60,7 +60,7 @@ struct match_tree {
       } else {
         if (prune_causes_false_positives) {
           u64 left_fp = !left_bit * (1 << (height - tree_t::level_of(left_node_idx)));
-          u64 right_fp = !right_bit * (1 << (height - tree_t::level_of(right_node_idx)));
+          u64 right_fp = !right_bit * (1 << (height - tree_t::level_of(right_node_idx))); // both are on the same level
           false_positive_cnt[parent_node_idx] = false_positive_cnt[left_node_idx] + false_positive_cnt[right_node_idx]
                                                 + left_fp + right_fp;
         }
