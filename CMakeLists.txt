@@ -42,7 +42,9 @@ target_link_libraries(tester_iter gtest gtest_main)
 set(TREE_MASK_SOURCE_FILES
         src/dtl/bitmap/dynamic_bitmap.hpp
         src/dtl/bitmap/dynamic_partitioned_tree_mask.hpp
-        src/dtl/bitmap/dynamic_tree.hpp
+        src/dtl/bitmap/util/bitmap_tree.hpp
+        src/dtl/bitmap/util/binary_tree_structure.hpp
+        src/dtl/bitmap/util/convert.hpp
         src/dtl/bitmap/dynamic_tree_mask_lo.hpp
         src/dtl/bitmap/static/partitioned_tree_mask.hpp
         src/dtl/bitmap/util/rank1.hpp

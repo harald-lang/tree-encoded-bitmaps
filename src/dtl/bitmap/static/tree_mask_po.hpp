@@ -9,11 +9,11 @@
 
 #include <dtl/dtl.hpp>
 #include <dtl/math.hpp>
-#include <dtl_storage/tree.hpp>
 
 #include <sdsl/bit_vectors.hpp>
 
 #include "dtl/bitmap/tree_mask_util.hpp"
+#include "dtl/bitmap/util/binary_tree_structure.hpp"
 
 namespace dtl {
 
@@ -72,12 +72,12 @@ private:
   /// Converts the given encoded binary tree path to a level-order node index.
   __forceinline__  static std::size_t
   get_node_idx(const path_t path) {
-    std::size_t node_idx = dtl::binary_tree_structure<N>::root();
+    std::size_t node_idx = dtl::binary_tree_structure::root();
     const auto sentinel_pos = (sizeof(path_t) * 8) - dtl::bits::lz_count(path) - 1;
     if (sentinel_pos > 0) {
       for (std::size_t i = sentinel_pos - 1; i < sentinel_pos; i--) {
         const auto direction = (path & (path_t(1) << i)) != 0;
-        node_idx = dtl::binary_tree_structure<N>::left_child_of(node_idx) + direction;
+        node_idx = dtl::binary_tree_structure::left_child_of(node_idx) + direction;
       }
     }
     return node_idx;
@@ -491,13 +491,12 @@ public:
   explicit
   tree_mask_po(const std::bitset<N>& bitmask) {
 
-    using tree_t = dtl::binary_tree_structure<N>;
+    using tree_t = dtl::binary_tree_structure;
 
-    static constexpr u64 length = tree_t::max_node_cnt;
-    static constexpr u64 height = tree_t::height;
-
-    tree_t tree_structure;
-    std::bitset<length> labels;
+    tree_t tree_structure(N);
+    u64 length = tree_structure.max_node_cnt_;
+    u64 height = tree_structure.height_;
+    boost::dynamic_bitset<$u32> labels(length);
 
     // initialize a complete binary tree
     // ... all the inner nodes have two children

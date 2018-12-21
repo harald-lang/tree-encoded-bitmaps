@@ -3,7 +3,7 @@
 #include <bitset>
 
 #include <dtl/dtl.hpp>
-#include <dtl_storage/tree.hpp>
+#include <dtl/bitmap/util/binary_tree_structure.hpp>
 
 namespace dtl {
 
@@ -15,7 +15,7 @@ is_compressed(const tree_mask_t& tm) {
   constexpr auto N = tree_mask_t::N;
   using traversal_t = typename tree_mask_t::traversal;
 
-  dtl::binary_tree_structure<N> bt;
+  dtl::binary_tree_structure bt(N);
   std::bitset<N> bt_labels;
 
   // decode the tree mask into an implicit representation

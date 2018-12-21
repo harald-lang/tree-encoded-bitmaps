@@ -4,9 +4,10 @@
 #include <queue>
 #include <vector>
 
-#include <dtl_storage/tree_mask.hpp>
-
 #include "boost/dynamic_bitset.hpp"
+
+#include <dtl/bitmap/util/bitmap_tree.hpp>
+#include <dtl/bitmap/util/convert.hpp>
 #include "dtl/bitmap/util/rank1.hpp"
 
 namespace dtl {
@@ -26,96 +27,52 @@ public:
 
   /// C'tor
   explicit
-  tree_mask_lo(const std::bitset<N>& bitmask) {
+  tree_mask_lo(const std::bitset<N>& bitmask, f64 fpr = 0.0) {
 
-    using tree_t = dtl::binary_tree_structure<N>;
+    const auto dynamic_bitset = to_dynamic_bitset(bitmask);
+    dtl::bitmap_tree bitmap_tree(dynamic_bitset, fpr);
 
-    static constexpr u64 length = tree_t::max_node_cnt;
-    static constexpr u64 height = tree_t::height;
-
-    tree_t tree_structure;
-    std::bitset<length> labels;
-
-    // initialize a complete binary tree
-    // ... all the inner nodes have two children
-    // ... the leaf nodes are labelled with the given bitmask
-    for ($u64 i = length / 2; i < length; i++) {
-      labels[i] = bitmask[i - length / 2];
-    }
-    // propagate the mask bits along the tree (bottom-up)
-    for ($u64 i = 0; i < length - 1; i++) {
-      u64 node_idx = length - i - 1;
-      labels[tree_t::parent_of(node_idx)] = labels[tree_t::parent_of(node_idx)] | labels[node_idx];
-    }
-
-    // bottom-up pruning (loss-less)
-    for ($u64 i = 0; i < length - 1; i += 2) {
-      u64 left_node_idx = length - i - 2;
-      u64 right_node_idx = left_node_idx + 1;
-
-      u1 left_bit = labels[left_node_idx];
-      u1 right_bit = labels[right_node_idx];
-
-      u64 parent_node_idx = tree_t::parent_of(left_node_idx);
-
-      u1 prune_causes_false_positives = left_bit ^ right_bit;
-      u1 both_nodes_are_leaves = !tree_structure.is_inner_node(left_node_idx) & !tree_structure.is_inner_node(right_node_idx);
-      u1 prune = both_nodes_are_leaves & !prune_causes_false_positives;
-      if (prune) {
-        tree_structure.set_leaf(parent_node_idx);
-      }
-    }
+    u64 length = bitmap_tree.max_node_cnt_;
+    u64 height = bitmap_tree.height_;
 
     // Encode the tree into level-order
-
     std::queue<$u64> fifo; // explored nodes set
 
-    // Allocate enough space for the structure and labels
-    lo_struc.resize(tree_structure.max_node_cnt);
-    lo_label.resize(labels.size());
-    $u64 struct_cnt = 0;
-    $u64 label_cnt = 0;
-
     std::function<void(u64)> add_node = [&](u64 idx){
-      u1 is_inner = tree_structure.is_inner_node(idx);
+      u1 is_inner = bitmap_tree.is_inner_node(idx);
       if(is_inner){
         // add the children of the current node to the structure
-        u64 l_child = tree_structure.left_child_of(idx);
-        u64 r_child = tree_structure.right_child_of(idx);
+        u64 l_child = bitmap_tree.left_child_of(idx);
+        u64 r_child = bitmap_tree.right_child_of(idx);
 
-        u1 l_child_is_inner = tree_structure.is_inner_node(l_child);
-        u1 r_child_is_inner = tree_structure.is_inner_node(r_child);
+        u1 l_child_is_inner = bitmap_tree.is_inner_node(l_child);
+        u1 r_child_is_inner = bitmap_tree.is_inner_node(r_child);
 
-        lo_struc[struct_cnt++] = l_child_is_inner;
-        lo_struc[struct_cnt++] = r_child_is_inner;
+        lo_struc.push_back(l_child_is_inner);
+        lo_struc.push_back(r_child_is_inner);
 
         // push them to the fifo queue to traverse them later
         fifo.push(l_child);
         fifo.push(r_child);
-
-        // done for this node
-
       } else { // leaf node
         // add the label of the leaf node
-        lo_label[label_cnt++] = labels[idx];
-
-        // no children, nothing to add to the fifo queue, done
+        lo_label.push_back(bitmap_tree.label_of_node(idx));
       }
     };
 
     // Special case for the root node: if the tree is only the root, structure is 0
     {
-      bool root_is_inner = tree_structure.is_inner_node(0);
+      bool root_is_inner = bitmap_tree.is_inner_node(0);
 
       // add the root to the tree structure
-      lo_struc[struct_cnt++] = root_is_inner;
+      lo_struc.push_back(root_is_inner);
 
       if(root_is_inner) {
         // add the root to the fifo to add the rest of the tree
         fifo.push(0);
       }
       else {
-        lo_label[label_cnt++] = labels[0];
+        lo_label.push_back(bitmap_tree.label_of_node(0));
         // tree is only the root, we are done
       }
     }
@@ -126,10 +83,6 @@ public:
       fifo.pop();
     }
 
-    lo_struc.resize(struct_cnt);
-    lo_label.resize(label_cnt);
-
-//    rank_support.set_vector(&lo_struc);
     rank_.init(lo_struc);
   }
 

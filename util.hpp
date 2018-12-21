@@ -11,6 +11,7 @@
 // Utility functions for bitsets.
 //===----------------------------------------------------------------------===//
 
+//===----------------------------------------------------------------------===//
 /// Count the number of 1-fills in the given bitset.
 template<typename bitset_t>
 std::size_t
@@ -25,7 +26,10 @@ count_1fills(const bitset_t& b) {
   }
   return cntr;
 }
+//===----------------------------------------------------------------------===//
 
+
+//===----------------------------------------------------------------------===//
 /// Count the number of 0-fills in the given bitset.
 template<typename bitset_t>
 std::size_t
@@ -40,7 +44,10 @@ count_0fills(const bitset_t& b) {
   }
   return cntr;
 }
+//===----------------------------------------------------------------------===//
 
+
+//===----------------------------------------------------------------------===//
 template<typename bitset_t>
 std::vector<$u1>
 to_vector(const bitset_t& b) {
@@ -50,8 +57,10 @@ to_vector(const bitset_t& b) {
   }
   return ret;
 }
+//===----------------------------------------------------------------------===//
 
 
+//===----------------------------------------------------------------------===//
 template<typename bitset_t>
 boost::dynamic_bitset<$u32>
 to_dynamic_bitset(const bitset_t& b) {

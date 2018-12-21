@@ -7,7 +7,7 @@
 /// The number of independent runs.
 static constexpr std::size_t REPEAT = 10;
 
-using tree_t = dtl::dynamic_binary_tree_structure;
+using tree_t = dtl::binary_tree_structure;
 
 struct setting_t {
   $u64 n = 0;
@@ -134,8 +134,8 @@ run(const setting_t& setting) {
 }
 
 $i32 main() {
-  run_verbose(setting_t{.n = 1u << 10, .d = 0.9, .f = 16});
-  return 0;
+  run_verbose(setting_t{.n = 1u << 10, .d = 0.1, .f = 16});
+//  return 0;
 
 //  const std::vector<$u64> n_values { 1u << 10, 1u << 12, 1u << 14, 1u << 16, 1u << 18, 1u << 20 };
   const std::vector<$u64> n_values { 1u << 20 };
@@ -196,22 +196,22 @@ $i32 main() {
 
 
 return 0;
-  auto t = dtl::dynamic_full_binary_tree(64);
-  for (std::size_t l = 0; l < t.height; ++l) {
-
-    $u64 from_node_idx = 0;
-    $u64 to_node_idx = 0;
-    for (std::size_t i = 0; i < l; ++i) {
-      from_node_idx = t.left_child_of(from_node_idx);
-      to_node_idx = t.right_child_of(to_node_idx);
-    }
-    assert(t.level_of(from_node_idx) == l);
-    assert(t.level_of(to_node_idx) == l);
-    std::cout << "level=" << l
-              << ": [" << from_node_idx << "," << to_node_idx << "]"
-              << ", #=" << (to_node_idx - from_node_idx + 1) << ""
-              << " - [" << (1ull << l) -1 << "," << (2*((1ull << l) - 1)) << "]"
-              << " - [" << (1ull << l) -1 << "," << (((1ull << (l+1)) - 2)) +1 << ")"
-              << std::endl;
-  }
+//  auto t = dtl::dynamic_full_binary_tree(64);
+//  for (std::size_t l = 0; l < t.height; ++l) {
+//
+//    $u64 from_node_idx = 0;
+//    $u64 to_node_idx = 0;
+//    for (std::size_t i = 0; i < l; ++i) {
+//      from_node_idx = t.left_child_of(from_node_idx);
+//      to_node_idx = t.right_child_of(to_node_idx);
+//    }
+//    assert(t.level_of(from_node_idx) == l);
+//    assert(t.level_of(to_node_idx) == l);
+//    std::cout << "level=" << l
+//              << ": [" << from_node_idx << "," << to_node_idx << "]"
+//              << ", #=" << (to_node_idx - from_node_idx + 1) << ""
+//              << " - [" << (1ull << l) -1 << "," << (2*((1ull << l) - 1)) << "]"
+//              << " - [" << (1ull << l) -1 << "," << (((1ull << (l+1)) - 2)) +1 << ")"
+//              << std::endl;
+//  }
 }

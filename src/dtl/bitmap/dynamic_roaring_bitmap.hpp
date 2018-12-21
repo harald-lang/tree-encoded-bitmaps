@@ -34,10 +34,10 @@ struct dynamic_roaring_bitmap {
 
   dynamic_roaring_bitmap(dynamic_roaring_bitmap&& other) noexcept = default;
 
-  dynamic_roaring_bitmap&
+  dynamic_roaring_bitmap& __forceinline__
   operator=(const dynamic_roaring_bitmap& other) = default;
 
-  dynamic_roaring_bitmap&
+  dynamic_roaring_bitmap& __forceinline__
   operator=(dynamic_roaring_bitmap&& other) noexcept = default;
 
   /// Return the size in bytes.
@@ -57,7 +57,7 @@ struct dynamic_roaring_bitmap {
   }
 
   /// Bitwise AND
-  dynamic_roaring_bitmap
+  dynamic_roaring_bitmap __forceinline__
   operator&(const dynamic_roaring_bitmap& other) const {
     dynamic_roaring_bitmap ret(*this);
     ret.bitmap_ &= other.bitmap_;
@@ -65,13 +65,13 @@ struct dynamic_roaring_bitmap {
   }
 
   /// Bitwise AND (range encoding)
-  dynamic_roaring_bitmap
+  dynamic_roaring_bitmap __forceinline__
   and_re(const dynamic_roaring_bitmap& other) const {
     return *this & other; // nothing special here. fall back to AND
   }
 
   /// Bitwise XOR
-  dynamic_roaring_bitmap
+  dynamic_roaring_bitmap __forceinline__
   operator^(const dynamic_roaring_bitmap& other) const {
     dynamic_roaring_bitmap ret;
     ret.bitmap_ = bitmap_;
@@ -80,14 +80,15 @@ struct dynamic_roaring_bitmap {
   }
 
   /// Bitwise XOR (range encoding)
-  dynamic_roaring_bitmap
+  dynamic_roaring_bitmap __forceinline__
   xor_re(const dynamic_roaring_bitmap& other) const {
     return *this ^ other; // nothing special here. fall back to XOR
   }
 
   /// Computes (a XOR b) & this
-  /// Note: this, a and b must be different instances. Otherwise, the behavior is undefined.
-  dynamic_roaring_bitmap&
+  /// Note: this, a and b must be different instances. Otherwise, the behavior
+  /// is undefined.
+  dynamic_roaring_bitmap& __forceinline__
   fused_xor_and(const dynamic_roaring_bitmap& a, const dynamic_roaring_bitmap& b) {
     auto x = a ^ b;
     bitmap_ &= x.bitmap_;
@@ -105,7 +106,7 @@ struct dynamic_roaring_bitmap {
   }
 
   /// Returns the value of the bit at the position pos.
-  u1
+  u1 __forceinline__
   test(const std::size_t pos) const {
     return bitmap_.contains(pos);
   }
@@ -115,23 +116,23 @@ struct dynamic_roaring_bitmap {
     return size_;
   }
 
-  //===----------------------------------------------------------------------===//
+  //===--------------------------------------------------------------------===//
   /// 1-fill iterator, with skip support.
   class iter {
 
     const dynamic_roaring_bitmap& rbm_;
 
 
-    //===----------------------------------------------------------------------===//
+    //===------------------------------------------------------------------===//
     // Iterator state
-    //===----------------------------------------------------------------------===//
+    //===------------------------------------------------------------------===//
     Roaring::const_iterator roaring_iter;
     Roaring::const_iterator& roaring_iter_end;
-    /// points to the beginning of a 1-fill
+    /// Points to the beginning of a 1-fill.
     $u64 pos_;
-    /// the length of the current 1-fill
+    /// The length of the current 1-fill
     $u64 length_;
-    //===----------------------------------------------------------------------===//
+    //===------------------------------------------------------------------===//
 
   public:
 
@@ -215,7 +216,7 @@ struct dynamic_roaring_bitmap {
   it() const {
     return std::move(iter(*this));
   }
-  //===----------------------------------------------------------------------===//
+  //===--------------------------------------------------------------------===//
 
 };
 //===----------------------------------------------------------------------===//

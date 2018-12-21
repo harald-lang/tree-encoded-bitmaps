@@ -3,17 +3,16 @@
 #include <bitset>
 #include <list>
 #include <queue>
-#include <vector>
-
-#include <dtl/bits.hpp>
-#include <dtl_storage/tree_mask.hpp>
 #include <stack>
+#include <vector>
 
 #include "boost/dynamic_bitset.hpp"
 
-#include "dtl/bitmap/util/rank1.hpp"
-#include "dynamic_tree.hpp"
-#include "dtl/static_stack.hpp"
+#include <dtl/bits.hpp>
+#include <dtl/bitmap/util/rank1.hpp>
+#include <dtl/bitmap/util/bitmap_tree.hpp>
+#include <dtl/bitmap/util/binary_tree_structure.hpp>
+#include <dtl/static_stack.hpp>
 
 #define VERBOSE_OUT true
 
@@ -25,7 +24,6 @@ class dynamic_tree_mask_lo {
 public:
 
   using bitmap_t = boost::dynamic_bitset<$u32>;
-  using tree_t = dtl::dynamic_binary_tree_structure;
 
   /// The number of bits in the bitmap.
   u64 N;
@@ -42,202 +40,23 @@ public:
   dynamic_tree_mask_lo(const boost::dynamic_bitset<$u32>& bitmask, f64 fpr = 0.0)
       : N(bitmask.size()) {
 
-    // TODO: Support arbitrarily sized bitmaps.
-    if (!dtl::is_power_of_two(N)) {
-      throw std::invalid_argument(
-          "The length of the bitmask must be a power of two.");
-    }
+    dtl::bitmap_tree bitmap_tree(bitmask, fpr);
 
-    // Initialize a perfect binary tree on top of the given bitmap.
-    // ... all the inner nodes have two children
-    // ... all the leaf nodes are on the same level
-    // ... the leaf nodes are labelled with the given bitmap
-    tree_t tree_structure(N);
-    u64 length = tree_structure.max_node_cnt;
-    u64 height = tree_structure.height;
-    bitmap_t labels(length, false);
-    for ($u64 i = length / 2; i < length; i++) {
-      labels[i] = bitmask[i - length / 2];
-    }
-
-    // Propagate the bits along the tree (bottom-up).  The labels of an interior
-    // node is the bitwise OR of the labels of both child nodes.
-    for ($u64 i = 0; i < length - 1; i++) {
-      u64 node_idx = length - i - 1;
-      labels[tree_t::parent_of(node_idx)] =
-          labels[tree_t::parent_of(node_idx)] | labels[node_idx];
-    }
-
-    // Bottom-up pruning (loss-less).  Eliminate all sibling leaf nodes which
-    // have the same label.
-    for ($u64 i = 0; i < length - 1; i += 2) {
-      u64 left_node_idx = length - i - 2;
-      u64 right_node_idx = left_node_idx + 1;
-
-      u1 left_bit = labels[left_node_idx];
-      u1 right_bit = labels[right_node_idx];
-
-      u64 parent_node_idx = tree_t::parent_of(left_node_idx);
-
-      u1 prune_causes_false_positives = left_bit ^ right_bit;
-      u1 both_nodes_are_leaves =
-          !tree_structure.is_inner_node(left_node_idx)
-          & !tree_structure.is_inner_node(right_node_idx);
-      u1 prune = both_nodes_are_leaves & !prune_causes_false_positives;
-      if (prune) {
-        tree_structure.set_leaf(parent_node_idx);
+    // Encode the tree into level-order.
+    for (auto it = bitmap_tree.breadth_first_begin();
+         it != bitmap_tree.breadth_first_end();
+         ++it) {
+      u64 idx = *it;
+      // Emit a 1-bit if the current node is an inner node, a 0-bit otherwise.
+      u1 is_inner = bitmap_tree.is_inner_node(idx);
+      structure_.push_back(is_inner);
+      if (!is_inner) {
+        // Add the label of the leaf node.
+        labels_.push_back(bitmap_tree.label_of_node(idx));
       }
     }
 
-    // Lossy compression.  The size of the tree structure is further reduced,
-    // which causes false positive bits. The number of false positive bits is
-    // limited by the given false positive rate (FPR).
-    if (fpr > 0.0) {
-      // Determine maximum number of false positives.
-      const auto tp_cnt = bitmask.count();
-      const auto tn_cnt = N - tp_cnt;
-      u64 max_fp_cnt = static_cast<u64>(tn_cnt * fpr);
-      // The total number of false positives introduced so far.
-      $u64 total_fp_cntr = 0;
-
-      // Compute the number of associated false positives for each tree node.
-      // The value fp_cntrs[i] refers to the number of false positives when
-      // node i is turned into a leaf node (ie., the sub-tree is pruned).
-      std::vector<uint32_t> fp_cntrs(tree_structure.max_node_cnt, 0);
-      for ($u64 i = 0; i < length - 1; i += 2) {
-        u64 left_node_idx = length - i - 2;
-        u64 right_node_idx = left_node_idx + 1;
-
-        u1 left_bit = labels[left_node_idx];
-        u1 right_bit = labels[right_node_idx];
-
-        u64 parent_node_idx = tree_t::parent_of(left_node_idx);
-
-        const auto left_fp_cnt = fp_cntrs[left_node_idx];
-        const auto right_fp_cnt = fp_cntrs[right_node_idx];
-        fp_cntrs[parent_node_idx] = left_fp_cnt + right_fp_cnt;
-
-        if (left_bit ^ right_bit) {
-          // Introduce new false positives. - Note, that no new false positives
-          // are introduced if the labels of the two child nodes are identical.
-          u32 f = (1u << (height - tree_t::level_of(left_node_idx)));
-          fp_cntrs[parent_node_idx] += f;
-        }
-      }
-
-      // Pruning loop.
-      while (true) {
-        // Look for largest sub-tree to prune, so that the FPR is not exceeded.
-//        $u1 candidate_found = false;
-        $u64 candidate_node_idx = 0;
-        $u64 candidate_saved_bit_cnt = 0;
-        for (std::size_t level = 0; level < tree_structure.height; ++level) {
-          u64 node_idx_from = (1ull << level) - 1;
-          u64 node_idx_to = (1ull << (level + 1)) - 1;
-          for ($u64 node_idx = node_idx_from; node_idx < node_idx_to; ++node_idx) {
-            if (tree_structure.is_leaf_node(node_idx))
-              continue;
-            // Check whether pruning would not exceed the specified FPR.
-            if (fp_cntrs[node_idx] + total_fp_cntr > max_fp_cnt)
-              continue;
-
-            // Count the number of nodes that would be eliminated from the tree
-            // if the current node is turned into a leaf node.
-            const auto subtree_size = tree_structure.subtree_size(node_idx);
-            const auto pruned_node_cnt = subtree_size - 1;
-            // Count the number of leaf nodes that would be eliminated from the
-            // tree.
-            const auto leaf_node_cnt = tree_structure.count_leaf_nodes(node_idx);
-            const auto pruned_leaf_node_cnt = leaf_node_cnt - 1;
-            // Compute the amount of bits saved.  One bit per node and one per
-            // label.
-            const auto saved_bit_cnt = pruned_node_cnt + pruned_leaf_node_cnt;
-
-            if (saved_bit_cnt > candidate_saved_bit_cnt) {
-              candidate_node_idx = node_idx;
-              candidate_saved_bit_cnt = saved_bit_cnt;
-            }
-
-          }
-          // Check, whether we found a candidate on the current tree level.
-          if (candidate_saved_bit_cnt > 0) break;
-        }
-
-        if (candidate_saved_bit_cnt > 0) {
-          // The actual pruning.
-          tree_structure.set_leaf(candidate_node_idx);
-          total_fp_cntr += fp_cntrs[candidate_node_idx];
-        }
-        else {
-          // Exit the pruning loop, because no candidate has been found.
-          break;
-        }
-      }
-    }
-
-    // Encode the tree into level-order
-    std::queue<$u64> fifo; // explored nodes set
-
-    // Allocate enough space for the structure and labels
-    structure_.resize(tree_structure.max_node_cnt);
-    labels_.resize(labels.size());
-    $u64 struct_cnt = 0;
-    $u64 label_cnt = 0;
-
-    std::function<void(u64)> add_node = [&](u64 idx){
-      u1 is_inner = tree_structure.is_inner_node(idx);
-      if(is_inner){
-        // add the children of the current node to the structure
-        u64 l_child = tree_structure.left_child_of(idx);
-        u64 r_child = tree_structure.right_child_of(idx);
-
-        u1 l_child_is_inner = tree_structure.is_inner_node(l_child);
-        u1 r_child_is_inner = tree_structure.is_inner_node(r_child);
-
-        structure_[struct_cnt++] = l_child_is_inner;
-        structure_[struct_cnt++] = r_child_is_inner;
-
-        // push them to the fifo queue to traverse them later
-        fifo.push(l_child);
-        fifo.push(r_child);
-
-        // done for this node
-
-      } else { // leaf node
-        // add the label of the leaf node
-        labels_[label_cnt++] = labels[idx];
-
-        // no children, nothing to add to the fifo queue, done
-      }
-    };
-
-    // Special case for the root node: if the tree is only the root, structure is 0
-    {
-      u1 root_is_inner = tree_structure.is_inner_node(0);
-
-      // add the root to the tree structure
-      structure_[struct_cnt++] = root_is_inner;
-
-      if(root_is_inner) {
-        // add the root to the fifo to add the rest of the tree
-        fifo.push(0);
-      }
-      else {
-        labels_[label_cnt++] = labels[0];
-        // tree is only the root, we are done
-      }
-    }
-
-    while(!fifo.empty()){
-      u64 next_node = fifo.front();
-      add_node(next_node);
-      fifo.pop();
-    }
-
-    structure_.resize(struct_cnt);
-    labels_.resize(label_cnt);
-
-//    rank_support.set_vector(&structure_);
+    // Init rank1 support data structure.
     rank_.init(structure_);
   }
 
@@ -250,33 +69,33 @@ public:
     rank_.init(structure_);
   }
 
-  __forceinline__ u1
+  u1 __forceinline__
   is_inner_node(u64 node_idx) const {
     return structure_[node_idx];
   }
 
-  __forceinline__ u1
+  u1 __forceinline__
   is_leaf_node(u64 node_idx) const {
     return !structure_[node_idx];
   }
 
-  __forceinline__ u1
+  u1 __forceinline__
   is_root_node(u64 node_idx) const {
     return (node_idx == 0);
   }
 
-  __forceinline__ u1
+  u1 __forceinline__
   is_left_child(u64 node_idx) const {
     return (node_idx != 0) && (node_idx & 1);
   }
 
-  __forceinline__ u1
+  u1 __forceinline__
   is_right_child(u64 node_idx) const {
     return (node_idx != 0) && !(node_idx & 1);
   }
 
   // naive rank for tests
-  __forceinline__ u64
+  u64 __forceinline__
   rank_off(u64 node_idx) const {
     $u64 rank = 0;
     for(auto i = 0; i < node_idx; i++) {
@@ -286,30 +105,30 @@ public:
   }
 
   // naive rank for tests
-  __forceinline__ u64
+  u64 __forceinline__
   rank(u64 node_idx) const {
     return rank_(node_idx);
   }
 
   /// Important: rank() calculates the rank of the prefix -> we need idx + 1
-  __forceinline__ u64
+  u64 __forceinline__
   left_child(u64 node_idx) const {
     return 2 * rank(node_idx + 1) - 1;
   }
 
-  __forceinline__ u64
+  u64 __forceinline__
   right_child(u64 node_idx) const {
     return 2 * rank(node_idx + 1);
   }
 
-  __forceinline__ u1
+  u1 __forceinline__
   get_label(u64 node_idx) const {
     u64 label_idx = node_idx - rank(node_idx);
     return this->labels_[label_idx];
   }
 
   /// Decodes the level-order encoding to a bitmap.
-  __forceinline__ boost::dynamic_bitset<$u32>
+  boost::dynamic_bitset<$u32> __forceinline__
   to_bitset() const {
     boost::dynamic_bitset<$u32> ret(N); // the resulting bitmap
 
@@ -383,7 +202,7 @@ public:
   }
 
   /// Return the size in bytes.
-  __forceinline__ std::size_t
+  std::size_t __forceinline__
   size_in_byte() const {
     u64 lo_struct_size = (structure_.size() + 7) / 8;
     u64 lo_labels_size = (labels_.size() + 7) / 8;
@@ -392,23 +211,23 @@ public:
   }
 
   /// Return the size in bytes.
-  __forceinline__ std::size_t
+  std::size_t __forceinline__
   serialized_size_in_byte() const {
     u64 lo_struct_size = (structure_.size() + 7) / 8;
     u64 lo_labels_size = (labels_.size() + 7) / 8;
     return 4 + lo_struct_size + lo_labels_size;
   }
 
-  u1 operator!=(dynamic_tree_mask_lo& other) const {
+  u1 __forceinline__ operator!=(dynamic_tree_mask_lo& other) const {
     return (this->structure_ != other.structure_ || this->labels_ != other.labels_);
   }
 
-  u1 operator==(dynamic_tree_mask_lo& other) const {
+  u1 __forceinline__ operator==(dynamic_tree_mask_lo& other) const {
     return (this->structure_ == other.structure_ && this->labels_ == other.labels_);
   }
 
   /// Bitwise XOR without compression of the resulting tree
-  dynamic_tree_mask_lo
+  dynamic_tree_mask_lo __forceinline__
   operator^(const dynamic_tree_mask_lo& other) const{
 
     struct node {
@@ -625,7 +444,7 @@ public:
   }
 
   /// Bitwise XOR (range encoding)
-  dynamic_tree_mask_lo
+  dynamic_tree_mask_lo __forceinline__
   xor_re(const dynamic_tree_mask_lo& other) const {
     return *this ^ other; // TODO: find a way to exploit range encoding properties
   }
@@ -645,7 +464,7 @@ public:
 
 
   /// Bitwise AND without compression of the resulting tree
-  dynamic_tree_mask_lo
+  dynamic_tree_mask_lo __forceinline__
   operator&(const dynamic_tree_mask_lo& other) const {
 
     // the output
@@ -864,14 +683,14 @@ public:
   }
 
   /// Bitwise AND (range encoding)
-  dynamic_tree_mask_lo
+  dynamic_tree_mask_lo __forceinline__
   and_re(const dynamic_tree_mask_lo& other) const {
     return *this & other; // TODO: find a way to exploit range encoding properties
   }
 
   /// Computes (a XOR b) & this
   /// Note: this, a and b must be different instances. Otherwise, the behavior is undefined.
-  dynamic_tree_mask_lo
+  dynamic_tree_mask_lo __forceinline__
   fused_xor_and(const dynamic_tree_mask_lo& a, const dynamic_tree_mask_lo& b) const {
 
     // get (a XOR b)
@@ -890,7 +709,7 @@ public:
   }
 
   /// Returns the value of the bit at the position pos.
-  u1
+  u1 __forceinline__
   test(const std::size_t pos) const {
     auto n_log2 = dtl::log_2(N);
     $u64 node_idx = 0;
@@ -911,14 +730,14 @@ public:
     std::exit(42);
   }
 
-  u1
+  u1 __forceinline__
   all() {
     // TODO: this works only if the tree mask is in a compressed state
     return structure_[0] == false // root is the only node (a leaf)
         && labels_[0] == true; // and the label is 1
   }
 
-  u1
+  u1 __forceinline__
   none() {
     // TODO: this works only if the tree mask is in a compressed state
     return structure_[0] == false // root is the only node (a leaf)
