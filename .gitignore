@@ -8,7 +8,6 @@
 *.lo
 *.o
 *.so
-test
 *.exe
 .idea
 cmake-build-*
