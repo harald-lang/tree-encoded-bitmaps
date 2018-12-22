@@ -713,7 +713,7 @@ public:
   test(const std::size_t pos) const {
     auto n_log2 = dtl::log_2(N);
     $u64 node_idx = 0;
-    if (is_leaf_node(node_idx)) {
+    if (is_leaf_node(node_idx)) { // FIXME: eliminate special case!!!
       return get_label(node_idx);
     }
     for ($u64 i = n_log2 - 1; i < n_log2; i--) {
@@ -721,7 +721,7 @@ public:
       auto r = rank(node_idx + 1);
       node_idx = 2 * r - 1 + bit; // right child if bit is set, left child otherwise
       if (is_leaf_node(node_idx)) {
-        u64 label_idx = node_idx - rank(node_idx);
+        u64 label_idx = node_idx - rank(node_idx); // FIXME: do not call rank() twice!!!
         auto label = labels_[label_idx];
         return label;
       }

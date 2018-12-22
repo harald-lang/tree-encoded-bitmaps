@@ -134,8 +134,8 @@ run(const setting_t& setting) {
 }
 
 $i32 main() {
-  run_verbose(setting_t{.n = 1u << 10, .d = 0.1, .f = 16});
-//  return 0;
+  run_verbose(setting_t{.n = 1u << 10, .d = 0.5, .f = 1});
+  return 0;
 
 //  const std::vector<$u64> n_values { 1u << 10, 1u << 12, 1u << 14, 1u << 16, 1u << 18, 1u << 20 };
   const std::vector<$u64> n_values { 1u << 20 };
