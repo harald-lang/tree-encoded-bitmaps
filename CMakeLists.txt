@@ -40,14 +40,17 @@ target_link_libraries(tester_iter gtest gtest_main)
 
 # Treemask sources
 set(TREE_MASK_SOURCE_FILES
+        src/dtl/bitmap.hpp
         src/dtl/bitmap/dynamic_bitmap.hpp
         src/dtl/bitmap/dynamic_partitioned_tree_mask.hpp
         src/dtl/bitmap/util/bitmap_tree.hpp
         src/dtl/bitmap/util/binary_tree_structure.hpp
         src/dtl/bitmap/util/convert.hpp
         src/dtl/bitmap/dynamic_tree_mask_lo.hpp
+        src/dtl/bitmap/teb.hpp
         src/dtl/bitmap/static/partitioned_tree_mask.hpp
         src/dtl/bitmap/util/rank1.hpp
+        src/dtl/bitmap/util/random.hpp
         src/dtl/bitmap/static/tree_mask_lo.hpp
         src/dtl/bitmap/static/tree_mask_po.hpp
         src/dtl/bitmap/tree_mask_util.hpp
@@ -98,6 +101,17 @@ set(EXPERIMENT_COMPRESSION_SOURCE_FILES
 
 add_executable(ex_compression ${EXPERIMENT_COMPRESSION_SOURCE_FILES})
 target_link_libraries(ex_compression fastbit roaring)
+
+set(EXPERIMENT_COMPRESSION_OPT_SOURCE_FILES
+        ${SOURCE_FILES}
+        ${TREE_MASK_SOURCE_FILES}
+        ${COMPETITORS_SOURCE_FILES}
+        experiments/compression/common.hpp
+        experiments/compression/main_compression_optimizations.cpp
+        )
+
+add_executable(ex_compression_opt ${EXPERIMENT_COMPRESSION_OPT_SOURCE_FILES})
+target_link_libraries(ex_compression_opt fastbit roaring)
 
 
 set(EXPERIMENT_COMPRESSION_SKYLINE_SOURCE_FILES

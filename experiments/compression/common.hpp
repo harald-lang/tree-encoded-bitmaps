@@ -10,19 +10,18 @@
 #include <dtl/env.hpp>
 #include <dtl/thread.hpp>
 
-#include <bitmap/dynamic_roaring_bitmap.hpp>
-#include <bitmap/static/tree_mask_po.hpp>
-#include <bitmap/static/tree_mask_lo.hpp>
-#include <bitmap/static/wah.hpp>
-
-#include <util/two_state_markov_process.hpp>
-#include <bitmap/static/bitmap.hpp>
+#include <dtl/bitmap/dynamic_bitmap.hpp>
+#include <dtl/bitmap/dynamic_roaring_bitmap.hpp>
+#include <dtl/bitmap/teb.hpp>
+#include <dtl/bitmap/dynamic_wah.hpp>
+#include <dtl/bitmap/util/two_state_markov_process.hpp>
 
 // The number of independent runs.
 static constexpr u64 RUNS = 10;
 static constexpr u64 N = 1u << 20;
 
-static const i64 RUN_ID = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+static const i64 RUN_ID = std::chrono::duration_cast<std::chrono::seconds>(
+    std::chrono::system_clock::now().time_since_epoch()).count();
 
 // Read the CPU affinity for the process.
 static const auto cpu_mask = dtl::this_thread::get_cpu_affinity();
@@ -31,8 +30,7 @@ static const auto cpu_mask = dtl::this_thread::get_cpu_affinity();
 enum class bitmap_t {
   bitmap,
   roaring,
-  tree_mask_lo,
-  tree_mask_po,
+  teb,
   wah
 };
 
@@ -50,7 +48,7 @@ void run($f64 f, $f64 d, std::ostream& os) {
   f64 f_min = d >= 1.0 ? N : d/(1-d);
   f64 f_actual = std::max(f, f_min);
   two_state_markov_process mp(f_actual, d);
-  std::bitset<N> bs;
+  boost::dynamic_bitset<$u32> bs(N);
   for ($u64 i = 0; i < N; i++) {
     bs[i] = mp.next();
   }
@@ -79,26 +77,23 @@ void run($f64 f, $f64 d, std::ostream& os) {
 void run(config c, std::ostream& os) {
   switch (c.bitmap_type) {
     case bitmap_t::bitmap:
-      run<dtl::bitmap<N>>(c.clustering_factor, c.density, os);
+      run<dtl::dynamic_bitmap<$u32>>(c.clustering_factor, c.density, os);
       break;
     case bitmap_t::roaring:
-      run<dtl::roaring_bitmap<N>>(c.clustering_factor, c.density, os);
+      run<dtl::dynamic_roaring_bitmap>(c.clustering_factor, c.density, os);
       break;
-    case bitmap_t::tree_mask_lo:
-      run<dtl::tree_mask_lo<N>>(c.clustering_factor, c.density, os);
-      break;
-    case bitmap_t::tree_mask_po:
-      run<dtl::tree_mask_po<N>>(c.clustering_factor, c.density, os);
+    case bitmap_t::teb:
+      run<dtl::teb>(c.clustering_factor, c.density, os);
       break;
     case bitmap_t::wah:
-      run<dtl::wah32<N>>(c.clustering_factor, c.density, os);
+      run<dtl::dynamic_wah32>(c.clustering_factor, c.density, os);
       break;
   }
 }
 
 
 template<typename T>
-void dispatch(const std::vector<T> tasks,
+void dispatch(const std::vector<T>& tasks,
               std::function<void(const T&, std::ostream&)> fn) {
 
   i64 thread_cnt = dtl::env<$u64>::get("THREAD_CNT", cpu_mask.count());
@@ -113,7 +108,7 @@ void dispatch(const std::vector<T> tasks,
       // Grab work.
       const auto inc = std::min(std::max(min_batch_size, (config_cnt - cntr) / thread_cnt), max_batch_size);
       std::stringstream s;
-      s << "thread " << thread_id << " got " << inc << " tasks" << std::endl;
+      s << "thread " << thread_id << " got " << inc << " task(s)" << std::endl;
       std::cerr << s.str();
       const auto config_idx_begin = cntr.fetch_add(inc);
       const auto config_idx_end = std::min(config_idx_begin + inc, config_cnt);
