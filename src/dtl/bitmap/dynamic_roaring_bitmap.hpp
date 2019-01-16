@@ -34,10 +34,10 @@ struct dynamic_roaring_bitmap {
 
   dynamic_roaring_bitmap(dynamic_roaring_bitmap&& other) noexcept = default;
 
-  dynamic_roaring_bitmap& __forceinline__
+  __forceinline__ dynamic_roaring_bitmap&
   operator=(const dynamic_roaring_bitmap& other) = default;
 
-  dynamic_roaring_bitmap& __forceinline__
+  __forceinline__ dynamic_roaring_bitmap&
   operator=(dynamic_roaring_bitmap&& other) noexcept = default;
 
   /// Return the size in bytes.
@@ -80,7 +80,7 @@ struct dynamic_roaring_bitmap {
   }
 
   /// Bitwise XOR (range encoding)
-  dynamic_roaring_bitmap __forceinline__
+  __forceinline__ dynamic_roaring_bitmap
   xor_re(const dynamic_roaring_bitmap& other) const {
     return *this ^ other; // nothing special here. fall back to XOR
   }
@@ -88,7 +88,7 @@ struct dynamic_roaring_bitmap {
   /// Computes (a XOR b) & this
   /// Note: this, a and b must be different instances. Otherwise, the behavior
   /// is undefined.
-  dynamic_roaring_bitmap& __forceinline__
+  __forceinline__ dynamic_roaring_bitmap&
   fused_xor_and(const dynamic_roaring_bitmap& a, const dynamic_roaring_bitmap& b) {
     auto x = a ^ b;
     bitmap_ &= x.bitmap_;

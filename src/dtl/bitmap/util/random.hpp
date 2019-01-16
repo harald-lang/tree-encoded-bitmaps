@@ -21,7 +21,8 @@ gen_random_bitmap(u64 n, $f64 f, $f64 d) {
   $f64 d_actual = (bs.count() * 1.0) / n;
   if (std::abs(d - d_actual) > 1
       || std::abs(f - f_actual) > 0.25) {
-    throw std::invalid_argument("Failed to construct a random bitmap with the given parameters.");
+    throw std::invalid_argument(
+        "Failed to construct a random bitmap with the given parameters.");
   }
   return bs;
 }

@@ -18,6 +18,7 @@
 
 namespace dtl {
 
+//===----------------------------------------------------------------------===//
 /// Encodes a bitmap of length N as a binary tree.
 /// The tree structure is encoded in level-order.
 class dynamic_tree_mask_lo {
@@ -26,7 +27,7 @@ public:
   using bitmap_t = boost::dynamic_bitset<$u32>;
 
   /// The number of bits in the bitmap.
-  u64 N;
+  u64 n_;
 
   /// The tree encoded bitmap.
   bitmap_t structure_;
@@ -37,9 +38,10 @@ public:
 
   /// C'tor
   explicit
-  dynamic_tree_mask_lo(const boost::dynamic_bitset<$u32>& bitmask, f64 fpr = 0.0)
-      : N(bitmask.size()) {
+  dynamic_tree_mask_lo(const bitmap_t& bitmask, f64 fpr = 0.0)
+      : n_(bitmask.size()) {
 
+    // Construct a binary tree that represents the given bitmap.
     dtl::bitmap_tree bitmap_tree(bitmask, fpr);
 
     // Encode the tree into level-order.
@@ -61,9 +63,8 @@ public:
   }
 
   explicit
-  dynamic_tree_mask_lo(u64 N, const bitmap_t& structure, const bitmap_t& labels)
-      : N(N) {
-
+  dynamic_tree_mask_lo(u64 n, const bitmap_t& structure, const bitmap_t& labels)
+      : n_(n) {
     structure_ = structure;
     labels_ = labels;
     rank_.init(structure_);
@@ -130,7 +131,7 @@ public:
   /// Decodes the level-order encoding to a bitmap.
   boost::dynamic_bitset<$u32> __forceinline__
   to_bitset() const {
-    boost::dynamic_bitset<$u32> ret(N); // the resulting bitmap
+    boost::dynamic_bitset<$u32> ret(n_); // the resulting bitmap
 
     // special case if the tree is only a root node
     if(structure_.size() == 1){
@@ -144,7 +145,7 @@ public:
     // normal cases: construct the tree using the lo_construction and a level counter
     $u64 level = 0; //current height
     $u64 write_pointer = 0;
-    u64 tree_height = dtl::log_2(N);
+    u64 tree_height = dtl::log_2(n_);
 
     // a doubly linked list<node_idx, level> to manage the decoding for all nodes
     std::list<std::pair<$u64, $u64>> nodes;
@@ -218,17 +219,19 @@ public:
     return 4 + lo_struct_size + lo_labels_size;
   }
 
-  u1 __forceinline__ operator!=(dynamic_tree_mask_lo& other) const {
-    return (this->structure_ != other.structure_ || this->labels_ != other.labels_);
+  u1 __forceinline__
+  operator!=(dynamic_tree_mask_lo& other) const {
+    return (structure_ != other.structure_ || labels_ != other.labels_);
   }
 
-  u1 __forceinline__ operator==(dynamic_tree_mask_lo& other) const {
-    return (this->structure_ == other.structure_ && this->labels_ == other.labels_);
+  u1 __forceinline__
+  operator==(dynamic_tree_mask_lo& other) const {
+    return (structure_ == other.structure_ && labels_ == other.labels_);
   }
 
   /// Bitwise XOR without compression of the resulting tree
   dynamic_tree_mask_lo __forceinline__
-  operator^(const dynamic_tree_mask_lo& other) const{
+  operator^(const dynamic_tree_mask_lo& other) const {
 
     struct node {
         $u64 node_idx;
@@ -439,7 +442,7 @@ public:
       //std::cout << tmp << std::endl;
     }
 
-    dynamic_tree_mask_lo ret(N, structure, labels);
+    dynamic_tree_mask_lo ret(n_, structure, labels);
     return ret;
   }
 
@@ -678,7 +681,7 @@ public:
       //std::cout << tmp << std::endl;
     }
 
-    dynamic_tree_mask_lo ret(N, out_structure, out_labels);
+    dynamic_tree_mask_lo ret(n_, out_structure, out_labels);
     return ret;
   }
 
@@ -711,7 +714,7 @@ public:
   /// Returns the value of the bit at the position pos.
   u1 __forceinline__
   test(const std::size_t pos) const {
-    auto n_log2 = dtl::log_2(N);
+    auto n_log2 = dtl::log_2(n_);
     $u64 node_idx = 0;
     if (is_leaf_node(node_idx)) { // FIXME: eliminate special case!!!
       return get_label(node_idx);
@@ -746,7 +749,7 @@ public:
 
   std::size_t
   size() const {
-    return N;
+    return n_;
   }
 
   //===----------------------------------------------------------------------===//
@@ -757,15 +760,13 @@ public:
     static constexpr path_t path_msb = path_t(1) << (sizeof(path_t) * 8 - 1);
 
     const dynamic_tree_mask_lo& tm_;
-    u64 tree_height = dtl::log_2(tm_.N);
+    u64 tree_height = dtl::log_2(tm_.n_);
 
 
     //===----------------------------------------------------------------------===//
     // Iterator state
     //===----------------------------------------------------------------------===//
 
-//    std::stack<std::pair<$u64, path_t>> stack_;
-//    std::stack<$u64> stack_;
     static_stack<$u64, 32> stack_;
 
     /// encodes the path to the current node (the highest set bit is a sentinel bit)
@@ -803,8 +804,6 @@ public:
           const auto right_child_path = left_child_path | 1;
           stack_.push((right_child << 32) | right_child_path);
           stack_.push((left_child << 32) | left_child_path);
-//          stack_.push(std::make_pair(right_child, right_child_path));
-//          stack_.push(std::make_pair(left_child, left_child_path));
         }
         else {
           u1 label = tm_.get_label(node_idx);
@@ -813,29 +812,29 @@ public:
             const auto lz_cnt_path = dtl::bits::lz_count(path);
             level_ = sizeof(path_t) * 8 - 1 - lz_cnt_path;
             pos_ = (path ^ (path_msb >> lz_cnt_path)) << (tree_height - level_); // toggle sentinel bit (= highest bit set) and add offset
-            length_ = tm_.N >> level_; // the length of the 1-fill
+            length_ = tm_.n_ >> level_; // the length of the 1-fill
             path_ = path;
             return;
           }
         }
       }
-      pos_ = tm_.N;
+      pos_ = tm_.n_;
       length_ = 0;
     }
 
     explicit
     iter(const dynamic_tree_mask_lo& tm) : tm_(tm) {
-      const auto n_log2 = dtl::log_2(tm_.N);
+      const auto n_log2 = dtl::log_2(tm_.n_);
       u64 root_node_idx = 0;
       if (tm.is_leaf_node(root_node_idx)) {
         u1 label = tm.get_label(root_node_idx);
         if (label) {
           pos_ = 0;
-          length_ = tm.N;
+          length_ = tm.n_;
           level_ = 0;
         }
         else {
-          pos_ = tm.N;
+          pos_ = tm.n_;
           length_ = 0;
         }
         return;
@@ -850,13 +849,13 @@ public:
 
     static path_t __forceinline__
     toggle_msb(path_t i) {
-      return i ^ (path_t(1) << (sizeof i * CHAR_BIT - dtl::bits::lz_count(i) - 1));
+      return i ^ (path_t(1) << (sizeof i * 8 - dtl::bits::lz_count(i) - 1));
     }
 
     void __forceinline__
     nav_to(const std::size_t to_pos) {
-      if (to_pos >= tm_.N) {
-        pos_ = tm_.N;
+      if (to_pos >= tm_.n_) {
+        pos_ = tm_.n_;
         length_ = 0;
         return;
       }
@@ -876,7 +875,7 @@ public:
             // done
             const auto lz_cnt_path = dtl::bits::lz_count(path_);
             pos_ = (path_ ^ (path_msb >> lz_cnt_path)) << (tree_height - level_); // toggle sentinel bit (= highest bit set) and add offset
-            length_ = tm_.N >> level_; // the length of the 1-fill
+            length_ = tm_.n_ >> level_; // the length of the 1-fill
             // adjust the current position and fill-length
             length_ -= to_pos - pos_;
             pos_ = to_pos;
@@ -919,8 +918,8 @@ public:
     void __forceinline__
     skip_to_OFF(const std::size_t to_pos) {
       assert(to_pos >= pos_ + length_);
-      if (to_pos >= tm_.N) {
-        pos_ = tm_.N;
+      if (to_pos >= tm_.n_) {
+        pos_ = tm_.n_;
         return;
       }
       if (to_pos == pos_ + length_) {
@@ -956,7 +955,7 @@ public:
         stack_.pop();
         if (stack_.empty()) {
           // end
-          pos_ = tm_.N;
+          pos_ = tm_.n_;
           break;
         }
       }
@@ -980,7 +979,7 @@ public:
             // done
             const auto lz_cnt_path = dtl::bits::lz_count(path);
             pos_ = (path ^ (path_msb >> lz_cnt_path)) << (tree_height - level_); // toggle sentinel bit (= highest bit set) and add offset
-            length_ = tm_.N >> level_; // the length of the 1-fill
+            length_ = tm_.n_ >> level_; // the length of the 1-fill
             // adjust the current position and fill-length
             length_ -= to_pos - pos_;
             pos_ = to_pos;
@@ -1017,7 +1016,7 @@ public:
 
     u1 __forceinline__
     end() const noexcept {
-      return pos_ == tm_.N;
+      return pos_ == tm_.n_;
     }
 
     u64 __forceinline__
@@ -1027,7 +1026,7 @@ public:
 
     u64 __forceinline__
     length() const noexcept {
-      return (length_ > tm_.N ? 0 : length_);
+      return (length_ > tm_.n_ ? 0 : length_);
     }
 
   };
@@ -1415,11 +1414,7 @@ public:
         };
 
 };
-
-//TODO:
-// 1. XOR
-// 2. Fused XOR
-// 3. BP
+//===----------------------------------------------------------------------===//
 
 }; // namespace dtl
 

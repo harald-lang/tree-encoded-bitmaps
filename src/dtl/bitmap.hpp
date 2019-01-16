@@ -8,6 +8,7 @@
 #include "bitmap/dynamic_roaring_bitmap.hpp"
 #include "bitmap/dynamic_tree_mask_lo.hpp"
 #include "bitmap/dynamic_wah.hpp"
+#include "bitmap/teb.hpp"
 #include "bitmap/static/bitmap.hpp"
 #include "bitmap/static/partitioned_tree_mask.hpp"
 #include "bitmap/static/roaring_bitmap.hpp"

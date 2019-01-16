@@ -35,9 +35,10 @@ public:
   /// inner nodes.
   explicit
   binary_tree_structure(u64 n)
-      :n_(n), max_node_cnt_(2 * n_ - 1), height_(dtl::log_2(n_)) {
-
-    is_inner_node_.resize(max_node_cnt_, false);
+      :n_(n),
+       max_node_cnt_(2 * n_ - 1),
+       height_(dtl::log_2(n_)),
+       is_inner_node_(max_node_cnt_, false) {
 
     // Initialize a perfect binary tree.
     for ($u64 i = 0; i < max_node_cnt_ / 2; i++) {
