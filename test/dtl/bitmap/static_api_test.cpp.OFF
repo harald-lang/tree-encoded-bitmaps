@@ -21,7 +21,7 @@ using wah64 = dtl::wah64<LEN>;
 
 // Fixture for the parameterized test case.
 template<typename T>
-class api_test : public ::testing::Test {};
+class static_api_test : public ::testing::Test {};
 
 // Specify the types for which we want to run the API tests.
 using types_under_test = ::testing::Types<

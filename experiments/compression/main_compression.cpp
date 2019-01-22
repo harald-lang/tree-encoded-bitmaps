@@ -25,7 +25,7 @@ $i32 main() {
   for (auto f: clustering_factors) {
     for (auto d: bit_densities) {
 
-      if (f > N*d) continue;
+      if (f > N * d) continue;
 
       config c;
       c.clustering_factor = f;
@@ -35,9 +35,7 @@ $i32 main() {
       configs.push_back(c);
       c.bitmap_type = bitmap_t::roaring;
       configs.push_back(c);
-      c.bitmap_type = bitmap_t::tree_mask_lo;
-      configs.push_back(c);
-      c.bitmap_type = bitmap_t::tree_mask_po;
+      c.bitmap_type = bitmap_t::teb;
       configs.push_back(c);
       c.bitmap_type = bitmap_t::wah;
       configs.push_back(c);

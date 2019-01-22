@@ -25,9 +25,11 @@ add_subdirectory(thirdparty/gtest)
 include_directories(thirdparty/gtest/include lib/googletest)
 
 set(TEST_FILES
-        test/dtl/bitmap/api_test.cpp
+        test/dtl/bitmap/api_encode_decode_test.cpp
+        test/dtl/bitmap/api_set_operation_test.cpp
+#        test/dtl/bitmap/static_api_test.cpp
 #        bitmap_view_test.cpp
-        test/dtl/bitmap/iterate_1fills_test.cpp
+        test/dtl/bitmap/api_range_iterator_test.cpp
         test/dtl/bitmap/iterate_test.cpp
         )
 add_executable(tester ${TEST_FILES})
@@ -47,6 +49,10 @@ set(TREE_MASK_SOURCE_FILES
         src/dtl/bitmap/util/binary_tree_structure.hpp
         src/dtl/bitmap/util/convert.hpp
         src/dtl/bitmap/dynamic_tree_mask_lo.hpp
+        src/dtl/bitmap/position_list.hpp
+        src/dtl/bitmap/range_list.hpp
+        src/dtl/bitmap/partitioned_range_list.hpp
+        src/dtl/bitmap/partitioned_position_list.hpp
         src/dtl/bitmap/teb.hpp
         src/dtl/bitmap/static/partitioned_tree_mask.hpp
         src/dtl/bitmap/util/rank1.hpp

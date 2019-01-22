@@ -99,7 +99,7 @@ void dispatch(const std::vector<T>& tasks,
   i64 thread_cnt = dtl::env<$u64>::get("THREAD_CNT", cpu_mask.count());
   i64 config_cnt = tasks.size();
   i64 min_batch_size = 1;
-  i64 max_batch_size = 64;
+  i64 max_batch_size = 1;
 
   const auto time_start = std::chrono::system_clock::now();
   std::atomic<$i64> cntr { 0 };

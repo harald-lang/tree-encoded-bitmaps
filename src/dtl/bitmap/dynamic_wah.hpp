@@ -50,7 +50,14 @@ struct dynamic_wah {
   /// Return the size in bytes.
   std::size_t
   size_in_byte() const {
-    return bv.bytes();
+    return bv.bytes() /* size of the compressed bitmap */
+        + sizeof(size_);  /* bit-length of the original bitmap */
+  }
+
+  /// Returns the size of the bitmap.
+  std::size_t
+  size() const {
+    return size_;
   }
 
   /// Conversion to an std::bitset.
@@ -118,6 +125,114 @@ struct dynamic_wah {
   test(const std::size_t pos) const {
     return bv.getBit(pos);
   }
+
+  //===--------------------------------------------------------------------===//
+  /// 1-fill iterator, with skip support.
+  class iter {
+
+    const dynamic_wah& outer_;
+
+    /// Position iterator.
+    typename bitvector_t::pit pit;
+
+    //===------------------------------------------------------------------===//
+    // Iterator state
+    //===------------------------------------------------------------------===//
+    /// points to the beginning of a 1-fill
+    $u64 pos_;
+    /// the length of the current 1-fill
+    $u64 length_;
+    //===------------------------------------------------------------------===//
+
+  public:
+
+    explicit __forceinline__
+    iter(const dynamic_wah& outer)
+        : outer_(outer),
+          pit(outer_.bv),
+          pos_(*pit), length_(0) {
+      // determine the length of the current 1fill
+      if (*pit < outer_.size_) {
+        length_ = 1;
+        while (*pit < outer_.size_
+            && *pit == pos_ + length_) {
+          ++length_;
+          pit.next();
+        }
+      }
+      else {
+        pos_ = outer_.size_;
+        length_ = 0;
+      }
+    }
+
+    void __forceinline__
+    next() {
+      // Determine the length of the current 1-fill.
+      if (*pit < outer_.size_) {
+        pos_ = *pit;
+        length_ = 1;
+        pit.next();
+        while (*pit < outer_.size_
+            && *pit == pos_ + length_) {
+          ++length_;
+          pit.next();
+        }
+      }
+      else {
+        pos_ = outer_.size_;
+        length_ = 0;
+      }
+    }
+
+    void __forceinline__
+    skip_to(const std::size_t to_pos) {
+      if (*pit < outer_.size_) {
+        while (*pit < to_pos) {
+          pit.next();
+        }
+        // Determine the length of the current 1-fill.
+        if (*pit < outer_.size_) {
+          pos_ = *pit;
+          length_ = 1;
+          pit.next();
+          while (*pit < outer_.size_
+              && *pit == pos_ + length_) {
+            ++length_;
+            pit.next();
+          }
+        }
+        else {
+          pos_ = outer_.size_;
+          length_ = 0;
+        }
+      }
+    }
+
+    u1
+    end() const noexcept {
+      return length_ == 0;
+    }
+
+    u64
+    pos() const noexcept {
+      return pos_;
+    }
+
+    u64
+    length() const noexcept {
+      return length_;
+    }
+
+  };
+  //===--------------------------------------------------------------------===//
+
+  iter __forceinline__
+  it() const {
+    return iter(*this);
+  }
+
+
 
 
 };

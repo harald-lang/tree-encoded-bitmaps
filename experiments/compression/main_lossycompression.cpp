@@ -24,12 +24,21 @@ run_verbose(const setting_t& setting) {
   const auto plain_bitmap = dtl::gen_random_bitmap(n, f, d);
   std::cout << "plain bitmap:        " << plain_bitmap << std::endl;
 
-  const std::vector<$f64> fprs {0.0, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1.0};
-//  const std::vector<$f64> fprs {0.1};
+//  const std::vector<$f64> fprs {0.0, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1.0};
+  const std::vector<$f64> fprs {0.0};
   for (auto fpr : fprs) {
     std::cout << "desired fpr: " << fpr << std::endl;
-    const auto compressed_bitmap = dtl::dynamic_tree_mask_lo(plain_bitmap, fpr);
+    const auto compressed_bitmap = dtl::teb(plain_bitmap, fpr);
+    std::cout << "compressed bitmap:   " << compressed_bitmap << std::endl;
     const auto decompressed_bitmap = compressed_bitmap.to_bitset();
+    std::cout << "decompressed bitmap: " << decompressed_bitmap << std::endl;
+    if (fpr == 0.0) {
+      if (plain_bitmap != decompressed_bitmap) {
+        std::cerr << "Validation failed." << std::endl;
+        std::exit(1);
+      }
+    }
+
     const auto actual_false_positive_cnt =
         (decompressed_bitmap ^ plain_bitmap).count();
 
@@ -133,8 +142,148 @@ run(const setting_t& setting) {
   }
 }
 
+$i32 main_test() {
+  std::string s("1101111100011111011111110111111111111111111110111111111111111111111111111111111111111111111001111110111111111111100011001111111110011011111111111001100001110111111110111110001111101111110111111100111111111111111111111111111110000111111111100111111110101111111111110111101111111111110011111111111111111111111111100011110011011111111111111111000111111111111111101111111011111111100111111111101111010111001111111110011111111111111111111111111101111111111111011111111111010111111111110001111111111111011111111110000111111101100111000001101111111111111111111101101111111111111111111110001010111111110001100011110011011111110010111111110111011111111111111111111111011111111110111111111111110111111111011110110011111110111111001111111101101001111110111111111101111011111111111100111111111011111111111011111111111001111110111111111111111111111111111111011100011011111101011110110111110111111111111111101111111011010111111101011111111011100001110011111111111111111111110111111111111111111111111111111101011101111110111111111111111011");
+//  std::string s("1010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010");
+  std::cout << s.length() << std::endl;
+  dtl::bitmap b(s.length());
+  for (std::size_t i = 0; i < s.length(); ++i) {
+    b[s.length() - 1 - i] = s[i] == '1';
+  }
+  std::cout << b << std::endl;
+  dtl::teb t(b);
+  std::cout << t << std::endl;
+  std::cout << t.to_bitset() << std::endl;
+//  t.run_optimize();
+//  t.run_optimize();
+  std::size_t cntr = 0;
+  std::cout << t << std::endl;
+  while (t.decompress()) {
+    cntr++;
+    std::cout << cntr << std::endl;
+    std::cout << t << std::endl;
+    std::cout << t.to_bitset() << std::endl;
+    if (t.to_bitset() != b) {
+      std::cout << "Validation failed." << std::endl;
+      std::exit(1);
+    }
+  }
+  return 0;
+}
+
+$i32 main_test2() {
+  constexpr u64 LEN = 16;
+//  for ($u64 i = 15ull << 60; i < (~0ull >> (64 - LEN)); ++i) {
+  for ($u64 i = 0; i <= (~0ull >> (64 - LEN)); ++i) {
+//    dtl::bitmap plain(LEN*2, i);
+    dtl::bitmap plain(LEN, i);
+    std::cout << plain << std::endl;
+    dtl::teb compressed(plain);
+    compressed.run_optimize();
+    auto size_of = [](dtl::teb& teb) {
+      return (teb.structure_.size() + teb.labels_.size());
+    };
+    const auto compressed_size = size_of(compressed);
+
+    auto decompressed = compressed.to_bitset();
+    if (plain != decompressed) {
+      std::cout << "Validation failed." << std::endl;
+      std::exit(1);
+    }
+
+  }
+}
+
 $i32 main() {
-  run_verbose(setting_t{.n = 1u << 10, .d = 0.5, .f = 1});
+  constexpr u64 LEN = 8;
+//  for ($u64 i = 15ull << 60; i < (~0ull >> (64 - LEN)); ++i) {
+  for ($u64 i = 0; i < (~0ull >> (64 - LEN)); ++i) {
+//    dtl::bitmap plain(LEN*2, i);
+    dtl::bitmap plain(LEN, i);
+    dtl::teb compressed(plain, 1);
+//    compressed.run_optimize();
+    auto size_of = [](dtl::teb& teb) {
+      return (teb.structure_.size() * 1.0625 + teb.labels_.size());
+    };
+    const auto compressed_size = size_of(compressed);
+
+//    auto decompressed = compressed.to_bitset();
+//    assert(plain == decompressed);
+
+    $f64 min_size = compressed_size;
+    $f64 min_structure_size = compressed.structure_.size();
+    dtl::teb min_instance = compressed;
+    $f64 max_size = compressed_size;
+
+    while (compressed.decompress()) {
+      const auto compressed_size = 1.0 * size_of(compressed);
+      if (compressed_size < min_size) {
+        min_structure_size = compressed.structure_.size();
+        min_instance = compressed;
+      }
+      min_size = std::min(compressed_size, min_size);
+      max_size = std::max(compressed_size, max_size);
+    }
+    if (//min_structure_size > 0 &&
+        min_size < LEN &&
+        min_size < compressed_size) {
+      std::cout << plain << " ";
+      std::cout << " compressed_size=" << compressed_size;
+      std::cout << " min_size=" << min_size;
+      std::cout << " max_size=" << max_size;
+      std::cout << " min_struct_size=" << min_structure_size;
+      std::cout << std::endl;
+      std::cout << " teb_o0=" << dtl::teb(plain, 0) << std::endl;
+      std::cout << " teb_o1=" << dtl::teb(plain, 1) << std::endl;
+      std::cout << " teb_o2=" << min_instance << std::endl;
+    }
+  }
+}
+
+int main_old() {
+//  auto exp = 0b1111110000100000;
+  auto exp = 0b00010000;
+  dtl::bitmap bm(8, exp);
+  dtl::teb teb(bm);
+  std::cout << teb << std::endl;
+  std::cout << "expected: " << bm << std::endl;
+  std::cout << "actual:   " << teb.to_bitset() << std::endl;
+//  teb.run_optimize();
+  teb.decompress();
+  std::cout << teb << std::endl;
+  std::cout << "expected: " << bm << std::endl;
+  std::cout << "actual:   " << teb.to_bitset() << std::endl;
+  teb.decompress();
+  std::cout << teb << std::endl;
+  std::cout << "expected: " << bm << std::endl;
+  std::cout << "actual:   " << teb.to_bitset() << std::endl;
+  teb.decompress();
+  std::cout << teb << std::endl;
+  std::cout << "expected: " << bm << std::endl;
+  std::cout << "actual:   " << teb.to_bitset() << std::endl;
+  teb.decompress();
+  std::cout << teb << std::endl;
+  std::cout << "expected: " << bm << std::endl;
+  std::cout << "actual:   " << teb.to_bitset() << std::endl;
+  return 0;
+
+
+  return 0;
+  dtl::bitmap plain(8);
+//  plain[0] = true;
+//  plain[1] = true;
+//  plain[2] = true;
+  plain[3] = true;
+  plain[4] = true;
+  plain[5] = true;
+  plain[6] = true;
+  plain[7] = true;
+//  plain[0] = true;
+
+
+//  run_verbose(setting_t{.n = 1u << 10, .d = 0.25, .f = 8});
+//  run_verbose(setting_t{.n = 1u << 4, .d = 0.25, .f = 1});
+//  run_verbose(setting_t{.n = 4, .d = 0.5, .f = 1});
   return 0;
 
 //  const std::vector<$u64> n_values { 1u << 10, 1u << 12, 1u << 14, 1u << 16, 1u << 18, 1u << 20 };

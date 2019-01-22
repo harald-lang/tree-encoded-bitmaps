@@ -23,7 +23,8 @@ class iterate_test : public ::testing::Test {};
 using types_under_test = ::testing::Types<
 //    dtl::dynamic_tree_mask_lo,
     dtl::dynamic_partitioned_tree_mask,
-    dtl::dynamic_roaring_bitmap
+    dtl::dynamic_roaring_bitmap,
+    dtl::teb<$u32>
 //    dtl::dynamic_bitmap<$u32>
 //    roaring_bitmap,
 //    tree_mask_lo,
@@ -178,23 +179,23 @@ TYPED_TEST(iterate_test, bitwise_and) {
 TYPED_TEST(iterate_test, bitwise_and_skip) {
   using T = TypeParam;
 
-//  for ($u32 a = 0; a < 256; ++a) {
-//    for ($u32 b = 0; b < 256; ++b) {
+  for ($u32 a = 0; a < 256; ++a) {
+    for ($u32 b = 0; b < 256; ++b) {
 //      std::cout << "a=" << a << ", b=" << b << std::endl;
-  for ($u32 a = 1; a < 256; ++a) {
-    for ($u32 b = 2; b < 256; ++b) {
+//  for ($u32 a = 1; a < 256; ++a) {
+//    for ($u32 b = 2; b < 256; ++b) {
       dtl::bitmap bm_a(8, a);
       dtl::bitmap bm_b(8, b);
       T enc_bm_a(bm_a);
       T enc_bm_b(bm_b);
-      std::cout
-          << "a=" << std::bitset<8>(a) << " (" << a << ")"
-          << ", enc=" << enc_bm_a
-          << std::endl;
-      std::cout
-          << "b=" << std::bitset<8>(b) << " (" << b << ")"
-          << ", enc=" << enc_bm_b
-          << std::endl;
+//      std::cout
+//          << "a=" << std::bitset<8>(a) << " (" << a << ")"
+//          << ", enc=" << enc_bm_a
+//          << std::endl;
+//      std::cout
+//          << "b=" << std::bitset<8>(b) << " (" << b << ")"
+//          << ", enc=" << enc_bm_b
+//          << std::endl;
       auto result = bitwise_and_using_skip_iterator(enc_bm_a, enc_bm_b);
       ASSERT_EQ(bm_a & bm_b, result) << "Failed to compute the bitwise AND of "
           << bm_a  << " (" << a << ") and " << bm_b << " (" << b << ").";

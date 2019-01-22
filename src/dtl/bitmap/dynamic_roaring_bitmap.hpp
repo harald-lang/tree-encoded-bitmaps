@@ -43,7 +43,8 @@ struct dynamic_roaring_bitmap {
   /// Return the size in bytes.
   std::size_t
   size_in_byte() const {
-    return bitmap_.getSizeInBytes(false);
+    return bitmap_.getSizeInBytes(false) /* size of the compressed bitmap */
+        + sizeof(size_) /* bit-length of the original bitmap */;
   }
 
   /// Conversion to an std::bitset.
@@ -75,6 +76,7 @@ struct dynamic_roaring_bitmap {
   operator^(const dynamic_roaring_bitmap& other) const {
     dynamic_roaring_bitmap ret;
     ret.bitmap_ = bitmap_;
+    ret.size_ = size_;
     ret.bitmap_ ^= other.bitmap_;
     return ret;
   }
@@ -111,6 +113,7 @@ struct dynamic_roaring_bitmap {
     return bitmap_.contains(pos);
   }
 
+  /// Returns the size of the bitmap.
   std::size_t
   size() const {
     return size_;

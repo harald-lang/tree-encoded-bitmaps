@@ -6,7 +6,7 @@
 namespace dtl {
 
 //===----------------------------------------------------------------------===//
-dtl::bitmap
+inline dtl::bitmap
 gen_random_bitmap(u64 n, $f64 f, $f64 d) {
 
   // init bitset
