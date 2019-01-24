@@ -299,8 +299,8 @@ struct partitioned_range_list {
             + outer_.ranges_[ranges_read_pos_].begin;
         range_length_ = outer_.ranges_[ranges_read_pos_].length;
         if (ranges_read_pos_ + 1 < outer_.ranges_.size()
-            && outer_.partitions_[partitions_read_pos_].begin
-                <= outer_.partitions_[partitions_read_pos_ + 1].begin) {
+            && outer_.ranges_[ranges_read_pos_ + 1].begin
+                <= outer_.ranges_[ranges_read_pos_].begin) {
           ++partitions_read_pos_;
         }
       }
