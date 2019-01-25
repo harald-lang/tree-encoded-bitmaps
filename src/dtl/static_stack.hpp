@@ -7,6 +7,7 @@
 #include <dtl/dtl.hpp>
 
 namespace dtl {
+
 //===----------------------------------------------------------------------===//
 /// A statically sized stack.
 template<typename T, std::size_t N>
@@ -37,7 +38,7 @@ public:
   __forceinline__ static_stack&
   operator=(static_stack&& other) noexcept = default;
 
-  __forceinline__ bool
+  __forceinline__ u1
   empty() const {
     return cnt_ == 0;
   }
@@ -50,7 +51,7 @@ public:
   __forceinline__ void
   push_back(const T& item) {
     stack_[cnt_] = item;
-    cnt_++;
+    ++cnt_;
     assert(cnt_ <= N);
   }
 
@@ -62,7 +63,7 @@ public:
   __forceinline__ void
   push_back(const T&& item) {
     stack_[cnt_] = item;
-    cnt_++;
+    ++cnt_;
     assert(cnt_ <= N);
   }
 
@@ -84,7 +85,7 @@ public:
 
   __forceinline__ void
   pop_back() {
-    cnt_--;
+    --cnt_;
     assert(cnt_ >= 0 && cnt_ <= N);
   }
 
