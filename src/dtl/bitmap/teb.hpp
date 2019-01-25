@@ -21,7 +21,10 @@ namespace dtl {
 //===----------------------------------------------------------------------===//
 /// Encodes a bitmap of length N as a binary tree.
 /// The tree structure is encoded in level-order.
+template<i32 optimization_level_ = 3>
 class teb {
+
+
 public:
 
   // The fundamental storage type. The size of a TEB is a multiple of
@@ -45,14 +48,14 @@ public:
   $u32 implicit_inner_node_cnt_;
 
   /// For testing purposes only.
-  $u32 optimization_level_;
   $u32 implicit_leaf_node_cnt_;
 
 public:
+
   /// Tree-encode the given bitmap with an optional false positive rate.
   explicit
-  teb(const bitmap_t& bitmap, u32 opt_level = 3,f64 fpr = 0.0)
-      : n_(bitmap.size()), optimization_level_(opt_level) {
+  teb(const bitmap_t& bitmap, f64 fpr = 0.0)
+      : n_(bitmap.size()) {
 
     // Construct a binary tree that represents the given bitmap.
     dtl::bitmap_tree bitmap_tree(bitmap, fpr);
@@ -98,6 +101,11 @@ public:
 
     // Init rank1 support data structure.
     rank_.init(structure_);
+
+    // Optimization level 2
+    if (optimization_level_ > 1) {
+      run_optimize();
+    }
   }
 
   teb(const teb& other) = default;
@@ -106,11 +114,11 @@ public:
   teb& operator=(teb&& other) = default;
   ~teb() = default;
 
-  inline void run_optimize() {
+  inline void
+  run_optimize() {
     // Optimization level 2.
     if (optimization_level_ > 1) {
-      $u1 optimized = false;
-      dtl::teb min = *this;
+      auto min = *this;
       auto min_size = size_in_byte();
       // Gradual decompression.
       $u64 global_cntr = 0;
@@ -118,20 +126,14 @@ public:
       while (decompress()) {
         global_cntr++;
         local_cntr++;
-        if (local_cntr == 1000) break;
         const auto compressed_size = size_in_byte();
         if (compressed_size < min_size) {
-//          std::cout << "D(" << global_cntr << ") " << std::flush;
-          optimized = true;
           min = *this;
           min_size = compressed_size;
           local_cntr = 0;
         }
       }
-//      std::cout << "- cntr = " << global_cntr << "" << std::endl;
-      if (optimized) {
-        *this = min;
-      }
+      *this = min;
     }
   }
 
@@ -309,19 +311,11 @@ public:
     bytes += rank_.size_in_bytes();
     // Bit-length of the original bitmap.
     bytes += sizeof(n_);
-    if (optimization_level_ > 0) {
+//    if (optimization_level_ > 0) {
       // The number of implicit inner nodes.
       bytes += sizeof(implicit_inner_node_cnt_);
-    }
+//    }
     return bytes;
-  }
-
-  /// Return the size in bytes.
-  std::size_t __forceinline__
-  serialized_size_in_byte() const {
-    u64 lo_struct_size = (structure_.size() + 7) / 8;
-    u64 lo_labels_size = (labels_.size() + 7) / 8;
-    return 4 + lo_struct_size + lo_labels_size;
   }
 
   u1 __forceinline__
@@ -342,16 +336,20 @@ public:
        << implicit_inner_node_cnt_
        << "/"
        << implicit_leaf_node_cnt_
-       << ", "
-       << " tree bits = " << structure_.size()
-       << ", "
-       << " label bits = " << labels_.size()
+       << ", perfect levels = "
+       << determine_perfect_tree_levels(implicit_inner_node_cnt_)
+       << ", tree bits = " << structure_.size()
+       << ", label bits = " << labels_.size()
+       << ", opt level = " << optimization_level_
+       << ", n = " << n_
+       << ", rank size = " << rank_.size_in_bytes()
+       << ", size = " << size_in_byte()
        << "\n | ";
 
     if (implicit_inner_node_cnt_ > 0) {
-      for ($i64 i = 0; i < implicit_inner_node_cnt_; i++) {
-        os << "1";
-      }
+//      for ($i64 i = 0; i < implicit_inner_node_cnt_; i++) {
+//        os << "1";
+//      }
       os << "'";
     }
     for ($i64 i = 0; i < structure_.size(); i++) {
@@ -417,158 +415,185 @@ public:
     return n_;
   }
 
+  /// Computes the number of perfect levels in the tree structure based on the
+  /// number of implicit inner nodes. The number of perfect levels is at least
+  /// one, because there is at least one node in the tree structure.
+  static inline u64
+  determine_perfect_tree_levels(u64 implicit_inner_node_cnt) {
+    return implicit_inner_node_cnt == 0
+           ? 1
+           : dtl::log_2(implicit_inner_node_cnt + 1);
+  }
+
+  /// Computes the height of the tree based on n. - Note that a tree, consisting
+  /// of a single (root) node has a height of 0.
+  static inline u64
+  determine_tree_height(u64 n) {
+    return dtl::log_2(n);
+  }
+
   //===--------------------------------------------------------------------===//
   /// 1-fill iterator, with skip support.
   class iter {
 
-    using path_t = uint64_t;
+    using path_t = $u64;
     static constexpr path_t path_msb = path_t(1) << (sizeof(path_t) * 8 - 1);
 
-    const teb& tm_;
-    u64 tree_height = dtl::log_2(tm_.n_);
-
-
-    //===----------------------------------------------------------------------===//
-    // Iterator state
-    //===----------------------------------------------------------------------===//
-
+    /// Reference to the TEB instance.
+    const teb& teb_;
+    /// The height of the tree structure.
+    u64 tree_height_;
+    /// The number of perfect levels in the tree structure.
+    u64 perfect_levels_;
+    u64 top_node_idx_end_;
+    u64 top_node_idx_begin_;
+    $u64 top_node_idx_current_;
+    /// The stack contains the tree nodes that need to be visited.
     static_stack<$u64, 32> stack_;
-
-    /// encodes the path to the current node (the highest set bit is a sentinel bit)
-    path_t path_ = 1;
-    /// the level of the current tree node
-    $u64 level_ = 0; // FIXME somewhat redundant with path and length
-    /// points to the beginning of a 1-fill
+    /// Points to the beginning of the current 1-fill.
     $u64 pos_;
-    /// the length of the current 1-fill
+    /// The length of the current 1-fill.
     $u64 length_;
-    //===----------------------------------------------------------------------===//
+    //===------------------------------------------------------------------===//
 
   public:
 
-    void __forceinline__
-    next() {
-      while (!stack_.empty()) {
-        u64 pair = stack_.top();
-        u64 node_idx = pair >> 32;
-        u64 path = pair & ((u64(1) << 32) - 1);
-        stack_.pop();
-
-        //std::cout << "structure size: " << tm_.structure_.size() << " label_size: " << tm_.labels_.size() << std::endl;
-        //std::cout << "node index: " << node_idx << std::endl;
-        if(node_idx >= tm_.structure_.size()){
-          break;
-        }
-
-        if (!tm_.is_leaf_node(node_idx)) {
-          // goto left child
-          const auto r = tm_.rank(node_idx + 1);
-          const auto right_child = 2 * r;
-          const auto left_child = right_child - 1;
-          const auto left_child_path = path << 1;
-          const auto right_child_path = left_child_path | 1;
-          stack_.push((right_child << 32) | right_child_path);
-          stack_.push((left_child << 32) | left_child_path);
-        }
-        else {
-          u1 label = tm_.get_label(node_idx);
-          if (label) {
-            // produce output (a 1-fill)
-            const auto lz_cnt_path = dtl::bits::lz_count(path);
-            level_ = sizeof(path_t) * 8 - 1 - lz_cnt_path;
-            pos_ = (path ^ (path_msb >> lz_cnt_path)) << (tree_height - level_); // toggle sentinel bit (= highest bit set) and add offset
-            length_ = tm_.n_ >> level_; // the length of the 1-fill
-            path_ = path;
-            return;
-          }
-        }
-      }
-      pos_ = tm_.n_;
-      length_ = 0;
-    }
-
+    /// C'tor
     explicit
-    iter(const teb& tm) : tm_(tm) {
-      const auto n_log2 = dtl::log_2(tm_.n_);
+    iter(const teb& teb) :
+        teb_(teb),
+        tree_height_(determine_tree_height(teb.n_)),
+        perfect_levels_(
+            determine_perfect_tree_levels(teb_.implicit_inner_node_cnt_)),
+        top_node_idx_end_(perfect_levels_ > 0 // FIXME # of perfect levels is always > 0
+                          ? (1ull << perfect_levels_) - 1
+                          : 1),
+        top_node_idx_begin_(perfect_levels_ > 0
+                            ? top_node_idx_end_ - (1ll << (perfect_levels_ - 1))
+                            : 0),
+        top_node_idx_current_(top_node_idx_begin_) {
       u64 root_node_idx = 0;
-      if (tm.is_leaf_node(root_node_idx)) {
-        u1 label = tm.get_label(root_node_idx);
+      if (teb.is_leaf_node(root_node_idx)) {
+        // Handle the special case, where the root node is a leaf node.
+        u1 label = teb.get_label(root_node_idx);
         if (label) {
           pos_ = 0;
-          length_ = tm.n_;
-          level_ = 0;
+          length_ = teb.n_;
         }
         else {
-          pos_ = tm.n_;
+          pos_ = teb.n_;
           length_ = 0;
         }
-        return;
       }
-//      stack_.push(std::make_pair(root_node_idx, path_t(1)));
-      stack_.push((root_node_idx << 32) | 1);
-
-      next();
+      else {
+        // Initialize the stack.
+        path_t path = path_t(1) << (perfect_levels_ - 1);
+        stack_.push((top_node_idx_begin_ << 32) | path);
+        next();
+      }
     }
 
     iter(iter&&) = default;
 
-    static path_t __forceinline__
-    toggle_msb(path_t i) {
-      return i ^ (path_t(1) << (sizeof i * 8 - dtl::bits::lz_count(i) - 1));
+    void __forceinline__
+    next() {
+      while (top_node_idx_current_ < top_node_idx_end_) {
+        while (!stack_.empty()) {
+          u64 pair = stack_.top();
+          $u64 node_idx = pair >> 32;
+          $u64 path = pair & ((u64(1) << 32) - 1);
+          stack_.pop();
+          while (teb_.is_inner_node(node_idx)) {
+            // Push right child on the stack and go to left child.
+            node_idx = teb_.left_child(node_idx);
+            u64 right_child_idx = node_idx + 1;
+            path = path << 1;
+            path_t right_child_path = path | 1; //FIXME
+            stack_.push((right_child_idx << 32) | right_child_path);
+          }
+          // Reached a leaf node.
+          u1 label = teb_.get_label(node_idx);
+          if (label) {
+            // Produce output (a 1-fill).
+            const auto lz_cnt_path = dtl::bits::lz_count(path);
+            const auto level = sizeof(path_t) * 8 - 1 - lz_cnt_path;
+            // Toggle sentinel bit (= highest bit set) and add offset.
+            pos_ = (path ^ (1ull << level)) << (tree_height_ - level);
+            length_ = teb_.n_ >> level; // The length of the 1-fill.
+            return;
+          }
+        }
+
+        ++top_node_idx_current_;
+        auto path = path_t(top_node_idx_current_ - top_node_idx_begin_);
+        path |= path_t(1) << (perfect_levels_ - 1); // set the sentinel bit
+        stack_.push((top_node_idx_current_ << 32) | path);
+      }
+      pos_ = teb_.n_;
+      length_ = 0;
     }
 
+    /// Navigate to the desired position, starting at the trees' root node.
     void __forceinline__
     nav_to(const std::size_t to_pos) {
-      if (to_pos >= tm_.n_) {
-        pos_ = tm_.n_;
-        length_ = 0;
-        return;
-      }
-      level_ = 0;
+//      if (to_pos >= teb_.n_) { //TODO remove
+//        pos_ = teb_.n_;
+//        length_ = 0;
+//        return;
+//      }
+      //===----------------------------------------------------------------===//
+      // (Re-)initialize the iterator state.
       stack_.clear();
-      $u64 node_idx = 0;
-      path_ = 1;
-//      std::cout << "to_pos=" << std::bitset<64>(to_pos) << std::endl;
-      // walk down the tree to the desired position
-      std::size_t i = tree_height - 1;
+
+      // Determine the top-node path.
+      $u64 level = perfect_levels_ - 1;
+      const auto foo = to_pos >> (tree_height_ - level);
+      path_t path = (path_t(1) << level) | foo;
+
+      // Determine the top-node idx.
+      top_node_idx_current_ = top_node_idx_begin_ + foo;
+      //===----------------------------------------------------------------===//
+
+      $u64 node_idx = top_node_idx_current_;
+      // Walk down the tree to the desired position.
+      std::size_t i = tree_height_ - perfect_levels_;
       while (true) {
-//        std::cout << "path=" << std::bitset<64>(path_) << std::endl;
-        // first check, if this is already a leaf node
-        if (tm_.is_leaf_node(node_idx)) {
-          // reached the desired position
-          if (tm_.get_label(node_idx)) {
+        // First check, if this is already a leaf node.
+        if (teb_.is_leaf_node(node_idx)) {
+          // Reached the desired position.
+          if (teb_.get_label(node_idx)) {
             // done
-            const auto lz_cnt_path = dtl::bits::lz_count(path_);
-            pos_ = (path_ ^ (path_msb >> lz_cnt_path)) << (tree_height - level_); // toggle sentinel bit (= highest bit set) and add offset
-            length_ = tm_.n_ >> level_; // the length of the 1-fill
-            // adjust the current position and fill-length
+            const auto lz_cnt_path = dtl::bits::lz_count(path);
+            pos_ = (path ^ (path_msb >> lz_cnt_path)) << (tree_height_ - level); // toggle sentinel bit (= highest bit set) and add offset
+            length_ = teb_.n_ >> level; // the length of the 1-fill
+            // Adjust the current position and fill-length.
             length_ -= to_pos - pos_;
             pos_ = to_pos;
             return;
           }
           else {
-            // search forward to the next 1-fill
+            // Search forward to the next 1-fill.
             next();
             return;
           }
         }
 
-        // navigate downwards the tree
+        // Navigate downwards the tree.
         u1 bit = dtl::bits::bit_test(to_pos, i); // 0 -> goto left child, 1 -> goto right child
         i--;
-        const auto r = tm_.rank(node_idx + 1);
+        const auto r = teb_.rank(node_idx + 1);
         const auto right_child = 2 * r;
         const auto left_child = right_child - 1;
-        level_++;
+        level++;
         if (!bit) {
           // goto left child
-          stack_.push((right_child << 32) | ((path_ << 1) | 1));
-          path_ <<= 1;
+          stack_.push((right_child << 32) | ((path << 1) | 1));
+          path <<= 1;
           node_idx = left_child;
         }
         else {
           // goto right child
-          path_ = (path_ << 1) | 1;
+          path = (path << 1) | 1;
           node_idx = right_child;
         }
       }
@@ -579,109 +604,9 @@ public:
       nav_to(to_pos);
     }
 
-    // FIXME: buggy
-    void __forceinline__
-    skip_to_OFF(const std::size_t to_pos) {
-      assert(to_pos >= pos_ + length_);
-      if (to_pos >= tm_.n_) {
-        pos_ = tm_.n_;
-        return;
-      }
-      if (to_pos == pos_ + length_) {
-        next();
-        return;
-      }
-
-      // determine the common ancestor
-      const auto shift_amount = ((sizeof(path_t) * 8) - tree_height);
-//      std::cout << "path=" << std::bitset<64>(path_) << std::endl;
-      const auto a = toggle_msb(path_) << shift_amount;
-//      std::cout << "   a=" << std::bitset<64>(a) << std::endl;
-      const auto b = to_pos << shift_amount;
-//      std::cout << "   b=" << std::bitset<64>(b) << std::endl;
-      const auto a_xor_b = a ^ b;
-      const auto common_prefix_len = a_xor_b == 0 ? 0 : dtl::bits::lz_count(a_xor_b);
-
-      // walk up the tree to the common ancestor
-//      stack_.pop(); // requires the TM to be compressed?
-      const auto level_of_common_ancestor = common_prefix_len;
-      while (true) {
-        u64 pair = stack_.top();
-        u64 node_idx = pair >> 32;
-        u64 path = pair & ((u64(1) << 32) - 1);
-//        $u64 node_idx = stack_.top().first;
-//        $u64 path = stack_.top().second;
-        const auto lz_cnt_path = dtl::bits::lz_count(path);
-        const auto level = sizeof(path_t) * 8 - 1 - lz_cnt_path;
-        if (level_of_common_ancestor + 1 == level) {
-          level_ = level;
-          break;
-        }
-        stack_.pop();
-        if (stack_.empty()) {
-          // end
-          pos_ = tm_.n_;
-          break;
-        }
-      }
-
-      // common ancestor
-      u64 pair = stack_.top();
-      $u64 node_idx = pair >> 32;
-      $u64 path = pair & ((u64(1) << 32) - 1);
-//      $u64 node_idx = stack_.top().first;
-//      $u64 path = stack_.top().second;
-      stack_.pop();
-
-      // walk down the tree to the desired position
-      std::size_t i = tree_height - level_ - 1;
-      while (true) {
-
-        // first check, if this is already a leaf node
-        if (tm_.is_leaf_node(node_idx)) {
-          // reached the desired position
-          if (tm_.get_label(node_idx)) {
-            // done
-            const auto lz_cnt_path = dtl::bits::lz_count(path);
-            pos_ = (path ^ (path_msb >> lz_cnt_path)) << (tree_height - level_); // toggle sentinel bit (= highest bit set) and add offset
-            length_ = tm_.n_ >> level_; // the length of the 1-fill
-            // adjust the current position and fill-length
-            length_ -= to_pos - pos_;
-            pos_ = to_pos;
-            return;
-          }
-          else {
-            // search forward to the next 1-fill
-            next();
-            return;
-          }
-        }
-
-        // navigate downwards the tree
-        u1 bit = dtl::bits::bit_test(to_pos, i--); // 0 -> goto left child, 1 -> goto right child
-        const auto r = tm_.rank(node_idx + 1);
-        const auto right_child = 2 * r;
-        const auto left_child = right_child - 1;
-        level_++;
-        if (!bit) {
-          // goto left child
-//          stack_.push(std::make_pair(right_child, (path << 1) | 1));
-          stack_.push((right_child << 32) | ((path << 1) | 1));
-          path <<= 1;
-          node_idx = left_child;
-        }
-        else {
-          // goto right child
-          path = (path << 1) | 1;
-          node_idx = right_child;
-        }
-
-      }
-    }
-
     u1 __forceinline__
     end() const noexcept {
-      return pos_ == tm_.n_;
+      return pos_ == teb_.n_;
     }
 
     u64 __forceinline__
@@ -691,7 +616,7 @@ public:
 
     u64 __forceinline__
     length() const noexcept {
-      return (length_ > tm_.n_ ? 0 : length_);
+      return (length_ > teb_.n_ ? 0 : length_);
     }
 
   };
@@ -706,8 +631,12 @@ private:
   u1 __forceinline__
   is_inner_node(u64 node_idx) const {
     const std::size_t implicit_1bit_cnt = implicit_inner_node_cnt_;
-    if (node_idx < implicit_1bit_cnt) return true;
+    if (node_idx < implicit_1bit_cnt) {
+      // Implicit inner node.
+      return true;
+    }
     if ((node_idx - implicit_1bit_cnt) >= structure_.size()) {
+      // Implicit leaf node.
       return false;
     }
     return structure_[node_idx - implicit_1bit_cnt];
@@ -770,13 +699,6 @@ private:
     }
     const auto i = std::min(node_idx - implicit_1bit_cnt, structure_.size());
     const auto ret_val = implicit_1bit_cnt + rank_(i);
-
-//    const auto valid = rank_scan(node_idx);
-//    if (ret_val != valid) {
-//      std::cout << "expected: " << valid << std::endl;
-//      std::cout << "actual:   " << (implicit_1bit_cnt + rank_(i)) << std::endl;
-//      assert(false);
-//    };
     return ret_val;
   }
 
