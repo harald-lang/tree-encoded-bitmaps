@@ -115,8 +115,6 @@ skip_test(u64 n, u64 bitmap, u64 skip_to_pos,
                             << std::endl;
   dtl::bitmap b(n, bitmap);
   T t(b);
-//  std::cout << "skip_test: to_pos= " << skip_to_pos
-//            << " >>" << b << " -> " << t << std::endl;
   auto it = t.it();
   it.skip_to(skip_to_pos);
   if (expected_len == 0) {
@@ -185,3 +183,48 @@ TYPED_TEST(api_range_iterator_skip_test, skip_into_a_1fill_length_one) {
 }
 //===----------------------------------------------------------------------===//
 
+
+
+//===----------------------------------------------------------------------===//
+template<typename T>
+void
+skip_next_test(u64 n, u64 bitmap, u64 skip_to_pos,
+               u64 expected_pos, u64 expected_len) {
+  assert(n <= 64);
+  std::stringstream info;
+  info << "skip/next test: n=" << n
+       << ", bitmap=" << boost::dynamic_bitset<$u32>(n, bitmap)
+       << " (=" << bitmap << ")"
+       << ", skip_to=" << skip_to_pos
+       << ", expected_pos=" << expected_pos
+       << ", expected_len=" << expected_len
+       << std::endl;
+  dtl::bitmap b(n, bitmap);
+  T t(b);
+  auto it = t.it();
+  it.skip_to(skip_to_pos);
+  it.next();
+  if (expected_len == 0) {
+    ASSERT_TRUE(it.end()) << info.str();
+  }
+  else {
+    ASSERT_TRUE(!it.end()) << info.str();
+  }
+  ASSERT_EQ(it.pos(), expected_pos) << info.str();
+  if (expected_pos != n) {
+//    ASSERT_EQ(it.length(), expected_len);
+  }
+}
+
+TYPED_TEST(api_range_iterator_skip_test, skip_next) {
+  using T = TypeParam;
+  skip_next_test<T>(8, 0b00010101, 2, 4, 1);
+  skip_next_test<T>(8, 0b00100101, 2, 5, 1);
+  skip_next_test<T>(8, 0b01000101, 2, 6, 1);
+  skip_next_test<T>(8, 0b10000101, 2, 7, 1);
+  skip_next_test<T>(8, 0b11110101, 2, 4, 4);
+  skip_next_test<T>(8, 0b11100101, 2, 5, 3);
+  skip_next_test<T>(8, 0b11000101, 2, 6, 2);
+  skip_next_test<T>(8, 0b10000101, 2, 7, 1);
+}
+//===----------------------------------------------------------------------===//
