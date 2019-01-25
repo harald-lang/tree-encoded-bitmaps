@@ -32,7 +32,7 @@ using wah = dtl::dynamic_wah32;
 
 // Fixture for the parameterized test case.
 template<typename T>
-class api_encode_decode_test : public ::testing::Test {};
+class api_encode_decode_using_iterator_test : public ::testing::Test {};
 
 // Specify the types for which we want to run the API tests.
 using types_under_test = ::testing::Types<
@@ -49,17 +49,18 @@ using types_under_test = ::testing::Types<
     roaring_bitmap,
     wah
 >;
-TYPED_TEST_CASE(api_encode_decode_test, types_under_test);
+TYPED_TEST_CASE(api_encode_decode_using_iterator_test, types_under_test);
 
 //===----------------------------------------------------------------------===//
 // Encode, decode, and compare the results.
-TYPED_TEST(api_encode_decode_test, encode_decode_0_to_255) {
+TYPED_TEST(api_encode_decode_using_iterator_test, encode_decode_0_to_255) {
   using T = TypeParam;
 
   for (auto i = 0; i < (1u << LEN); ++i) {
     dtl::bitmap bs(LEN, i);
+    std::cout << bs << std::endl;
     T t(bs);
-    dtl::bitmap dec = t.to_bitset();
+    dtl::bitmap dec = dtl::to_bitmap_using_iterator(t);
     ASSERT_EQ(bs, dec) << "Decoding failed for i=" << i
       << ". - '" << bs << "' -> '" << t
       << "' -> '" << dec << "'"
@@ -71,7 +72,8 @@ TYPED_TEST(api_encode_decode_test, encode_decode_0_to_255) {
 
 //===----------------------------------------------------------------------===//
 // Encode, decode, and compare the results (varying bitmap sizes).
-TYPED_TEST(api_encode_decode_test, encode_decode_varying_bitmap_sizes) {
+TYPED_TEST(api_encode_decode_using_iterator_test,
+           encode_decode_varying_bitmap_sizes) {
   using T = TypeParam;
 
   for (auto len = 128; len <= 1ull << 4; ++len) {
@@ -80,7 +82,7 @@ TYPED_TEST(api_encode_decode_test, encode_decode_varying_bitmap_sizes) {
     bs.clear();
     {
       T t(bs);
-      dtl::bitmap dec = t.to_bitset();
+      dtl::bitmap dec = dtl::to_bitmap_using_iterator(t);
       ASSERT_EQ(bs, dec)
         << "Decoding failed: "
         << "'" << bs << "' -> '" << t
@@ -91,7 +93,7 @@ TYPED_TEST(api_encode_decode_test, encode_decode_varying_bitmap_sizes) {
     bs.flip();
     {
       T t(bs);
-      dtl::bitmap dec = t.to_bitset();
+      dtl::bitmap dec = dtl::to_bitmap_using_iterator(t);
       ASSERT_EQ(bs, dec)
         << "Decoding failed: "
         << "'" << bs << "' -> '" << t
@@ -103,7 +105,7 @@ TYPED_TEST(api_encode_decode_test, encode_decode_varying_bitmap_sizes) {
       for (std::size_t rep = 0; rep < 10; ++rep) {
         bs = dtl::gen_random_bitmap(len, 4.0, 0.2);
         T t(bs);
-        dtl::bitmap dec = t.to_bitset();
+        dtl::bitmap dec = dtl::to_bitmap_using_iterator(t);
         ASSERT_EQ(bs, dec)
           << "Decoding failed: "
           << "'" << bs << "' -> '" << t

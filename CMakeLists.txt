@@ -26,11 +26,13 @@ include_directories(thirdparty/gtest/include lib/googletest)
 
 set(TEST_FILES
         test/dtl/bitmap/api_encode_decode_test.cpp
-        test/dtl/bitmap/api_set_operation_test.cpp
+        test/dtl/bitmap/api_encode_decode_using_iterator_test.cpp
+        test/dtl/bitmap/teb_compression_levels_test.cpp
+        test/dtl/bitmap/api_range_iterator_skip_test.cpp
+#        test/dtl/bitmap/api_set_operation_test.cpp
 #        test/dtl/bitmap/static_api_test.cpp
 #        bitmap_view_test.cpp
-        test/dtl/bitmap/api_range_iterator_test.cpp
-        test/dtl/bitmap/iterate_test.cpp
+#        test/dtl/bitmap/iterate_test.cpp
         )
 add_executable(tester ${TEST_FILES})
 target_link_libraries(tester gtest gtest_main fastbit roaring)
@@ -54,6 +56,7 @@ set(TREE_MASK_SOURCE_FILES
         src/dtl/bitmap/partitioned_range_list.hpp
         src/dtl/bitmap/partitioned_position_list.hpp
         src/dtl/bitmap/teb.hpp
+        src/dtl/bitmap/teb_perfect_levels.hpp
         src/dtl/bitmap/static/partitioned_tree_mask.hpp
         src/dtl/bitmap/util/rank1.hpp
         src/dtl/bitmap/util/random.hpp
