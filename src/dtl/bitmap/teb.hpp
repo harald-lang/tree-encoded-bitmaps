@@ -14,16 +14,20 @@
 #include <dtl/bitmap/util/binary_tree_structure.hpp>
 #include <dtl/static_stack.hpp>
 
-#define VERBOSE_OUT true
-
 namespace dtl {
 
 //===----------------------------------------------------------------------===//
 /// Encodes a bitmap of length N as a binary tree.
-/// The tree structure is encoded in level-order.
-template<i32 optimization_level_ = 3>
+///
+/// The implementation supports the optimization levels 0, 1, and 2.
+///   0 = implements the core idea of TEBs
+///   1 = uses the implicit inner node optimization
+///   2 = additionally applies the gradual decompression optimization.
+/// Please note, that the different optimization levels can be chosen due to
+/// academic reasons only. I.e., to analyse and compare the different
+/// optimizations levels.
+template<i32 optimization_level_ = 2>
 class teb {
-
 
 public:
 
@@ -234,7 +238,7 @@ public:
 
   /// Decodes the level-order encoding to a bitmap.
   boost::dynamic_bitset<$u32> __forceinline__
-  to_bitset() const {
+  to_bitset() const noexcept {
     boost::dynamic_bitset<$u32> ret(n_); // the resulting bitmap
 
     // special case if the tree is only a root node
@@ -299,7 +303,7 @@ public:
 
   /// Return the size in bytes.
   std::size_t __forceinline__
-  size_in_byte() const {
+  size_in_byte() const noexcept {
     constexpr u64 block_bitlength = sizeof(_block_type) * 8;
     constexpr u64 block_size = sizeof(_block_type);
     $u64 bytes = 0;
@@ -319,19 +323,19 @@ public:
   }
 
   u1 __forceinline__
-  operator!=(teb& other) const {
+  operator!=(teb& other) const noexcept {
     return !(*this == other);
   }
 
   u1 __forceinline__
-  operator==(teb& other) const {
+  operator==(teb& other) const noexcept {
     return implicit_inner_node_cnt_ == other.implicit_inner_node_cnt_
         && structure_ == other.structure_
         && labels_ == other.labels_;
   }
 
   void
-  print(std::ostream& os) const {
+  print(std::ostream& os) const noexcept {
     os << "implicit nodes (internal/external) = "
        << implicit_inner_node_cnt_
        << "/"
@@ -368,13 +372,13 @@ public:
 
   /// Return the name of the implementation.
   static std::string
-  name() {
+  name() noexcept {
     return "teb";
   }
 
   /// Returns the value of the bit at the position pos.
   u1 __forceinline__
-  test(const std::size_t pos) const {
+  test(const std::size_t pos) const noexcept {
     auto n_log2 = dtl::log_2(n_);
     $u64 node_idx = 0;
     if (is_leaf_node(node_idx)) { // FIXME: eliminate special case!!!
@@ -396,7 +400,7 @@ public:
 
   /// Returns true if all bits are set, false otherwise.
   u1 __forceinline__
-  all() {
+  all() noexcept {
     // FIXME: this works only if the tree mask is in a compressed state
     return is_leaf_node(0) // root is the only node (a leaf)
         && get_label(0) == true; // and the label is 1
@@ -404,14 +408,15 @@ public:
 
   /// Returns true if all bits are zero, false otherwise.
   u1 __forceinline__
-  none() {
+  none() noexcept {
     // FIXME: this works only if the tree mask is in a compressed state
     return is_leaf_node(0) // root is the only node (a leaf)
         && get_label(0) == false; // and the label is 0
   }
 
+  /// Returns the length of the original bitmap.
   std::size_t
-  size() const {
+  size() const noexcept {
     return n_;
   }
 
@@ -419,7 +424,7 @@ public:
   /// number of implicit inner nodes. The number of perfect levels is at least
   /// one, because there is at least one node in the tree structure.
   static inline u64
-  determine_perfect_tree_levels(u64 implicit_inner_node_cnt) {
+  determine_perfect_tree_levels(u64 implicit_inner_node_cnt) noexcept {
     return implicit_inner_node_cnt == 0
            ? 1
            : dtl::log_2(implicit_inner_node_cnt + 1);
@@ -428,7 +433,7 @@ public:
   /// Computes the height of the tree based on n. - Note that a tree, consisting
   /// of a single (root) node has a height of 0.
   static inline u64
-  determine_tree_height(u64 n) {
+  determine_tree_height(u64 n) noexcept {
     return dtl::log_2(n);
   }
 
@@ -436,8 +441,8 @@ public:
   /// 1-fill iterator, with skip support.
   class iter {
 
+    /// The fundamental type to encode paths within the tree.
     using path_t = $u64;
-    static constexpr path_t path_msb = path_t(1) << (sizeof(path_t) * 8 - 1);
 
     /// Reference to the TEB instance.
     const teb& teb_;
@@ -445,8 +450,11 @@ public:
     u64 tree_height_;
     /// The number of perfect levels in the tree structure.
     u64 perfect_levels_;
+    /// First node index in the last perfect level.
     u64 top_node_idx_end_;
+    /// Last node index + 1 in the last perfect level.
     u64 top_node_idx_begin_;
+    /// The current top node.
     $u64 top_node_idx_current_;
     /// The stack contains the tree nodes that need to be visited.
     static_stack<$u64, 32> stack_;
@@ -458,19 +466,16 @@ public:
 
   public:
 
-    /// C'tor
+    /// Constructs an iterator for the given TEB instance. After construction,
+    /// the iterator points to the first 1-fill.
     explicit
-    iter(const teb& teb) :
+    iter(const teb& teb) noexcept :
         teb_(teb),
         tree_height_(determine_tree_height(teb.n_)),
         perfect_levels_(
             determine_perfect_tree_levels(teb_.implicit_inner_node_cnt_)),
-        top_node_idx_end_(perfect_levels_ > 0 // FIXME # of perfect levels is always > 0
-                          ? (1ull << perfect_levels_) - 1
-                          : 1),
-        top_node_idx_begin_(perfect_levels_ > 0
-                            ? top_node_idx_end_ - (1ll << (perfect_levels_ - 1))
-                            : 0),
+        top_node_idx_end_((1ull << perfect_levels_) - 1),
+        top_node_idx_begin_(top_node_idx_end_ - (1ll << (perfect_levels_ - 1))),
         top_node_idx_current_(top_node_idx_begin_) {
       u64 root_node_idx = 0;
       if (teb.is_leaf_node(root_node_idx)) {
@@ -493,10 +498,13 @@ public:
       }
     }
 
-    iter(iter&&) = default;
+    iter(iter&&) noexcept = default;
 
+    /// Forwards the iterator to the next 1-fill (if any).
+    /// Use the functions pos() and length() to get the 1-fill the iterator
+    /// is currently pointing to.
     void __forceinline__
-    next() {
+    next() noexcept {
       while (top_node_idx_current_ < top_node_idx_end_) {
         while (!stack_.empty()) {
           u64 pair = stack_.top();
@@ -508,7 +516,7 @@ public:
             node_idx = teb_.left_child(node_idx);
             u64 right_child_idx = node_idx + 1;
             path = path << 1;
-            path_t right_child_path = path | 1; //FIXME
+            path_t right_child_path = path | 1;
             stack_.push((right_child_idx << 32) | right_child_path);
           }
           // Reached a leaf node.
@@ -519,28 +527,25 @@ public:
             const auto level = sizeof(path_t) * 8 - 1 - lz_cnt_path;
             // Toggle sentinel bit (= highest bit set) and add offset.
             pos_ = (path ^ (1ull << level)) << (tree_height_ - level);
-            length_ = teb_.n_ >> level; // The length of the 1-fill.
+            // The length of the 1-fill.
+            length_ = teb_.n_ >> level;
             return;
           }
         }
 
         ++top_node_idx_current_;
         auto path = path_t(top_node_idx_current_ - top_node_idx_begin_);
-        path |= path_t(1) << (perfect_levels_ - 1); // set the sentinel bit
+        // Set the sentinel bit.
+        path |= path_t(1) << (perfect_levels_ - 1);
         stack_.push((top_node_idx_current_ << 32) | path);
       }
       pos_ = teb_.n_;
       length_ = 0;
     }
 
-    /// Navigate to the desired position, starting at the trees' root node.
+    /// Navigate to the desired position, starting from the trees' root node.
     void __forceinline__
-    nav_to(const std::size_t to_pos) {
-//      if (to_pos >= teb_.n_) { //TODO remove
-//        pos_ = teb_.n_;
-//        length_ = 0;
-//        return;
-//      }
+    nav_to(const std::size_t to_pos) noexcept {
       //===----------------------------------------------------------------===//
       // (Re-)initialize the iterator state.
       stack_.clear();
@@ -564,8 +569,10 @@ public:
           if (teb_.get_label(node_idx)) {
             // done
             const auto lz_cnt_path = dtl::bits::lz_count(path);
-            pos_ = (path ^ (path_msb >> lz_cnt_path)) << (tree_height_ - level); // toggle sentinel bit (= highest bit set) and add offset
-            length_ = teb_.n_ >> level; // the length of the 1-fill
+            // Toggle sentinel bit (= highest bit set) and add offset.
+            pos_ = (path ^ (1ull << level)) << (tree_height_ - level);
+            // The length of the 1-fill.
+            length_ = teb_.n_ >> level;
             // Adjust the current position and fill-length.
             length_ -= to_pos - pos_;
             pos_ = to_pos;
@@ -579,13 +586,14 @@ public:
         }
 
         // Navigate downwards the tree.
-        u1 bit = dtl::bits::bit_test(to_pos, i); // 0 -> goto left child, 1 -> goto right child
+        // 0 -> goto left child, 1 -> goto right child
+        u1 direction_bit = dtl::bits::bit_test(to_pos, i);
         i--;
         const auto r = teb_.rank(node_idx + 1);
         const auto right_child = 2 * r;
         const auto left_child = right_child - 1;
         level++;
-        if (!bit) {
+        if (!direction_bit) {
           // goto left child
           stack_.push((right_child << 32) | ((path << 1) | 1));
           path <<= 1;
@@ -599,30 +607,34 @@ public:
       }
     }
 
+    /// Fast-forwards the iterator to the given position.
     void __forceinline__
-    skip_to(const std::size_t to_pos) {
+    skip_to(const std::size_t to_pos) noexcept {
       nav_to(to_pos);
     }
 
+    /// Returns true if the iterator reached the end, false otherwise.
     u1 __forceinline__
     end() const noexcept {
       return pos_ == teb_.n_;
     }
 
+    /// Returns the starting position of the current 1-fill.
     u64 __forceinline__
     pos() const noexcept {
       return pos_;
     }
 
+    /// Returns the length of the current 1-fill.
     u64 __forceinline__
     length() const noexcept {
-      return (length_ > teb_.n_ ? 0 : length_);
+      return length_;
     }
 
   };
 
   iter __forceinline__
-  it() const {
+  it() const noexcept {
     return std::move(iter(*this));
   }
 
@@ -706,4 +718,3 @@ private:
 //===----------------------------------------------------------------------===//
 
 }; // namespace dtl
-
