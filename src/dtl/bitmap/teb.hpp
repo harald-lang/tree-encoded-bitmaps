@@ -319,6 +319,7 @@ public:
       // The number of implicit inner nodes.
       bytes += sizeof(implicit_inner_node_cnt_);
 //    }
+    // FIXME: + number of tree bits + number of label bits
     return bytes;
   }
 
@@ -427,7 +428,7 @@ public:
   determine_perfect_tree_levels(u64 implicit_inner_node_cnt) noexcept {
     return implicit_inner_node_cnt == 0
            ? 1
-           : dtl::log_2(implicit_inner_node_cnt + 1);
+           : dtl::log_2(implicit_inner_node_cnt + 1) + 1;
   }
 
   /// Computes the height of the tree based on n. - Note that a tree, consisting
@@ -594,13 +595,13 @@ public:
         const auto left_child = right_child - 1;
         level++;
         if (!direction_bit) {
-          // goto left child
+          // Go to left child.
           stack_.push((right_child << 32) | ((path << 1) | 1));
           path <<= 1;
           node_idx = left_child;
         }
         else {
-          // goto right child
+          // Go to right child.
           path = (path << 1) | 1;
           node_idx = right_child;
         }

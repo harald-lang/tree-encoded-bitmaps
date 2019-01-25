@@ -27,7 +27,7 @@ include_directories(thirdparty/gtest/include lib/googletest)
 set(TEST_FILES
         test/dtl/bitmap/api_encode_decode_test.cpp
         test/dtl/bitmap/api_encode_decode_using_iterator_test.cpp
-        test/dtl/bitmap/teb_compression_levels_test.cpp
+        test/dtl/bitmap/teb_test.cpp
         test/dtl/bitmap/api_range_iterator_skip_test.cpp
 #        test/dtl/bitmap/api_set_operation_test.cpp
 #        test/dtl/bitmap/static_api_test.cpp
