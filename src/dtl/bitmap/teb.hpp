@@ -17,7 +17,7 @@
 namespace dtl {
 
 //===----------------------------------------------------------------------===//
-/// Encodes a bitmap of length N as a binary tree.
+/// Encodes a bitmap of length n as a binary tree.
 ///
 /// The implementation supports the optimization levels 0, 1, and 2.
 ///   0 = implements the core idea of TEBs
@@ -26,6 +26,12 @@ namespace dtl {
 /// Please note, that the different optimization levels can be chosen due to
 /// academic reasons only. I.e., to analyse and compare the different
 /// optimizations levels.
+///
+/// Terminology:
+///   node index: TODO
+///   path: TODO
+///   top node: TODO
+///   perfect levels: TODO
 template<i32 optimization_level_ = 2>
 class teb {
 
@@ -421,6 +427,9 @@ public:
     return n_;
   }
 
+  //===--------------------------------------------------------------------===//
+  // Helper functions.
+  //===--------------------------------------------------------------------===//
   /// Computes the number of perfect levels in the tree structure based on the
   /// number of implicit inner nodes. The number of perfect levels is at least
   /// one, because there is at least one node in the tree structure.
@@ -437,6 +446,31 @@ public:
   determine_tree_height(u64 n) noexcept {
     return dtl::log_2(n);
   }
+
+  /// Determines the path to the common ancestor of the two nodes specified
+  /// by there paths.
+  static inline u64
+  determine_common_ancestor_path(u64 src_path, u64 dst_path) {
+    //TODO should use positions instead of paths (at least for the second argument)
+    assert(src_path != dst_path);
+    const auto a = src_path << (dtl::bits::lz_count(src_path) + 1);
+    const auto b = dst_path << (dtl::bits::lz_count(dst_path) + 1);
+    assert(a < b);
+    const auto src_path_len = sizeof(src_path) * 8
+        - (dtl::bits::lz_count(src_path) + 1);
+    const auto common_prefix_length = dtl::bits::lz_count(a ^ b);
+    const auto common_ancestor_path =
+        src_path >> (src_path_len - common_prefix_length);
+    return common_ancestor_path;
+  }
+
+  static inline u64
+  determine_level_of(u64 path) {
+    const auto lz_cnt_path = dtl::bits::lz_count(path);
+    const auto level = sizeof(u64) * 8 - 1 - lz_cnt_path;
+    return level;
+  }
+  //===--------------------------------------------------------------------===//
 
   //===--------------------------------------------------------------------===//
   /// 1-fill iterator, with skip support.
@@ -463,6 +497,11 @@ public:
     $u64 pos_;
     /// The length of the current 1-fill.
     $u64 length_;
+    /// The current node.
+    $u64 node_idx_;
+    /// The path to the current node
+    /// (required only for leaf-to-leaf navigation).
+    path_t path_;
     //===------------------------------------------------------------------===//
 
   public:
@@ -477,7 +516,10 @@ public:
             determine_perfect_tree_levels(teb_.implicit_inner_node_cnt_)),
         top_node_idx_end_((1ull << perfect_levels_) - 1),
         top_node_idx_begin_(top_node_idx_end_ - (1ll << (perfect_levels_ - 1))),
-        top_node_idx_current_(top_node_idx_begin_) {
+        top_node_idx_current_(top_node_idx_begin_),
+        node_idx_(top_node_idx_current_),
+        path_(path_t(1) << (perfect_levels_ - 1))
+    {
       u64 root_node_idx = 0;
       if (teb.is_leaf_node(root_node_idx)) {
         // Handle the special case, where the root node is a leaf node.
@@ -530,6 +572,8 @@ public:
             pos_ = (path ^ (1ull << level)) << (tree_height_ - level);
             // The length of the 1-fill.
             length_ = teb_.n_ >> level;
+            node_idx_ = node_idx;
+            path_ = path;
             return;
           }
         }
@@ -546,7 +590,7 @@ public:
 
     /// Navigate to the desired position, starting from the trees' root node.
     void __forceinline__
-    nav_to(const std::size_t to_pos) noexcept {
+    nav_from_root_to(const std::size_t to_pos) noexcept {
       //===----------------------------------------------------------------===//
       // (Re-)initialize the iterator state.
       stack_.clear();
@@ -554,24 +598,27 @@ public:
       // Determine the top-node path.
       $u64 level = perfect_levels_ - 1;
       const auto foo = to_pos >> (tree_height_ - level);
-      path_t path = (path_t(1) << level) | foo;
+      path_ = (path_t(1) << level) | foo;
 
       // Determine the top-node idx.
       top_node_idx_current_ = top_node_idx_begin_ + foo;
+      const auto bar = determine_level_of(path_);
       //===----------------------------------------------------------------===//
 
-      $u64 node_idx = top_node_idx_current_;
+      node_idx_ = top_node_idx_current_;
+      nav_downwards(to_pos);
+      return;
       // Walk down the tree to the desired position.
+      // TODO possibly inline the nav_downwards function to save a few instructions.
       std::size_t i = tree_height_ - perfect_levels_;
       while (true) {
         // First check, if this is already a leaf node.
-        if (teb_.is_leaf_node(node_idx)) {
+        if (teb_.is_leaf_node(node_idx_)) {
           // Reached the desired position.
-          if (teb_.get_label(node_idx)) {
-            // done
-            const auto lz_cnt_path = dtl::bits::lz_count(path);
+          if (teb_.get_label(node_idx_)) {
+            // Found the corresponding leaf node.
             // Toggle sentinel bit (= highest bit set) and add offset.
-            pos_ = (path ^ (1ull << level)) << (tree_height_ - level);
+            pos_ = (path_ ^ (1ull << level)) << (tree_height_ - level);
             // The length of the 1-fill.
             length_ = teb_.n_ >> level;
             // Adjust the current position and fill-length.
@@ -587,25 +634,111 @@ public:
         }
 
         // Navigate downwards the tree.
-        // 0 -> goto left child, 1 -> goto right child
+        // 0 -> go to left child, 1 -> go to right child
         u1 direction_bit = dtl::bits::bit_test(to_pos, i);
         i--;
-        const auto r = teb_.rank(node_idx + 1);
-        const auto right_child = 2 * r;
+        const auto right_child = teb_.right_child(node_idx_);
         const auto left_child = right_child - 1;
         level++;
         if (!direction_bit) {
           // Go to left child.
-          stack_.push((right_child << 32) | ((path << 1) | 1));
-          path <<= 1;
-          node_idx = left_child;
+          stack_.push((right_child << 32) | ((path_ << 1) | 1));
+          path_ <<= 1;
+          node_idx_ = left_child;
         }
         else {
           // Go to right child.
-          path = (path << 1) | 1;
-          node_idx = right_child;
+          path_ = (path_ << 1) | 1;
+          node_idx_ = right_child;
         }
       }
+    }
+
+    /// Navigate downwards the tree to the desired position, starting from the
+    /// current node. The destination position must be part of the current sub-
+    /// tree, otherwise the behavior is undefined.
+    void __forceinline__
+    nav_downwards(const std::size_t to_pos) noexcept {
+      $u64 level = determine_level_of(path_);
+      std::size_t i = tree_height_ - level - 1;
+      while (true) {
+        // First check, if this is already a leaf node.
+        if (teb_.is_leaf_node(node_idx_)) {
+          // Reached the desired position.
+          if (teb_.get_label(node_idx_)) {
+            // Found the corresponding leaf node.
+            // Toggle sentinel bit (= highest bit set) and add offset.
+            pos_ = (path_ ^ (1ull << level)) << (tree_height_ - level);
+            // The length of the 1-fill.
+            length_ = teb_.n_ >> level;
+            // Adjust the current position and fill-length.
+            length_ -= to_pos - pos_;
+            pos_ = to_pos;
+            return;
+          }
+          else {
+            // Search forward to the next 1-fill.
+            next();
+            return;
+          }
+        }
+
+        // Navigate downwards the tree.
+        // 0 -> go to left child, 1 -> go to right child
+        u1 direction_bit = dtl::bits::bit_test(to_pos, i);
+        i--;
+        const auto right_child = teb_.right_child(node_idx_);
+        const auto left_child = right_child - 1;
+        level++;
+        if (!direction_bit) {
+          // Go to left child.
+          stack_.push((right_child << 32) | ((path_ << 1) | 1));
+          path_ <<= 1;
+          node_idx_ = left_child;
+        }
+        else {
+          // Go to right child.
+          path_ = (path_ << 1) | 1;
+          node_idx_ = right_child;
+        }
+      }
+    }
+
+    /// Forwards the iterator to the given position. The function first
+    /// determines the common ancestor node and then decides whether it is
+    /// cheaper to navigate starting from the current node or from the root
+    /// node.
+    void __forceinline__
+    nav_to(const std::size_t to_pos) {
+      assert(to_pos >= pos_ + length_);
+
+      const path_t to_path = to_pos | path_t(1) << tree_height_;
+      const path_t from_path = path_;
+
+      const auto common_ancestor_path =
+          determine_common_ancestor_path(from_path, to_path);
+      const auto right_child_of_common_ancestor_path =
+          (common_ancestor_path << 1) | 1ull;
+
+      // The common ancestor must be in the perfect tree part. - The reason is,
+      // that the perfect levels are skipped during downward traversal and
+      // therefore no nodes from these levels will ever be pushed on the stack.
+      // TODO change the condition to something like this:
+      // TODO level_of(ca) - (perfect_levels_ - 1) < level_of(current node) - level_of(ca)
+      if (determine_level_of(common_ancestor_path) <= perfect_levels_) {
+        nav_from_root_to(to_pos);
+        return;
+      }
+
+      // Walk up the tree to the common ancestor.
+      $u64 pair = 0;
+      while (path_ != right_child_of_common_ancestor_path) {
+        pair = stack_.top();
+        path_ = pair & ((u64(1) << 32) - 1);
+        stack_.pop();
+      }
+      node_idx_ = pair >> 32;
+      nav_downwards(to_pos);
     }
 
     /// Fast-forwards the iterator to the given position.
