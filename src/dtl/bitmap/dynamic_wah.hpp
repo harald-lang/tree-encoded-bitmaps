@@ -117,7 +117,13 @@ struct dynamic_wah {
 
   static std::string
   name() {
-    return "dynamic_wah" + std::to_string(sizeof(typename bitvector_t::word_t) * 8);
+    const auto word_size = sizeof(typename bitvector_t::word_t) * 8;
+    if (word_size == 4) {
+      return "wah";
+    }
+    else {
+      return "wah" + std::to_string(word_size);
+    }
   }
 
   /// Returns the value of the bit at the position pos.
@@ -232,8 +238,17 @@ struct dynamic_wah {
     return iter(*this);
   }
 
-
-
+  /// Returns the name of the instance including the most important parameters
+  /// in JSON.
+  std::string
+  info() {
+    return "{\"name\":\"" + name() + "\""
+        + ",\"n\":" + std::to_string(size_)
+        + ",\"size\":" + std::to_string(size_in_byte())
+        + ",\"word_size\":" +
+          std::to_string(sizeof(typename bitvector_t::word_t))
+        + "}";
+  }
 
 };
 //===----------------------------------------------------------------------===//

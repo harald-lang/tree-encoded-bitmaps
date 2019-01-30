@@ -749,6 +749,23 @@ public:
     return std::move(iter(*this));
   }
 
+  /// Returns the name of the instance including the most important parameters
+  /// in JSON.
+  std::string
+  info() {
+    return "{\"name\":\"" + name() + "\""
+        + ",\"n\":" + std::to_string(n_)
+        + ",\"size\":" + std::to_string(size_in_byte())
+        + ",\"rank_size\":" + std::to_string(rank_.size_in_bytes())
+        + ",\"tree_bits\":" + std::to_string(structure_.size())
+        + ",\"label_bits\":" + std::to_string(labels_.size())
+        + ",\"implicit_inner_nodes\":" + std::to_string(implicit_inner_node_cnt_)
+        + ",\"implicit_leaf_nodes\":" + std::to_string(implicit_leaf_node_cnt_)
+        + ",\"perfect_levels\":" + std::to_string(determine_perfect_tree_levels(implicit_inner_node_cnt_))
+        + ",\"opt_level\":" + std::to_string(optimization_level_)
+        + "}";
+  }
+
 private:
 
   u1 __forceinline__

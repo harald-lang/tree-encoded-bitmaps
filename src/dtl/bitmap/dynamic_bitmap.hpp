@@ -17,7 +17,7 @@ struct dynamic_bitmap {
 
   boost::dynamic_bitset<_block_type> bitmap_;
 
-  // the number of bits
+  // The number of bits.
   u64 n_;
 
   dynamic_bitmap() = default;
@@ -110,7 +110,7 @@ struct dynamic_bitmap {
 
   static std::string
   name() {
-    return "dynamic_bitmap";
+    return "bitmap";
   }
 
   /// Returns the value of the bit at the position pos.
@@ -215,6 +215,15 @@ struct dynamic_bitmap {
     return iter(*this);
   }
 
+  /// Returns the name of the instance including the most important parameters
+  /// in JSON.
+  std::string
+  info() {
+    return "{\"name\":\"" + name() + "\""
+        + ",\"n\":" + std::to_string(n_)
+        + ",\"size\":" + std::to_string(size_in_byte())
+        + "}";
+  }
 
 };
 //===----------------------------------------------------------------------===//

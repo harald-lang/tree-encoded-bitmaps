@@ -347,6 +347,18 @@ struct partitioned_position_list {
     return iter(*this);
   }
 
+  /// Returns the name of the instance including the most important parameters
+  /// in JSON.
+  std::string
+  info() {
+    return "{\"name\":\"" + name() + "\""
+        + ",\"n\":" + std::to_string(n_)
+        + ",\"size\":" + std::to_string(size_in_byte())
+        + ",\"size_type_bytes\":" + std::to_string(sizeof(local_position_t))
+        + ",\"partitions\":" + std::to_string(partitions_.size())
+        + ",\"positions\":" + std::to_string(positions_.size())
+        + "}";
+  }
 
 private:
 

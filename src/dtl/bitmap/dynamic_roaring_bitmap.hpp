@@ -221,6 +221,16 @@ struct dynamic_roaring_bitmap {
   }
   //===--------------------------------------------------------------------===//
 
+  /// Returns the name of the instance including the most important parameters
+  /// in JSON.
+  std::string
+  info() {
+    return "{\"name\":\"" + name() + "\""
+        + ",\"n\":" + std::to_string(size_)
+        + ",\"size\":" + std::to_string(size_in_byte())
+        + "}";
+  }
+
 };
 //===----------------------------------------------------------------------===//
 } // namespace dtl
