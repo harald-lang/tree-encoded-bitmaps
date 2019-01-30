@@ -28,10 +28,13 @@ namespace dtl {
 /// optimizations levels.
 ///
 /// Terminology:
-///   node index: TODO
-///   path: TODO
-///   top node: TODO
-///   perfect levels: TODO
+/// - node index: the nodes identifier, which is its position within the
+///       bit sequence of the encoded tree.
+/// - path: also identifies a tree node, but it encodes the path to the node,
+///       starting at the root
+/// - perfect levels: the number of tree levels in which the tree is perfect.
+/// - top nodes: refer to the nodes within the last perfect level.
+///
 template<i32 optimization_level_ = 2>
 class teb {
 
@@ -68,54 +71,45 @@ public:
       : n_(bitmap.size()) {
 
     // Construct a binary tree that represents the given bitmap.
-    dtl::bitmap_tree bitmap_tree(bitmap, fpr);
+    // Space-optimizations are performed in the (non-encoded) bitmap tree.
+    dtl::bitmap_tree<optimization_level_> bitmap_tree(bitmap, fpr);
 
     // Encode the tree into level-order.
+    implicit_inner_node_cnt_ = 0;
+    implicit_leaf_node_cnt_ = 0;
+    if (optimization_level_ > 0) {
+      // Implicit tree nodes are only considered with -o1 or higher.
+      implicit_inner_node_cnt_ = bitmap_tree.get_leading_inner_node_cnt();
+      implicit_leaf_node_cnt_ = bitmap_tree.get_trailing_leaf_node_cnt();
+    }
+    std::size_t node_cntr = 0;
     for (auto it = bitmap_tree.breadth_first_begin();
          it != bitmap_tree.breadth_first_end();
          ++it) {
+      ++node_cntr;
+
+      // Omit the implicit nodes.
+      if (node_cntr <= implicit_inner_node_cnt_) {
+        continue;
+      }
       u64 idx = *it;
+
       // Emit a 1-bit if the current node is an inner node, a 0-bit otherwise.
       u1 is_inner = bitmap_tree.is_inner_node(idx);
-      structure_.push_back(is_inner);
+      if (is_inner
+          || optimization_level_ == 0
+          || (optimization_level_ > 0
+              && idx <= bitmap_tree.get_last_explicit_node_idx())) {
+        structure_.push_back(is_inner);
+      }
       if (!is_inner) {
         // Add the label of the leaf node.
         labels_.push_back(bitmap_tree.label_of_node(idx));
       }
     }
 
-    // Optimization level 1.
-    implicit_inner_node_cnt_ = 0;
-    implicit_leaf_node_cnt_ = 0;
-    if (optimization_level_ > 0) {
-      // Count the number of consecutive least significant 1-bits.
-      std::size_t trailing_1bits = 0;
-      for (std::size_t i = 0; i < structure_.size(); ++i) {
-        if (!structure_[i]) {
-          break;
-        }
-        trailing_1bits++;
-      }
-      implicit_inner_node_cnt_ = static_cast<u32>(trailing_1bits);
-
-      // Remove the trailing 1-bits from the tree structure.
-      structure_ >>= implicit_inner_node_cnt_;
-      structure_.resize(structure_.size() - implicit_inner_node_cnt_);
-
-      // Remove the most significant 0-bits from the tree structure.
-      while (structure_.size() > 0 && !structure_[structure_.size() - 1]) {
-        structure_.pop_back();
-        implicit_leaf_node_cnt_++;
-      }
-    }
-
     // Init rank1 support data structure.
     rank_.init(structure_);
-
-    // Optimization level 2
-    if (optimization_level_ > 1) {
-      run_optimize();
-    }
   }
 
   teb(const teb& other) = default;
@@ -435,9 +429,7 @@ public:
   /// one, because there is at least one node in the tree structure.
   static inline u64
   determine_perfect_tree_levels(u64 implicit_inner_node_cnt) noexcept {
-    return implicit_inner_node_cnt == 0
-           ? 1
-           : dtl::log_2(implicit_inner_node_cnt + 1) + 1;
+    return dtl::log_2(implicit_inner_node_cnt + 1) + 1;
   }
 
   /// Computes the height of the tree based on n. - Note that a tree, consisting
@@ -486,9 +478,9 @@ public:
     /// The number of perfect levels in the tree structure.
     u64 perfect_levels_;
     /// First node index in the last perfect level.
-    u64 top_node_idx_end_;
-    /// Last node index + 1 in the last perfect level.
     u64 top_node_idx_begin_;
+    /// Last node index + 1 in the last perfect level.
+    u64 top_node_idx_end_;
     /// The current top node.
     $u64 top_node_idx_current_;
     /// The stack contains the tree nodes that need to be visited.
@@ -514,31 +506,16 @@ public:
         tree_height_(determine_tree_height(teb.n_)),
         perfect_levels_(
             determine_perfect_tree_levels(teb_.implicit_inner_node_cnt_)),
+        top_node_idx_begin_((1ull << (perfect_levels_ - 1)) - 1),
         top_node_idx_end_((1ull << perfect_levels_) - 1),
-        top_node_idx_begin_(top_node_idx_end_ - (1ll << (perfect_levels_ - 1))),
         top_node_idx_current_(top_node_idx_begin_),
         node_idx_(top_node_idx_current_),
         path_(path_t(1) << (perfect_levels_ - 1))
     {
-      u64 root_node_idx = 0;
-      if (teb.is_leaf_node(root_node_idx)) {
-        // Handle the special case, where the root node is a leaf node.
-        u1 label = teb.get_label(root_node_idx);
-        if (label) {
-          pos_ = 0;
-          length_ = teb.n_;
-        }
-        else {
-          pos_ = teb.n_;
-          length_ = 0;
-        }
-      }
-      else {
-        // Initialize the stack.
-        path_t path = path_t(1) << (perfect_levels_ - 1);
-        stack_.push((top_node_idx_begin_ << 32) | path);
-        next();
-      }
+      // Initialize the stack.
+      path_t path = path_t(1) << (perfect_levels_ - 1);
+      stack_.push((top_node_idx_begin_ << 32) | path);
+      next();
     }
 
     iter(iter&&) noexcept = default;
