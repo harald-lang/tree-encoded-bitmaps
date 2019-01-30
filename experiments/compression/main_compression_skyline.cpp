@@ -40,11 +40,21 @@ $i32 main() {
       configs.push_back(c);
       c.bitmap_type = bitmap_t::roaring;
       configs.push_back(c);
-      c.bitmap_type = bitmap_t::tree_mask_lo;
-      configs.push_back(c);
-      c.bitmap_type = bitmap_t::tree_mask_po;
-      configs.push_back(c);
       c.bitmap_type = bitmap_t::wah;
+      configs.push_back(c);
+      c.bitmap_type = bitmap_t::teb;
+      configs.push_back(c);
+      c.bitmap_type = bitmap_t::position_list;
+      configs.push_back(c);
+      c.bitmap_type = bitmap_t::partitioned_position_list_u8;
+      configs.push_back(c);
+      c.bitmap_type = bitmap_t::partitioned_position_list_u16;
+      configs.push_back(c);
+      c.bitmap_type = bitmap_t::range_list;
+      configs.push_back(c);
+      c.bitmap_type = bitmap_t::partitioned_range_list_u8;
+      configs.push_back(c);
+      c.bitmap_type = bitmap_t::partitioned_range_list_u16;
       configs.push_back(c);
 
     }

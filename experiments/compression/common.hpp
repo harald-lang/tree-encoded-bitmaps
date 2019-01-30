@@ -6,6 +6,8 @@
 #include <limits>
 #include <iostream>
 
+#include <boost/algorithm/string.hpp>
+
 #include <dtl/dtl.hpp>
 #include <dtl/env.hpp>
 #include <dtl/thread.hpp>
@@ -15,6 +17,10 @@
 #include <dtl/bitmap/teb.hpp>
 #include <dtl/bitmap/dynamic_wah.hpp>
 #include <dtl/bitmap/util/two_state_markov_process.hpp>
+#include <dtl/bitmap/position_list.hpp>
+#include <dtl/bitmap/partitioned_position_list.hpp>
+#include <dtl/bitmap/range_list.hpp>
+#include <dtl/bitmap/partitioned_range_list.hpp>
 
 // The number of independent runs.
 static constexpr u64 RUNS = 10;
@@ -31,7 +37,13 @@ enum class bitmap_t {
   bitmap,
   roaring,
   teb,
-  wah
+  wah,
+  position_list,
+  partitioned_position_list_u8,
+  partitioned_position_list_u16,
+  range_list,
+  partitioned_range_list_u8,
+  partitioned_range_list_u16
 };
 
 struct config {
@@ -44,7 +56,7 @@ struct config {
 template<typename T>
 void run($f64 f, $f64 d, std::ostream& os) {
 
-  // init bitset
+  // Construct a random bitmap.
   f64 f_min = d >= 1.0 ? N : d/(1-d);
   f64 f_actual = std::max(f, f_min);
   two_state_markov_process mp(f_actual, d);
@@ -59,9 +71,13 @@ void run($f64 f, $f64 d, std::ostream& os) {
     return;
   }
 
+  // Encode the bitmap.
   T enc_bs(bs);
 
   const auto size_in_bytes = enc_bs.size_in_byte();
+
+  std::string type_info = enc_bs.info();
+  boost::replace_all(type_info, "\"", "\"\""); // Escape JSON for CSV output.
 
   os << RUN_ID
      << "," << N
@@ -71,6 +87,7 @@ void run($f64 f, $f64 d, std::ostream& os) {
      << "," << f
      << "," << f_actual
      << "," << size_in_bytes
+     << "," << "\"" << type_info << "\""
      << std::endl;
 }
 
@@ -83,10 +100,32 @@ void run(config c, std::ostream& os) {
       run<dtl::dynamic_roaring_bitmap>(c.clustering_factor, c.density, os);
       break;
     case bitmap_t::teb:
-      run<dtl::teb>(c.clustering_factor, c.density, os);
+      run<dtl::teb<>>(c.clustering_factor, c.density, os);
       break;
     case bitmap_t::wah:
       run<dtl::dynamic_wah32>(c.clustering_factor, c.density, os);
+      break;
+    case bitmap_t::position_list:
+      run<dtl::position_list<$u32>>(c.clustering_factor, c.density, os);
+      break;
+    case bitmap_t::partitioned_position_list_u8:
+      run<dtl::partitioned_position_list<$u32, $u8>>(
+          c.clustering_factor, c.density, os);
+      break;
+    case bitmap_t::partitioned_position_list_u16:
+      run<dtl::partitioned_position_list<$u32, $u16>>(
+          c.clustering_factor, c.density, os);
+      break;
+    case bitmap_t::range_list:
+      run<dtl::range_list<$u32>>(c.clustering_factor, c.density, os);
+      break;
+    case bitmap_t::partitioned_range_list_u8:
+      run<dtl::partitioned_range_list<$u32, $u8>>(
+          c.clustering_factor, c.density, os);
+      break;
+    case bitmap_t::partitioned_range_list_u16:
+      run<dtl::partitioned_range_list<$u32, $u16>>(
+          c.clustering_factor, c.density, os);
       break;
   }
 }
@@ -99,7 +138,7 @@ void dispatch(const std::vector<T>& tasks,
   i64 thread_cnt = dtl::env<$u64>::get("THREAD_CNT", cpu_mask.count());
   i64 config_cnt = tasks.size();
   i64 min_batch_size = 1;
-  i64 max_batch_size = 1;
+  i64 max_batch_size = 16;
 
   const auto time_start = std::chrono::system_clock::now();
   std::atomic<$i64> cntr { 0 };
