@@ -4,12 +4,15 @@
 
 #include <dtl/dtl.hpp>
 #include <dtl/bitmap/util/binary_tree_structure.hpp>
+#include <dtl/bitmap/util/rank1.hpp>
 
 namespace dtl {
 
 //===----------------------------------------------------------------------===//
 /// Represents a bitmap as a binary tree. During construction, the bitmap tree
 /// is compressed, either loss-less or lossy.
+/// The template parameter controls the space optimizations.
+template<i32 optimization_level_ = 2>
 class bitmap_tree : public binary_tree_structure {
 
   using tree_t = dtl::binary_tree_structure;
@@ -18,13 +21,29 @@ class bitmap_tree : public binary_tree_structure {
   /// The labels of the tree nodes.
   bitmap_t labels_;
 
+  struct range_t {
+    std::size_t begin = 0;
+    std::size_t end = 0;
+  };
+
+  std::size_t inner_node_cnt_;
+  std::size_t leaf_node_cnt_;
+  std::size_t leading_inner_node_cnt_;
+  std::size_t trailing_leaf_node_cnt_;
+  range_t explicit_node_idxs_;
+
+
 public:
 
   /// C'tor
   explicit
   bitmap_tree(const bitmap_t& bitmap, f64 fpr = 0.0)
       : binary_tree_structure(bitmap.size()),
-        labels_(max_node_cnt_) {
+        labels_(max_node_cnt_),
+        inner_node_cnt_(0),
+        leaf_node_cnt_(0),
+        leading_inner_node_cnt_(0),
+        trailing_leaf_node_cnt_(0) {
 
     // TODO: Support arbitrarily sized bitmaps.
     if (!dtl::is_power_of_two(n_)) {
@@ -115,7 +134,8 @@ public:
         for (std::size_t level = 0; level < height_; ++level) {
           u64 node_idx_from = (1ull << level) - 1;
           u64 node_idx_to = (1ull << (level + 1)) - 1;
-          for ($u64 node_idx = node_idx_from; node_idx < node_idx_to; ++node_idx) {
+          for ($u64 node_idx = node_idx_from; node_idx < node_idx_to;
+               ++node_idx) {
             if (is_leaf_node(node_idx))
               continue;
             // Check whether pruning would not exceed the specified FPR.
@@ -179,17 +199,182 @@ public:
         }
       }
     }
+
+    // Determine the total number of tree nodes and which of these nodes need
+    // to be stored explicitly.
+    {
+      $u1 found_leaf_node = false;
+      std::size_t node_cnt = 0;
+      explicit_node_idxs_.end = 0;
+
+      for (auto it = breadth_first_begin(); it != breadth_first_end(); ++it) {
+        u64 idx = *it;
+        u1 is_inner = is_inner_node(idx);
+
+        ++node_cnt;
+        inner_node_cnt_ += is_inner;
+        leaf_node_cnt_ += !is_inner;
+
+        // Count the leading inner nodes.
+        if (!found_leaf_node && is_inner) {
+          ++leading_inner_node_cnt_;
+        }
+        if (!found_leaf_node && !is_inner) {
+          found_leaf_node = true;
+        }
+
+        // Count the trailing leaf nodes.
+        if (!is_inner) {
+          ++trailing_leaf_node_cnt_;
+        } else {
+          trailing_leaf_node_cnt_ = 0;
+          explicit_node_idxs_.end = *it;
+        }
+      }
+
+      explicit_node_idxs_.begin = leading_inner_node_cnt_;
+    }
+
+    // Run space optimizations.
+    {
+      // Optimization level 2
+      if (optimization_level_ > 1) {
+        run_optimize();
+      }
+    }
   }
 
-  /// Returns the maximum number of tree nodes. Which is 2n-1 for binary trees.
+  bitmap_tree(const bitmap_tree& other) = default;
+  bitmap_tree(bitmap_tree&& other) noexcept = default;
+  bitmap_tree& operator=(const bitmap_tree& other) = default;
+  bitmap_tree& operator=(bitmap_tree&& other) noexcept = default;
+  ~bitmap_tree() override = default;
+
+  /// Estimates the size in bytes, when the bitmap tree is succinctly encoded.
+  /// This function basically resembles the size_in_bytes() function of TEBs.
+  std::size_t
+  estimate_encoded_size_in_bytes() {
+    constexpr u64 block_bitlength = 32;
+    constexpr u64 block_size = 4;
+    $u64 bytes = 0;
+    // Tree structure
+    u64 explicit_tree_node_cnt = inner_node_cnt_ + leaf_node_cnt_
+        - leading_inner_node_cnt_ - trailing_leaf_node_cnt_;
+    bytes += ((explicit_tree_node_cnt + block_bitlength - 1) / block_bitlength)
+        * block_size;
+    // Labels
+    bytes += ((leaf_node_cnt_ + block_bitlength - 1) / block_bitlength)
+        * block_size;
+    // Rank support
+    bytes += dtl::rank1::estimate_size_in_bytes(explicit_tree_node_cnt);
+    // Bit-length of the original bitmap.
+    bytes += sizeof(n_);
+    // The number of implicit inner nodes.
+    bytes += 4;
+    // FIXME: + number of tree bits + number of label bits
+    return bytes;
+  }
+
+  /// Returns the maximum number of tree nodes. Which is 2n-1 for perfect
+  /// full binary trees.
   inline std::size_t
   max_node_cnt() const {
     return max_node_cnt_;
   }
 
+  /// Returns the label of the given node.
   inline u1
   label_of_node(u64 node_idx) const {
     return labels_[node_idx];
+  }
+
+  /// Returns the number of nodes in the tree.
+  inline u32
+  get_node_cnt() const noexcept {
+    return inner_node_cnt_ + leaf_node_cnt_;
+  }
+
+  /// Returns the number of leading inner nodes (in level order).
+  inline u32
+  get_leading_inner_node_cnt() const noexcept {
+    return leading_inner_node_cnt_;
+  }
+
+  /// Returns the number of trailing leaf nodes (in level order).
+  inline u32
+  get_trailing_leaf_node_cnt() const noexcept {
+    return trailing_leaf_node_cnt_;
+  }
+
+  /// Returns the node index of the first non-implicit node. - Note that the
+  /// node index refers to the index within a perfect binary tree.
+  inline u32
+  get_first_explicit_node_idx() const noexcept {
+    return explicit_node_idxs_.begin;
+  }
+
+  /// Returns the node index of the last non-implicit node. - Note that the
+  /// node index refers to the index within a perfect binary tree.
+  inline u32
+  get_last_explicit_node_idx() const noexcept {
+    return explicit_node_idxs_.end;
+  }
+
+private:
+
+  void __attribute__ ((noinline))
+  run_optimize() {
+    // Optimization level 2.
+    if (optimization_level_ > 1) {
+      // Estimates the size of a TEB.
+      auto size = [&]() {
+        return estimate_encoded_size_in_bytes();
+      };
+
+      // Gradual decompression.
+      auto min = *this;
+      auto min_size = size();
+      for (auto it = breadth_first_begin(); it != breadth_first_end(); ++it) {
+        u64 idx = *it;
+        if (is_inner_node(idx)) continue;
+        if (right_child_of(idx) >= max_node_cnt_) break;
+        // Expand inner node.
+        set_inner(idx);
+        // Update the counters.
+        ++inner_node_cnt_;
+        ++leaf_node_cnt_;
+
+        ++leading_inner_node_cnt_;
+        for (auto i = idx + 1; i < max_node_cnt_ && is_inner_node(i); ++i) {
+          ++leading_inner_node_cnt_;
+        }
+        explicit_node_idxs_.begin = leading_inner_node_cnt_;
+        if (explicit_node_idxs_.begin >= explicit_node_idxs_.end) {
+          // The entire tree became implicit.
+          leading_inner_node_cnt_ = inner_node_cnt_;
+          trailing_leaf_node_cnt_ = leaf_node_cnt_;
+        }
+        else {
+          const auto left_child_idx = left_child_of(idx);
+          if (left_child_idx >= explicit_node_idxs_.end) {
+            // The newly created leaf is implicit.
+            trailing_leaf_node_cnt_ += 1;
+          }
+          const auto right_child_idx = right_child_of(idx);
+          if (right_child_idx >= explicit_node_idxs_.end) {
+            // The newly created leaf is implicit.
+            trailing_leaf_node_cnt_ += 1;
+          }
+        }
+
+        const auto compressed_size = size();
+        if (compressed_size < min_size) {
+          min = *this;
+          min_size = compressed_size;
+        }
+      }
+      *this = min;
+    }
   }
 
 };
