@@ -15,19 +15,21 @@ namespace dtl {
 /// the identifier of the right child node; the parent node ID is (i-1)/2.
 class binary_tree_structure {
 
+  using bitmap_t = boost::dynamic_bitset<$u32>;
+
 public:
 
   /// The number of leaf nodes.
-  u64 n_;
+  $u64 n_;
 
   /// The max number of nodes.
-  u64 max_node_cnt_;
+  $u64 max_node_cnt_;
 
   /// The tree height.
-  u64 height_;
+  $u64 height_;
 
   /// Indicates whether a node is an internal or a leaf node.
-  std::vector<$u1> is_inner_node_;
+  bitmap_t is_inner_node_;
 
 public:
 
@@ -35,16 +37,22 @@ public:
   /// inner nodes.
   explicit
   binary_tree_structure(u64 n)
-      :n_(n),
-       max_node_cnt_(2 * n_ - 1),
-       height_(dtl::log_2(n_)),
-       is_inner_node_(max_node_cnt_, false) {
+      : n_(n),
+        max_node_cnt_(2 * n_ - 1),
+        height_(dtl::log_2(n_)),
+        is_inner_node_(max_node_cnt_) {
 
     // Initialize a perfect binary tree.
     for ($u64 i = 0; i < max_node_cnt_ / 2; i++) {
       is_inner_node_[i] = true;
     }
   }
+
+  binary_tree_structure(const binary_tree_structure& other) = default;
+  binary_tree_structure(binary_tree_structure&& other) noexcept = default;
+  binary_tree_structure& operator=(const binary_tree_structure& other) = default;
+  binary_tree_structure& operator=(binary_tree_structure&& other) noexcept = default;
+  virtual ~binary_tree_structure() = default;
 
   /// Counts the number of nodes in the given subtree.
   u64
