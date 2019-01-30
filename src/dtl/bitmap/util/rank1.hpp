@@ -95,6 +95,14 @@ struct rank1 {
     return lut.size() * sizeof(size_type); // lut size
   }
 
+  static u64
+  estimate_size_in_bytes(u64 bitmap_size) {
+    u64 bitmap_bitlength = bitmap_size;
+    u64 block_cnt = (bitmap_bitlength + block_bitlength - 1) / block_bitlength;
+    u64 lut_entry_cnt = block_cnt + 1;
+    return lut_entry_cnt * sizeof(size_type);
+  }
+
   // TODO remove redundancy (for testing purposes only)
   void
   copy(std::vector<$u1>& bitmap) {
