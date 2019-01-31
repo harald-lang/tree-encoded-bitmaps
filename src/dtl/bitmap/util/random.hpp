@@ -46,4 +46,24 @@ count_1fills(const bitset_t& b) {
 }
 //===----------------------------------------------------------------------===//
 
+//===----------------------------------------------------------------------===//
+/// Count the number of 1-fills in the given bitmap.
+template<typename bitset_t>
+f64
+determine_bit_density(const bitset_t& b) {
+  if (b.size() == 0) return 0.0;
+  return (b.count() * 1.0) / b.size();
+}
+//===----------------------------------------------------------------------===//
+
+//===----------------------------------------------------------------------===//
+/// Count the number of 1-fills in the given bitmap.
+template<typename bitset_t>
+f64
+determine_clustering_factor(const bitset_t& b) {
+  if (b.size() == 0) return 0.0;
+  return (b.count() * 1.0 ) / count_1fills(b);
+}
+//===----------------------------------------------------------------------===//
+
 } // namespace dtl
