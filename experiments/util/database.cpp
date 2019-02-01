@@ -14,7 +14,8 @@ bitmap_db::bitmap_db(const std::string& file)
       insert_stmt_(nullptr),
       select_by_id_stmt_(nullptr),
       select_ids_stmt_(nullptr),
-      delete_by_id_stmt_(nullptr) {
+      delete_by_id_stmt_(nullptr),
+      count_stmt_(nullptr) {
   open();
   init();
 }
@@ -128,6 +129,18 @@ bitmap_db::init() {
       throw std::runtime_error(err.str());
     }
   }
+  {
+    const std::string sql_stmt = "select count(*) from bitmaps";
+    rc = sqlite3_prepare_v2(db_, sql_stmt.c_str(), -1, &count_stmt_,
+        nullptr);
+    if (rc) {
+      std::stringstream err;
+      err << "Can't prepare SQL statement."
+          << sqlite3_errmsg(db_)
+          << std::endl;
+      throw std::runtime_error(err.str());
+    }
+  }
   //===--------------------------------------------------------------------===//
 }
 //===----------------------------------------------------------------------===//
@@ -139,6 +152,7 @@ bitmap_db::close() {
     sqlite3_finalize(select_by_id_stmt_);
     sqlite3_finalize(select_ids_stmt_);
     sqlite3_finalize(delete_by_id_stmt_);
+    sqlite3_finalize(count_stmt_);
 
     db_ = nullptr;
     auto* db = db_;
@@ -266,5 +280,31 @@ bitmap_db::delete_bitmap(i64 id) {
         << std::endl;
     throw std::runtime_error(err.str());
   }
+}
+//===----------------------------------------------------------------------===//
+std::size_t
+bitmap_db::count() {
+  std::lock_guard<std::mutex> lock(mutex_);
+  // Critical section.
+  sqlite3_reset(count_stmt_);
+
+  std::size_t ret = 0;
+  $i32 rc;
+  while((rc = sqlite3_step(count_stmt_)) == SQLITE_ROW) {
+    ret = sqlite3_column_int64(count_stmt_, 0);
+  }
+  if (rc != SQLITE_DONE) {
+    std::stringstream err;
+    err << "Can't fetch data. Error: " << rc << " - "
+        << sqlite3_errmsg(db_)
+        << std::endl;
+    throw std::runtime_error(err.str());
+  }
+  return ret;
+}
+//===----------------------------------------------------------------------===//
+u1
+bitmap_db::empty() {
+  return count() == 0;
 }
 //===----------------------------------------------------------------------===//

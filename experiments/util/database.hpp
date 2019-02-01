@@ -15,6 +15,7 @@ class bitmap_db {
   sqlite3_stmt* select_by_id_stmt_;
   sqlite3_stmt* select_ids_stmt_;
   sqlite3_stmt* delete_by_id_stmt_;
+  sqlite3_stmt* count_stmt_;
 
 public:
 
@@ -29,6 +30,10 @@ public:
   std::vector<$i64> find_bitmaps(u64 n, f64 f, f64 d);
   /// Deletes the bitmap with the given ID (thread-safe).
   void delete_bitmap(i64 id);
+  /// Returns the number of bitmaps in the database.
+  std::size_t count();
+  /// Returns true if the database is empty.
+  u1 empty();
 
 private:
 
