@@ -1,0 +1,41 @@
+#pragma once
+
+#include <mutex>
+#include <string>
+#include <dtl/dtl.hpp>
+#include <sqlite/sqlite3.h>
+
+class bitmap_db {
+
+  const std::string file_;
+  std::mutex mutex_;
+  sqlite3* db_;
+  sqlite3_stmt* insert_stmt_;
+  sqlite3_stmt* select_by_id_stmt_;
+  sqlite3_stmt* select_ids_stmt_;
+  sqlite3_stmt* delete_by_id_stmt_;
+
+public:
+
+  explicit bitmap_db(const std::string& file);
+  virtual ~bitmap_db();
+
+  /// Puts the given bitmap in the DB and return the ID (thread-safe).
+  i64 store_bitmap(u64 n, f64 f, f64 d, const dtl::bitmap& b);
+  /// Loads the bitmap with the given ID (thread-safe).
+  dtl::bitmap load_bitmap(i64 id);
+  /// Returns the IDs of the bitmaps that match n, f, and d (thread-safe).
+  std::vector<$i64> find_bitmaps(u64 n, f64 f, f64 d);
+  /// Deletes the bitmap with the given ID (thread-safe).
+  void delete_bitmap(i64 id);
+
+private:
+
+  /// Opens the database.
+  void open();
+  /// Initialize the database schema and prepare the SQL statements.
+  void init();
+  /// Close the database. Called by the constructor.
+  void close();
+
+};
