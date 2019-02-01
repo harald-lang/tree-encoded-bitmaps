@@ -3,6 +3,7 @@
 #include <mutex>
 #include <string>
 #include <dtl/dtl.hpp>
+#include <dtl/bitmap.hpp>
 #include <sqlite/sqlite3.h>
 
 class bitmap_db {
