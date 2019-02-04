@@ -2,15 +2,19 @@
 
 #include <dtl/dtl.hpp>
 #include <dtl/bitmap.hpp>
-#include <dtl/bitmap/position_list.hpp>
+#include <dtl/bitmap/dynamic_bitmap.hpp>
+#include <dtl/bitmap/dynamic_roaring_bitmap.hpp>
+#include <dtl/bitmap/dynamic_wah.hpp>
 #include <dtl/bitmap/partitioned_position_list.hpp>
-#include <dtl/bitmap/range_list.hpp>
 #include <dtl/bitmap/partitioned_range_list.hpp>
+#include <dtl/bitmap/position_list.hpp>
+#include <dtl/bitmap/range_list.hpp>
+#include <dtl/bitmap/teb.hpp>
 #include <dtl/bitmap/util/random.hpp>
 
 //===----------------------------------------------------------------------===//
 // API tests for range indices and bitmap indices.
-// Encoding/Decoding.
+// Encoding/Decoding using the iterator interface.
 //===----------------------------------------------------------------------===//
 
 constexpr std::size_t LEN = 8;
@@ -50,6 +54,17 @@ using types_under_test = ::testing::Types<
     wah
 >;
 TYPED_TEST_CASE(api_encode_decode_test, types_under_test);
+
+//===----------------------------------------------------------------------===//
+// Encode, decode, and compare the results.
+TYPED_TEST(api_encode_decode_test, info) {
+  using T = TypeParam;
+
+  dtl::bitmap bs(LEN, 1u << 8);
+  T t(bs);
+  std::cout << t.info() << std::endl;
+}
+//===----------------------------------------------------------------------===//
 
 //===----------------------------------------------------------------------===//
 // Encode, decode, and compare the results.
@@ -101,7 +116,7 @@ TYPED_TEST(api_encode_decode_test, encode_decode_varying_bitmap_sizes) {
     // random bitmap
     {
       for (std::size_t rep = 0; rep < 10; ++rep) {
-        bs = dtl::gen_random_bitmap(len, 4.0, 0.2);
+        bs = dtl::gen_random_bitmap_markov(len, 4.0, 0.2);
         T t(bs);
         dtl::bitmap dec = t.to_bitset();
         ASSERT_EQ(bs, dec)

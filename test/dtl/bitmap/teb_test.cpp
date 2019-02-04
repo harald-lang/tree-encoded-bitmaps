@@ -1,8 +1,25 @@
 #include "gtest/gtest.h"
 
+#include <chrono>
+
 #include <dtl/dtl.hpp>
 #include <dtl/bitmap.hpp>
+#include <dtl/bitmap/dynamic_bitmap.hpp>
+#include <dtl/bitmap/dynamic_roaring_bitmap.hpp>
+#include <dtl/bitmap/dynamic_wah.hpp>
+#include <dtl/bitmap/partitioned_position_list.hpp>
+#include <dtl/bitmap/partitioned_range_list.hpp>
+#include <dtl/bitmap/position_list.hpp>
+#include <dtl/bitmap/range_list.hpp>
+#include <dtl/bitmap/teb.hpp>
 #include <dtl/bitmap/util/random.hpp>
+
+
+u64
+now_nanos() {
+  return std::chrono::duration_cast<std::chrono::nanoseconds>(
+      std::chrono::steady_clock::now().time_since_epoch()).count();
+}
 
 //===----------------------------------------------------------------------===//
 // Test the compression levels of TEBs.
@@ -12,7 +29,7 @@ TEST(teb,
     for (auto f = 1; f <= 16; f *= 2) {
       for (auto d : {0.001, 0.01, 0.1, 0.2, 0.3, 0.4, 0.5} ) {
         for (std::size_t rep = 0; rep < 1; ++rep) {
-          dtl::bitmap bs = dtl::gen_random_bitmap(n, f, d);
+          dtl::bitmap bs = dtl::gen_random_bitmap_markov(n, f, d);
           std::cout << "plain: " << bs << std::endl;
           dtl::teb<0> teb_o0(bs);
           std::cout << "o0:\n" << teb_o0 << std::endl;
@@ -88,3 +105,86 @@ TEST(teb,
   ASSERT_EQ(teb::determine_perfect_tree_levels(31), 6);
   ASSERT_EQ(teb::determine_perfect_tree_levels(32), 6);
 }
+//===----------------------------------------------------------------------===//
+
+//===----------------------------------------------------------------------===//
+TEST(teb,
+     ensure_the_correct_top_node_idxs) {
+  using teb = dtl::teb<2>;
+
+  auto top_node_idx_end =  [&](u64 perfect_levels) {
+    return (1ull << perfect_levels) - 1;
+  };
+  auto top_node_idx_begin = [&](u64 perfect_levels) {
+    return (1ll << (perfect_levels - 1)) - 1;
+  };
+
+  ASSERT_EQ(top_node_idx_begin( 1), 0);
+  ASSERT_EQ(top_node_idx_end  ( 1), 1);
+
+  ASSERT_EQ(top_node_idx_begin( 2), 1);
+  ASSERT_EQ(top_node_idx_end  ( 2), 3);
+
+  ASSERT_EQ(top_node_idx_begin( 3), 3);
+  ASSERT_EQ(top_node_idx_end  ( 3), 7);
+
+}
+//===----------------------------------------------------------------------===//
+
+//===----------------------------------------------------------------------===//
+// Compare TEB and BitmapTree
+TEST(teb,
+     compare_explicit_node_cnt_of_teb_o1_and_bitmaptree) {
+  for (auto n = 1ull << 10; n <= 1ull << 10; n <<= 1) {
+    for (auto f = 1; f <= 16; f *= 2) {
+      for (auto d : {0.001, 0.01, 0.1, 0.2, 0.3, 0.4, 0.5} ) {
+        for (std::size_t rep = 0; rep < 1; ++rep) {
+          dtl::bitmap bs = dtl::gen_random_bitmap_markov(n, f, d);
+          dtl::teb<1> teb(bs);
+          dtl::bitmap_tree<1> bt(bs);
+          ASSERT_LE(bt.estimate_encoded_size_in_bytes(), teb.size())
+              << " - bitmap=" << bs << std::endl;
+          std::cout << std::endl;
+        }
+      }
+    }
+  }
+}
+
+TEST(teb,
+     compare_size_of_teb_o2_and_bitmaptree) {
+  for (auto n = 1ull << 10; n <= 1ull << 12; n <<= 1) {
+    for (auto f = 1; f <= 16; f *= 2) {
+      for (auto d : {0.001, 0.01, 0.1, 0.2, 0.3, 0.4, 0.5} ) {
+        for (std::size_t rep = 0; rep < 1; ++rep) {
+          std::cout << "n=" << n << std::flush;
+          dtl::bitmap bs = dtl::gen_random_bitmap_markov(n, f, d);
+          const auto teb_nanos_start = now_nanos();
+          dtl::teb<2> teb(bs);
+          std::cout << teb.info() << std::endl;
+          const auto teb_nanos_end = now_nanos();
+
+//          std::cout
+//              << "[teb] total: " << (teb.implicit_inner_node_cnt_
+//                + teb.structure_.size()+ teb.implicit_leaf_node_cnt_)
+//              << ", leading: " << teb.implicit_inner_node_cnt_
+//              << ", explicit: " << teb.structure_.size()
+//              << ", trailing: " << teb.implicit_leaf_node_cnt_
+//              << ", labels: " << teb.labels_.size()
+//              << std::endl;
+          const auto bt_nanos_start = now_nanos();
+          dtl::bitmap_tree<2> bt(bs);
+          const auto bt_nanos_end = now_nanos();
+          ASSERT_LE(bt.estimate_encoded_size_in_bytes(), teb.size())
+              << " - bitmap=" << bs << std::endl;
+          std::cout
+              << ", teb_millis=" << (teb_nanos_end - teb_nanos_start) / 1000 / 1000
+              << ", bt_millis=" << (bt_nanos_end - bt_nanos_start) / 1000 / 1000
+              << ", teb/bt=" << (teb_nanos_end - teb_nanos_start) / (bt_nanos_end - bt_nanos_start);
+          std::cout << std::endl;
+        }
+      }
+    }
+  }
+}
+//===----------------------------------------------------------------------===//
