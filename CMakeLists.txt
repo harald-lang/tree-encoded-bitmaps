@@ -78,6 +78,7 @@ set(TEB_SOURCE_FILES
         src/dtl/bitmap/util/convert.hpp
         src/dtl/bitmap/util/rank1.hpp
         src/dtl/bitmap/util/random.hpp
+        src/dtl/bitmap/util/markov_process.hpp
         src/dtl/bitmap/util/two_state_markov_process.hpp
         src/dtl/bitmap/teb.hpp
         src/dtl/bitmap/tree_mask_util.hpp

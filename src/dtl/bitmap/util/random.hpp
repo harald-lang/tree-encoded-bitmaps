@@ -7,7 +7,7 @@
 namespace dtl {
 
 //===----------------------------------------------------------------------===//
-inline dtl::bitmap
+static inline dtl::bitmap
 gen_random_bitmap_markov(u64 n, $f64 f, $f64 d) {
 
   // init bitset
@@ -24,7 +24,7 @@ gen_random_bitmap_markov(u64 n, $f64 f, $f64 d) {
 
 
 //===----------------------------------------------------------------------===//
-inline dtl::bitmap
+static inline dtl::bitmap
 gen_random_bitmap_uniform(u64 n, $f64 d) {
   std::random_device rd;
   std::mt19937 gen(rd());
@@ -79,7 +79,7 @@ gen_random_bitmap_uniform(u64 n, $f64 d) {
 //===----------------------------------------------------------------------===//
 /// Count the number of 1-fills in the given bitmap.
 template<typename bitset_t>
-std::size_t
+static std::size_t
 count_1fills(const bitset_t& b) {
   if (b.size() == 0) return 0;
   bool last_bit = b[0];
@@ -96,7 +96,7 @@ count_1fills(const bitset_t& b) {
 //===----------------------------------------------------------------------===//
 /// Count the number of 1-fills in the given bitmap.
 template<typename bitset_t>
-f64
+static f64
 determine_bit_density(const bitset_t& b) {
   if (b.size() == 0) return 0.0;
   return (b.count() * 1.0) / b.size();
@@ -104,13 +104,55 @@ determine_bit_density(const bitset_t& b) {
 //===----------------------------------------------------------------------===//
 
 //===----------------------------------------------------------------------===//
-/// Count the number of 1-fills in the given bitmap.
+/// Determine the average length of the 1-fills in the given bitmap.
 template<typename bitset_t>
-f64
+static f64
 determine_clustering_factor(const bitset_t& b) {
   if (b.size() == 0) return 0.0;
   if (b.count() == 0) return 0.0;
   return (b.count() * 1.0) / count_1fills(b);
+}
+//===----------------------------------------------------------------------===//
+
+//===----------------------------------------------------------------------===//
+/// Count the number of runs of the of the given value.
+static std::size_t
+count_value_runs(const std::vector<$u32>& b, u32 val) {
+  if (b.size() == 0) return 0;
+  auto last_val = b[0];
+  std::size_t cntr = b[0] == val;
+  for (std::size_t i = 1; i < b.size(); i++) {
+    const auto current_val = b[i];
+    cntr += last_val != val
+      && current_val == val;
+    last_val = current_val;
+  }
+  assert(cntr > 0);
+  return cntr;
+}
+//===----------------------------------------------------------------------===//
+
+//===----------------------------------------------------------------------===//
+/// Count the occurrences of the given value.
+static std::size_t
+count_value(const std::vector<$u32>& b, u32 val) {
+  if (b.size() == 0) return 0;
+  std::size_t cntr = b[0] == val;
+  for (std::size_t i = 1; i < b.size(); i++) {
+    cntr += b[i] == val;
+  }
+  return cntr;
+}
+//===----------------------------------------------------------------------===//
+
+//===----------------------------------------------------------------------===//
+/// Determine the average run-length of the given value.
+static f64
+determine_clustering_factor(const std::vector<$u32>& b, u32 val) {
+  if (b.size() == 0) return 0.0;
+  const auto cnt = count_value(b, val);
+  if (cnt == 0) return 0.0;
+  return (cnt * 1.0) / count_value_runs(b, val);
 }
 //===----------------------------------------------------------------------===//
 
