@@ -7,7 +7,7 @@ namespace dtl {
 
 //===----------------------------------------------------------------------===//
 inline dtl::bitmap
-gen_random_bitmap(u64 n, $f64 f, $f64 d) {
+gen_random_bitmap_markov(u64 n, $f64 f, $f64 d) {
 
   // init bitset
   f64 f_min = d >= 1.0 ? n : d/(1-d);
