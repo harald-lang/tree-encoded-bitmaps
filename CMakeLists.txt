@@ -39,6 +39,7 @@ set(BENCHMARK_SOURCE_FILES
         experiments/util/database.hpp
         experiments/util/database.cpp
         experiments/util/gen.hpp
+        experiments/util/threading.hpp
         )
 
 ##===----------------------------------------------------------------------===##

@@ -5,17 +5,14 @@
 #include "common.hpp"
 
 //===----------------------------------------------------------------------===//
-// Experiment: Comparison of compression ratios.
+// Experiment: Comparison of compression ratios of random bitmaps generated
+//             using a two-state Markov process.
+//             The Benchmark is used to compute the skyline of the most
+//             efficient compression technique for various parameters.
 //===----------------------------------------------------------------------===//
 
-static const std::string DB_FILE =
-    dtl::env<std::string>::get("DB_FILE", "./random_bitmaps.sqlite3");
-static u64 GEN_DATA = dtl::env<$u64>::get("GEN_DATA", 0);
-
-static bitmap_db db(DB_FILE);
-
-
 //===----------------------------------------------------------------------===//
+/// Data generation.
 void gen_data(const std::vector<$u64>& n_values,
               const std::vector<$f64>& clustering_factors,
               const std::vector<$f64>& bit_densities) {
@@ -59,7 +56,7 @@ void gen_data(const std::vector<$u64>& n_values,
     std::function<void(const config&, std::ostream&)> fn =
         [&](const config c, std::ostream& os) -> void {
           try {
-            const auto b = gen_random_bitmap_markov(
+            const auto b = gen_random_bitmap(
                 c.n, c.clustering_factor, c.density);
             const auto id =
                 db.store_bitmap(c.n, c.clustering_factor, c.density, b);
@@ -125,7 +122,7 @@ void gen_data(const std::vector<$u64>& n_values,
       std::function<void(const config&, std::ostream&)> fn =
           [&](const config c, std::ostream& os) -> void {
             try {
-              const auto b = gen_random_bitmap_markov(
+              const auto b = gen_random_bitmap(
                   c.n, c.clustering_factor, c.density);
               const auto id = db.store_bitmap(
                   c.n, c.clustering_factor, c.density, b);
@@ -156,65 +153,6 @@ void gen_data(const std::vector<$u64>& n_values,
             << pass << " passes." << std::endl;
 }
 //===----------------------------------------------------------------------===//
-template<typename T>
-void run(const config& c, std::ostream& os) {
-  // Load the bitmap from DB.
-  auto bs = db.load_bitmap(c.bitmap_id);
-  // Encode the bitmap.
-  T enc_bs(bs);
-
-  const auto size_in_bytes = enc_bs.size_in_byte();
-
-  std::string type_info = enc_bs.info();
-  boost::replace_all(type_info, "\"", "\"\""); // Escape JSON for CSV output.
-
-  os << RUN_ID
-     << "," << c.n
-     << "," << T::name()
-     << "," << c.density
-     << "," << dtl::determine_bit_density(bs)
-     << "," << c.clustering_factor
-     << "," << dtl::determine_clustering_factor(bs)
-     << "," << size_in_bytes
-     << "," << "\"" << type_info << "\""
-     << std::endl;
-}
-//===----------------------------------------------------------------------===//
-void run(config c, std::ostream& os) {
-  switch (c.bitmap_type) {
-    case bitmap_t::bitmap:
-      run<dtl::dynamic_bitmap<$u32>>(c, os);
-      break;
-    case bitmap_t::roaring:
-      run<dtl::dynamic_roaring_bitmap>(c, os);
-      break;
-    case bitmap_t::teb:
-      run<dtl::teb<>>(c, os);
-      break;
-    case bitmap_t::wah:
-      run<dtl::dynamic_wah32>(c, os);
-      break;
-    case bitmap_t::position_list:
-      run<dtl::position_list<$u32>>(c, os);
-      break;
-    case bitmap_t::partitioned_position_list_u8:
-      run<dtl::partitioned_position_list<$u32, $u8>>(c, os);
-      break;
-    case bitmap_t::partitioned_position_list_u16:
-      run<dtl::partitioned_position_list<$u32, $u16>>(c, os);
-      break;
-    case bitmap_t::range_list:
-      run<dtl::range_list<$u32>>(c, os);
-      break;
-    case bitmap_t::partitioned_range_list_u8:
-      run<dtl::partitioned_range_list<$u32, $u8>>(c, os);
-      break;
-    case bitmap_t::partitioned_range_list_u16:
-      run<dtl::partitioned_range_list<$u32, $u16>>(c, os);
-      break;
-  }
-}
-//===----------------------------------------------------------------------===//
 $i32 main() {
 
   // Prepare benchmark settings.
@@ -239,6 +177,7 @@ $i32 main() {
 
   if (GEN_DATA) {
     gen_data(n_values, clustering_factors, bit_densities);
+    std::exit(0);
   }
   else {
     if (db.empty()) {
@@ -262,10 +201,6 @@ $i32 main() {
 
         auto bitmap_ids = db.find_bitmaps(n, f, d);
         if (bitmap_ids.empty()) {
-//          std::cerr << "There are only " << bitmap_ids.size() << " prepared "
-//              << "bitmaps for the parameters n=" << n << ", f=" << f
-//              << ", d=" << d << ", but " << RUNS << " are required."
-//              << std::endl;
           continue;
         }
         if (bitmap_ids.size() < RUNS) {
@@ -297,10 +232,6 @@ $i32 main() {
   }
 
   // Run the actual benchmark.
-  std::function<void(const config&, std::ostream&)> fn =
-      [](const config c, std::ostream& os) -> void {
-        run(c, os);
-      };
-  dispatch(configs, fn);
+  run(configs);
 }
 //===----------------------------------------------------------------------===//
