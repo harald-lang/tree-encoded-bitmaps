@@ -174,7 +174,8 @@ struct position_list {
 
   static std::string
   name() {
-    return "position_list";
+    return "position_list_"
+        + std::to_string(sizeof(position_t) * 8);;
   }
 
   /// Returns the value of the bit at the position pos.

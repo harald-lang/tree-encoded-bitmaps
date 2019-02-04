@@ -247,7 +247,8 @@ struct partitioned_range_list {
 
   static std::string
   name() {
-    return "partitioned_range_list";
+    return "partitioned_range_list_"
+        + std::to_string(sizeof(local_position_t) * 8);
   }
 
   /// Returns the value of the bit at the position pos.
