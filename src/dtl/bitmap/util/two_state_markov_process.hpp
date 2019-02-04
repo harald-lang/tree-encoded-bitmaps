@@ -6,7 +6,8 @@
 //===----------------------------------------------------------------------===//
 /// Implementation of a two-state Markov process to generate (clustered) bit
 /// sequences as defined in the TODS paper "Optimizing Bitmap Indices With
-/// Efficient Compression" of Wu et al. (http://www.yajun.info/LBNL-49626-tods.pdf)
+/// Efficient Compression" of Wu et al.
+/// (http://www.yajun.info/LBNL-49626-tods.pdf).
 class two_state_markov_process {
 
   double p;
