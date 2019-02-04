@@ -1,84 +1,306 @@
 #include <iostream>
-
 #include <dtl/dtl.hpp>
-
+#include <experiments/util/database.hpp>
+#include <experiments/util/gen.hpp>
 #include "common.hpp"
 
 //===----------------------------------------------------------------------===//
 // Experiment: Comparison of compression ratios.
 //===----------------------------------------------------------------------===//
 
+static const std::string DB_FILE =
+    dtl::env<std::string>::get("DB_FILE", "./random_bitmaps.sqlite3");
+static u64 GEN_DATA = dtl::env<$u64>::get("GEN_DATA", 0);
 
+static bitmap_db db(DB_FILE);
+
+
+//===----------------------------------------------------------------------===//
+void gen_data(const std::vector<$u64>& n_values,
+              const std::vector<$f64>& clustering_factors,
+              const std::vector<$f64>& bit_densities) {
+  // Prepare the random bitmaps.
+  std::cout << "Preparing the data set." << std::endl;
+  std::vector<config> missing_bitmaps;
+  for (auto f: clustering_factors) {
+    for (auto d: bit_densities) {
+      for (auto n: n_values) {
+
+        if (!markov_parameters_are_valid(n, f, d)) continue;
+
+        auto ids = db.find_bitmaps(n, f, d);
+        if (ids.size() < RUNS) {
+          config c;
+          c.n = n;
+          c.clustering_factor = f;
+          c.density = d;
+          for (std::size_t i = ids.size(); i < RUNS; ++i) {
+            missing_bitmaps.push_back(c);
+          }
+        }
+
+      }
+    }
+  }
+
+  if (!missing_bitmaps.empty()) {
+    std::cout << "Generating " << missing_bitmaps.size()
+              << " random bitmaps." << std::endl;
+
+    {
+      // Shuffle the configurations to better predict the overall runtime of the
+      // benchmark.
+      std::random_device rd;
+      std::mt19937 gen(rd());
+      std::shuffle(missing_bitmaps.begin(), missing_bitmaps.end(), gen);
+    }
+
+    std::atomic<std::size_t> failure_cntr {0};
+    std::function<void(const config&, std::ostream&)> fn =
+        [&](const config c, std::ostream& os) -> void {
+          try {
+            const auto b = gen_random_bitmap(
+                c.n, c.clustering_factor, c.density);
+            const auto id =
+                db.store_bitmap(c.n, c.clustering_factor, c.density, b);
+            // Validation.
+            const auto loaded = db.load_bitmap(id);
+            if (b != loaded) {
+              // Fatal!
+              std::cerr << "Validation failed" << std::endl;
+              std::exit(1);
+            }
+          }
+          catch (std::exception& ex) {
+            ++failure_cntr;
+          }
+        };
+    dispatch(missing_bitmaps, fn);
+
+    if (failure_cntr > 0) {
+      std::cerr << "Failed to generate all required bitmaps. "
+                << failure_cntr << " bitmaps are still missing."
+                << std::endl;
+    }
+  }
+
+  std::size_t pass = 2;
+  while (true) {
+    std::cout << "Preparing the data set. (pass " << pass << ")" << std::endl;
+    std::vector<config> incomplete_bitmaps;
+    for (auto f: clustering_factors) {
+      for (auto d: bit_densities) {
+        for (auto n: n_values) {
+
+          if (!markov_parameters_are_valid(n, f, d)) continue;
+
+          auto ids = db.find_bitmaps(n, f, d);
+          if (ids.size() > 0 && ids.size() < RUNS) {
+            config c;
+            c.n = n;
+            c.clustering_factor = f;
+            c.density = d;
+            for (std::size_t i = ids.size(); i < RUNS; ++i) {
+              incomplete_bitmaps.push_back(c);
+            }
+          }
+
+        }
+      }
+    }
+    std::cout << incomplete_bitmaps.size() << " remaining." << std::endl;
+    if (!incomplete_bitmaps.empty()) {
+      std::cout << "Generating " << incomplete_bitmaps.size()
+                << " random bitmaps. (pass " << pass << ")" << std::endl;
+
+      {
+        // Shuffle the configurations to better predict the overall runtime of the
+        // benchmark.
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::shuffle(incomplete_bitmaps.begin(), incomplete_bitmaps.end(), gen);
+      }
+
+      std::atomic<std::size_t> failure_cntr {0};
+      std::function<void(const config&, std::ostream&)> fn =
+          [&](const config c, std::ostream& os) -> void {
+            try {
+              const auto b = gen_random_bitmap(
+                  c.n, c.clustering_factor, c.density);
+              const auto id = db.store_bitmap(
+                  c.n, c.clustering_factor, c.density, b);
+              // Validation.
+              const auto loaded = db.load_bitmap(id);
+              if (b != loaded) {
+                // Fatal!
+                std::cerr << "Validation failed" << std::endl;
+                std::exit(1);
+              }
+            }
+            catch (std::exception& ex) {
+              ++failure_cntr;
+            }
+          };
+      dispatch(incomplete_bitmaps, fn);
+      if (failure_cntr == 0) {
+        break;
+      }
+
+    }
+    else {
+      break;
+    }
+    pass++;
+  }
+  std::cerr << "Done generating random bitmaps after "
+            << pass << " passes." << std::endl;
+}
+//===----------------------------------------------------------------------===//
+template<typename T>
+void run(const config& c, std::ostream& os) {
+  // Load the bitmap from DB.
+  auto bs = db.load_bitmap(c.bitmap_id);
+  // Encode the bitmap.
+  T enc_bs(bs);
+
+  const auto size_in_bytes = enc_bs.size_in_byte();
+
+  std::string type_info = enc_bs.info();
+  boost::replace_all(type_info, "\"", "\"\""); // Escape JSON for CSV output.
+
+  os << RUN_ID
+     << "," << c.n
+     << "," << T::name()
+     << "," << c.density
+     << "," << dtl::determine_bit_density(bs)
+     << "," << c.clustering_factor
+     << "," << dtl::determine_clustering_factor(bs)
+     << "," << size_in_bytes
+     << "," << "\"" << type_info << "\""
+     << std::endl;
+}
+//===----------------------------------------------------------------------===//
+void run(config c, std::ostream& os) {
+  switch (c.bitmap_type) {
+    case bitmap_t::bitmap:
+      run<dtl::dynamic_bitmap<$u32>>(c, os);
+      break;
+    case bitmap_t::roaring:
+      run<dtl::dynamic_roaring_bitmap>(c, os);
+      break;
+    case bitmap_t::teb:
+      run<dtl::teb<>>(c, os);
+      break;
+    case bitmap_t::wah:
+      run<dtl::dynamic_wah32>(c, os);
+      break;
+    case bitmap_t::position_list:
+      run<dtl::position_list<$u32>>(c, os);
+      break;
+    case bitmap_t::partitioned_position_list_u8:
+      run<dtl::partitioned_position_list<$u32, $u8>>(c, os);
+      break;
+    case bitmap_t::partitioned_position_list_u16:
+      run<dtl::partitioned_position_list<$u32, $u16>>(c, os);
+      break;
+    case bitmap_t::range_list:
+      run<dtl::range_list<$u32>>(c, os);
+      break;
+    case bitmap_t::partitioned_range_list_u8:
+      run<dtl::partitioned_range_list<$u32, $u8>>(c, os);
+      break;
+    case bitmap_t::partitioned_range_list_u16:
+      run<dtl::partitioned_range_list<$u32, $u16>>(c, os);
+      break;
+  }
+}
+//===----------------------------------------------------------------------===//
 $i32 main() {
+
+  // Prepare benchmark settings.
+  u64 n_min = 1ull << 10;
+  u64 n_max = 1ull << 20;
 
   std::cerr << "run_id=" << RUN_ID << std::endl;
   std::vector<$f64> clustering_factors;
-  std::cerr << "f:" << std::endl;
-  for ($f64 f = 1; f <= N; f *= 2) {
+  for ($f64 f = 1; f <= n_max; f *= 2) {
     clustering_factors.push_back(f);
-    std::cerr << f << std::endl;
   }
 
   std::vector<$f64> bit_densities;
-  std::cerr << "d:" << std::endl;
   for ($f64 d = 1; d <= 10000; d *= 1.25) {
     bit_densities.push_back(d/10000);
-    std::cerr << (d/10000) << std::endl;
+  }
+
+  std::vector<$u64> n_values;
+  for ($u64 n = n_min; n <= n_max; n <<= 1) {
+    n_values.push_back(n);
+  }
+
+  if (GEN_DATA) {
+    gen_data(n_values, clustering_factors, bit_densities);
+  }
+  else {
+    if (db.empty()) {
+      std::cerr << "Bitmap database is empty. Use GEN_DATA=1 to populate the "
+          "database." << std::endl;
+      std::exit(1);
+    }
   }
 
   std::vector<config> configs;
   for (auto f: clustering_factors) {
     for (auto d: bit_densities) {
+      for (auto n: n_values) {
 
-      if (f > N*d) continue;
+        if (!markov_parameters_are_valid(n, f, d)) continue;
 
-      config c;
-      c.clustering_factor = f;
-      c.density = d;
+        config c;
+        c.n = n;
+        c.clustering_factor = f;
+        c.density = d;
 
-      c.bitmap_type = bitmap_t::bitmap;
-      configs.push_back(c);
-      c.bitmap_type = bitmap_t::roaring;
-      configs.push_back(c);
-      c.bitmap_type = bitmap_t::wah;
-      configs.push_back(c);
-      c.bitmap_type = bitmap_t::teb;
-      configs.push_back(c);
-      c.bitmap_type = bitmap_t::position_list;
-      configs.push_back(c);
-      c.bitmap_type = bitmap_t::partitioned_position_list_u8;
-      configs.push_back(c);
-      c.bitmap_type = bitmap_t::partitioned_position_list_u16;
-      configs.push_back(c);
-      c.bitmap_type = bitmap_t::range_list;
-      configs.push_back(c);
-      c.bitmap_type = bitmap_t::partitioned_range_list_u8;
-      configs.push_back(c);
-      c.bitmap_type = bitmap_t::partitioned_range_list_u16;
-      configs.push_back(c);
+        auto bitmap_ids = db.find_bitmaps(n, f, d);
+        if (bitmap_ids.empty()) {
+//          std::cerr << "There are only " << bitmap_ids.size() << " prepared "
+//              << "bitmaps for the parameters n=" << n << ", f=" << f
+//              << ", d=" << d << ", but " << RUNS << " are required."
+//              << std::endl;
+          continue;
+        }
+        if (bitmap_ids.size() < RUNS) {
+          std::cerr << "There are only " << bitmap_ids.size() << " prepared "
+              << "bitmaps for the parameters n=" << n << ", f=" << f
+              << ", d=" << d << ", but " << RUNS << " are required."
+              << std::endl;
+        }
+        for (auto bitmap_id : bitmap_ids) {
+          c.bitmap_id = bitmap_id;
+          for (auto bitmap_type = static_cast<int>(bitmap_t::_first);
+               bitmap_type <= static_cast<int>(bitmap_t::_last);
+               ++bitmap_type) {
+            c.bitmap_type = static_cast<bitmap_t>(bitmap_type);
+            configs.push_back(c);
+          }
+        }
 
+      }
     }
   }
 
   {
-    // # of runs
-    std::vector<config> c(configs.begin(), configs.end());
-    for ($u64 r = 1; r < RUNS; r++) {
-      c.insert(c.end(), configs.begin(), configs.end());
-    }
-    std::swap(c, configs);
-  }
-
-  {
-    // Shuffle the configurations to better predict the overall runtime of the benchmark.
+    // Shuffle the configurations to better predict the overall runtime of the
+    // benchmark.
     std::random_device rd;
     std::mt19937 gen(rd());
     std::shuffle(configs.begin(), configs.end(), gen);
   }
 
-  std::function<void(const config&, std::ostream&)> fn = [](const config c, std::ostream& os) -> void {
-    run(c, os);
-  };
+  // Run the actual benchmark.
+  std::function<void(const config&, std::ostream&)> fn =
+      [](const config c, std::ostream& os) -> void {
+        run(c, os);
+      };
   dispatch(configs, fn);
-
 }
+//===----------------------------------------------------------------------===//

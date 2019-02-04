@@ -17,6 +17,7 @@
 #include <dtl/bitmap/teb.hpp>
 #include <dtl/bitmap/dynamic_wah.hpp>
 #include <dtl/bitmap/util/two_state_markov_process.hpp>
+#include <dtl/bitmap/util/random.hpp>
 #include <dtl/bitmap/position_list.hpp>
 #include <dtl/bitmap/partitioned_position_list.hpp>
 #include <dtl/bitmap/range_list.hpp>
@@ -32,7 +33,6 @@ static const i64 RUN_ID = std::chrono::duration_cast<std::chrono::seconds>(
 // Read the CPU affinity for the process.
 static const auto cpu_mask = dtl::this_thread::get_cpu_affinity();
 
-
 enum class bitmap_t {
   bitmap,
   roaring,
@@ -43,93 +43,18 @@ enum class bitmap_t {
   partitioned_position_list_u16,
   range_list,
   partitioned_range_list_u8,
-  partitioned_range_list_u16
+  partitioned_range_list_u16,
+  _first = bitmap,
+  _last = partitioned_range_list_u16
 };
 
 struct config {
   bitmap_t bitmap_type;
+  $u64 n;
   $f64 density;
   $f64 clustering_factor;
+  $i64 bitmap_id; // in DB
 };
-
-
-template<typename T>
-void run($f64 f, $f64 d, std::ostream& os) {
-
-  // Construct a random bitmap.
-  f64 f_min = d >= 1.0 ? N : d/(1-d);
-  f64 f_actual = std::max(f, f_min);
-  two_state_markov_process mp(f_actual, d);
-  boost::dynamic_bitset<$u32> bs(N);
-  for ($u64 i = 0; i < N; i++) {
-    bs[i] = mp.next();
-  }
-
-  $f64 d_actual = (bs.count() * 1.0) / N;
-  if (std::abs(d - d_actual) > 1
-      || std::abs(f - f_actual) > 0.25) {
-    return;
-  }
-
-  // Encode the bitmap.
-  T enc_bs(bs);
-
-  const auto size_in_bytes = enc_bs.size_in_byte();
-
-  std::string type_info = enc_bs.info();
-  boost::replace_all(type_info, "\"", "\"\""); // Escape JSON for CSV output.
-
-  os << RUN_ID
-     << "," << N
-     << "," << T::name()
-     << "," << d
-     << "," << d_actual
-     << "," << f
-     << "," << f_actual
-     << "," << size_in_bytes
-     << "," << "\"" << type_info << "\""
-     << std::endl;
-}
-
-void run(config c, std::ostream& os) {
-  switch (c.bitmap_type) {
-    case bitmap_t::bitmap:
-      run<dtl::dynamic_bitmap<$u32>>(c.clustering_factor, c.density, os);
-      break;
-    case bitmap_t::roaring:
-      run<dtl::dynamic_roaring_bitmap>(c.clustering_factor, c.density, os);
-      break;
-    case bitmap_t::teb:
-      run<dtl::teb<>>(c.clustering_factor, c.density, os);
-      break;
-    case bitmap_t::wah:
-      run<dtl::dynamic_wah32>(c.clustering_factor, c.density, os);
-      break;
-    case bitmap_t::position_list:
-      run<dtl::position_list<$u32>>(c.clustering_factor, c.density, os);
-      break;
-    case bitmap_t::partitioned_position_list_u8:
-      run<dtl::partitioned_position_list<$u32, $u8>>(
-          c.clustering_factor, c.density, os);
-      break;
-    case bitmap_t::partitioned_position_list_u16:
-      run<dtl::partitioned_position_list<$u32, $u16>>(
-          c.clustering_factor, c.density, os);
-      break;
-    case bitmap_t::range_list:
-      run<dtl::range_list<$u32>>(c.clustering_factor, c.density, os);
-      break;
-    case bitmap_t::partitioned_range_list_u8:
-      run<dtl::partitioned_range_list<$u32, $u8>>(
-          c.clustering_factor, c.density, os);
-      break;
-    case bitmap_t::partitioned_range_list_u16:
-      run<dtl::partitioned_range_list<$u32, $u16>>(
-          c.clustering_factor, c.density, os);
-      break;
-  }
-}
-
 
 template<typename T>
 void dispatch(const std::vector<T>& tasks,
@@ -138,20 +63,21 @@ void dispatch(const std::vector<T>& tasks,
   i64 thread_cnt = dtl::env<$u64>::get("THREAD_CNT", cpu_mask.count());
   i64 config_cnt = tasks.size();
   i64 min_batch_size = 1;
-  i64 max_batch_size = 16;
+  i64 max_batch_size = 32;
 
   const auto time_start = std::chrono::system_clock::now();
   std::atomic<$i64> cntr { 0 };
   auto thread_fn = [&](u32 thread_id) {
     while (true) {
       // Grab work.
-      const auto inc = std::min(std::max(min_batch_size, (config_cnt - cntr) / thread_cnt), max_batch_size);
-      std::stringstream s;
-      s << "thread " << thread_id << " got " << inc << " task(s)" << std::endl;
-      std::cerr << s.str();
+      const auto inc = std::min(std::max(min_batch_size, (config_cnt - cntr)
+          / thread_cnt), max_batch_size);
       const auto config_idx_begin = cntr.fetch_add(inc);
       const auto config_idx_end = std::min(config_idx_begin + inc, config_cnt);
       if (config_idx_begin >= config_cnt) break;
+      std::stringstream s;
+      s << "thread " << thread_id << " got " << inc << " task(s)" << std::endl;
+      std::cerr << s.str();
 
       std::stringstream str;
       for ($i64 ci = config_idx_begin; ci < config_idx_end; ci++) {
@@ -170,12 +96,17 @@ void dispatch(const std::vector<T>& tasks,
         u64 h = (remaining_sec / 3600);
         u64 m = (remaining_sec % 3600) / 60;
         std::stringstream str;
-        str << "Progress: [" << (i + 1) << "/" << config_cnt << "]";
-        str << " - estimated time until completion: " << h << "h " << m << "m" << std::endl;
+        str << "Progress: [" << std::min((i + 1), config_cnt)
+            << "/" << config_cnt << "]";
+        str << " - estimated time until completion: " << h << "h "
+            << m << "m" << std::endl;
         std::cerr << str.str();
       }
     }
+    std::stringstream s;
+    s << "thread " << thread_id << " done" << std::endl;
+    std::cerr << s.str();
   };
-  dtl::run_in_parallel(thread_fn, cpu_mask, cpu_mask.count());
+  dtl::run_in_parallel(thread_fn, cpu_mask, thread_cnt);
 }
 
