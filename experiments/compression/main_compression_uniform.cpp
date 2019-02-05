@@ -92,7 +92,7 @@ $i32 main() {
   }
   // linear scale
   bit_densities.push_back(0.01);
-  for ($f64 d = 5; d <= 85; d += 5) {
+  for ($f64 d = 5; d <= 100; d += 5) {
     bit_densities.push_back(d/100);
   }
 
