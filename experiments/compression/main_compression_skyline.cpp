@@ -56,7 +56,7 @@ void gen_data(const std::vector<$u64>& n_values,
     std::function<void(const config&, std::ostream&)> fn =
         [&](const config c, std::ostream& os) -> void {
           try {
-            const auto b = gen_random_bitmap(
+            const auto b = gen_random_bitmap_markov(
                 c.n, c.clustering_factor, c.density);
             const auto id =
                 db.store_bitmap(c.n, c.clustering_factor, c.density, b);
@@ -122,7 +122,7 @@ void gen_data(const std::vector<$u64>& n_values,
       std::function<void(const config&, std::ostream&)> fn =
           [&](const config c, std::ostream& os) -> void {
             try {
-              const auto b = gen_random_bitmap(
+              const auto b = gen_random_bitmap_markov(
                   c.n, c.clustering_factor, c.density);
               const auto id = db.store_bitmap(
                   c.n, c.clustering_factor, c.density, b);

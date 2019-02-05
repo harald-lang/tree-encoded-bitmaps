@@ -21,7 +21,7 @@ markov_parameters_are_valid(u64 n, $f64 f, $f64 d) {
 /// Throws an exception if the parameters are invalid or a random bitmap could
 /// not be constructed after several retries.
 static dtl::bitmap
-gen_random_bitmap(u64 n, $f64 f, $f64 d) {
+gen_random_bitmap_markov(u64 n, $f64 f, $f64 d) {
   if (!markov_parameters_are_valid(n, f, d)) {
     throw std::invalid_argument("Invalid parameters for the Markov process.");
   }
@@ -29,7 +29,7 @@ gen_random_bitmap(u64 n, $f64 f, $f64 d) {
   dtl::bitmap bs(n);
 
   // Error bounds.
-  f64 e = 0.02;
+  f64 e = 0.05;
   f64 f_min = f - f * e;
   f64 f_max = f + f * e;
   f64 d_min = d - d * e;
@@ -60,6 +60,18 @@ gen_random_bitmap(u64 n, $f64 f, $f64 d) {
   std::cerr << err.str();
   throw std::invalid_argument(
       "Failed to construct a random bitmap with the given parameters after "
-          "several retries.");
+      "several retries.");
+}
+//===----------------------------------------------------------------------===//
+/// Generate a uniformly populated random bitmap with the given density.
+static dtl::bitmap
+gen_random_bitmap_uniform(u64 n, $f64 d) {
+  if (d < 0 || d > 1.0) {
+    throw std::invalid_argument("Invalid bit density.");
+  }
+
+  dtl::bitmap bs = dtl::gen_random_bitmap_uniform(n, d);
+
+  return bs;
 }
 //===----------------------------------------------------------------------===//

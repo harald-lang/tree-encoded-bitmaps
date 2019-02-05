@@ -24,10 +24,16 @@ public:
 
   /// Puts the given bitmap in the DB and return the ID (thread-safe).
   i64 store_bitmap(u64 n, f64 f, f64 d, const dtl::bitmap& b);
+  i64 store_bitmap(u64 n, f64 d, const dtl::bitmap& b) {
+    return store_bitmap(n, 0.0, d, b);
+  };
   /// Loads the bitmap with the given ID (thread-safe).
   dtl::bitmap load_bitmap(i64 id);
   /// Returns the IDs of the bitmaps that match n, f, and d (thread-safe).
   std::vector<$i64> find_bitmaps(u64 n, f64 f, f64 d);
+  std::vector<$i64> find_bitmaps(u64 n, f64 d) {
+    return find_bitmaps(n, 0.0, d);
+  };
   /// Deletes the bitmap with the given ID (thread-safe).
   void delete_bitmap(i64 id);
   /// Returns the number of bitmaps in the database.

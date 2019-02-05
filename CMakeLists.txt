@@ -154,7 +154,7 @@ set(EXPERIMENT_COMPRESSION_OPT_SOURCE_FILES
 add_executable(ex_compression_opt ${EXPERIMENT_COMPRESSION_OPT_SOURCE_FILES})
 target_link_libraries(ex_compression_opt fastbit roaring)
 
-# Skyline
+# Skyline (markov)
 set(EXPERIMENT_COMPRESSION_SKYLINE_SOURCE_FILES
         ${SOURCE_FILES}
         ${BENCHMARK_SOURCE_FILES}
@@ -163,6 +163,16 @@ set(EXPERIMENT_COMPRESSION_SKYLINE_SOURCE_FILES
         )
 add_executable(ex_compression_skyline ${EXPERIMENT_COMPRESSION_SKYLINE_SOURCE_FILES})
 target_link_libraries(ex_compression_skyline fastbit roaring pthread dl)
+
+# Compression (uniform)
+set(EXPERIMENT_COMPRESSION_UNIFORM_SOURCE_FILES
+        ${SOURCE_FILES}
+        ${BENCHMARK_SOURCE_FILES}
+        experiments/compression/common.hpp
+        experiments/compression/main_compression_uniform.cpp
+        )
+add_executable(ex_compression_uniform ${EXPERIMENT_COMPRESSION_UNIFORM_SOURCE_FILES})
+target_link_libraries(ex_compression_uniform fastbit roaring pthread dl)
 
 
 # copy shell scripts
