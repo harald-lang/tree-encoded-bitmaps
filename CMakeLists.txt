@@ -174,6 +174,16 @@ set(EXPERIMENT_COMPRESSION_UNIFORM_SOURCE_FILES
 add_executable(ex_compression_uniform ${EXPERIMENT_COMPRESSION_UNIFORM_SOURCE_FILES})
 target_link_libraries(ex_compression_uniform fastbit roaring pthread dl)
 
+# Compression, varying f (markov)
+set(EXPERIMENT_COMPRESSION_VARYING_F_SOURCE_FILES
+        ${SOURCE_FILES}
+        ${BENCHMARK_SOURCE_FILES}
+        experiments/compression/common.hpp
+        experiments/compression/main_compression_varying_f.cpp
+        )
+add_executable(ex_compression_varying_f ${EXPERIMENT_COMPRESSION_VARYING_F_SOURCE_FILES})
+target_link_libraries(ex_compression_varying_f fastbit roaring pthread dl)
+
 
 # copy shell scripts
 configure_file(experiments/compression/compression.sh compression.sh COPYONLY)
