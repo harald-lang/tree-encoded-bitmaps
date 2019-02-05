@@ -48,7 +48,8 @@ struct dynamic_bitmap {
   /// Return the size in bytes.
   std::size_t
   size_in_byte() const {
-    return ((n_ + sizeof(_block_type) - 1) / sizeof(_block_type)) /* bitmap */
+    const auto bits_per_block = sizeof(_block_type) * 8;
+    return ((n_ + bits_per_block - 1) / bits_per_block) * sizeof(_block_type) /* bitmap */
         + 4 /* length */;
   }
 
