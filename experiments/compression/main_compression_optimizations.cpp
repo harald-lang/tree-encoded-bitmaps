@@ -10,7 +10,7 @@
 
 //===----------------------------------------------------------------------===//
 // Experiment: Comparison of compression ratios for the different TEB
-// optimization levels.
+//             optimization levels.
 //===----------------------------------------------------------------------===//
 
 struct config_t {
@@ -44,9 +44,9 @@ run(const config_t& config, std::ostream& os) {
   // # of runs
   for ($u64 r = 0; r < RUNS; r++) {
 
-    auto bm = dtl::gen_random_bitmap(config.n,
-                                     config.clustering_factor,
-                                     config.bit_density);
+    auto bm = dtl::gen_random_bitmap_markov(config.n,
+                                            config.clustering_factor,
+                                            config.bit_density);
 
     dtl::dynamic_wah32 wah(bm);
     size_wah += wah.size_in_byte();
