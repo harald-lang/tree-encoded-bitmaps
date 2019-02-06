@@ -12,7 +12,7 @@ namespace dtl {
 //  https://github.com/efficient/SuRF/blob/master/include/popcount.h
 //===----------------------------------------------------------------------===//
 
-template<typename _word_type = $u64>
+template<typename _word_type = $u64, u1 _inclusive = false>
 struct rank1_surf {
 
   using word_type = typename std::remove_cv<_word_type>::type;
@@ -25,6 +25,7 @@ struct rank1_surf {
   static constexpr u64 word_bitlength = sizeof(word_type) * 8;
   static constexpr u64 words_per_block = block_bitlength / word_bitlength;
 
+  static constexpr u64 is_inclusive = _inclusive ? 1 : 0;
   ~rank1_surf() = default;
 
 #define popcountsize 64ULL
@@ -72,7 +73,8 @@ struct rank1_surf {
     const auto block_id = idx / block_bitlength;
     const auto offset = idx & (block_bitlength - 1);
     return (lut[block_id]
-        + popcountLinear(bitmap_ptr, block_id * words_per_block, offset));
+        + popcountLinear(bitmap_ptr, block_id * words_per_block,
+                         offset + is_inclusive));
   }
 
   u64
