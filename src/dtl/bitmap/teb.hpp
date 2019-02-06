@@ -70,8 +70,8 @@ public:
 
   /// Support data structure for rank1 operations on the tree structure.
 //  using rank_support = dtl::rank1_naive<word_type>;
-//  using rank_support = dtl::rank1_surf<word_type>;
-  using rank_support = dtl::rank1<word_type>;
+  using rank_support = dtl::rank1_surf<word_type>;
+//  using rank_support = dtl::rank1<word_type>;
   rank_support rank_;
 
   /// The number of implicit inner nodes in the tree structure.
