@@ -10,11 +10,24 @@
 
 #include <dtl/bits.hpp>
 #include <dtl/bitmap/util/rank1.hpp>
+#include <dtl/bitmap/util/rank1_surf.hpp>
 #include <dtl/bitmap/util/bitmap_tree.hpp>
 #include <dtl/bitmap/util/binary_tree_structure.hpp>
 #include <dtl/static_stack.hpp>
+#include <dtl/bitmap/util/rank1_naive.hpp>
 
 namespace dtl {
+
+
+#if !defined(__teb_inline__)
+#if defined(NDEBUG)
+// Release build.
+#define __teb_inline__ inline __attribute__((always_inline))
+//#define __teb_inline__ __attribute__((noinline))
+#else
+#define __teb_inline__
+#endif
+#endif
 
 //===----------------------------------------------------------------------===//
 /// Encodes a bitmap of length n as a binary tree.
@@ -42,10 +55,11 @@ public:
 
   // The fundamental storage type. The size of a TEB is a multiple of
   // sizeof(_block_type).
-  using _block_type = $u32;
+  using _block_type = $u64;
+  using word_type = _block_type;
 
   using position_t = $u32;
-  using bitmap_t = boost::dynamic_bitset<$u32>;
+  using bitmap_t = boost::dynamic_bitset<word_type>;
 
   /// The number of bits in the bitmap.
   $u64 n_;
@@ -55,7 +69,10 @@ public:
   bitmap_t labels_;
 
   /// Support data structure for rank1 operations on the tree structure.
-  dtl::rank1 rank_;
+//  using rank_support = dtl::rank1_naive<word_type>;
+  using rank_support = dtl::rank1_surf<word_type>;
+//  using rank_support = dtl::rank1<word_type>;
+  rank_support rank_;
 
   /// The number of implicit inner nodes in the tree structure.
   $u32 implicit_inner_node_cnt_;
@@ -67,7 +84,7 @@ public:
 
   /// Tree-encode the given bitmap with an optional false positive rate.
   explicit
-  teb(const bitmap_t& bitmap, f64 fpr = 0.0)
+  teb(const boost::dynamic_bitset<$u32>& bitmap, f64 fpr = 0.0)
       : n_(bitmap.size()) {
 
     // Construct a binary tree that represents the given bitmap.
@@ -237,7 +254,7 @@ public:
   }
 
   /// Decodes the level-order encoding to a bitmap.
-  boost::dynamic_bitset<$u32> __forceinline__
+  boost::dynamic_bitset<$u32> __teb_inline__
   to_bitset() const noexcept {
     boost::dynamic_bitset<$u32> ret(n_); // the resulting bitmap
 
@@ -302,7 +319,7 @@ public:
   }
 
   /// Return the size in bytes.
-  std::size_t __forceinline__
+  std::size_t __teb_inline__
   size_in_byte() const noexcept {
     constexpr u64 block_bitlength = sizeof(_block_type) * 8;
     constexpr u64 block_size = sizeof(_block_type);
@@ -323,12 +340,12 @@ public:
     return bytes;
   }
 
-  u1 __forceinline__
+  u1 __teb_inline__
   operator!=(teb& other) const noexcept {
     return !(*this == other);
   }
 
-  u1 __forceinline__
+  u1 __teb_inline__
   operator==(teb& other) const noexcept {
     return implicit_inner_node_cnt_ == other.implicit_inner_node_cnt_
         && structure_ == other.structure_
@@ -378,7 +395,7 @@ public:
   }
 
   /// Returns the value of the bit at the position pos.
-  u1 __forceinline__
+  u1 __teb_inline__
   test(const std::size_t pos) const noexcept {
     auto n_log2 = dtl::log_2(n_);
     $u64 node_idx = 0;
@@ -400,7 +417,7 @@ public:
   }
 
   /// Returns true if all bits are set, false otherwise.
-  u1 __forceinline__
+  u1 __teb_inline__
   all() noexcept {
     // FIXME: this works only if the tree mask is in a compressed state
     return is_leaf_node(0) // root is the only node (a leaf)
@@ -408,7 +425,7 @@ public:
   }
 
   /// Returns true if all bits are zero, false otherwise.
-  u1 __forceinline__
+  u1 __teb_inline__
   none() noexcept {
     // FIXME: this works only if the tree mask is in a compressed state
     return is_leaf_node(0) // root is the only node (a leaf)
@@ -473,7 +490,7 @@ public:
 
     /// Reference to the TEB instance.
     const teb& teb_;
-    /// The height of the tree structure.
+    /// The height of the tree structure. // TODO refers to max height
     u64 tree_height_;
     /// The number of perfect levels in the tree structure.
     u64 perfect_levels_;
@@ -500,7 +517,7 @@ public:
 
     /// Constructs an iterator for the given TEB instance. After construction,
     /// the iterator points to the first 1-fill.
-    explicit
+    explicit __teb_inline__
     iter(const teb& teb) noexcept :
         teb_(teb),
         tree_height_(determine_tree_height(teb.n_)),
@@ -518,12 +535,13 @@ public:
       next();
     }
 
+    __teb_inline__
     iter(iter&&) noexcept = default;
 
     /// Forwards the iterator to the next 1-fill (if any).
     /// Use the functions pos() and length() to get the 1-fill the iterator
     /// is currently pointing to.
-    void __forceinline__
+    void __teb_inline__
     next() noexcept {
       while (top_node_idx_current_ < top_node_idx_end_) {
         while (!stack_.empty()) {
@@ -566,7 +584,7 @@ public:
     }
 
     /// Navigate to the desired position, starting from the trees' root node.
-    void __forceinline__
+    void __teb_inline__
     nav_from_root_to(const std::size_t to_pos) noexcept {
       //===----------------------------------------------------------------===//
       // (Re-)initialize the iterator state.
@@ -634,7 +652,7 @@ public:
     /// Navigate downwards the tree to the desired position, starting from the
     /// current node. The destination position must be part of the current sub-
     /// tree, otherwise the behavior is undefined.
-    void __forceinline__
+    void __teb_inline__
     nav_downwards(const std::size_t to_pos) noexcept {
       $u64 level = determine_level_of(path_);
       std::size_t i = tree_height_ - level - 1;
@@ -685,7 +703,7 @@ public:
     /// determines the common ancestor node and then decides whether it is
     /// cheaper to navigate starting from the current node or from the root
     /// node.
-    void __forceinline__
+    void __teb_inline__
     nav_to(const std::size_t to_pos) {
       assert(to_pos >= pos_ + length_);
 
@@ -719,32 +737,38 @@ public:
     }
 
     /// Fast-forwards the iterator to the given position.
-    void __forceinline__
+    void __teb_inline__
     skip_to(const std::size_t to_pos) noexcept {
       nav_to(to_pos);
     }
 
     /// Returns true if the iterator reached the end, false otherwise.
-    u1 __forceinline__
+    u1 __teb_inline__
     end() const noexcept {
       return pos_ == teb_.n_;
     }
 
     /// Returns the starting position of the current 1-fill.
-    u64 __forceinline__
+    u64 __teb_inline__
     pos() const noexcept {
       return pos_;
     }
 
     /// Returns the length of the current 1-fill.
-    u64 __forceinline__
+    u64 __teb_inline__
     length() const noexcept {
       return length_;
     }
 
+    /// Returns the path of the current tree node.
+    u64 __teb_inline__
+    path() const noexcept {
+      return path_;
+    }
+
   };
 
-  iter __forceinline__
+  iter __teb_inline__
   it() const noexcept {
     return std::move(iter(*this));
   }
@@ -752,23 +776,38 @@ public:
   /// Returns the name of the instance including the most important parameters
   /// in JSON.
   std::string
-  info() {
+  info() const noexcept {
+    auto determine_compressed_tree_height = [&]() {
+      auto i = it();
+      $u64 height = 0;
+      while (!i.end()) {
+        const auto h = determine_level_of(i.path());
+        height = std::max(height, h);
+        i.next();
+      }
+      return height;
+    };
     return "{\"name\":\"" + name() + "\""
         + ",\"n\":" + std::to_string(n_)
         + ",\"size\":" + std::to_string(size_in_byte())
-        + ",\"rank_size\":" + std::to_string(rank_.size_in_bytes())
         + ",\"tree_bits\":" + std::to_string(structure_.size())
         + ",\"label_bits\":" + std::to_string(labels_.size())
-        + ",\"implicit_inner_nodes\":" + std::to_string(implicit_inner_node_cnt_)
-        + ",\"implicit_leaf_nodes\":" + std::to_string(implicit_leaf_node_cnt_)
-        + ",\"perfect_levels\":" + std::to_string(determine_perfect_tree_levels(implicit_inner_node_cnt_))
+        + ",\"implicit_inner_nodes\":"
+          + std::to_string(implicit_inner_node_cnt_)
+        + ",\"implicit_leaf_nodes\":"
+          + std::to_string(implicit_leaf_node_cnt_)
+        + ",\"tree_height\":"
+          + std::to_string(determine_compressed_tree_height())
+        + ",\"perfect_levels\":"
+          + std::to_string(determine_perfect_tree_levels(implicit_inner_node_cnt_))
         + ",\"opt_level\":" + std::to_string(optimization_level_)
+        + ",\"rank\":" + rank_.info()
         + "}";
   }
 
 private:
 
-  u1 __forceinline__
+  u1 __teb_inline__
   is_inner_node(u64 node_idx) const {
     const std::size_t implicit_1bit_cnt = implicit_inner_node_cnt_;
     if (node_idx < implicit_1bit_cnt) {
@@ -782,13 +821,13 @@ private:
     return structure_[node_idx - implicit_1bit_cnt];
   }
 
-  u1 __forceinline__
+  u1 __teb_inline__
   is_leaf_node(u64 node_idx) const {
     return !is_inner_node(node_idx);
   }
 
   /// Important: rank() calculates the rank of the prefix -> we need idx + 1
-  u64 __forceinline__
+  u64 __teb_inline__
   left_child(u64 node_idx) const {
     const std::size_t implicit_1bit_cnt = implicit_inner_node_cnt_;
     if (node_idx < implicit_1bit_cnt) {
@@ -797,7 +836,7 @@ private:
     return 2 * rank(node_idx + 1) - 1;
   }
 
-  u64 __forceinline__
+  u64 __teb_inline__
   right_child(u64 node_idx) const {
     const std::size_t implicit_1bit_cnt = implicit_inner_node_cnt_;
     if (node_idx < implicit_1bit_cnt) {
@@ -806,39 +845,26 @@ private:
     return 2 * rank(node_idx + 1);
   }
 
-  std::size_t __forceinline__
+  std::size_t __teb_inline__
   get_label_idx(u64 node_idx) const {
     return node_idx - rank(node_idx);
   }
 
-  u1 __forceinline__
+  u1 __teb_inline__
   get_label(u64 node_idx) const {
     u64 label_idx = get_label_idx(node_idx);
     return labels_[label_idx];
   }
 
-  u64 __forceinline__
-  rank_scan(u64 node_idx) const {
-    const std::size_t implicit_1bit_cnt = implicit_inner_node_cnt_;
-    if (node_idx < implicit_1bit_cnt) {
-      return node_idx;
-    }
-    const auto i = std::min(node_idx - implicit_1bit_cnt, structure_.size());
-    auto ret_val = implicit_1bit_cnt;
-    for (std::size_t j = 0; j < i; ++j) {
-      ret_val += structure_[j];
-    }
-    return ret_val;
-  }
-
-  u64 __forceinline__
+  u64 __teb_inline__
   rank(u64 node_idx) const {
     const std::size_t implicit_1bit_cnt = implicit_inner_node_cnt_;
     if (node_idx < implicit_1bit_cnt) {
       return node_idx;
     }
     const auto i = std::min(node_idx - implicit_1bit_cnt, structure_.size());
-    const auto ret_val = implicit_1bit_cnt + rank_(i);
+    const auto r = rank_(i, structure_.m_bits.data());
+    const auto ret_val = implicit_1bit_cnt + r;
     return ret_val;
   }
 
