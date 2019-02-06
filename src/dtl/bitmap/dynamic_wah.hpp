@@ -160,6 +160,7 @@ struct dynamic_wah {
       // determine the length of the current 1fill
       if (*pit < outer_.size_) {
         length_ = 1;
+        pit.next();
         while (*pit < outer_.size_
             && *pit == pos_ + length_) {
           ++length_;
