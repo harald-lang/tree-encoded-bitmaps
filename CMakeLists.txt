@@ -135,6 +135,7 @@ set(TEB_SOURCE_FILES
         src/dtl/bitmap/util/binary_tree_structure.hpp
         src/dtl/bitmap/util/convert.hpp
         src/dtl/bitmap/util/rank1.hpp
+        src/dtl/bitmap/util/rank1_interceptor.hpp
         src/dtl/bitmap/util/rank1_naive.hpp
         src/dtl/bitmap/util/rank1_surf.hpp
         src/dtl/bitmap/util/random.hpp
