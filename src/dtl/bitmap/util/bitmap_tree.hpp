@@ -266,7 +266,7 @@ public:
     bytes += ((leaf_node_cnt_ + block_bitlength - 1) / block_bitlength)
         * block_size;
     // Rank support
-    bytes += dtl::rank1::estimate_size_in_bytes(explicit_tree_node_cnt);
+    bytes += dtl::rank1<u64>::estimate_size_in_bytes(explicit_tree_node_cnt);
     // Bit-length of the original bitmap.
     bytes += sizeof(n_);
     // The number of implicit inner nodes.

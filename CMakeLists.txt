@@ -6,6 +6,9 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -march=native")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -march=corei7")
 
+# Hack: This gives us access to the private members of the dynamic_bitset.
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_DYNAMIC_BITSET_DONT_USE_FRIENDS")
+
 include_directories(src)
 
 
@@ -36,6 +39,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSQLITE_OMIT_LOAD_EXTENSION")
 
 set(BENCHMARK_SOURCE_FILES
         ${SQLITE_SOURCE_FILES}
+        experiments/compression/common.hpp
+        experiments/performance/common.hpp
         experiments/util/database.hpp
         experiments/util/database.cpp
         experiments/util/gen.hpp
@@ -48,6 +53,7 @@ set(BENCHMARK_SOURCE_FILES
 set(TEST_FILES
         test/dtl/bitmap/api_encode_decode_test.cpp
         test/dtl/bitmap/api_encode_decode_using_iterator_test.cpp
+        test/dtl/bitmap/bitmap_fun_test.cpp
         test/dtl/bitmap/teb_test.cpp
         test/dtl/bitmap/api_range_iterator_skip_test.cpp
 #        test/dtl/bitmap/api_set_operation_test.cpp
@@ -77,9 +83,12 @@ set(TEB_SOURCE_FILES
         src/dtl/bitmap/util/binary_tree_structure.hpp
         src/dtl/bitmap/util/convert.hpp
         src/dtl/bitmap/util/rank1.hpp
+        src/dtl/bitmap/util/rank1_naive.hpp
+        src/dtl/bitmap/util/rank1_surf.hpp
         src/dtl/bitmap/util/random.hpp
         src/dtl/bitmap/util/markov_process.hpp
         src/dtl/bitmap/util/two_state_markov_process.hpp
+        src/dtl/bitmap/bitmap_fun.hpp
         src/dtl/bitmap/teb.hpp
         src/dtl/bitmap/tree_mask_util.hpp
         src/dtl/static_stack.hpp
@@ -148,7 +157,6 @@ target_link_libraries(ex_compression fastbit roaring)
 set(EXPERIMENT_COMPRESSION_OPT_SOURCE_FILES
         ${SOURCE_FILES}
         ${BENCHMARK_SOURCE_FILES}
-        experiments/compression/common.hpp
         experiments/compression/main_compression_optimizations.cpp
         )
 add_executable(ex_compression_opt ${EXPERIMENT_COMPRESSION_OPT_SOURCE_FILES})
@@ -188,6 +196,14 @@ target_link_libraries(ex_compression_varying_f fastbit roaring pthread dl)
 # copy shell scripts
 configure_file(experiments/compression/compression.sh compression.sh COPYONLY)
 
+
+set(EXPERIMENT_PERFORMANCE_SKYLINE_SOURCE_FILES
+        ${SOURCE_FILES}
+        ${BENCHMARK_SOURCE_FILES}
+        experiments/performance/main_performance_skyline.cpp
+        )
+add_executable(ex_performance_skyline ${EXPERIMENT_PERFORMANCE_SKYLINE_SOURCE_FILES})
+target_link_libraries(ex_performance_skyline fastbit roaring pthread dl)
 
 set(EXPERIMENT_PERFORMANCE_SOURCE_FILES
         ${SOURCE_FILES}

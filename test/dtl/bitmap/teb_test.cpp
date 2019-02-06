@@ -14,6 +14,8 @@
 #include <dtl/bitmap/teb.hpp>
 #include <dtl/bitmap/util/random.hpp>
 
+#include <dtl/bitmap/util/markov_process.hpp>
+
 
 u64
 now_nanos() {
@@ -188,3 +190,39 @@ TEST(teb,
   }
 }
 //===----------------------------------------------------------------------===//
+TEST(teb,
+     fooooo) {
+//  for (auto n = 1ull << 10; n <= 1ull << 10; n <<= 1) {
+//  for (auto n = 1ull << 8; n <= 1ull << 8; n <<= 1) {
+  for (auto n = 1ull << 20; n <= 1ull << 20; n <<= 1) {
+    for (auto f : {2, 4, 8} ) {
+      std::cout << "--- f=" << f << std::endl;
+      for (std::size_t rep = 0; rep < 1; ++rep) {
+        const auto k = 3;
+        std::cout << "f=" << f << ", ";
+        std::vector<std::size_t> cnt(k, f);
+        std::vector<$u32> vals(n, 0);
+        markov_process mp(k, f);
+        for (std::size_t i = 0; i < n; ++i) {
+          const auto val = mp.next();
+          cnt[val]++;
+          vals[i] = val;
+//          std::cout << val << ",";
+        }
+        std::cout << std::endl;
+        std::cout << "card: ";
+        for (std::size_t i = 0; i < k; ++i) {
+          std::cout << i << ":" << cnt[i] << ",";
+        }
+        std::cout << std::endl;
+        std::cout << "f: ";
+        for (std::size_t i = 0; i < k; ++i) {
+          std::cout << i << ":"
+              << dtl::determine_clustering_factor(vals, i) << ", ";
+        }
+        std::cout << std::endl;
+
+      }
+    }
+  }
+}
