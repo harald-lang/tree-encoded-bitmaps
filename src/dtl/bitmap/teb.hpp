@@ -15,6 +15,7 @@
 #include <dtl/bitmap/util/binary_tree_structure.hpp>
 #include <dtl/static_stack.hpp>
 #include <dtl/bitmap/util/rank1_naive.hpp>
+#include <dtl/bitmap/util/rank1_interceptor.hpp>
 
 namespace dtl {
 
@@ -70,8 +71,11 @@ public:
 
   /// Support data structure for rank1 operations on the tree structure.
 //  using rank_support = dtl::rank1_naive<word_type>;
-  using rank_support = dtl::rank1_surf<word_type>;
+//  using rank_support = dtl::rank1_surf<word_type>;
 //  using rank_support = dtl::rank1<word_type>;
+//  using rank_support = dtl::rank1_interceptor<dtl::rank1_surf<word_type, false>>;
+//  using rank_support = dtl::rank1_interceptor<dtl::rank1_surf<word_type, true>>;
+  using rank_support = dtl::rank1_surf<word_type, true>;
   rank_support rank_;
 
   /// The number of implicit inner nodes in the tree structure.
@@ -123,6 +127,11 @@ public:
         // Add the label of the leaf node.
         labels_.push_back(bitmap_tree.label_of_node(idx));
       }
+    }
+
+    // Hack: ensure structure is not null
+    if (structure_.size() == 0) {
+      structure_.push_back(false);
     }
 
     // Init rank1 support data structure.
@@ -394,27 +403,27 @@ public:
     return "teb";
   }
 
-  /// Returns the value of the bit at the position pos.
-  u1 __teb_inline__
-  test(const std::size_t pos) const noexcept {
-    auto n_log2 = dtl::log_2(n_);
-    $u64 node_idx = 0;
-    if (is_leaf_node(node_idx)) { // FIXME: eliminate special case!!!
-      return get_label(node_idx);
-    }
-    for ($u64 i = n_log2 - 1; i < n_log2; i--) {
-      u1 bit = dtl::bits::bit_test(pos, i);
-      auto r = rank(node_idx + 1);
-      node_idx = 2 * r - 1 + bit; // right child if bit is set, left child otherwise
-      if (is_leaf_node(node_idx)) {
-        u64 label_idx = node_idx - rank(node_idx); // FIXME: do not call rank() twice!!!
-        auto label = labels_[label_idx];
-        return label;
-      }
-    }
-    std::cout << "BÄM" << std::endl;
-    std::exit(42);
-  }
+//  /// Returns the value of the bit at the position pos.
+//  u1 __teb_inline__
+//  test(const std::size_t pos) const noexcept {
+//    auto n_log2 = dtl::log_2(n_);
+//    $u64 node_idx = 0;
+//    if (is_leaf_node(node_idx)) { // FIXME: eliminate special case!!!
+//      return get_label(node_idx);
+//    }
+//    for ($u64 i = n_log2 - 1; i < n_log2; i--) {
+//      u1 bit = dtl::bits::bit_test(pos, i);
+//      auto r = rank(node_idx + 1);
+//      node_idx = 2 * r - 1 + bit; // right child if bit is set, left child otherwise
+//      if (is_leaf_node(node_idx)) {
+//        u64 label_idx = node_idx - rank(node_idx); // FIXME: do not call rank() twice!!!
+//        auto label = labels_[label_idx];
+//        return label;
+//      }
+//    }
+//    std::cout << "BÄM" << std::endl;
+//    std::exit(42);
+//  }
 
   /// Returns true if all bits are set, false otherwise.
   u1 __teb_inline__
@@ -845,10 +854,16 @@ private:
   u64 __teb_inline__
   left_child(u64 node_idx) const {
     const std::size_t implicit_1bit_cnt = implicit_inner_node_cnt_;
+    $u64 left_child_idx;
     if (node_idx < implicit_1bit_cnt) {
-      return 2 * node_idx + 1;
+      left_child_idx = 2 * node_idx + 1;
     }
-    return 2 * rank(node_idx + 1) - 1;
+    else {
+//      left_child_idx = 2 * (rank(node_idx) + 1) - 1;
+      left_child_idx = 2 * rank_inclusive(node_idx) - 1;
+    }
+    return left_child_idx;
+//    return right_child(node_idx) - 1;
   }
 
   u64 __teb_inline__
@@ -857,12 +872,17 @@ private:
     if (node_idx < implicit_1bit_cnt) {
       return 2 * node_idx + 2;
     }
-    return 2 * rank(node_idx + 1);
+//    return 2 * (rank(node_idx) + 1);
+    return 2 * rank_inclusive(node_idx);
   }
 
   std::size_t __teb_inline__
   get_label_idx(u64 node_idx) const {
-    return node_idx - rank(node_idx);
+//    assert(is_leaf_node(node_idx));
+    return node_idx - rank_inclusive(node_idx);
+//    return node_idx - rank_inclusive(node_idx);
+//    return node_idx - rank(node_idx);
+//    return node_idx - rank(node_idx + 1);
   }
 
   u1 __teb_inline__
@@ -871,8 +891,33 @@ private:
     return labels_[label_idx];
   }
 
+//  u64 __teb_inline__
+//  rank(u64 node_idx) const {
+//    const std::size_t implicit_1bit_cnt = implicit_inner_node_cnt_;
+//    if (node_idx < implicit_1bit_cnt) {
+//      return node_idx;
+//    }
+//    const auto i = std::min(node_idx - implicit_1bit_cnt, structure_.size());
+//    const auto r = rank_(i, structure_.m_bits.data());
+//    const auto ret_val = implicit_1bit_cnt + r;
+//    return ret_val;
+//  }
+
+//  u64 __teb_inline__
+//  rank_inclusive(u64 node_idx) const {
+//    const std::size_t implicit_1bit_cnt = implicit_inner_node_cnt_;
+//    if (node_idx < implicit_1bit_cnt) {
+//      return node_idx;
+//    }
+//    const auto i = std::min(node_idx - implicit_1bit_cnt, structure_.size());
+//    const auto r = rank_(i, structure_.m_bits.data())
+//        + (i < structure_.size() ? structure_[i] : 0); // inclusive rank // TODO optimize
+//    const auto ret_val = implicit_1bit_cnt + r;
+//    return ret_val;
+//  }
+
   u64 __teb_inline__
-  rank(u64 node_idx) const {
+  rank_inclusive(u64 node_idx) const {
     const std::size_t implicit_1bit_cnt = implicit_inner_node_cnt_;
     if (node_idx < implicit_1bit_cnt) {
       return node_idx;
