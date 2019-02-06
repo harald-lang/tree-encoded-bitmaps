@@ -133,6 +133,14 @@ struct rank1 {
     }
   }
 
+  /// Returns the important properties in JSON.
+  std::string
+  info() const noexcept {
+    return "{\"size\":" + std::to_string(size_in_bytes())
+        + ",\"block_size\":" + std::to_string(block_bitlength / 8)
+        + "}";
+  }
+
 };
 //===----------------------------------------------------------------------===//
 
