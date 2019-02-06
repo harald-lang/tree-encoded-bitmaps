@@ -14,7 +14,7 @@
 //===----------------------------------------------------------------------===//
 
 constexpr std::size_t LEN = 8;
-using teb = dtl::teb<$u32>;
+using teb = dtl::teb;
 using plain_bitmap_32 = dtl::dynamic_bitmap<$u32>;
 using plain_bitmap_64 = dtl::dynamic_bitmap<$u64>;
 using position_list_32 = dtl::position_list<$u32>;

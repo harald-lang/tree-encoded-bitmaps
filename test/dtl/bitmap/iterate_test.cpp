@@ -24,7 +24,7 @@ using types_under_test = ::testing::Types<
 //    dtl::dynamic_tree_mask_lo,
     dtl::dynamic_partitioned_tree_mask,
     dtl::dynamic_roaring_bitmap,
-    dtl::teb<$u32>
+    dtl::teb<>
 //    dtl::dynamic_bitmap<$u32>
 //    roaring_bitmap,
 //    tree_mask_lo,

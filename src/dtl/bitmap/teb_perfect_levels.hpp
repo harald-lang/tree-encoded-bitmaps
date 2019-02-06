@@ -174,13 +174,13 @@ public:
     return lo_struct_size + lo_labels_size + rank_supp_bytes;
   }
 
-  /// Return the size in bytes.
-  std::size_t __forceinline__
-  serialized_size_in_byte() const {
-    u64 lo_struct_size = (structure_.size() + 7) / 8;
-    u64 lo_labels_size = (labels_.size() + 7) / 8;
-    return 4 + lo_struct_size + lo_labels_size;
-  }
+//  /// Return the size in bytes.
+//  std::size_t __forceinline__
+//  serialized_size_in_byte() const {
+//    u64 lo_struct_size = (structure_.size() + 7) / 8;
+//    u64 lo_labels_size = (labels_.size() + 7) / 8;
+//    return 4 + lo_struct_size + lo_labels_size;
+//  }
 
   u1 __forceinline__
   operator!=(teb& other) const {
@@ -271,7 +271,7 @@ public:
     static constexpr path_t path_msb = path_t(1) << (sizeof(path_t) * 8 - 1);
 
     const teb& tm_;
-    u64 tree_height = dtl::log_2(tm_.n_);
+    u64 tree_height_ = dtl::log_2(tm_.n_);
 
 
     //===----------------------------------------------------------------------===//
@@ -322,7 +322,7 @@ public:
             // produce output (a 1-fill)
             const auto lz_cnt_path = dtl::bits::lz_count(path);
             level_ = sizeof(path_t) * 8 - 1 - lz_cnt_path;
-            pos_ = (path ^ (path_msb >> lz_cnt_path)) << (tree_height - level_); // toggle sentinel bit (= highest bit set) and add offset
+            pos_ = (path ^ (path_msb >> lz_cnt_path)) << (tree_height_ - level_); // toggle sentinel bit (= highest bit set) and add offset
             length_ = tm_.n_ >> level_; // the length of the 1-fill
             path_ = path;
             return;
@@ -376,7 +376,7 @@ public:
       path_ = 1;
 //      std::cout << "to_pos=" << std::bitset<64>(to_pos) << std::endl;
       // walk down the tree to the desired position
-      std::size_t i = tree_height - 1;
+      std::size_t i = tree_height_ - 1;
       while (true) {
 //        std::cout << "path=" << std::bitset<64>(path_) << std::endl;
         // first check, if this is already a leaf node
@@ -385,7 +385,7 @@ public:
           if (tm_.get_label(node_idx)) {
             // done
             const auto lz_cnt_path = dtl::bits::lz_count(path_);
-            pos_ = (path_ ^ (path_msb >> lz_cnt_path)) << (tree_height - level_); // toggle sentinel bit (= highest bit set) and add offset
+            pos_ = (path_ ^ (path_msb >> lz_cnt_path)) << (tree_height_ - level_); // toggle sentinel bit (= highest bit set) and add offset
             length_ = tm_.n_ >> level_; // the length of the 1-fill
             // adjust the current position and fill-length
             length_ -= to_pos - pos_;
@@ -439,14 +439,16 @@ public:
       }
 
       // determine the common ancestor
-      const auto shift_amount = ((sizeof(path_t) * 8) - tree_height);
+      const auto shift_amount = ((sizeof(path_t) * 8) - tree_height_);
 //      std::cout << "path=" << std::bitset<64>(path_) << std::endl;
       const auto a = toggle_msb(path_) << shift_amount;
 //      std::cout << "   a=" << std::bitset<64>(a) << std::endl;
       const auto b = to_pos << shift_amount;
 //      std::cout << "   b=" << std::bitset<64>(b) << std::endl;
       const auto a_xor_b = a ^ b;
-      const auto common_prefix_len = a_xor_b == 0 ? 0 : dtl::bits::lz_count(a_xor_b);
+      const auto common_prefix_len = (a_xor_b == 0)
+                                     ? 0
+                                     : dtl::bits::lz_count(a_xor_b);
 
       // walk up the tree to the common ancestor
 //      stack_.pop(); // requires the TM to be compressed?
@@ -480,7 +482,7 @@ public:
       stack_.pop();
 
       // walk down the tree to the desired position
-      std::size_t i = tree_height - level_ - 1;
+      std::size_t i = tree_height_ - level_ - 1;
       while (true) {
 
         // first check, if this is already a leaf node
@@ -489,7 +491,7 @@ public:
           if (tm_.get_label(node_idx)) {
             // done
             const auto lz_cnt_path = dtl::bits::lz_count(path);
-            pos_ = (path ^ (path_msb >> lz_cnt_path)) << (tree_height - level_); // toggle sentinel bit (= highest bit set) and add offset
+            pos_ = (path ^ (path_msb >> lz_cnt_path)) << (tree_height_ - level_); // toggle sentinel bit (= highest bit set) and add offset
             length_ = tm_.n_ >> level_; // the length of the 1-fill
             // adjust the current position and fill-length
             length_ -= to_pos - pos_;

@@ -42,7 +42,7 @@ public:
       : n_(bitmask.size()) {
 
     // Construct a binary tree that represents the given bitmap.
-    dtl::bitmap_tree bitmap_tree(bitmask, fpr);
+    dtl::bitmap_tree<0> bitmap_tree(bitmask, fpr);
 
     // Encode the tree into level-order.
     for (auto it = bitmap_tree.breadth_first_begin();
@@ -789,7 +789,7 @@ public:
         u64 path = pair & ((u64(1) << 32) - 1);
         stack_.pop();
 
-        //std::cout << "structure size: " << tm_.structure_.size() << " label_size: " << tm_.labels_.size() << std::endl;
+        //std::cout << "structure size: " << teb_.structure_.size() << " label_size: " << teb_.labels_.size() << std::endl;
         //std::cout << "node index: " << node_idx << std::endl;
         if(node_idx >= tm_.structure_.size()){
           break;

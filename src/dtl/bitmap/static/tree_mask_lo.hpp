@@ -30,7 +30,7 @@ public:
   tree_mask_lo(const std::bitset<N>& bitmask, f64 fpr = 0.0) {
 
     const auto dynamic_bitset = to_dynamic_bitset(bitmask);
-    dtl::bitmap_tree bitmap_tree(dynamic_bitset, fpr);
+    dtl::bitmap_tree<0> bitmap_tree(dynamic_bitset, fpr);
 
     u64 length = bitmap_tree.max_node_cnt_;
     u64 height = bitmap_tree.height_;

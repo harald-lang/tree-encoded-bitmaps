@@ -25,12 +25,14 @@ static constexpr u64 N = 1u << 20;
 
 static constexpr u64 M = 1024;
 
-static const i64 RUN_ID = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+static const i64 RUN_ID = std::chrono::duration_cast<std::chrono::seconds>(
+    std::chrono::system_clock::now().time_since_epoch()).count();
 
 
 u64
 now_nanos() {
-  return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+  return std::chrono::duration_cast<std::chrono::nanoseconds>(
+      std::chrono::steady_clock::now().time_since_epoch()).count();
 }
 
 
