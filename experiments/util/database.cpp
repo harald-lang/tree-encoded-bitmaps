@@ -226,13 +226,11 @@ bitmap_db::load_bitmap(i64 id) {
     const auto bytes = sqlite3_column_bytes(select_by_id_stmt_, 6);
     return dtl::base64_decode_bitmap(dtl::data_view<u8>{blob, blob + bytes});
   }
-  if (rc != SQLITE_DONE) {
-    std::stringstream err;
-    err << "Can't fetch data. Error: " << rc << " - "
-        << sqlite3_errmsg(db_)
-        << std::endl;
-    throw std::runtime_error(err.str());
-  }
+  std::stringstream err;
+  err << "Can't fetch data. Error: " << rc << " - "
+      << sqlite3_errmsg(db_)
+      << std::endl;
+  throw std::runtime_error(err.str());
 }
 //===----------------------------------------------------------------------===//
 std::vector<$i64>
