@@ -552,10 +552,14 @@ public:
           while (teb_.is_inner_node(node_idx)) {
             // Push right child on the stack and go to left child.
             node_idx = teb_.left_child(node_idx);
-            u64 right_child_idx = node_idx + 1;
             path = path << 1;
-            path_t right_child_path = path | 1;
-            stack_.push((right_child_idx << 32) | right_child_path);
+            u64 right_child_idx = node_idx + 1;
+            // Push the right child only if necessary.
+            if (teb_.is_inner_node(right_child_idx)
+                || teb_.get_label(right_child_idx)) {
+              path_t right_child_path = path | 1;
+              stack_.push((right_child_idx << 32) | right_child_path);
+            }
           }
           // Reached a leaf node.
           u1 label = teb_.get_label(node_idx);
@@ -687,7 +691,11 @@ public:
         level++;
         if (!direction_bit) {
           // Go to left child.
-          stack_.push((right_child << 32) | ((path_ << 1) | 1));
+          // Push the right child only if necessary.
+          if (teb_.is_inner_node(right_child)
+              || teb_.get_label(right_child)) {
+            stack_.push((right_child << 32) | ((path_ << 1) | 1));
+          }
           path_ <<= 1;
           node_idx_ = left_child;
         }
@@ -728,6 +736,13 @@ public:
       // Walk up the tree to the common ancestor.
       $u64 pair = 0;
       while (path_ != right_child_of_common_ancestor_path) {
+        if (stack_.empty()) {
+          // Note: It is no longer guaranteed, that the common ancestor is on
+          //       the stack since we push only inner nodes and leaf nodes with
+          //       1-labels on the stack.
+          nav_from_root_to(to_pos);
+          return;
+        }
         pair = stack_.top();
         path_ = pair & ((u64(1) << 32) - 1);
         stack_.pop();
