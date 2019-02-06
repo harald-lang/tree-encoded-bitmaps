@@ -32,6 +32,57 @@ include_directories(thirdparty/gtest/include lib/googletest)
 include_directories(thirdparty)
 
 
+##===----------------------------------------------------------------------===##
+# Expose Git commit ID.
+#
+# Inspired from
+# http://xit0.org/2013/04/cmake-use-git-branch-and-commit-details-in-project/
+# and
+# https://stackoverflow.com/questions/1704907/how-can-i-get-my-c-code-to-automatically-print-out-its-git-version-hash
+##===----------------------------------------------------------------------===##
+
+# Get the current wo.king branch.
+execute_process(
+        COMMAND git rev-parse --abbrev-ref HEAD
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE GIT_BRANCH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+# Get the latest abbreviated commit hash of the working branch.
+execute_process(
+        COMMAND git describe --abbrev=7 --dirty=+ --always --tags
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE GIT_COMMIT_HASH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+# Get the current date and time.
+execute_process(
+        COMMAND date +%Y-%m-%d
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE BUILD_DATE
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+execute_process(
+        COMMAND date +%H:%M:%S
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE BUILD_TIME
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+#add_definitions("-DGIT_COMMIT_HASH=${GIT_COMMIT_HASH}")
+#add_definitions("-DGIT_BRANCH=${GIT_BRANCH}")
+#add_definitions("-DBUILD_DATE=${BUILD_DATE}")
+#add_definitions("-DBUILD_TIME=${BUILD_TIME}")
+
+configure_file(
+        ${CMAKE_SOURCE_DIR}/src/version.h.in
+        ${CMAKE_BINARY_DIR}/generated/version.h
+)
+include_directories(${CMAKE_BINARY_DIR}/generated)
+##===----------------------------------------------------------------------===##
+
 set(SQLITE_SOURCE_FILES
         thirdparty/sqlite/sqlite3.c
         )
@@ -53,7 +104,7 @@ set(BENCHMARK_SOURCE_FILES
 set(TEST_FILES
         test/dtl/bitmap/api_encode_decode_test.cpp
         test/dtl/bitmap/api_encode_decode_using_iterator_test.cpp
-        test/dtl/bitmap/bitmap_fun_test.cpp
+#        test/dtl/bitmap/bitmap_fun_test.cpp
         test/dtl/bitmap/teb_test.cpp
         test/dtl/bitmap/api_range_iterator_skip_test.cpp
 #        test/dtl/bitmap/api_set_operation_test.cpp
@@ -79,6 +130,7 @@ set(TEB_SOURCE_FILES
         src/dtl/bitmap/dynamic_partitioned_tree_mask.hpp
 #        src/dtl/bitmap/dynamic_tree_mask_lo.hpp
         src/dtl/bitmap/util/base64.hpp
+        src/dtl/bitmap/util/bitmap_fun.hpp
         src/dtl/bitmap/util/bitmap_tree.hpp
         src/dtl/bitmap/util/binary_tree_structure.hpp
         src/dtl/bitmap/util/convert.hpp
@@ -88,7 +140,6 @@ set(TEB_SOURCE_FILES
         src/dtl/bitmap/util/random.hpp
         src/dtl/bitmap/util/markov_process.hpp
         src/dtl/bitmap/util/two_state_markov_process.hpp
-        src/dtl/bitmap/bitmap_fun.hpp
         src/dtl/bitmap/teb.hpp
         src/dtl/bitmap/tree_mask_util.hpp
         src/dtl/static_stack.hpp

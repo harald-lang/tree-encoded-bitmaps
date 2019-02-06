@@ -1,0 +1,13 @@
+#pragma once
+
+//===----------------------------------------------------------------------===//
+// Automatically generated file.
+//===----------------------------------------------------------------------===//
+
+#define GIT_BRANCH "@GIT_BRANCH@"
+#define GIT_COMMIT_HASH "@GIT_COMMIT_HASH@"
+#define GIT_VERSION "@GIT_BRANCH@/@GIT_COMMIT_HASH@"
+#define BUILD_DATE "@BUILD_DATE@"
+#define BUILD_TIME "@BUILD_TIME@"
+#define BUILD_DATETIME "@BUILD_DATE@ @BUILD_TIME@"
+#define BUILD_ID "@BUILD_DATE@ @BUILD_TIME@, @GIT_BRANCH@/@GIT_COMMIT_HASH@, gcc-"  __VERSION__
