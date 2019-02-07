@@ -11,6 +11,7 @@
 #include <dtl/bits.hpp>
 #include <dtl/bitmap/util/rank1.hpp>
 #include <dtl/bitmap/util/rank1_surf.hpp>
+#include <dtl/bitmap/util/rank1_surf_cached.hpp>
 #include <dtl/bitmap/util/bitmap_tree.hpp>
 #include <dtl/bitmap/util/binary_tree_structure.hpp>
 #include <dtl/static_stack.hpp>
@@ -75,7 +76,8 @@ public:
 //  using rank_support = dtl::rank1<word_type>;
 //  using rank_support = dtl::rank1_interceptor<dtl::rank1_surf<word_type, false>>;
 //  using rank_support = dtl::rank1_interceptor<dtl::rank1_surf<word_type, true>>;
-  using rank_support = dtl::rank1_surf<word_type, true>;
+//  using rank_support = dtl::rank1_surf<word_type, true>;
+  using rank_support = dtl::rank1_surf_cached<word_type, true>;
   rank_support rank_;
 
   /// The number of implicit inner nodes in the tree structure.
