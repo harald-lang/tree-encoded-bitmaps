@@ -555,42 +555,162 @@ public:
     /// Use the functions pos() and length() to get the 1-fill the iterator
     /// is currently pointing to.
     void __teb_inline__
-    next() noexcept {
+    next() noexcept __attribute__ ((flatten, hot)){
       while (top_node_idx_current_ < top_node_idx_end_) {
+outer_loop_begin:
         while (!stack_.empty()) {
           D(std::cout << "pop" << std::endl;)
           u64 pair = stack_.top();
           $u64 node_idx = pair >> 32;
           $u64 path = pair & ((u64(1) << 32) - 1);
           stack_.pop();
+
+          $u1 label;
           while (teb_.is_inner_node(node_idx)) {
-            // Push right child on the stack and go to left child.
-            u64 from_tmp = node_idx;
-            node_idx = teb_.left_child(node_idx);
-            D(std::cout << "go to left child " << from_tmp  << " -> ";)
-            D(std::cout << node_idx << std::endl;)
-            path = path << 1;
-            u64 right_child_idx = node_idx + 1;
-            // Push the right child only if necessary.
-            if (teb_.is_inner_node(right_child_idx)) {
-              path_t right_child_path = path | 1;
-              D(std::cout << "push right child (inner) " << right_child_idx  << std::endl;)
-              stack_.push((right_child_idx << 32) | right_child_path);
-            }
-            else {
-              u1 right_label = teb_.get_label(right_child_idx);
-              if (right_label) {
-                path_t right_child_path = path | 1;
-                D(std::cout << "push right child (inner) " << right_child_idx  << std::endl;)
-                stack_.push((right_child_idx << 32) | right_child_path);
+loop_begin:
+            label = false;
+            // Determine left and right child. - Both exist, because the tree
+            // is full binary.
+            // Note: If the current node is an inner node, the rank is always
+            //       required.
+            u64 right_child_idx = teb_.right_child(node_idx); // rank(parent)
+            u64 left_child_idx = right_child_idx - 1;
+            const auto right_child_is_inner = 0 + teb_.is_inner_node(right_child_idx);
+            const auto left_child_is_inner = 0 + teb_.is_inner_node(left_child_idx);
+            const auto children_are_inner =
+                (left_child_is_inner << 1) | right_child_is_inner; // TODO fetch both bits in one go
+
+            // Switch over the different cases.
+            switch (children_are_inner) {
+              case 0b00: {
+                //===------------------------------------------------------===//
+                // Both childs are leaf nodes.
+                //===------------------------------------------------------===//
+                // Compute the rank for one child, and derive the rank of the
+                // other one.
+                // Rank is required to compute the label index.
+                u64 left_child_rank = teb_.rank_inclusive(left_child_idx);
+                u64 left_child_label_idx = left_child_idx - left_child_rank;
+                // Fetch the labels.
+                //
+                // Note for UN-optimized TEBs the following holds:
+                //   One child has a 1-label the other has
+                //   a 0-label, which is guaranteed by the bottom-up pruning.
+                //   Thus, right_label == !left_label.
+                //
+                // However, gradual decompression (optimization level >= 2) may
+                // expand nodes and replicate labels. Thus, the sub-tree is no
+                // longer guaranteed to be 'compressed', and therefore, both
+                // labels need to be inspected.
+                if (optimization_level_ < 2) {
+                  u1 left_child_label = teb_.labels_[left_child_label_idx];
+                  // Go to the node which has the 1-label.
+                  node_idx = left_child_label ? left_child_idx : right_child_idx;
+                  path = (path << 1) | !left_child_label;
+                  goto produce_output;
+                }
+                else {
+                  // The price we pay for better compression ratios.
+                  u1 left_child_label = teb_.labels_[left_child_label_idx];
+                  u64 right_child_label_idx = left_child_label_idx + 1;
+                  u1 right_child_label = teb_.labels_[right_child_label_idx];
+                  u64 both_labels = 2 * left_child_label + right_child_label;
+                  switch (both_labels) {
+                    case 0b00: {
+                      goto outer_loop_begin;
+                    }
+                    case 0b01: {
+                      node_idx = right_child_idx;
+                      path = (path << 1) | 1;
+                      goto produce_output;
+                    }
+                    case 0b10: {
+                      node_idx = left_child_idx;
+                      path <<= 1;
+                      goto produce_output;
+                    }
+                    case 0b11: {
+                      goto produce_output;
+                    }
+                  }
+                }
               }
+              case 0b01: {
+                //===------------------------------------------------------===//
+                // Left child is a leaf, right child is an inner node.
+                //===------------------------------------------------------===//
+                // Determine whether the left child produces an output
+                // (label = 1).
+                u64 left_child_rank = teb_.rank_inclusive(left_child_idx);
+                // Derive rank of the right child.  The following works, because
+                // the left child is leaf (0-bit) and the right is inner (1-bit).
+                u64 right_child_rank = left_child_rank + 1; // TODO paper
+
+                u1 left_child_label =
+                    teb_.labels_[left_child_idx - left_child_rank];
+                if (left_child_label) {
+                  // Produce the output for the left child iff it has a 1-label,
+                  // otherwise it can be ignored.
+                  node_idx = left_child_idx;
+                  label = true; // TODO remove
+                  path <<= 1;
+                  // Push the right child on the stack.
+                  stack_.push((right_child_idx << 32) | path | 1);
+                  // TODO also memorize the rank of the node
+                  goto produce_output;
+                }
+                // Else, go to right child.
+                node_idx = right_child_idx;
+                path = (path << 1) | 1;
+                goto loop_begin;
+              }
+              case 0b10: {
+                //===------------------------------------------------------===//
+                // Left child is an inner, right child is a leaf node.
+                //===------------------------------------------------------===//
+                u64 left_child_rank = teb_.rank_inclusive(left_child_idx);
+                // Rank of the right child is equal to the rank of the left
+                // child.
+                u64 right_child_rank = left_child_rank; // TODO paper
+
+                // Determine whether the right child produces an output
+                // (label = 1).
+                u1 right_child_label =
+                    teb_.labels_[right_child_idx - right_child_rank];
+                if (right_child_label) {
+                  // Push the right child on the stack iff it has a 1-label,
+                  // otherwise the right child is ignored.
+                  stack_.push((right_child_idx << 32) | (path << 1) | 1);
+                  // TODO also memorize the rank of the node
+                }
+                // Go to left child.
+                node_idx = left_child_idx;
+                path <<= 1;
+                goto loop_begin;
+              }
+              case 0b11: {
+                //===------------------------------------------------------===//
+                // Both childs are an inner nodes.
+                //===------------------------------------------------------===//
+                u64 left_child_rank = teb_.rank_inclusive(left_child_idx);
+                u64 right_child_rank = left_child_rank + 1; // TODO paper (maybe)
+                // Go to left child.
+                node_idx = left_child_idx;
+                path <<= 1;
+                // Push the right child on the stack.
+                stack_.push((right_child_idx << 32) | (path | 1));
+                goto loop_begin;
+              }
+              default:
+                __builtin_unreachable();
             }
           }
           // Reached a leaf node.
+          label = teb_.get_label(node_idx);
           D(std::cout << "reached leaf " << node_idx  << std::endl;)
-          u1 label = teb_.get_label(node_idx);
           D(std::cout << "label = " << label  << std::endl;)
           if (label) {
+produce_output:
             // Produce output (a 1-fill).
             const auto lz_cnt_path = dtl::bits::lz_count(path);
             const auto level = sizeof(path_t) * 8 - 1 - lz_cnt_path;
