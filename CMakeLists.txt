@@ -145,6 +145,7 @@ set(TEB_SOURCE_FILES
         src/dtl/bitmap/teb.hpp
         src/dtl/bitmap/tree_mask_util.hpp
         src/dtl/static_stack.hpp
+        src/dtl/static_stack2.hpp
         )
 
 # Our competitors

@@ -15,6 +15,7 @@
 #include <dtl/bitmap/util/bitmap_tree.hpp>
 #include <dtl/bitmap/util/binary_tree_structure.hpp>
 #include <dtl/static_stack.hpp>
+#include <dtl/static_stack2.hpp>
 #include <dtl/bitmap/util/rank1_naive.hpp>
 #include <dtl/bitmap/util/rank1_interceptor.hpp>
 
@@ -514,7 +515,7 @@ public:
     /// The current top node.
     $u64 top_node_idx_current_;
     /// The stack contains the tree nodes that need to be visited.
-    static_stack<$u64, 32> stack_;
+    static_stack2<$u64, 32> stack_;
     /// Points to the beginning of the current 1-fill.
     $u64 pos_;
     /// The length of the current 1-fill.
