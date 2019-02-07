@@ -33,9 +33,14 @@ struct rank1_interceptor {
 
   size_type __forceinline__
   operator()(u64 idx, const word_type* bitmap_ptr) const {
-    std::cout << "rank " << idx << std::endl;
     if (idx == last_idx) {
-      std::cout << "breakpoint - idx=" << idx << std::endl;
+      std::cout << "rank " << idx << " -------------------------------------- !! " << std::endl;
+    }
+    else if (idx + 1 == last_idx || idx - 1 == last_idx) {
+      std::cout << "rank " << idx << " --------------------------------------- !" << std::endl;
+    }
+    else {
+      std::cout << "rank " << idx << std::endl;
     }
     last_idx = idx;
     return wrapped_instance_(idx, bitmap_ptr);
