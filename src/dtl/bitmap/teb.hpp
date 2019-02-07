@@ -71,13 +71,15 @@ public:
   bitmap_t labels_;
 
   /// Support data structure for rank1 operations on the tree structure.
+  static constexpr u1 inclusive = true;
+  static constexpr u1 non_inclusive = false;
 //  using rank_support = dtl::rank1_naive<word_type>;
-//  using rank_support = dtl::rank1_surf<word_type>;
+//  using rank_support = dtl::rank1_surf_cached<word_type>;
 //  using rank_support = dtl::rank1<word_type>;
-//  using rank_support = dtl::rank1_interceptor<dtl::rank1_surf<word_type, false>>;
-//  using rank_support = dtl::rank1_interceptor<dtl::rank1_surf<word_type, true>>;
-//  using rank_support = dtl::rank1_surf<word_type, true>;
-  using rank_support = dtl::rank1_surf_cached<word_type, true>;
+//  using rank_support = dtl::rank1_interceptor<dtl::rank1_surf_cached<word_type, non_inclusive>>;
+//  using rank_support = dtl::rank1_interceptor<dtl::rank1_surf_cached<word_type, inclusive>>;
+//  using rank_support = dtl::rank1_surf<word_type, inclusive>;
+  using rank_support = dtl::rank1_surf_cached<word_type, inclusive>;
   rank_support rank_;
 
   /// The number of implicit inner nodes in the tree structure.
@@ -556,24 +558,38 @@ public:
     next() noexcept {
       while (top_node_idx_current_ < top_node_idx_end_) {
         while (!stack_.empty()) {
+          D(std::cout << "pop" << std::endl;)
           u64 pair = stack_.top();
           $u64 node_idx = pair >> 32;
           $u64 path = pair & ((u64(1) << 32) - 1);
           stack_.pop();
           while (teb_.is_inner_node(node_idx)) {
             // Push right child on the stack and go to left child.
+            u64 from_tmp = node_idx;
             node_idx = teb_.left_child(node_idx);
+            D(std::cout << "go to left child " << from_tmp  << " -> ";)
+            D(std::cout << node_idx << std::endl;)
             path = path << 1;
             u64 right_child_idx = node_idx + 1;
             // Push the right child only if necessary.
-            if (teb_.is_inner_node(right_child_idx)
-                || teb_.get_label(right_child_idx)) {
+            if (teb_.is_inner_node(right_child_idx)) {
               path_t right_child_path = path | 1;
+              D(std::cout << "push right child (inner) " << right_child_idx  << std::endl;)
               stack_.push((right_child_idx << 32) | right_child_path);
+            }
+            else {
+              u1 right_label = teb_.get_label(right_child_idx);
+              if (right_label) {
+                path_t right_child_path = path | 1;
+                D(std::cout << "push right child (inner) " << right_child_idx  << std::endl;)
+                stack_.push((right_child_idx << 32) | right_child_path);
+              }
             }
           }
           // Reached a leaf node.
+          D(std::cout << "reached leaf " << node_idx  << std::endl;)
           u1 label = teb_.get_label(node_idx);
+          D(std::cout << "label = " << label  << std::endl;)
           if (label) {
             // Produce output (a 1-fill).
             const auto lz_cnt_path = dtl::bits::lz_count(path);
