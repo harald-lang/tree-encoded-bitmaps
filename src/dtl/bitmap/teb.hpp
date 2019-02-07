@@ -79,7 +79,8 @@ public:
 //  using rank_support = dtl::rank1<word_type>;
 //  using rank_support = dtl::rank1_interceptor<dtl::rank1_surf_cached<word_type, non_inclusive>>;
 //  using rank_support = dtl::rank1_interceptor<dtl::rank1_surf_cached<word_type, inclusive>>;
-  using rank_support = dtl::rank1_surf<word_type, inclusive>;
+  using rank_support = dtl::rank1_interceptor<dtl::rank1_surf<word_type, inclusive>>;
+//  using rank_support = dtl::rank1_surf<word_type, inclusive>;
 //  using rank_support = dtl::rank1_surf_cached<word_type, inclusive>;
   rank_support rank_;
 
@@ -502,6 +503,13 @@ public:
     /// The fundamental type to encode paths within the tree.
     using path_t = $u64;
 
+    struct stack_entry {
+      $u64 node_idx;
+      path_t path;
+      $u32 rank;
+      $u32 level;
+    };
+
     /// Reference to the TEB instance.
     const teb& teb_;
     /// The height of the tree structure. // TODO refers to max height
@@ -515,7 +523,7 @@ public:
     /// The current top node.
     $u64 top_node_idx_current_;
     /// The stack contains the tree nodes that need to be visited.
-    static_stack2<$u64, 32> stack_;
+    static_stack<stack_entry, 32> stack_;
     /// Points to the beginning of the current 1-fill.
     $u64 pos_;
     /// The length of the current 1-fill.
@@ -544,8 +552,13 @@ public:
         path_(path_t(1) << (perfect_levels_ - 1))
     {
       // Initialize the stack.
-      path_t path = path_t(1) << (perfect_levels_ - 1);
-      stack_.push((top_node_idx_begin_ << 32) | path);
+      stack_entry entry; // TODO emplace back
+      entry.node_idx = top_node_idx_begin_;
+      entry.path = path_t(1) << (perfect_levels_ - 1);
+      // TODO populate rank + level
+//      entry.rank = top_node_idx_begin_;
+//      entry.level = 0;
+      stack_.push(entry);
       next();
     }
 
@@ -556,25 +569,24 @@ public:
     /// Use the functions pos() and length() to get the 1-fill the iterator
     /// is currently pointing to.
     void __teb_inline__
-    next() noexcept __attribute__ ((flatten, hot)){
+    next() noexcept __attribute__ ((flatten, hot)) {
       while (top_node_idx_current_ < top_node_idx_end_) {
+        D(std::cout << "next top node" << std::endl;)
 outer_loop_begin:
         while (!stack_.empty()) {
           D(std::cout << "pop" << std::endl;)
-          u64 pair = stack_.top();
-          $u64 node_idx = pair >> 32;
-          $u64 path = pair & ((u64(1) << 32) - 1);
+          stack_entry node_info = stack_.top();
           stack_.pop();
 
           $u1 label;
-          while (teb_.is_inner_node(node_idx)) {
+          while (teb_.is_inner_node(node_info.node_idx)) {
 loop_begin:
             label = false;
             // Determine left and right child. - Both exist, because the tree
             // is full binary.
             // Note: If the current node is an inner node, the rank is always
             //       required.
-            u64 right_child_idx = teb_.right_child(node_idx); // rank(parent)
+            u64 right_child_idx = teb_.right_child(node_info.node_idx); // rank(parent)
             u64 left_child_idx = right_child_idx - 1;
             const auto right_child_is_inner = 0 + teb_.is_inner_node(right_child_idx);
             const auto left_child_is_inner = 0 + teb_.is_inner_node(left_child_idx);
@@ -614,8 +626,9 @@ loop_begin:
                 // labels need to be inspected.
                 if (optimization_level_ < 2) {
                   // Go to the node which has the 1-label.
-                  node_idx = left_child_label ? left_child_idx : right_child_idx;
-                  path = (path << 1) | !left_child_label;
+                  node_info.node_idx =
+                      left_child_label ? left_child_idx : right_child_idx;
+                  node_info.path = (node_info.path << 1) | !left_child_label;
                   goto produce_output;
                 }
                 else {
@@ -627,13 +640,13 @@ loop_begin:
                       goto outer_loop_begin;
                     }
                     case 0b01: {
-                      node_idx = right_child_idx;
-                      path = (path << 1) | 1;
+                      node_info.node_idx = right_child_idx;
+                      node_info.path = (node_info.path << 1) | 1;
                       goto produce_output;
                     }
                     case 0b10: {
-                      node_idx = left_child_idx;
-                      path <<= 1;
+                      node_info.node_idx = left_child_idx;
+                      node_info.path <<= 1;
                       goto produce_output;
                     }
                     case 0b11: {
@@ -656,17 +669,20 @@ loop_begin:
                 if (left_child_label) {
                   // Produce the output for the left child iff it has a 1-label,
                   // otherwise it can be ignored.
-                  node_idx = left_child_idx;
+                  node_info.node_idx = left_child_idx;
                   label = true; // TODO remove
-                  path <<= 1;
+                  node_info.path <<= 1;
                   // Push the right child on the stack.
-                  stack_.push((right_child_idx << 32) | path | 1);
+                  stack_entry right_child_info;
+                  right_child_info.node_idx = right_child_idx;
+                  right_child_info.path = node_info.path | 1;
+                  stack_.push(right_child_info);
                   // TODO also memorize the rank of the node
                   goto produce_output;
                 }
                 // Else, go to right child.
-                node_idx = right_child_idx;
-                path = (path << 1) | 1;
+                node_info.node_idx = right_child_idx;
+                node_info.path = (node_info.path << 1) | 1;
                 goto loop_begin;
               }
               case 0b10: {
@@ -683,12 +699,15 @@ loop_begin:
                 if (right_child_label) { // FIXME DEP
                   // Push the right child on the stack iff it has a 1-label,
                   // otherwise the right child is ignored.
-                  stack_.push((right_child_idx << 32) | (path << 1) | 1);
+                  stack_entry right_child_info;
+                  right_child_info.node_idx = right_child_idx;
+                  right_child_info.path = (node_info.path << 1) | 1;
+                  stack_.push(right_child_info);
                   // TODO also memorize the rank of the node
                 }
                 // Go to left child.
-                node_idx = left_child_idx;
-                path <<= 1;
+                node_info.node_idx = left_child_idx;
+                node_info.path <<= 1;
                 goto loop_begin;
               }
               case 0b11: {
@@ -698,10 +717,13 @@ loop_begin:
 
 //                u64 right_child_rank = left_child_rank + 1; // TODO paper (maybe)
                 // Go to left child.
-                node_idx = left_child_idx;
-                path <<= 1;
+                node_info.node_idx = left_child_idx;
+                node_info.path <<= 1;
                 // Push the right child on the stack.
-                stack_.push((right_child_idx << 32) | (path | 1));
+                stack_entry right_child_info;
+                right_child_info.node_idx = right_child_idx;
+                right_child_info.path = node_info.path | 1;
+                stack_.push(right_child_info);
                 goto loop_begin;
               }
               default:
@@ -709,29 +731,35 @@ loop_begin:
             }
           }
           // Reached a leaf node.
-          label = teb_.get_label(node_idx);
-          D(std::cout << "reached leaf " << node_idx  << std::endl;)
-          D(std::cout << "label = " << label  << std::endl;)
+          label = teb_.get_label(node_info.node_idx);
+          D(std::cout << "reached leaf " << node_info.node_idx  << std::endl;)
+//          D(std::cout << "label = " << label  << std::endl;)
           if (label) {
 produce_output:
             // Produce output (a 1-fill).
-            const auto lz_cnt_path = dtl::bits::lz_count(path);
+            const auto lz_cnt_path = dtl::bits::lz_count(node_info.path);
             const auto level = sizeof(path_t) * 8 - 1 - lz_cnt_path;
             // Toggle sentinel bit (= highest bit set) and add offset.
-            pos_ = (path ^ (1ull << level)) << (tree_height_ - level);
+            pos_ = (node_info.path ^ (1ull << level)) << (tree_height_ - level);
             // The length of the 1-fill.
             length_ = teb_.n_ >> level;
-            node_idx_ = node_idx;
-            path_ = path;
+            node_idx_ = node_info.node_idx;
+            path_ = node_info.path;
+            D(std::cout << "return [" << pos_ << ","
+                        << (pos_ + length_) << ")"
+                        << std::endl;)
             return;
           }
         }
 
+        // TODO bypass the stack here
         ++top_node_idx_current_;
-        auto path = path_t(top_node_idx_current_ - top_node_idx_begin_);
+        stack_entry next_node;
+        next_node.node_idx = top_node_idx_current_;
+        next_node.path = path_t(top_node_idx_current_ - top_node_idx_begin_);
         // Set the sentinel bit.
-        path |= path_t(1) << (perfect_levels_ - 1);
-        stack_.push((top_node_idx_current_ << 32) | path);
+        next_node.path |= path_t(1) << (perfect_levels_ - 1);
+        stack_.push(next_node);
       }
       pos_ = teb_.n_;
       length_ = 0;
@@ -757,50 +785,50 @@ produce_output:
       node_idx_ = top_node_idx_current_;
       nav_downwards(to_pos);
       return;
-      // Walk down the tree to the desired position.
-      // TODO possibly inline the nav_downwards function to save a few instructions.
-      std::size_t i = tree_height_ - perfect_levels_;
-      while (true) {
-        // First check, if this is already a leaf node.
-        if (teb_.is_leaf_node(node_idx_)) {
-          // Reached the desired position.
-          if (teb_.get_label(node_idx_)) {
-            // Found the corresponding leaf node.
-            // Toggle sentinel bit (= highest bit set) and add offset.
-            pos_ = (path_ ^ (1ull << level)) << (tree_height_ - level);
-            // The length of the 1-fill.
-            length_ = teb_.n_ >> level;
-            // Adjust the current position and fill-length.
-            length_ -= to_pos - pos_;
-            pos_ = to_pos;
-            return;
-          }
-          else {
-            // Search forward to the next 1-fill.
-            next();
-            return;
-          }
-        }
-
-        // Navigate downwards the tree.
-        // 0 -> go to left child, 1 -> go to right child
-        u1 direction_bit = dtl::bits::bit_test(to_pos, i);
-        i--;
-        const auto right_child = teb_.right_child(node_idx_);
-        const auto left_child = right_child - 1;
-        level++;
-        if (!direction_bit) {
-          // Go to left child.
-          stack_.push((right_child << 32) | ((path_ << 1) | 1));
-          path_ <<= 1;
-          node_idx_ = left_child;
-        }
-        else {
-          // Go to right child.
-          path_ = (path_ << 1) | 1;
-          node_idx_ = right_child;
-        }
-      }
+//      // Walk down the tree to the desired position.
+//      // TODO possibly inline the nav_downwards function to save a few instructions.
+//      std::size_t i = tree_height_ - perfect_levels_;
+//      while (true) {
+//        // First check, if this is already a leaf node.
+//        if (teb_.is_leaf_node(node_idx_)) {
+//          // Reached the desired position.
+//          if (teb_.get_label(node_idx_)) {
+//            // Found the corresponding leaf node.
+//            // Toggle sentinel bit (= highest bit set) and add offset.
+//            pos_ = (path_ ^ (1ull << level)) << (tree_height_ - level);
+//            // The length of the 1-fill.
+//            length_ = teb_.n_ >> level;
+//            // Adjust the current position and fill-length.
+//            length_ -= to_pos - pos_;
+//            pos_ = to_pos;
+//            return;
+//          }
+//          else {
+//            // Search forward to the next 1-fill.
+//            next();
+//            return;
+//          }
+//        }
+//
+//        // Navigate downwards the tree.
+//        // 0 -> go to left child, 1 -> go to right child
+//        u1 direction_bit = dtl::bits::bit_test(to_pos, i);
+//        i--;
+//        const auto right_child = teb_.right_child(node_idx_);
+//        const auto left_child = right_child - 1;
+//        level++;
+//        if (!direction_bit) {
+//          // Go to left child.
+//          stack_.push((right_child << 32) | ((path_ << 1) | 1));
+//          path_ <<= 1;
+//          node_idx_ = left_child;
+//        }
+//        else {
+//          // Go to right child.
+//          path_ = (path_ << 1) | 1;
+//          node_idx_ = right_child;
+//        }
+//      }
     }
 
     /// Navigate downwards the tree to the desired position, starting from the
@@ -836,23 +864,26 @@ produce_output:
         // 0 -> go to left child, 1 -> go to right child
         u1 direction_bit = dtl::bits::bit_test(to_pos, i);
         i--;
-        const auto right_child = teb_.right_child(node_idx_);
-        const auto left_child = right_child - 1;
+        const auto right_child_idx = teb_.right_child(node_idx_);
+        const auto left_child_idx = right_child_idx - 1;
         level++;
         if (!direction_bit) {
           // Go to left child.
           // Push the right child only if necessary.
-          if (teb_.is_inner_node(right_child)
-              || teb_.get_label(right_child)) {
-            stack_.push((right_child << 32) | ((path_ << 1) | 1));
+          if (teb_.is_inner_node(right_child_idx)
+              || teb_.get_label(right_child_idx)) {
+            stack_entry right_child_info;
+            right_child_info.node_idx = right_child_idx;
+            right_child_info.path = (path_ << 1) | 1;
+            stack_.push(right_child_info);
           }
           path_ <<= 1;
-          node_idx_ = left_child;
+          node_idx_ = left_child_idx;
         }
         else {
           // Go to right child.
           path_ = (path_ << 1) | 1;
-          node_idx_ = right_child;
+          node_idx_ = right_child_idx;
         }
       }
     }
@@ -884,7 +915,7 @@ produce_output:
       }
 
       // Walk up the tree to the common ancestor.
-      $u64 pair = 0;
+      stack_entry node;
       while (path_ != right_child_of_common_ancestor_path) {
         if (stack_.empty()) {
           // Note: It is no longer guaranteed, that the common ancestor is on
@@ -893,11 +924,11 @@ produce_output:
           nav_from_root_to(to_pos);
           return;
         }
-        pair = stack_.top();
-        path_ = pair & ((u64(1) << 32) - 1);
+        node = stack_.top();
+        path_ = node.path;
         stack_.pop();
       }
-      node_idx_ = pair >> 32;
+      node_idx_ = node.node_idx;
       nav_downwards(to_pos);
     }
 
@@ -937,6 +968,7 @@ produce_output:
   it() const noexcept {
     return std::move(iter(*this));
   }
+  //===--------------------------------------------------------------------===//
 
   /// Returns the name of the instance including the most important parameters
   /// in JSON.
