@@ -79,8 +79,8 @@ public:
 //  using rank_support = dtl::rank1<word_type>;
 //  using rank_support = dtl::rank1_interceptor<dtl::rank1_surf_cached<word_type, non_inclusive>>;
 //  using rank_support = dtl::rank1_interceptor<dtl::rank1_surf_cached<word_type, inclusive>>;
-  using rank_support = dtl::rank1_interceptor<dtl::rank1_surf<word_type, inclusive>>;
-//  using rank_support = dtl::rank1_surf<word_type, inclusive>;
+//  using rank_support = dtl::rank1_interceptor<dtl::rank1_surf<word_type, inclusive>>;
+  using rank_support = dtl::rank1_surf<word_type, inclusive>;
 //  using rank_support = dtl::rank1_surf_cached<word_type, inclusive>;
   rank_support rank_;
 
