@@ -138,6 +138,7 @@ set(TEB_SOURCE_FILES
         src/dtl/bitmap/util/rank1_interceptor.hpp
         src/dtl/bitmap/util/rank1_naive.hpp
         src/dtl/bitmap/util/rank1_surf.hpp
+        src/dtl/bitmap/util/rank1_surf_cached.hpp
         src/dtl/bitmap/util/random.hpp
         src/dtl/bitmap/util/markov_process.hpp
         src/dtl/bitmap/util/two_state_markov_process.hpp
