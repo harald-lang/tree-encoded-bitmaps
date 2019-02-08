@@ -260,6 +260,14 @@ set(EXPERIMENT_PERFORMANCE_SKYLINE_SOURCE_FILES
 add_executable(ex_performance_skyline ${EXPERIMENT_PERFORMANCE_SKYLINE_SOURCE_FILES})
 target_link_libraries(ex_performance_skyline fastbit roaring pthread dl)
 
+set(EXPERIMENT_PERFORMANCE_PROFILING_SOURCE_FILES
+        ${SOURCE_FILES}
+        ${BENCHMARK_SOURCE_FILES}
+        experiments/performance/main_performance_profiling.cpp
+        )
+add_executable(ex_performance_profiling ${EXPERIMENT_PERFORMANCE_PROFILING_SOURCE_FILES})
+target_link_libraries(ex_performance_profiling fastbit roaring pthread dl)
+
 set(EXPERIMENT_PERFORMANCE_SOURCE_FILES
         ${SOURCE_FILES}
         ${BENCHMARK_SOURCE_FILES}
