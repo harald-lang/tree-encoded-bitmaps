@@ -1054,15 +1054,16 @@ private:
   u1 __teb_inline__
   is_inner_node(u64 node_idx) const {
     const std::size_t implicit_1bit_cnt = implicit_inner_node_cnt_;
+    const std::size_t implicit_leaf_begin =
+        structure_bit_cnt_ + implicit_inner_node_cnt_;
     if (node_idx < implicit_1bit_cnt) {
       // Implicit inner node.
       return true;
     }
-    if ((node_idx - implicit_1bit_cnt) >= structure_bit_cnt_) {
+    if (node_idx >= implicit_leaf_begin) {
       // Implicit leaf node.
       return false;
     }
-//    return structure_[node_idx - implicit_1bit_cnt];
     return T_[node_idx - implicit_1bit_cnt];
   }
 
