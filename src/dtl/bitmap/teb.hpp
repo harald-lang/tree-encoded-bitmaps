@@ -19,6 +19,7 @@
 #include <dtl/bitmap/util/rank1_naive.hpp>
 #include <dtl/bitmap/util/rank1_interceptor.hpp>
 #include <dtl/bitmap/util/rank1_super_fast.hpp>
+#include <dtl/bitmap/util/bitmap_view.hpp>
 
 namespace dtl {
 
@@ -71,6 +72,10 @@ public:
   /// The tree encoded bitmap.
   bitmap_t structure_;
   bitmap_t labels_;
+
+  bitmap_view<word_type> T_;
+  $u64 structure_bit_cnt_;
+  bitmap_view<word_type> L_;
 
   /// Support data structure for rank1 operations on the tree structure.
   static constexpr u1 inclusive = true;
@@ -144,6 +149,16 @@ public:
 
     // Init rank1 support data structure.
     rank_.init(structure_);
+
+    T_.init(data_view<const word_type> {
+        structure_.m_bits.data(),
+        structure_.m_bits.data() + structure_.m_bits.size(),
+    });
+    structure_bit_cnt_ = structure_.size();
+    L_.init(data_view<const word_type> {
+        labels_.m_bits.data(),
+        labels_.m_bits.data() + labels_.m_bits.size(),
+    });
   }
 
   teb(const teb& other) = default;
@@ -1040,11 +1055,12 @@ private:
       // Implicit inner node.
       return true;
     }
-    if ((node_idx - implicit_1bit_cnt) >= structure_.size()) {
+    if ((node_idx - implicit_1bit_cnt) >= structure_bit_cnt_) {
       // Implicit leaf node.
       return false;
     }
-    return structure_[node_idx - implicit_1bit_cnt];
+//    return structure_[node_idx - implicit_1bit_cnt];
+    return T_[node_idx - implicit_1bit_cnt];
   }
 
   u1 __teb_inline__
@@ -1108,10 +1124,14 @@ private:
     if (node_idx < implicit_1bit_cnt) {
       return node_idx + 1;
     }
-    const auto i = std::min(node_idx - implicit_1bit_cnt, structure_.size());
-    const auto r = rank_(i, structure_.m_bits.data());
+    const auto i = std::min(node_idx - implicit_1bit_cnt, structure_bit_cnt_);
+    const auto r = rank_(i, T_.data_.begin());
     const auto ret_val = implicit_1bit_cnt + r;
     return ret_val;
+//    const auto i = std::min(node_idx - implicit_1bit_cnt, structure_.size());
+//    const auto r = rank_(i, structure_.m_bits.data());
+//    const auto ret_val = implicit_1bit_cnt + r;
+//    return ret_val;
   }
 
 };
