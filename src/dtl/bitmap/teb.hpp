@@ -777,7 +777,7 @@ loop_begin:
             }
           }
           // Reached a leaf node.
-          label = teb_.get_label(node_info.node_idx);
+          label = teb_.L_[node_info.node_idx - node_info.rank];
           D(std::cout << "reached leaf " << node_info.node_idx  << std::endl;)
 //          D(std::cout << "label = " << label  << std::endl;)
           if (label) {
