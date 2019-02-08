@@ -79,7 +79,7 @@ struct rank1_super_fast {
   /// Returns the important properties in JSON.
   std::string
   info() const noexcept {
-    return "{\"name\":" + std::string("\"SuRF\"")
+    return "{\"name\":" + std::string("\"super_fast\"")
         + ",\"size\":" + std::to_string(size_in_bytes())
         + ",\"block_size\":" + std::to_string(block_bitlength / 8)
         + "}";
