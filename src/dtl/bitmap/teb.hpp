@@ -602,8 +602,7 @@ outer_loop_begin:
         while (!stack_.empty()) {
           stack_entry node_info = stack_.top();
           D(std::cout << "pop: " << node_info << std::endl;)
-          D(std::cout << "rank: " << teb_.rank_inclusive(node_info.node_idx) << std::endl;)
-          assert(node_info.rank == teb_.rank_inclusive(node_info.node_idx));
+          D(std::cout << "rank: " << node_info.rank << std::endl;)
           stack_.pop();
 
           $u1 label;
@@ -615,7 +614,7 @@ loop_begin:
             // Note: If the current node is an inner node, the rank is always
             //       required.
             u64 right_child_idx = 2 * node_info.rank;
-            assert(right_child_idx == teb_.right_child(node_info.node_idx));
+//            assert(right_child_idx == teb_.right_child(node_info.node_idx));
             u64 left_child_idx = right_child_idx - 1;
             const auto right_child_is_inner = 0 + teb_.is_inner_node(right_child_idx);
             const auto left_child_is_inner = 0 + teb_.is_inner_node(left_child_idx);
@@ -779,7 +778,7 @@ loop_begin:
           // Reached a leaf node.
           label = teb_.L_[node_info.node_idx - node_info.rank];
           D(std::cout << "reached leaf " << node_info.node_idx  << std::endl;)
-//          D(std::cout << "label = " << label  << std::endl;)
+          D(std::cout << "label = " << label  << std::endl;)
           if (label) {
 produce_output:
             // Produce output (a 1-fill).
