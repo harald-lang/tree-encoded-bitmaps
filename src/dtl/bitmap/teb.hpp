@@ -615,8 +615,8 @@ loop_begin:
             u64 left_child_label_idx = left_child_idx - left_child_rank
                 + left_child_is_inner; // prevent underflow
 //            u1 left_child_label = teb_.labels_[left_child_label_idx];
-            // Prefetch labels.
-            __builtin_prefetch(teb_.labels_.m_bits.data() + (left_child_label_idx / 64), 0);
+//            // Prefetch labels.
+//            __builtin_prefetch(teb_.labels_.m_bits.data() + (left_child_label_idx / 64), 0);
             u64 right_child_label_idx = left_child_label_idx + 1
                 - left_child_is_inner; // adjust index if necessary
 //            u1 right_child_label = teb_.labels_[right_child_label_idx];
