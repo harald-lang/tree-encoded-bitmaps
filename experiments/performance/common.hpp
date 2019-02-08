@@ -40,6 +40,8 @@ static u64 GEN_DATA = dtl::env<$u64>::get("GEN_DATA", 0);
 
 static bitmap_db db(DB_FILE);
 
+static $u64 RUN_DURATION_NANOS = 250e6; // run for at least 250ms
+
 u64
 now_nanos() {
   return std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -102,6 +104,7 @@ struct config {
 template<typename T>
 void __attribute__ ((noinline))
 run(const config& c, std::ostream& os) {
+  const auto duration_nanos = RUN_DURATION_NANOS;
   const std::size_t MIN_REPS = 10;
   // Load the bitmap from DB.
   auto bs = db.load_bitmap(c.bitmap_id);
@@ -125,7 +128,7 @@ run(const config& c, std::ostream& os) {
   const auto nanos_begin = now_nanos();
   const auto tsc_begin = _rdtsc();
   std::size_t rep_cntr = 0;
-  while (now_nanos() - nanos_begin < 250e6 // run for at least 250ms
+  while (now_nanos() - nanos_begin < duration_nanos
       || rep_cntr < MIN_REPS) {
     ++rep_cntr;
     auto it = enc_bs.it();
