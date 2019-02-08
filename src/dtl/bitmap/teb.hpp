@@ -1054,30 +1054,12 @@ private:
 
   u64 __teb_inline__
   left_child(u64 node_idx) const {
-    const std::size_t implicit_1bit_cnt = implicit_inner_node_cnt_;
-    $u64 left_child_idx;
-    if (node_idx < implicit_1bit_cnt) {
-      left_child_idx = 2 * node_idx + 1;
-    }
-    else {
-//      left_child_idx = 2 * (rank(node_idx) + 1) - 1;
-      left_child_idx = 2 * rank_inclusive(node_idx) - 1;
-    }
-    return left_child_idx;
-//    return right_child(node_idx) - 1;
+    return 2 * rank_inclusive(node_idx) - 1;
   }
 
   u64 __teb_inline__
   right_child(u64 node_idx) const {
-    const std::size_t implicit_1bit_cnt = implicit_inner_node_cnt_;
-    $u64 right_child_idx;
-    if (node_idx < implicit_1bit_cnt) {
-      right_child_idx = 2 * node_idx + 2;
-    }
-    else {
-      right_child_idx = 2 * rank_inclusive(node_idx);
-    }
-    return right_child_idx;
+    return 2 * rank_inclusive(node_idx);
   }
 
   std::size_t __teb_inline__
