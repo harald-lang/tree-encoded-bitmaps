@@ -614,11 +614,11 @@ loop_begin:
             u64 left_child_rank = teb_.rank_inclusive(left_child_idx);
             u64 left_child_label_idx = left_child_idx - left_child_rank
                 + left_child_is_inner; // prevent underflow
-            u1 left_child_label = teb_.labels_[left_child_label_idx];
+//            u1 left_child_label = teb_.labels_[left_child_label_idx];
 
             u64 right_child_label_idx = left_child_label_idx + 1
                 - left_child_is_inner; // adjust index if necessary
-            u1 right_child_label = teb_.labels_[right_child_label_idx];
+//            u1 right_child_label = teb_.labels_[right_child_label_idx];
 
             // Switch over the different cases.
             switch (children_are_inner) {
@@ -629,7 +629,8 @@ loop_begin:
                 // Compute the rank for one child, and derive the rank of the
                 // other one.
                 // Rank is required to compute the label index.
-
+                u1 left_child_label = teb_.labels_[left_child_label_idx];
+                u1 right_child_label = teb_.labels_[right_child_label_idx];
                 // Fetch the labels.
                 //
                 // Note for UN-optimized TEBs the following holds:
@@ -681,6 +682,7 @@ loop_begin:
                 //===------------------------------------------------------===//
                 // Determine whether the left child produces an output
                 // (label = 1).
+                u1 left_child_label = teb_.labels_[left_child_label_idx];
 
                 // Derive rank of the right child.  The following works, because
                 // the left child is leaf (0-bit) and the right is inner (1-bit).
@@ -715,6 +717,7 @@ loop_begin:
 
                 // Determine whether the right child produces an output
                 // (label = 1).
+                u1 right_child_label = teb_.labels_[right_child_label_idx];
                 if (right_child_label) { // FIXME DEP
                   // Push the right child on the stack iff it has a 1-label,
                   // otherwise the right child is ignored.
