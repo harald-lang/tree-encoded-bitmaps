@@ -599,10 +599,7 @@ loop_begin:
             // is full binary.
             // Note: If the current node is an inner node, the rank is always
             //       required.
-            u64 right_child_idx =
-                (node_info.node_idx < teb_.implicit_inner_node_cnt_)
-                  ? 2 * node_info.node_idx + 2
-                  : 2 * node_info.rank;
+            u64 right_child_idx = 2 * node_info.rank;
             assert(right_child_idx == teb_.right_child(node_info.node_idx));
             u64 left_child_idx = right_child_idx - 1;
             const auto right_child_is_inner = 0 + teb_.is_inner_node(right_child_idx);
