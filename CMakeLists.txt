@@ -109,7 +109,6 @@ set(TEST_FILES
         test/dtl/bitmap/api_range_iterator_skip_test.cpp
 #        test/dtl/bitmap/api_set_operation_test.cpp
 #        test/dtl/bitmap/static_api_test.cpp
-#        bitmap_view_test.cpp
 #        test/dtl/bitmap/iterate_test.cpp
         )
 add_executable(tester ${TEST_FILES})
@@ -132,6 +131,7 @@ set(TEB_SOURCE_FILES
         src/dtl/bitmap/util/base64.hpp
         src/dtl/bitmap/util/bitmap_fun.hpp
         src/dtl/bitmap/util/bitmap_tree.hpp
+        src/dtl/bitmap/util/bitmap_view.hpp
         src/dtl/bitmap/util/binary_tree_structure.hpp
         src/dtl/bitmap/util/convert.hpp
         src/dtl/bitmap/util/rank1.hpp
@@ -145,6 +145,7 @@ set(TEB_SOURCE_FILES
         src/dtl/bitmap/util/two_state_markov_process.hpp
         src/dtl/bitmap/teb.hpp
         src/dtl/bitmap/tree_mask_util.hpp
+        src/dtl/iterator.hpp
         src/dtl/static_stack.hpp
         src/dtl/static_stack2.hpp
         )
