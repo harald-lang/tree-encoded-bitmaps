@@ -785,7 +785,7 @@ produce_output:
         next_node.path = path_t(top_node_idx_current_ - top_node_idx_begin_);
         // Set the sentinel bit.
         next_node.path |= path_t(1) << (perfect_levels_ - 1);
-        next_node.rank = teb_.rank_inclusive(top_node_idx_current_); // FIXME avoid rank call
+        next_node.rank = teb_.rank_inclusive(top_node_idx_current_);
         stack_.push(next_node);
       }
       pos_ = teb_.n_;
@@ -1051,7 +1051,6 @@ private:
     return !is_inner_node(node_idx);
   }
 
-  /// Important: rank() calculates the rank of the prefix -> we need idx + 1
   u64 __teb_inline__
   left_child(u64 node_idx) const {
     const std::size_t implicit_1bit_cnt = implicit_inner_node_cnt_;
