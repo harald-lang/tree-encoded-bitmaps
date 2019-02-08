@@ -18,6 +18,7 @@
 #include <dtl/static_stack2.hpp>
 #include <dtl/bitmap/util/rank1_naive.hpp>
 #include <dtl/bitmap/util/rank1_interceptor.hpp>
+#include <dtl/bitmap/util/rank1_super_fast.hpp>
 
 namespace dtl {
 
@@ -80,8 +81,9 @@ public:
 //  using rank_support = dtl::rank1_interceptor<dtl::rank1_surf_cached<word_type, non_inclusive>>;
 //  using rank_support = dtl::rank1_interceptor<dtl::rank1_surf_cached<word_type, inclusive>>;
 //  using rank_support = dtl::rank1_interceptor<dtl::rank1_surf<word_type, inclusive>>;
-  using rank_support = dtl::rank1_surf<word_type, inclusive>;
 //  using rank_support = dtl::rank1_surf_cached<word_type, inclusive>;
+//  using rank_support = dtl::rank1_surf<word_type, inclusive>;
+  using rank_support = dtl::rank1_super_fast<word_type, inclusive>;
   rank_support rank_;
 
   /// The number of implicit inner nodes in the tree structure.
