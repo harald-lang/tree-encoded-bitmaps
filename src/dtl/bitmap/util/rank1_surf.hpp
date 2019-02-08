@@ -21,7 +21,7 @@ struct rank1_surf {
   using size_type = $u32;
   std::vector<size_type> lut;
 
-  static constexpr u64 block_bitlength = 128;
+  static constexpr u64 block_bitlength = 512;
   static constexpr u64 word_bitlength = sizeof(word_type) * 8;
   static constexpr u64 words_per_block = block_bitlength / word_bitlength;
 
