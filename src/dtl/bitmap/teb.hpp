@@ -508,6 +508,14 @@ public:
       path_t path;
       $u32 rank;
       $u32 level;
+      void
+      print(std::ostream& os) const noexcept {
+        os << "node[idx=" << node_idx
+           << ",rank=" << rank
+           << ",level=" << level
+           << ",path=" << std::bitset<32>(path)
+           << "]";
+      }
     };
 
     /// Reference to the TEB instance.
@@ -555,8 +563,8 @@ public:
       stack_entry entry; // TODO emplace back
       entry.node_idx = top_node_idx_begin_;
       entry.path = path_t(1) << (perfect_levels_ - 1);
-      // TODO populate rank + level
-//      entry.rank = top_node_idx_begin_;
+      entry.rank = teb_.rank_inclusive(top_node_idx_begin_);
+      // TODO populate level
 //      entry.level = 0;
       stack_.push(entry);
       next();
@@ -570,12 +578,15 @@ public:
     /// is currently pointing to.
     void __teb_inline__
     next() noexcept __attribute__ ((flatten, hot)) {
+      D(std::cout << "next()" << std::endl;)
       while (top_node_idx_current_ < top_node_idx_end_) {
         D(std::cout << "next top node" << std::endl;)
 outer_loop_begin:
         while (!stack_.empty()) {
-          D(std::cout << "pop" << std::endl;)
           stack_entry node_info = stack_.top();
+          D(std::cout << "pop: " << node_info << std::endl;)
+          D(std::cout << "rank: " << teb_.rank_inclusive(node_info.node_idx) << std::endl;)
+          assert(node_info.rank == teb_.rank_inclusive(node_info.node_idx));
           stack_.pop();
 
           $u1 label;
@@ -586,7 +597,11 @@ loop_begin:
             // is full binary.
             // Note: If the current node is an inner node, the rank is always
             //       required.
-            u64 right_child_idx = teb_.right_child(node_info.node_idx); // rank(parent)
+            u64 right_child_idx =
+                (node_info.node_idx < teb_.implicit_inner_node_cnt_)
+                  ? 2 * node_info.node_idx + 2
+                  : 2 * node_info.rank;
+            assert(right_child_idx == teb_.right_child(node_info.node_idx));
             u64 left_child_idx = right_child_idx - 1;
             const auto right_child_is_inner = 0 + teb_.is_inner_node(right_child_idx);
             const auto left_child_is_inner = 0 + teb_.is_inner_node(left_child_idx);
@@ -629,6 +644,7 @@ loop_begin:
                   node_info.node_idx =
                       left_child_label ? left_child_idx : right_child_idx;
                   node_info.path = (node_info.path << 1) | !left_child_label;
+                  node_info.rank = left_child_rank;
                   goto produce_output;
                 }
                 else {
@@ -642,11 +658,13 @@ loop_begin:
                     case 0b01: {
                       node_info.node_idx = right_child_idx;
                       node_info.path = (node_info.path << 1) | 1;
+                      node_info.rank = left_child_rank + 1; // TODO double check
                       goto produce_output;
                     }
                     case 0b10: {
                       node_info.node_idx = left_child_idx;
                       node_info.path <<= 1;
+                      node_info.rank = left_child_rank;
                       goto produce_output;
                     }
                     case 0b11: {
@@ -664,7 +682,7 @@ loop_begin:
 
                 // Derive rank of the right child.  The following works, because
                 // the left child is leaf (0-bit) and the right is inner (1-bit).
-//                u64 right_child_rank = left_child_rank + 1; // TODO paper
+                u64 right_child_rank = left_child_rank + 1; // TODO paper
 
                 if (left_child_label) {
                   // Produce the output for the left child iff it has a 1-label,
@@ -672,27 +690,26 @@ loop_begin:
                   node_info.node_idx = left_child_idx;
                   label = true; // TODO remove
                   node_info.path <<= 1;
+                  node_info.rank = left_child_rank;
                   // Push the right child on the stack.
                   stack_entry right_child_info;
                   right_child_info.node_idx = right_child_idx;
                   right_child_info.path = node_info.path | 1;
+                  right_child_info.rank = right_child_rank;
                   stack_.push(right_child_info);
                   // TODO also memorize the rank of the node
                   goto produce_output;
                 }
-                // Else, go to right child.
+                // Else, go to right child, ignoring the left child.
                 node_info.node_idx = right_child_idx;
                 node_info.path = (node_info.path << 1) | 1;
+                node_info.rank = right_child_rank;
                 goto loop_begin;
               }
               case 0b10: {
                 //===------------------------------------------------------===//
                 // Left child is an inner, right child is a leaf node.
                 //===------------------------------------------------------===//
-
-                // Rank of the right child is equal to the rank of the left
-                // child.
-//                u64 right_child_rank = left_child_rank; // TODO paper
 
                 // Determine whether the right child produces an output
                 // (label = 1).
@@ -702,12 +719,17 @@ loop_begin:
                   stack_entry right_child_info;
                   right_child_info.node_idx = right_child_idx;
                   right_child_info.path = (node_info.path << 1) | 1;
+                  // Rank of the right child is equal to the rank of the left
+                  // child.
+                  u64 right_child_rank = left_child_rank; // TODO paper
+                  right_child_info.rank = right_child_rank;
                   stack_.push(right_child_info);
                   // TODO also memorize the rank of the node
                 }
                 // Go to left child.
                 node_info.node_idx = left_child_idx;
                 node_info.path <<= 1;
+                node_info.rank = left_child_rank;
                 goto loop_begin;
               }
               case 0b11: {
@@ -715,14 +737,16 @@ loop_begin:
                 // Both childs are an inner nodes.
                 //===------------------------------------------------------===//
 
-//                u64 right_child_rank = left_child_rank + 1; // TODO paper (maybe)
+                u64 right_child_rank = left_child_rank + 1; // TODO paper (maybe)
                 // Go to left child.
                 node_info.node_idx = left_child_idx;
                 node_info.path <<= 1;
+                node_info.rank = left_child_rank;
                 // Push the right child on the stack.
                 stack_entry right_child_info;
                 right_child_info.node_idx = right_child_idx;
                 right_child_info.path = node_info.path | 1;
+                right_child_info.rank = right_child_rank;
                 stack_.push(right_child_info);
                 goto loop_begin;
               }
@@ -759,6 +783,7 @@ produce_output:
         next_node.path = path_t(top_node_idx_current_ - top_node_idx_begin_);
         // Set the sentinel bit.
         next_node.path |= path_t(1) << (perfect_levels_ - 1);
+        next_node.rank = teb_.rank_inclusive(top_node_idx_current_); // FIXME avoid rank call
         stack_.push(next_node);
       }
       pos_ = teb_.n_;
@@ -868,15 +893,16 @@ produce_output:
         const auto left_child_idx = right_child_idx - 1;
         level++;
         if (!direction_bit) {
-          // Go to left child.
           // Push the right child only if necessary.
           if (teb_.is_inner_node(right_child_idx)
               || teb_.get_label(right_child_idx)) {
             stack_entry right_child_info;
             right_child_info.node_idx = right_child_idx;
             right_child_info.path = (path_ << 1) | 1;
+            right_child_info.rank = teb_.rank_inclusive(right_child_idx); // FIXME re-use previously computed rank (get_label())
             stack_.push(right_child_info);
           }
+          // Go to left child.
           path_ <<= 1;
           node_idx_ = left_child_idx;
         }
@@ -1042,11 +1068,14 @@ private:
   u64 __teb_inline__
   right_child(u64 node_idx) const {
     const std::size_t implicit_1bit_cnt = implicit_inner_node_cnt_;
+    $u64 right_child_idx;
     if (node_idx < implicit_1bit_cnt) {
-      return 2 * node_idx + 2;
+      right_child_idx = 2 * node_idx + 2;
     }
-//    return 2 * (rank(node_idx) + 1);
-    return 2 * rank_inclusive(node_idx);
+    else {
+      right_child_idx = 2 * rank_inclusive(node_idx);
+    }
+    return right_child_idx;
   }
 
   std::size_t __teb_inline__
@@ -1093,7 +1122,7 @@ private:
   rank_inclusive(u64 node_idx) const {
     const std::size_t implicit_1bit_cnt = implicit_inner_node_cnt_;
     if (node_idx < implicit_1bit_cnt) {
-      return node_idx;
+      return node_idx + 1;
     }
     const auto i = std::min(node_idx - implicit_1bit_cnt, structure_.size());
     const auto r = rank_(i, structure_.m_bits.data());
