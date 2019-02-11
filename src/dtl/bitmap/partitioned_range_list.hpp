@@ -336,7 +336,7 @@ struct partitioned_range_list {
               return lhs.begin + lhs.length <= rhs.begin;
             });
         if (range_search != outer_.ranges_.begin() + part_end) {
-          ranges_read_pos_ = std::distance(outer_.ranges_.begin(), range_search) + 1ull;
+          ranges_read_pos_ = std::distance(outer_.ranges_.begin(), range_search);
           if (to_pos_local < (*range_search).begin) {
             // No match at the given position. Forward to the next match.
             range_begin_ = (*part_search).begin + (*range_search).begin;
