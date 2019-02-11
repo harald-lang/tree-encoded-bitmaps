@@ -126,15 +126,26 @@ public:
   }
 
   //===--------------------------------------------------------------------===//
+  struct node_t {
+    $u64 idx;
+    $u64 level;
+
+    inline u1
+    operator==(const node_t& other) const {
+      return idx == other.idx && level == other.level;
+    }
+  };
+
   class breadth_first_iterator : public std::iterator<
       std::input_iterator_tag,  // iterator_category
-      u64,                      // value_type
+      node_t,                   // value_type
       u64,                      // difference_type
-      const u64*,               // pointer
-      u64                       // reference
-    >{
+      const node_t*,            // pointer
+      node_t                    // reference
+    > {
     const binary_tree_structure& tree_;
-    std::queue<$u64> fifo_;
+
+    std::queue<node_t> fifo_;
 
   public:
 
@@ -142,16 +153,18 @@ public:
     breadth_first_iterator(const binary_tree_structure& tree,
         u64 start_node_idx)
         : tree_(tree) {
-      fifo_.push(start_node_idx);
+      fifo_.push(node_t {start_node_idx, 0} );
     }
 
     inline breadth_first_iterator&
     operator++() {
       if (!fifo_.empty()) {
-        const auto current_node_idx = fifo_.front();
-        if (tree_.is_inner_node(current_node_idx)) {
-          fifo_.push(tree_.left_child_of(current_node_idx));
-          fifo_.push(tree_.right_child_of(current_node_idx));
+        const auto current_node = fifo_.front();
+        if (tree_.is_inner_node(current_node.idx)) {
+          fifo_.push(node_t {
+              tree_.left_child_of(current_node.idx), current_node.level + 1});
+          fifo_.push(node_t {
+              tree_.right_child_of(current_node.idx), current_node.level + 1});
         }
         fifo_.pop();
       }
@@ -167,7 +180,7 @@ public:
 
     inline bool
     operator==(breadth_first_iterator other) const {
-      return **this == *other;
+      return (*(*this)).idx == (*other).idx;
     }
 
     inline bool
@@ -178,7 +191,7 @@ public:
     inline reference
     operator*() const {
       if (fifo_.empty()) {
-        return tree_.max_node_cnt_;
+        return node_t { tree_.max_node_cnt_, tree_.height_};
       }
       return fifo_.front();
     }

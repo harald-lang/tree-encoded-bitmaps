@@ -208,7 +208,8 @@ public:
       explicit_node_idxs_.end = 0;
 
       for (auto it = breadth_first_begin(); it != breadth_first_end(); ++it) {
-        u64 idx = *it;
+        u64 idx = (*it).idx;
+        u64 level = (*it).level;
         u1 is_inner = is_inner_node(idx);
 
         ++node_cnt;
@@ -228,7 +229,7 @@ public:
           ++trailing_leaf_node_cnt_;
         } else {
           trailing_leaf_node_cnt_ = 0;
-          explicit_node_idxs_.end = *it;
+          explicit_node_idxs_.end = (*it).idx;
         }
       }
 
@@ -335,7 +336,7 @@ private:
       auto min = *this;
       auto min_size = size();
       for (auto it = breadth_first_begin(); it != breadth_first_end(); ++it) {
-        u64 idx = *it;
+        u64 idx = (*it).idx;
         if (is_inner_node(idx)) continue;
         if (right_child_of(idx) >= max_node_cnt_) break;
         // Expand inner node.
