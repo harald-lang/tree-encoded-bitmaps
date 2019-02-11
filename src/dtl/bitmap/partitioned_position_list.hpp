@@ -259,43 +259,59 @@ struct partitioned_position_list {
                        : outer_.positions_[0] + outer_.partitions_[0].begin),
           range_length_(outer.positions_.empty() ? 0 : 1) {
 
-      if (!outer.positions_.empty()) {
-        range_begin_ =
-          outer_.partitions_[partitions_read_pos_].begin + outer_.positions_[0];
-        range_length_ = 1;
-        ++positions_read_pos_;
-        // Determine the length of the current range.
-        while (positions_read_pos_ < outer_.positions_.size()
-            && outer_.positions_[positions_read_pos_] == range_begin_
-                + range_length_
-                - outer_.partitions_[partitions_read_pos_].begin) {
-          ++positions_read_pos_;
-          ++range_length_;
-        }
-        if (outer_.positions_[positions_read_pos_]
-            < outer_.positions_[positions_read_pos_ - 1]) {
-          ++partitions_read_pos_;
-        }
-      }
-      else {
+      const auto& parts = outer_.partitions_;
+      const auto& pos = outer_.positions_;
+
+      if (parts.empty()) {
+        // Empty list.
         range_begin_ = outer_.n_;
         range_length_ = 0;
+        return;
+      }
+
+      range_begin_ = parts[partitions_read_pos_].begin + pos[0];
+      range_length_ = 1;
+      ++positions_read_pos_;
+
+      // Determine the length of the current range.
+      while (positions_read_pos_ < pos.size()
+          && pos[positions_read_pos_] ==
+              range_begin_
+              + range_length_
+              - parts[partitions_read_pos_].begin) {
+        ++positions_read_pos_;
+        ++range_length_;
+      }
+      // Check, whether we reached the end of the partition.
+      if (positions_read_pos_ < outer_.positions_.size()) {
+        if (pos[positions_read_pos_] < pos[positions_read_pos_ - 1]) {
+          ++partitions_read_pos_;
+        }
       }
     }
 
     void __forceinline__
     next() {
-      if (positions_read_pos_ < outer_.positions_.size()) {
-        range_begin_ = outer_.partitions_[partitions_read_pos_].begin
-            + outer_.positions_[positions_read_pos_];
+      const auto& parts = outer_.partitions_;
+      const auto& pos = outer_.positions_;
+
+      if (positions_read_pos_ < pos.size()) {
+        range_begin_ =
+            parts[partitions_read_pos_].begin + pos[positions_read_pos_];
         range_length_ = 1;
         ++positions_read_pos_;
         while (positions_read_pos_ < outer_.positions_.size()
-            && outer_.positions_[positions_read_pos_] == range_begin_
+            && pos[positions_read_pos_] == range_begin_
                 + range_length_
-                - outer_.partitions_[partitions_read_pos_].begin) {
+                - parts[partitions_read_pos_].begin) {
           ++positions_read_pos_;
           ++range_length_;
+        }
+        // Check, whether we reached the end of the partition.
+        if (positions_read_pos_ < outer_.positions_.size()) {
+          if (pos[positions_read_pos_] < pos[positions_read_pos_ - 1]) {
+            ++partitions_read_pos_;
+          }
         }
       }
       else {
