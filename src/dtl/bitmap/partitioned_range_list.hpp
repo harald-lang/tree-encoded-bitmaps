@@ -296,14 +296,13 @@ struct partitioned_range_list {
     next() {
       ++ranges_read_pos_;
       if (ranges_read_pos_ < outer_.ranges_.size()) {
+        if (outer_.ranges_[ranges_read_pos_].begin
+                <= outer_.ranges_[ranges_read_pos_ - 1].begin) {
+          ++partitions_read_pos_;
+        }
         range_begin_ = outer_.partitions_[partitions_read_pos_].begin
             + outer_.ranges_[ranges_read_pos_].begin;
         range_length_ = outer_.ranges_[ranges_read_pos_].length;
-        if (ranges_read_pos_ + 1 < outer_.ranges_.size()
-            && outer_.ranges_[ranges_read_pos_ + 1].begin
-                <= outer_.ranges_[ranges_read_pos_].begin) {
-          ++partitions_read_pos_;
-        }
       }
       else {
         range_begin_ = outer_.n_;
