@@ -265,7 +265,7 @@ struct range_list {
             return lhs.begin + lhs.length < rhs.begin + rhs.length;
           });
       if (search != outer_.ranges_.end()) {
-        read_pos_ = std::distance(outer_.ranges_.begin(), search) + 1ull;
+        read_pos_ = std::distance(outer_.ranges_.begin(), search);
         if (to_pos < (*search).begin) {
           range_begin_ = (*search).begin;
           range_length_ = (*search).length;
