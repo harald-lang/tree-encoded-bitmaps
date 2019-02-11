@@ -17,13 +17,18 @@ struct rank1_naive {
 
   ~rank1_naive() = default;
 
+  std::size_t bitmap_length_ = 0;
+
   void
-  init(const boost::dynamic_bitset<word_type>& bitmap) {}
+  init(const boost::dynamic_bitset<word_type>& bitmap) {
+    bitmap_length_ = bitmap.size();
+  }
 
   size_type __forceinline__
   operator()(u64 idx, const word_type* bitmap_ptr) const {
+    assert(idx < bitmap_length_);
     size_type ret_val = 0;
-    for (std::size_t i = 0; i < idx; ++i) {
+    for (std::size_t i = 0; i <= idx; ++i) {
       ret_val += bitmap_fun<word_type>::test(bitmap_ptr, i);
     }
     return ret_val;

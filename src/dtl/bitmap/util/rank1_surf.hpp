@@ -28,6 +28,8 @@ struct rank1_surf {
   static constexpr u64 is_inclusive = _inclusive ? 1 : 0;
   ~rank1_surf() = default;
 
+  D(std::size_t bitmap_word_cnt_ = 0;)
+
 #define popcountsize 64ULL
 #define popcountmask (popcountsize - 1)
 
@@ -41,12 +43,14 @@ struct rank1_surf {
 //    __builtin_prefetch(bits + x + 7, 0); //huanchen
     for (uint64_t i = 0; i < lastword; i++) { /* tested;  manually unrolling doesn't help, at least in C */
       //__builtin_prefetch(bits + x + i + 3, 0);
+      D(assert(i < bitmap_word_cnt_);)
       p += dtl::bits::pop_count(bits[x+i]); // note that use binds us to 64 bit popcount impls
     }
 
     // 'nbits' may or may not fall on a multiple of 64 boundary,
     // so we may need to zero out the right side of the last word
     // (accomplished by shifting it right, since we're just popcounting)
+    D(assert(x + lastword < bitmap_word_cnt_);)
     uint64_t lastshifted = bits[x+lastword] << (63 - ((nbits - 1) & popcountmask));
     p += dtl::bits::pop_count(lastshifted);
     return p;
@@ -54,7 +58,9 @@ struct rank1_surf {
 
   void
   init(const boost::dynamic_bitset<word_type>& bitmap) {
-    u64 bitmap_bitlength = bitmap.size() * word_bitlength;
+    u64 bitmap_bitlength = bitmap.m_bits.size() * word_bitlength;
+    u64 bitmap_word_cnt = bitmap.m_bits.size();
+    D(bitmap_word_cnt_ = bitmap.m_bits.size();)
     u64 block_cnt = (bitmap_bitlength + block_bitlength - 1) / block_bitlength;
     u64 lut_entry_cnt = block_cnt + 1;
     lut.resize(lut_entry_cnt, 0);
@@ -62,8 +68,13 @@ struct rank1_surf {
     size_type bit_cntr = 0;
     for ($u64 i = 0; i < block_cnt; ++i) {
       lut[i] = bit_cntr;
+      const auto word_cnt_in_current_block =
+          (i + 1) * words_per_block <= bitmap_word_cnt
+          ? words_per_block
+          : bitmap_word_cnt % words_per_block;
+      const auto nbits = word_cnt_in_current_block * word_bitlength;
       bit_cntr += popcountLinear(
-          bitmap.m_bits.data(), i * words_per_block, block_bitlength);
+          bitmap.m_bits.data(), i * words_per_block, nbits);
     }
     lut[lut_entry_cnt - 1] = bit_cntr;
   }

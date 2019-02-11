@@ -42,7 +42,7 @@ struct rank1_super_fast {
 
   void
   init(const boost::dynamic_bitset<word_type>& bitmap) {
-    u64 bitmap_bitlength = bitmap.size() * word_bitlength;
+    u64 bitmap_bitlength = bitmap.m_bits.size() * word_bitlength;
     u64 block_cnt = (bitmap_bitlength + block_bitlength - 1) / block_bitlength;
     u64 lut_entry_cnt = block_cnt + 1;
     lut.resize(lut_entry_cnt, 0);

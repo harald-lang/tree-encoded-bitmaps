@@ -21,7 +21,7 @@ struct rank1_surf_cached {
   using size_type = $u32;
   std::vector<size_type> lut;
 
-  static constexpr u64 block_bitlength = 128;
+  static constexpr u64 block_bitlength = 512;
   static constexpr u64 word_bitlength = sizeof(word_type) * 8;
   static constexpr u64 words_per_block = block_bitlength / word_bitlength;
 
@@ -38,7 +38,7 @@ struct rank1_surf_cached {
     uint64_t lastword = (nbits - 1) / popcountsize;
     uint64_t p = 0;
 
-    __builtin_prefetch(bits + x + 7, 0); //huanchen
+//    __builtin_prefetch(bits + x + 7, 0); //huanchen
     for (uint64_t i = 0; i < lastword; i++) { /* tested;  manually unrolling doesn't help, at least in C */
       //__builtin_prefetch(bits + x + i + 3, 0);
       p += dtl::bits::pop_count(bits[x+i]); // note that use binds us to 64 bit popcount impls
@@ -57,7 +57,8 @@ struct rank1_surf_cached {
     cached_idx = ~0ull;
     cached_rank = 0;
 
-    u64 bitmap_bitlength = bitmap.size() * word_bitlength;
+    u64 bitmap_bitlength = bitmap.m_bits.size() * word_bitlength;
+    u64 bitmap_word_cnt = bitmap.m_bits.size();
     u64 block_cnt = (bitmap_bitlength + block_bitlength - 1) / block_bitlength;
     u64 lut_entry_cnt = block_cnt + 1;
     lut.resize(lut_entry_cnt, 0);
@@ -65,8 +66,13 @@ struct rank1_surf_cached {
     size_type bit_cntr = 0;
     for ($u64 i = 0; i < block_cnt; ++i) {
       lut[i] = bit_cntr;
+      const auto word_cnt_in_current_block =
+          (i + 1) * words_per_block <= bitmap_word_cnt
+          ? words_per_block
+          : bitmap_word_cnt % words_per_block;
+      const auto nbits = word_cnt_in_current_block * word_bitlength;
       bit_cntr += popcountLinear(
-          bitmap.m_bits.data(), i * words_per_block, block_bitlength);
+          bitmap.m_bits.data(), i * words_per_block, nbits);
     }
     lut[lut_entry_cnt - 1] = bit_cntr;
   }
