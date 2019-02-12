@@ -15,6 +15,7 @@
 #include <dtl/bitmap/dynamic_bitmap.hpp>
 #include <dtl/bitmap/dynamic_roaring_bitmap.hpp>
 #include <dtl/bitmap/teb.hpp>
+#include <dtl/bitmap/teb_scan.hpp>
 #include <dtl/bitmap/dynamic_wah.hpp>
 #include <dtl/bitmap/util/two_state_markov_process.hpp>
 #include <dtl/bitmap/util/random.hpp>
@@ -24,6 +25,7 @@
 #include <dtl/bitmap/range_list.hpp>
 
 #include <experiments/util/threading.hpp>
+#include <dtl/bitmap/teb_scan.hpp>
 
 #include "version.h"
 
@@ -54,6 +56,7 @@ enum class bitmap_t {
   bitmap,
   roaring,
   teb,
+  teb_scan,
   wah,
   position_list,
   partitioned_position_list_u8,
@@ -68,6 +71,7 @@ std::vector<std::string> bitmap_names {
     "bitmap",
     "roaring",
     "teb",
+    "teb_scan",
     "wah",
     "position_list",
     "partitioned_position_list_u8",
@@ -108,6 +112,7 @@ run(const config& c, std::ostream& os) {
   const std::size_t MIN_REPS = 10;
   // Load the bitmap from DB.
   auto bs = db.load_bitmap(c.bitmap_id);
+  const auto bs_count = bs.count();
   // Encode the bitmap.
   T enc_bs(bs);
 
@@ -122,6 +127,14 @@ run(const config& c, std::ostream& os) {
       length_sink += it.length();
       it.next();
     }
+  }
+
+  // Validation. (Fail fast)
+  if (!(length_sink == bs_count)) {
+    std::cerr << "Validation failed: " << c << std::endl;
+    std::cerr << "Expected length to be " << bs.count()
+              << " but got " << length_sink << std::endl;
+    std::exit(1);
   }
 
   // The actual measurement.
@@ -141,15 +154,14 @@ run(const config& c, std::ostream& os) {
   const auto tsc_end = _rdtsc();
   const auto nanos_end = now_nanos();
 
-  // Validation.
-  if (!(length_sink / (rep_cntr + 1) == bs.count()
-     || length_sink / (rep_cntr + 1) - 1 == bs.count() // FIXME: off-by-1 workaround
-    )) {
+
+  if (!(length_sink / (rep_cntr + 1) == bs_count)) {
     std::cerr << "Validation failed: " << c << std::endl;
-    std::cerr << "Expected length to be " << bs.count()
+    std::cerr << "Expected length to be " << bs_count
               << " but got " << (length_sink / (rep_cntr + 1)) << std::endl;
     std::exit(1);
   }
+
   const std::size_t checksum = pos_sink + length_sink;
 
   std::string type_info = enc_bs.info();
@@ -182,6 +194,9 @@ void run(config c, std::ostream& os) {
       break;
     case bitmap_t::teb:
       run<dtl::teb<>>(c, os);
+      break;
+    case bitmap_t::teb_scan:
+      run<dtl::teb_scan<>>(c, os);
       break;
     case bitmap_t::wah:
       run<dtl::dynamic_wah32>(c, os);
