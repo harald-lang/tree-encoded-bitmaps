@@ -9,6 +9,10 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -march=native")
 # Hack: This gives us access to the private members of the dynamic_bitset.
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_DYNAMIC_BITSET_DONT_USE_FRIENDS")
 
+# Enable ASAN in debug builds.
+set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+
 include_directories(src)
 
 
@@ -144,6 +148,7 @@ set(TEB_SOURCE_FILES
         src/dtl/bitmap/util/markov_process.hpp
         src/dtl/bitmap/util/two_state_markov_process.hpp
         src/dtl/bitmap/teb.hpp
+        src/dtl/bitmap/teb_scan.hpp
         src/dtl/bitmap/tree_mask_util.hpp
         src/dtl/iterator.hpp
         src/dtl/static_stack.hpp
