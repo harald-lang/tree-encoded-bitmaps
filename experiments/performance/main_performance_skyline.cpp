@@ -161,21 +161,15 @@ $i32 main() {
   std::cerr << "run_id=" << RUN_ID << std::endl;
   std::cerr << "build_id=" << BUILD_ID << std::endl;
   std::vector<$f64> clustering_factors;
-//  for ($f64 f = 1; f <= n_max; f *= 2) {
-//    clustering_factors.push_back(f);
-//  }
-  clustering_factors.push_back(4);
-  clustering_factors.push_back(64);
+  for ($f64 f = 1; f <= n_max; f *= 2) {
+    clustering_factors.push_back(f);
+  }
 
   std::vector<$f64> bit_densities;
-//  for ($f64 d = 1; d <= 10000; d *= 1.25) {
-//  for ($f64 d = 1000; d <= 10000; d *= 1.25) {
-//  for ($f64 d = 1; d <= 1000; d *= 1.25) {
-//    bit_densities.push_back(d/10000);
-//  }
-  bit_densities.push_back(0.01);
-  bit_densities.push_back(0.10);
-  bit_densities.push_back(0.25);
+  for ($f64 d = 1; d <= 10000; d *= 1.25) {
+    if (d < 1000) continue;
+    bit_densities.push_back(d/10000);
+  }
 
   std::vector<$u64> n_values;
   for ($u64 n = n_min; n <= n_max; n <<= 1) {
@@ -196,15 +190,11 @@ $i32 main() {
 
   // The implementations under test.
   std::vector<bitmap_t> bitmap_types;
-//  for (auto bitmap_type = static_cast<int>(bitmap_t::_first);
-//       bitmap_type <= static_cast<int>(bitmap_t::_last);
-//       ++bitmap_type) {
-//    bitmap_types.push_back(static_cast<bitmap_t>(bitmap_type));
-//  }
-  bitmap_types.push_back(bitmap_t::roaring);
-  bitmap_types.push_back(bitmap_t::teb);
-  bitmap_types.push_back(bitmap_t::wah);
-
+  for (auto bitmap_type = static_cast<int>(bitmap_t::_first);
+       bitmap_type <= static_cast<int>(bitmap_t::_last);
+       ++bitmap_type) {
+    bitmap_types.push_back(static_cast<bitmap_t>(bitmap_type));
+  }
 
   std::vector<config> configs;
   for (auto f: clustering_factors) {
@@ -241,13 +231,13 @@ $i32 main() {
     }
   }
 
-//  {
-//    // Shuffle the configurations to better predict the overall runtime of the
-//    // benchmark.
-//    std::random_device rd;
-//    std::mt19937 gen(rd());
-//    std::shuffle(configs.begin(), configs.end(), gen);
-//  }
+  {
+    // Shuffle the configurations to better predict the overall runtime of the
+    // benchmark.
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::shuffle(configs.begin(), configs.end(), gen);
+  }
 
   // Run the actual benchmark.
   run(configs);
