@@ -80,15 +80,15 @@ public:
   /// Support data structure for rank1 operations on the tree structure.
   static constexpr u1 inclusive = true;
   static constexpr u1 non_inclusive = false;
+//  using rank_support = dtl::rank1<word_type>; // TEB implementation
 //  using rank_support = dtl::rank1_naive<word_type>;
 //  using rank_support = dtl::rank1_surf_cached<word_type>;
-//  using rank_support = dtl::rank1<word_type>;
 //  using rank_support = dtl::rank1_interceptor<dtl::rank1_surf_cached<word_type, non_inclusive>>;
 //  using rank_support = dtl::rank1_interceptor<dtl::rank1_surf_cached<word_type, inclusive>>;
 //  using rank_support = dtl::rank1_interceptor<dtl::rank1_surf<word_type, inclusive>>;
-//  using rank_support = dtl::rank1_surf_cached<word_type, inclusive>;
-  using rank_support = dtl::rank1_surf<word_type, inclusive>;
+//  using rank_support = dtl::rank1_naive<word_type>;
 //  using rank_support = dtl::rank1_super_fast<word_type, inclusive>;
+  using rank_support = dtl::rank1_surf<word_type, inclusive>;
   rank_support rank_;
 
   /// The number of implicit inner nodes in the tree structure.
@@ -126,7 +126,8 @@ public:
       if (node_cntr <= implicit_inner_node_cnt_) {
         continue;
       }
-      u64 idx = *it;
+      u64 idx = (*it).idx;
+      u64 level = (*it).level;
 
       // Emit a 1-bit if the current node is an inner node, a 0-bit otherwise.
       u1 is_inner = bitmap_tree.is_inner_node(idx);
@@ -142,10 +143,14 @@ public:
       }
     }
 
-    // Hack: ensure structure is not null
-    if (structure_.size() == 0) {
-      structure_.push_back(false);
-    }
+//    // Hack: ensure structure is not null
+//    if (structure_.size() == 0) {
+//      structure_.push_back(false);
+//    }
+
+    // Hack: push back an additional 0-bit, which makes our live easier with
+    // the inclusive rank.
+    structure_.push_back(false);
 
     // Init rank1 support data structure.
     rank_.init(structure_);
@@ -1128,7 +1133,8 @@ private:
     if (node_idx < implicit_1bit_cnt) {
       return node_idx + 1;
     }
-    const auto i = std::min(node_idx - implicit_1bit_cnt, structure_bit_cnt_);
+    assert(structure_bit_cnt_ > 0);
+    const auto i = std::min(node_idx - implicit_1bit_cnt, structure_bit_cnt_ - 1);
     const auto r = rank_(i, T_.data_.begin());
     const auto ret_val = implicit_1bit_cnt + r;
     return ret_val;
