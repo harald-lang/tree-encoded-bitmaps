@@ -10,6 +10,7 @@
 #include <dtl/bitmap/position_list.hpp>
 #include <dtl/bitmap/range_list.hpp>
 #include <dtl/bitmap/teb.hpp>
+#include <dtl/bitmap/teb_scan.hpp>
 #include <dtl/bitmap/util/convert.hpp>
 #include <dtl/bitmap/util/random.hpp>
 
@@ -24,6 +25,9 @@ constexpr std::size_t LEN = 8;
 using teb_o0 = dtl::teb<0>;
 using teb_o1 = dtl::teb<1>;
 using teb_o2 = dtl::teb<2>;
+using teb_scan_o0 = dtl::teb_scan<0>;
+using teb_scan_o1 = dtl::teb_scan<1>;
+using teb_scan_o2 = dtl::teb_scan<2>;
 // Competitors
 using plain_bitmap_32 = dtl::dynamic_bitmap<$u32>;
 using position_list_32 = dtl::position_list<$u32>;
@@ -43,17 +47,19 @@ class api_range_iterator_skip_test : public ::testing::Test {};
 using types_under_test = ::testing::Types<
     teb_o0,
     teb_o1,
-    teb_o2
-//    ,
-//    plain_bitmap_32,
-//    position_list_32,
-//    partitioned_position_list_32_u8,
-//    partitioned_position_list_32_u16,
-//    range_list_32,
-//    partitioned_range_list_32_u8,
-//    partitioned_range_list_32_u16,
-//    roaring_bitmap,
-//    wah
+    teb_o2,
+    teb_scan_o0,
+    teb_scan_o1,
+    teb_scan_o2,
+    plain_bitmap_32,
+    position_list_32,
+    partitioned_position_list_32_u8,
+    partitioned_position_list_32_u16,
+    range_list_32,
+    partitioned_range_list_32_u8,
+    partitioned_range_list_32_u16,
+    roaring_bitmap,
+    wah
 >;
 TYPED_TEST_CASE(api_range_iterator_skip_test, types_under_test);
 
@@ -118,6 +124,7 @@ skip_test(u64 n, u64 bitmap, u64 skip_to_pos,
        << ", expected_pos=" << expected_pos
        << ", expected_len=" << expected_len
                             << std::endl;
+  std::cout << info.str();
   dtl::bitmap b(n, bitmap);
   T t(b);
   auto it = t.it();
@@ -204,8 +211,10 @@ skip_next_test(u64 n, u64 bitmap, u64 skip_to_pos,
        << ", expected_pos=" << expected_pos
        << ", expected_len=" << expected_len
        << std::endl;
+  std::cout << info.str();
   dtl::bitmap b(n, bitmap);
   T t(b);
+  std::cout << t << std::endl;
   auto it = t.it();
   it.skip_to(skip_to_pos);
   it.next();

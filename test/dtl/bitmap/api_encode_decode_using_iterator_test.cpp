@@ -10,6 +10,7 @@
 #include <dtl/bitmap/position_list.hpp>
 #include <dtl/bitmap/range_list.hpp>
 #include <dtl/bitmap/teb.hpp>
+#include <dtl/bitmap/teb_scan.hpp>
 #include <dtl/bitmap/util/convert.hpp>
 #include <dtl/bitmap/util/random.hpp>
 
@@ -24,6 +25,9 @@ constexpr std::size_t LEN = 8;
 using teb_o0 = dtl::teb<0>;
 using teb_o1 = dtl::teb<1>;
 using teb_o2 = dtl::teb<2>;
+using teb_scan_o0 = dtl::teb_scan<0>;
+using teb_scan_o1 = dtl::teb_scan<1>;
+using teb_scan_o2 = dtl::teb_scan<2>;
 // Competitors
 using plain_bitmap_32 = dtl::dynamic_bitmap<$u32>;
 using position_list_32 = dtl::position_list<$u32>;
@@ -44,6 +48,9 @@ using types_under_test = ::testing::Types<
     teb_o0,
     teb_o1,
     teb_o2,
+    teb_scan_o0,
+    teb_scan_o1,
+    teb_scan_o2,
     plain_bitmap_32,
     position_list_32,
     partitioned_position_list_32_u8,
@@ -72,6 +79,22 @@ TYPED_TEST(api_encode_decode_using_iterator_test, encode_decode_0_to_255) {
       << std::endl;
   }
 }
+
+TYPED_TEST(api_encode_decode_using_iterator_test, DISABLED_encode_decode_0_to_65536) {
+  using T = TypeParam;
+  constexpr std::size_t LEN = 16;
+
+  for (auto i = 0; i < (1u << LEN); ++i) {
+    dtl::bitmap bs(LEN, i);
+    std::cout << bs << std::endl;
+    T t(bs);
+    dtl::bitmap dec = dtl::to_bitmap_using_iterator(t);
+    ASSERT_EQ(bs, dec) << "Decoding failed for i=" << i
+      << ". - '" << bs << "' -> '" << t
+      << "' -> '" << dec << "'"
+      << std::endl;
+  }
+}
 //===----------------------------------------------------------------------===//
 
 
@@ -81,10 +104,10 @@ TYPED_TEST(api_encode_decode_using_iterator_test,
            encode_decode_varying_bitmap_sizes) {
   using T = TypeParam;
 
-  for (auto len = 128; len <= 1ull << 4; ++len) {
+  for (auto len = 128; len <= 1024; len *= 2) {
     dtl::bitmap bs(len);
     // all bits zero
-    bs.clear();
+    bs.reset();
     {
       T t(bs);
       dtl::bitmap dec = dtl::to_bitmap_using_iterator(t);
