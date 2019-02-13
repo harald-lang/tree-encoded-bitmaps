@@ -8,6 +8,7 @@
 
 #include "boost/dynamic_bitset.hpp"
 
+#include <dtl/dtl.hpp>
 #include <dtl/bits.hpp>
 #include <dtl/bitmap/util/rank1.hpp>
 #include <dtl/bitmap/util/rank1_surf.hpp>
@@ -20,6 +21,7 @@
 #include <dtl/bitmap/util/rank1_interceptor.hpp>
 #include <dtl/bitmap/util/rank1_super_fast.hpp>
 #include <dtl/bitmap/util/bitmap_view.hpp>
+#include <dtl/math.hpp>
 
 namespace dtl {
 

@@ -600,14 +600,14 @@ public:
     /// is currently pointing to.
     void __teb_inline__
     next() noexcept __attribute__ ((flatten, hot)) {
-      D(std::cout << "next()" << std::endl;)
+//      D(std::cout << "next()" << std::endl;)
       while (top_node_idx_current_ < top_node_idx_end_) {
-        D(std::cout << "next top node" << std::endl;)
+//        D(std::cout << "next top node" << std::endl;)
 outer_loop_begin:
         while (!stack_.empty()) {
           stack_entry node_info = stack_.top();
-          D(std::cout << "pop: " << node_info << std::endl;)
-          D(std::cout << "rank: " << node_info.rank << std::endl;)
+//          D(std::cout << "pop: " << node_info << std::endl;)
+//          D(std::cout << "rank: " << node_info.rank << std::endl;)
           stack_.pop();
 
           $u1 label;
@@ -782,8 +782,8 @@ loop_begin:
           }
           // Reached a leaf node.
           label = teb_.L_[node_info.node_idx - node_info.rank];
-          D(std::cout << "reached leaf " << node_info.node_idx  << std::endl;)
-          D(std::cout << "label = " << label  << std::endl;)
+//          D(std::cout << "reached leaf " << node_info.node_idx  << std::endl;)
+//          D(std::cout << "label = " << label  << std::endl;)
           if (label) {
 produce_output:
             // Produce output (a 1-fill).
@@ -795,9 +795,9 @@ produce_output:
             length_ = teb_.n_ >> level;
             node_idx_ = node_info.node_idx;
             path_ = node_info.path;
-            D(std::cout << "return [" << pos_ << ","
-                        << (pos_ + length_) << ")"
-                        << std::endl;)
+//            D(std::cout << "return [" << pos_ << ","
+//                        << (pos_ + length_) << ")"
+//                        << std::endl;)
             return;
           }
         }
