@@ -24,6 +24,9 @@
 #include <dtl/bitmap/range_list.hpp>
 
 #include <experiments/util/threading.hpp>
+#include <experiments/util/database.hpp>
+#include <dtl/bitmap/util/convert.hpp>
+#include <dtl/bitmap/teb_scan.hpp>
 
 // The number of independent runs.
 static constexpr u64 RUNS = 10;
@@ -43,6 +46,7 @@ enum class bitmap_t {
   bitmap,
   roaring,
   teb,
+  teb_scan,
   wah,
   position_list,
   partitioned_position_list_u8,
@@ -70,8 +74,23 @@ void run(const config& c, std::ostream& os) {
   T enc_bs(bs);
 
   const auto size_in_bytes = enc_bs.size_in_byte();
-
   std::string type_info = enc_bs.info();
+
+  // Validation.
+  // Reconstruct the original bitmap.
+  auto dec_bs = dtl::to_bitmap_using_iterator(enc_bs);
+  if (bs != dec_bs) {
+    std::cerr << "Validation failed for "
+//              << T::name() << ", "
+              << type_info << "."
+              << "\nBitmap ID: " << c.bitmap_id
+              << "\nExpected: " << bs
+              << "\n but got: " << dec_bs
+              << "\n" << enc_bs
+              << std::endl;
+    std::exit(1);
+  }
+
   boost::replace_all(type_info, "\"", "\"\""); // Escape JSON for CSV output.
 
   os << RUN_ID
@@ -96,6 +115,9 @@ void run(config c, std::ostream& os) {
       break;
     case bitmap_t::teb:
       run<dtl::teb<>>(c, os);
+      break;
+    case bitmap_t::teb_scan:
+      run<dtl::teb_scan<>>(c, os);
       break;
     case bitmap_t::wah:
       run<dtl::dynamic_wah32>(c, os);
