@@ -275,6 +275,7 @@ struct partitioned_position_list {
 
       // Determine the length of the current range.
       while (positions_read_pos_ < pos.size()
+          && pos[positions_read_pos_ - 1] < pos[positions_read_pos_]
           && pos[positions_read_pos_] ==
               range_begin_
               + range_length_
@@ -284,7 +285,7 @@ struct partitioned_position_list {
       }
       // Check, whether we reached the end of the partition.
       if (positions_read_pos_ < outer_.positions_.size()) {
-        if (pos[positions_read_pos_] < pos[positions_read_pos_ - 1]) {
+        if (pos[positions_read_pos_] <= pos[positions_read_pos_ - 1]) {
           ++partitions_read_pos_;
         }
       }
@@ -300,7 +301,8 @@ struct partitioned_position_list {
             parts[partitions_read_pos_].begin + pos[positions_read_pos_];
         range_length_ = 1;
         ++positions_read_pos_;
-        while (positions_read_pos_ < outer_.positions_.size()
+        while (positions_read_pos_ < pos.size()
+            && pos[positions_read_pos_ - 1] < pos[positions_read_pos_]
             && pos[positions_read_pos_] == range_begin_
                 + range_length_
                 - parts[partitions_read_pos_].begin) {
@@ -308,8 +310,8 @@ struct partitioned_position_list {
           ++range_length_;
         }
         // Check, whether we reached the end of the partition.
-        if (positions_read_pos_ < outer_.positions_.size()) {
-          if (pos[positions_read_pos_] < pos[positions_read_pos_ - 1]) {
+        if (positions_read_pos_ < pos.size()) {
+          if (pos[positions_read_pos_] <= pos[positions_read_pos_ - 1]) {
             ++partitions_read_pos_;
           }
         }
