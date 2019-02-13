@@ -15,7 +15,8 @@ bitmap_db::bitmap_db(const std::string& file)
       select_by_id_stmt_(nullptr),
       select_ids_stmt_(nullptr),
       delete_by_id_stmt_(nullptr),
-      count_stmt_(nullptr) {
+      count_stmt_(nullptr),
+      select_all_ids_stmt_(nullptr) {
   open();
   init();
 }
@@ -141,6 +142,18 @@ bitmap_db::init() {
       throw std::runtime_error(err.str());
     }
   }
+  {
+    const std::string sql_stmt = "select id from bitmaps order by id";
+    rc = sqlite3_prepare_v2(db_, sql_stmt.c_str(), -1, &select_all_ids_stmt_,
+        nullptr);
+    if (rc) {
+      std::stringstream err;
+      err << "Can't prepare SQL statement."
+          << sqlite3_errmsg(db_)
+          << std::endl;
+      throw std::runtime_error(err.str());
+    }
+  }
   //===--------------------------------------------------------------------===//
 }
 //===----------------------------------------------------------------------===//
@@ -153,6 +166,7 @@ bitmap_db::close() {
     sqlite3_finalize(select_ids_stmt_);
     sqlite3_finalize(delete_by_id_stmt_);
     sqlite3_finalize(count_stmt_);
+    sqlite3_finalize(select_all_ids_stmt_);
 
     db_ = nullptr;
     auto* db = db_;
@@ -304,5 +318,26 @@ bitmap_db::count() {
 u1
 bitmap_db::empty() {
   return count() == 0;
+}
+//===----------------------------------------------------------------------===//
+std::vector<$i64>
+bitmap_db::ids() {
+  std::lock_guard<std::mutex> lock(mutex_);
+  // Critical section.
+  sqlite3_reset(select_all_ids_stmt_);
+
+  std::vector<$i64> ret;
+  $i32 rc;
+  while((rc = sqlite3_step(select_all_ids_stmt_)) == SQLITE_ROW) {
+    ret.push_back(sqlite3_column_int64(select_all_ids_stmt_, 0));
+  }
+  if (rc != SQLITE_DONE) {
+    std::stringstream err;
+    err << "Can't fetch data. Error: " << rc << " - "
+        << sqlite3_errmsg(db_)
+        << std::endl;
+    throw std::runtime_error(err.str());
+  }
+  return ret;
 }
 //===----------------------------------------------------------------------===//
