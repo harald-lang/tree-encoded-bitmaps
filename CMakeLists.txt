@@ -106,9 +106,11 @@ set(BENCHMARK_SOURCE_FILES
 # Test cases.
 ##===----------------------------------------------------------------------===##
 set(TEST_FILES
+        ${BENCHMARK_SOURCE_FILES}
         test/dtl/bitmap/api_encode_decode_test.cpp
         test/dtl/bitmap/api_encode_decode_using_iterator_test.cpp
 #        test/dtl/bitmap/bitmap_fun_test.cpp
+        test/dtl/bitmap/encode_decode_pregenerated_bitmaps_test.cpp
         test/dtl/bitmap/teb_test.cpp
         test/dtl/bitmap/api_range_iterator_skip_test.cpp
 #        test/dtl/bitmap/api_set_operation_test.cpp
@@ -116,7 +118,7 @@ set(TEST_FILES
 #        test/dtl/bitmap/iterate_test.cpp
         )
 add_executable(tester ${TEST_FILES})
-target_link_libraries(tester gtest gtest_main fastbit roaring)
+target_link_libraries(tester gtest gtest_main fastbit roaring dl)
 
 # TODO removed
 #set(TEST_ITER_FILES
