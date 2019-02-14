@@ -152,12 +152,14 @@ void gen_data(const std::vector<$u64>& n_values,
 //===----------------------------------------------------------------------===//
 $i32 main() {
 
+  RUNS = 1;
+
   // Prepare benchmark settings.
 //  u64 n_min = 1ull << 10;
   u64 n_min = 1ull << 20;
   u64 n_max = 1ull << 20;
 
-  RUN_DURATION_NANOS = 2e9; // run for at least 2s
+  RUN_DURATION_NANOS = 1e9; // run for at least 1s
   // Use the same setting as with the compression skyline.
   std::cerr << "run_id=" << RUN_ID << std::endl;
   std::cerr << "build_id=" << BUILD_ID << std::endl;
@@ -166,7 +168,9 @@ $i32 main() {
 //    clustering_factors.push_back(f);
 //  }
   clustering_factors.push_back(4);
-//  clustering_factors.push_back(64);
+  clustering_factors.push_back(16);
+  clustering_factors.push_back(32);
+  clustering_factors.push_back(64);
 
   std::vector<$f64> bit_densities;
 //  for ($f64 d = 1; d <= 10000; d *= 1.25) {
@@ -175,8 +179,8 @@ $i32 main() {
 //    bit_densities.push_back(d/10000);
 //  }
   bit_densities.push_back(0.01);
-//  bit_densities.push_back(0.10);
-//  bit_densities.push_back(0.25);
+  bit_densities.push_back(0.10);
+  bit_densities.push_back(0.25);
 
   std::vector<$u64> n_values;
   for ($u64 n = n_min; n <= n_max; n <<= 1) {
@@ -202,9 +206,10 @@ $i32 main() {
 //       ++bitmap_type) {
 //    bitmap_types.push_back(static_cast<bitmap_t>(bitmap_type));
 //  }
-//  bitmap_types.push_back(bitmap_t::roaring);
+  bitmap_types.push_back(bitmap_t::roaring);
   bitmap_types.push_back(bitmap_t::teb);
-//  bitmap_types.push_back(bitmap_t::wah);
+  bitmap_types.push_back(bitmap_t::teb_scan);
+  bitmap_types.push_back(bitmap_t::wah);
 
 
   std::vector<config> configs;

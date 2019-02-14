@@ -30,7 +30,7 @@
 #include "version.h"
 
 // The number of independent runs.
-static constexpr u64 RUNS = 10;
+static $u64 RUNS = 10;
 static constexpr u64 N = 1u << 20;
 
 static const i64 RUN_ID = std::chrono::duration_cast<std::chrono::seconds>(
