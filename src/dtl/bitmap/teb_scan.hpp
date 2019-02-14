@@ -473,9 +473,6 @@ public:
           structure_cache = iter.teb_.structure_.m_bits[structure_block_idx];
         }
         assert(bitmap_cache_idx < cache_word_bitlength);
-
-
-
       }
 
       void __teb_inline__
@@ -633,6 +630,10 @@ public:
 
     __teb_inline__
     iter(iter&&) noexcept = default;
+    iter(const iter& other) = default;
+    iter& operator=(const iter& other) = default;
+    iter& operator=(iter&& other) = default;
+    ~iter() = default;
 
     /// Forwards the iterator to the next 1-fill (if any).
     /// Use the functions pos() and length() to get the 1-fill the iterator
@@ -648,7 +649,7 @@ public:
       }
     }
 
-    u64 //__teb_inline__
+    void //__teb_inline__
     next_batch() noexcept __attribute__ ((flatten, hot, noinline)) {
 //      D(std::cout << "next_batch()" << std::endl;)
       const auto h = tree_height_;
