@@ -494,15 +494,12 @@ public:
       advance_fetch_structure(const iter& iter) {
         // The cached bitmap fragment has been fully consumed.
         ++structure_block_idx;
-//        D(std::cout << "fetch " << structure_block_idx << std::flush;)
         if (structure_block_idx < 0) {
           // Implicit inner nodes.
-//          D(std::cout << " implicit inner" << std::endl;)
           structure_cache = ~word_type(0);
         }
         else if (structure_block_idx >= iter.teb_.structure_.m_bits.size()) {
           // Implicit leaf nodes.
-//          D(std::cout << " implicit leaf" << std::endl;)
           structure_cache = word_type(0);
         }
         else {
@@ -686,8 +683,6 @@ public:
 
     void //__teb_inline__
     next_batch() noexcept __attribute__ ((flatten, hot, noinline)) {
-//      D(std::cout << "next_batch()" << std::endl;)
-      D(constexpr auto O = optimization_level_;)
       const auto h = tree_height_;
       const auto n = teb_.size();
       auto pos = scan_pos_;
@@ -703,7 +698,6 @@ public:
         u1 is_inner_node = scanners_[i].is_inner_node(*this);
         u1 x = was_inner_node ^ is_inner_node;
         alpha ^= u32(x) << i;
-//        D(std::cout <<"["<<O<<"]"<< "scanner " << i << ": " << scanners_[i] << std::endl;)
       };
 
       while (result_cnt < batch_size_ && pos < n) {
@@ -719,48 +713,28 @@ public:
 
         const auto advance_end = path_level + 1;
 
-//        D(std::cout <<"["<<O<<"]"<< "before up: " << std::bitset<32>(path) << std::endl;)
         // Walk upwards until a left child is found. (might be the current one)
         const auto up_steps = dtl::bits::tz_count(~path);
         path >>= up_steps;
         path_level -= up_steps;
         // Go to right sibling.
-//        D(std::cout <<"["<<O<<"]"<< "after up:  " << std::bitset<32>(path) << std::endl;)
         path = path | 1;
-//        D(std::cout <<"["<<O<<"]"<< "right sib: " << std::bitset<32>(path) << std::endl;)
-
 
         // Advance the scanners and update the alpha vector.
-//        D(std::cout <<"["<<O<<"]"<< "alpha bef: " << std::bitset<32>(alpha) << std::endl;)
-
         const auto advance_begin = path_level;
-
-//        for (std::size_t i = 0; i < advance_begin; ++i) {
-//          D(std::cout <<"["<<O<<"]"<< "scanner " << i << ": " << scanners_[i] << std::endl;)
-//        }
-//        D(std::cout <<"["<<O<<"]"<< "advancing: [" << advance_begin << ", " << advance_end << ")" << std::endl;)
         for (std::size_t i = advance_begin; i < advance_end; ++i) {
           advance_scanner(i);
         }
-//        for (std::size_t i = advance_end; i < teb_.encoded_tree_height_; ++i) {
-//          D(std::cout <<"["<<O<<"]"<< "scanner " << i << ": " << scanners_[i] << std::endl;)
-//        }
-
-//        D(std::cout <<"["<<O<<"]"<< "alpha aft: " << std::bitset<32>(alpha) << std::endl;)
 
         // Walk downwards to the left-most leaf in that sub-tree.
         const auto down_steps = dtl::bits::tz_count(~(alpha >> path_level));
         path_level += down_steps;
         path <<= down_steps;
-//        D(std::cout <<"["<<O<<"]"<< "after down:" << std::bitset<32>(path) << std::endl;)
-//        D(std::cout <<"["<<O<<"]"<< "level:     " << path_level << std::endl;)
-
 
         // Toggle sentinel bit (= highest bit set) and add offset.
         pos = (path ^ (1ull << path_level)) << (h - path_level);
         // The length of the 1-fill.
         length = n >> path_level;
-//        D(std::cout <<"["<<O<<"]"<< "pos=" << pos << ", len=" << length << ", level=" << path_level << std::endl;)
 
         u64 label = scanners_[path_level].get_label(*this);
 
