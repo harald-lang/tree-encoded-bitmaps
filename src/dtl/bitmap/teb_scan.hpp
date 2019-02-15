@@ -526,12 +526,12 @@ public:
 //        label_idx += !is_inner_node(iter);
         ++idx;
         ++structure_cache_idx;
-        if (unlikely(structure_cache_idx == cache_word_bitlength)) {
-          advance_fetch_structure(iter);
-        }
         label_idx += current_node_is_leaf;
         label_cache_idx += current_node_is_leaf;
-        if (unlikely(label_cache_idx == cache_word_bitlength)) {
+        if (structure_cache_idx == cache_word_bitlength) {
+          advance_fetch_structure(iter);
+        }
+        if (label_cache_idx == cache_word_bitlength) {
           advance_fetch_label(iter);
         }
       }
