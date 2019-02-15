@@ -667,7 +667,7 @@ public:
     void //__teb_inline__
     next_batch() noexcept __attribute__ ((flatten, hot, noinline)) {
 //      D(std::cout << "next_batch()" << std::endl;)
-      constexpr auto O = optimization_level_;
+      D(constexpr auto O = optimization_level_;)
       const auto h = tree_height_;
       const auto n = teb_.size();
       auto pos = scan_pos_;
