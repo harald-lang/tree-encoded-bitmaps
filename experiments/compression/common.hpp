@@ -84,9 +84,9 @@ void run(const config& c, std::ostream& os) {
 //              << T::name() << ", "
               << type_info << "."
               << "\nBitmap ID: " << c.bitmap_id
-              << "\nExpected: " << bs
-              << "\n but got: " << dec_bs
-              << "\n" << enc_bs
+//              << "\nExpected: " << bs
+//              << "\n but got: " << dec_bs
+//              << "\n" << enc_bs
               << std::endl;
     std::exit(1);
   }
