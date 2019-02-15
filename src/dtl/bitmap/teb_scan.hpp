@@ -425,21 +425,23 @@ public:
 
       $u64 idx;
       $u64 label_idx;
-      $u64 bitmap_cache_idx;
 
       cache_word_type structure_cache;
       $i64 structure_block_idx;
+      $u64 structure_cache_idx;
+
       cache_word_type label_cache;
       $i64 label_block_idx;
+      $u64 label_cache_idx;
 
       void
       print(std::ostream& os) const noexcept {
         os << "scan[node_idx=" << idx
            << ",label_idx=" << label_idx
-           << ",bitmap_cache_idx=" << bitmap_cache_idx
+           << ",structure_cache_idx=" << structure_cache_idx
            << ",structure_block_idx=" << structure_block_idx
            << ",structure_cache=";
-        for (std::size_t i = bitmap_cache_idx; i < cache_word_bitlength; ++i) {
+        for (std::size_t i = structure_cache_idx; i < cache_word_bitlength; ++i) {
           std::cout << (dtl::bits::bit_test(structure_cache, i) ? "1" : "0");
         }
         std::cout << "]";
@@ -460,16 +462,15 @@ public:
         i64 phys_node_idx = i64(node_idx) - implicit_1bit_cnt;
         if (phys_node_idx >= 0) {
           structure_block_idx = phys_node_idx / i64(cache_word_bitlength);
-          bitmap_cache_idx = phys_node_idx % cache_word_bitlength;
+          structure_cache_idx = phys_node_idx % cache_word_bitlength;
         }
         else {
           structure_block_idx = (phys_node_idx / i64(cache_word_bitlength)) - 1;
-          bitmap_cache_idx = phys_node_idx % cache_word_bitlength;
+          structure_cache_idx = phys_node_idx % cache_word_bitlength;
           if (phys_node_idx % cache_word_bitlength == 0) {
             ++structure_block_idx;
           }
         }
-
 
         if (structure_block_idx < 0) {
           // Implicit inner node.
@@ -482,38 +483,56 @@ public:
         else {
           structure_cache = iter.teb_.structure_.m_bits[structure_block_idx];
         }
-        assert(bitmap_cache_idx < cache_word_bitlength);
+        assert(structure_cache_idx < cache_word_bitlength);
+
+        label_block_idx = label_idx / cache_word_bitlength;
+        label_cache_idx = label_idx % cache_word_bitlength;
+        iter.teb_.structure_.m_bits[label_block_idx];
       }
 
       void __teb_inline__
-      advance_fetch(const iter& iter) {
+      advance_fetch_structure(const iter& iter) {
         // The cached bitmap fragment has been fully consumed.
         ++structure_block_idx;
-        D(std::cout << "fetch " << structure_block_idx << std::flush;)
+//        D(std::cout << "fetch " << structure_block_idx << std::flush;)
         if (structure_block_idx < 0) {
           // Implicit inner nodes.
-          D(std::cout << " implicit inner" << std::endl;)
+//          D(std::cout << " implicit inner" << std::endl;)
           structure_cache = ~word_type(0);
         }
         else if (structure_block_idx >= iter.teb_.structure_.m_bits.size()) {
           // Implicit leaf nodes.
-          D(std::cout << " implicit leaf" << std::endl;)
+//          D(std::cout << " implicit leaf" << std::endl;)
           structure_cache = word_type(0);
         }
         else {
           structure_cache = iter.teb_.structure_.m_bits[structure_block_idx];
         }
-        bitmap_cache_idx = 0;
+        structure_cache_idx = 0;
+      }
+
+      void __teb_inline__
+      advance_fetch_label(const iter& iter) {
+        // The cached bitmap fragment has been fully consumed.
+        ++label_block_idx;
+        if (label_block_idx < iter.teb_.labels_.m_bits.size()) {
+          label_cache = iter.teb_.labels_.m_bits[label_block_idx];
+        }
+        label_cache_idx = 0;
       }
 
       void __teb_inline__
       advance(const iter& iter, u1 current_node_is_leaf) {
 //        label_idx += !is_inner_node(iter);
         ++idx;
+        ++structure_cache_idx;
+        if (unlikely(structure_cache_idx == cache_word_bitlength)) {
+          advance_fetch_structure(iter);
+        }
         label_idx += current_node_is_leaf;
-        ++bitmap_cache_idx;
-        if (unlikely(bitmap_cache_idx == cache_word_bitlength)) {
-          advance_fetch(iter);
+        label_cache_idx += current_node_is_leaf;
+        if (unlikely(label_cache_idx == cache_word_bitlength)) {
+          advance_fetch_label(iter);
         }
       }
 
@@ -521,9 +540,9 @@ public:
       /// false otherwise.
       u1 __teb_inline__
       is_inner_node(const iter& iter) {
-        assert(bitmap_cache_idx < (sizeof(word_type) * 8));
-        assert(dtl::bits::bit_test(structure_cache, bitmap_cache_idx) == iter.teb_.is_inner_node(idx));
-        return dtl::bits::bit_test(structure_cache, bitmap_cache_idx);
+        assert(structure_cache_idx < (sizeof(word_type) * 8));
+        assert(dtl::bits::bit_test(structure_cache, structure_cache_idx) == iter.teb_.is_inner_node(idx));
+        return dtl::bits::bit_test(structure_cache, structure_cache_idx);
 //        return iter.teb_.is_inner_node(idx);
       }
 
@@ -683,7 +702,7 @@ public:
         u1 is_inner_node = scanners_[i].is_inner_node(*this);
         u1 x = was_inner_node ^ is_inner_node;
         alpha ^= u32(x) << i;
-        D(std::cout <<"["<<O<<"]"<< "scanner " << i << ": " << scanners_[i] << std::endl;)
+//        D(std::cout <<"["<<O<<"]"<< "scanner " << i << ": " << scanners_[i] << std::endl;)
       };
 
       while (result_cnt < batch_size_ && pos < n) {
@@ -699,48 +718,48 @@ public:
 
         const auto advance_end = path_level + 1;
 
-        D(std::cout <<"["<<O<<"]"<< "before up: " << std::bitset<32>(path) << std::endl;)
+//        D(std::cout <<"["<<O<<"]"<< "before up: " << std::bitset<32>(path) << std::endl;)
         // Walk upwards until a left child is found. (might be the current one)
         const auto up_steps = dtl::bits::tz_count(~path);
         path >>= up_steps;
         path_level -= up_steps;
         // Go to right sibling.
-        D(std::cout <<"["<<O<<"]"<< "after up:  " << std::bitset<32>(path) << std::endl;)
+//        D(std::cout <<"["<<O<<"]"<< "after up:  " << std::bitset<32>(path) << std::endl;)
         path = path | 1;
-        D(std::cout <<"["<<O<<"]"<< "right sib: " << std::bitset<32>(path) << std::endl;)
+//        D(std::cout <<"["<<O<<"]"<< "right sib: " << std::bitset<32>(path) << std::endl;)
 
 
         // Advance the scanners and update the alpha vector.
-        D(std::cout <<"["<<O<<"]"<< "alpha bef: " << std::bitset<32>(alpha) << std::endl;)
+//        D(std::cout <<"["<<O<<"]"<< "alpha bef: " << std::bitset<32>(alpha) << std::endl;)
 
         const auto advance_begin = path_level;
 
-        for (std::size_t i = 0; i < advance_begin; ++i) {
-          D(std::cout <<"["<<O<<"]"<< "scanner " << i << ": " << scanners_[i] << std::endl;)
-        }
-        D(std::cout <<"["<<O<<"]"<< "advancing: [" << advance_begin << ", " << advance_end << ")" << std::endl;)
+//        for (std::size_t i = 0; i < advance_begin; ++i) {
+//          D(std::cout <<"["<<O<<"]"<< "scanner " << i << ": " << scanners_[i] << std::endl;)
+//        }
+//        D(std::cout <<"["<<O<<"]"<< "advancing: [" << advance_begin << ", " << advance_end << ")" << std::endl;)
         for (std::size_t i = advance_begin; i < advance_end; ++i) {
           advance_scanner(i);
         }
-        for (std::size_t i = advance_end; i < teb_.encoded_tree_height_; ++i) {
-          D(std::cout <<"["<<O<<"]"<< "scanner " << i << ": " << scanners_[i] << std::endl;)
-        }
+//        for (std::size_t i = advance_end; i < teb_.encoded_tree_height_; ++i) {
+//          D(std::cout <<"["<<O<<"]"<< "scanner " << i << ": " << scanners_[i] << std::endl;)
+//        }
 
-        D(std::cout <<"["<<O<<"]"<< "alpha aft: " << std::bitset<32>(alpha) << std::endl;)
+//        D(std::cout <<"["<<O<<"]"<< "alpha aft: " << std::bitset<32>(alpha) << std::endl;)
 
         // Walk downwards to the left-most leaf in that sub-tree.
         const auto down_steps = dtl::bits::tz_count(~(alpha >> path_level));
         path_level += down_steps;
         path <<= down_steps;
-        D(std::cout <<"["<<O<<"]"<< "after down:" << std::bitset<32>(path) << std::endl;)
-        D(std::cout <<"["<<O<<"]"<< "level:     " << path_level << std::endl;)
+//        D(std::cout <<"["<<O<<"]"<< "after down:" << std::bitset<32>(path) << std::endl;)
+//        D(std::cout <<"["<<O<<"]"<< "level:     " << path_level << std::endl;)
 
 
         // Toggle sentinel bit (= highest bit set) and add offset.
         pos = (path ^ (1ull << path_level)) << (h - path_level);
         // The length of the 1-fill.
         length = n >> path_level;
-        D(std::cout <<"["<<O<<"]"<< "pos=" << pos << ", len=" << length << ", level=" << path_level << std::endl;)
+//        D(std::cout <<"["<<O<<"]"<< "pos=" << pos << ", len=" << length << ", level=" << path_level << std::endl;)
 
         u64 label = scanners_[path_level].get_label(*this);
 
