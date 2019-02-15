@@ -564,6 +564,7 @@ public:
     $u64 scan_pos_;
     $u64 scan_length_;
     $u64 scan_path_;
+    $u64 scan_path_level_;
 
     $u32 alpha_;
     //===------------------------------------------------------------------===//
@@ -634,7 +635,9 @@ public:
       u32 level =  dtl::bits::tz_count(~alpha_);
       scan_pos_ = 0;
       scan_length_ = teb_.n_ >> level;
-      scan_path_ = path_t(1) << level;
+      scan_path_ = path_t(0);
+      scan_path_level_ = level;
+
       // Iterator is positioned at the first leaf node.
       const auto first_leaf_node_idx = teb_.level_offsets_structure_[level];
       // Determine the label.
@@ -675,7 +678,8 @@ public:
       auto pos = scan_pos_;
       auto length = scan_length_;
       register auto path = scan_path_;
-      register auto path_level = determine_level_of(path);
+//      register auto path_level = determine_level_of(path);
+      register auto path_level = scan_path_level_;
       auto result_cnt = result_cnt_;
       auto alpha = alpha_;
 
@@ -690,7 +694,7 @@ public:
       while (result_cnt < batch_size_ && pos < n) {
         assert(pos <= n);
         assert(pos + length <= n);
-        assert(path >= 1);
+        assert(path_level >= 1);
         assert(length > 0);
 
         // Increment the current position.
@@ -719,7 +723,7 @@ public:
         path <<= down_steps;
 
         // Toggle sentinel bit (= highest bit set) and add offset.
-        pos = (path ^ (1ull << path_level)) << (h - path_level);
+        pos = path << (h - path_level);
         // The length of the 1-fill.
         length = n >> path_level;
 
@@ -742,6 +746,7 @@ public:
       scan_pos_ = pos;
       scan_length_ = length;
       scan_path_ = path;
+      scan_path_level_ = path_level;
       result_cnt_ = result_cnt;
       alpha_ = alpha;
     }
