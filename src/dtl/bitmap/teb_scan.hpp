@@ -489,15 +489,15 @@ public:
       advance_fetch(const iter& iter) {
         // The cached bitmap fragment has been fully consumed.
         ++structure_block_idx;
-        std::cout << "fetch " << structure_block_idx << std::flush;
+        D(std::cout << "fetch " << structure_block_idx << std::flush;)
         if (structure_block_idx < 0) {
           // Implicit inner nodes.
-          std::cout << " implicit inner" << std::endl;
+          D(std::cout << " implicit inner" << std::endl;)
           structure_cache = ~word_type(0);
         }
         else if (structure_block_idx >= iter.teb_.structure_.m_bits.size()) {
           // Implicit leaf nodes.
-          std::cout << " implicit leaf" << std::endl;
+          D(std::cout << " implicit leaf" << std::endl;)
           structure_cache = word_type(0);
         }
         else {
