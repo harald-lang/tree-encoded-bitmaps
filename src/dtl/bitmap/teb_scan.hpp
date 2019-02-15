@@ -423,9 +423,6 @@ public:
       using cache_word_type = word_type;
       static constexpr u64 cache_word_bitlength = (sizeof(cache_word_type) * 8);
 
-      $u64 idx;
-      $u64 label_idx;
-
       cache_word_type structure_cache;
       $i64 structure_block_idx;
       $u64 structure_cache_idx;
@@ -436,9 +433,8 @@ public:
 
       void
       print(std::ostream& os) const noexcept {
-        os << "scan[node_idx=" << idx
-           << ",label_idx=" << label_idx
-           << ",structure_cache_idx=" << structure_cache_idx
+        os << "scan["
+           << "structure_cache_idx=" << structure_cache_idx
            << ",structure_block_idx=" << structure_block_idx
            << ",structure_cache=";
         for (std::size_t i = structure_cache_idx; i < cache_word_bitlength; ++i) {
@@ -449,10 +445,6 @@ public:
 
       void __teb_inline__
       init(const iter& iter, u64 node_idx, u64 label_offset) {
-        // Set the node index.
-        idx = node_idx;
-        label_idx = label_offset;
-
         // Fetch the corresponding word from the tree structure.
         const std::size_t implicit_1bit_cnt =
             iter.teb_.implicit_inner_node_cnt_;
@@ -485,8 +477,8 @@ public:
         }
         assert(structure_cache_idx < cache_word_bitlength);
 
-        label_block_idx = label_idx / cache_word_bitlength;
-        label_cache_idx = label_idx % cache_word_bitlength;
+        label_block_idx = label_offset / cache_word_bitlength;
+        label_cache_idx = label_offset % cache_word_bitlength;
         label_cache = iter.teb_.labels_.m_bits[label_block_idx];
       }
 
@@ -520,10 +512,7 @@ public:
 
       void __teb_inline__
       advance(const iter& iter, u1 current_node_is_leaf) {
-//        label_idx += !is_inner_node(iter);
-        ++idx;
         ++structure_cache_idx;
-        label_idx += current_node_is_leaf;
         label_cache_idx += current_node_is_leaf;
         if (structure_cache_idx == cache_word_bitlength) {
           advance_fetch_structure(iter);
@@ -538,9 +527,7 @@ public:
       u1 __teb_inline__
       is_inner_node(const iter& iter) {
         assert(structure_cache_idx < (sizeof(word_type) * 8));
-        assert(dtl::bits::bit_test(structure_cache, structure_cache_idx) == iter.teb_.is_inner_node(idx));
         return dtl::bits::bit_test(structure_cache, structure_cache_idx);
-//        return iter.teb_.is_inner_node(idx);
       }
 
       /// Returns the label of the current node. This function must only be
@@ -649,7 +636,7 @@ public:
       scan_length_ = teb_.n_ >> level;
       scan_path_ = path_t(1) << level;
       // Iterator is positioned at the first leaf node.
-      const auto first_leaf_node_idx = scanners_[level].idx;
+      const auto first_leaf_node_idx = teb_.level_offsets_structure_[level];
       // Determine the label.
       u1 first_leaf_label = scanners_[level].get_label(*this);
       if (first_leaf_label) {
