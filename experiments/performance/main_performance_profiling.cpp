@@ -168,9 +168,9 @@ $i32 main() {
 //    clustering_factors.push_back(f);
 //  }
   clustering_factors.push_back(4);
-  clustering_factors.push_back(16);
-  clustering_factors.push_back(32);
-  clustering_factors.push_back(64);
+//  clustering_factors.push_back(16);
+//  clustering_factors.push_back(32);
+//  clustering_factors.push_back(64);
 
   std::vector<$f64> bit_densities;
 //  for ($f64 d = 1; d <= 10000; d *= 1.25) {
@@ -179,8 +179,8 @@ $i32 main() {
 //    bit_densities.push_back(d/10000);
 //  }
   bit_densities.push_back(0.01);
-  bit_densities.push_back(0.10);
-  bit_densities.push_back(0.25);
+//  bit_densities.push_back(0.10);
+//  bit_densities.push_back(0.25);
 
   std::vector<$u64> n_values;
   for ($u64 n = n_min; n <= n_max; n <<= 1) {
