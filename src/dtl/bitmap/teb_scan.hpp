@@ -434,9 +434,10 @@ public:
 
       void
       print(std::ostream& os) const noexcept {
-        os << "scan[idx=" << idx
+        os << "scan[node_idx=" << idx
            << ",label_idx=" << label_idx
-           << ",bitmap_cache_ids=" << bitmap_cache_idx
+           << ",bitmap_cache_idx=" << bitmap_cache_idx
+           << ",structure_block_idx=" << structure_block_idx
            << ",structure_cache=";
         for (std::size_t i = bitmap_cache_idx; i < cache_word_bitlength; ++i) {
           std::cout << (dtl::bits::bit_test(structure_cache, i) ? "1" : "0");
@@ -457,9 +458,18 @@ public:
             iter.teb_.structure_bit_cnt_ + implicit_1bit_cnt;
 
         i64 phys_node_idx = i64(node_idx) - implicit_1bit_cnt;
-        structure_block_idx = phys_node_idx / i64(cache_word_bitlength)
-            - (phys_node_idx < 0 ? 1 : 0);
-        bitmap_cache_idx = phys_node_idx % cache_word_bitlength;
+        if (phys_node_idx >= 0) {
+          structure_block_idx = phys_node_idx / i64(cache_word_bitlength);
+          bitmap_cache_idx = phys_node_idx % cache_word_bitlength;
+        }
+        else {
+          structure_block_idx = (phys_node_idx / i64(cache_word_bitlength)) - 1;
+          bitmap_cache_idx = phys_node_idx % cache_word_bitlength;
+          if (phys_node_idx % cache_word_bitlength == 0) {
+            ++structure_block_idx;
+          }
+        }
+
 
         if (structure_block_idx < 0) {
           // Implicit inner node.
@@ -479,12 +489,15 @@ public:
       advance_fetch(const iter& iter) {
         // The cached bitmap fragment has been fully consumed.
         ++structure_block_idx;
+        std::cout << "fetch " << structure_block_idx << std::flush;
         if (structure_block_idx < 0) {
           // Implicit inner nodes.
+          std::cout << " implicit inner" << std::endl;
           structure_cache = ~word_type(0);
         }
         else if (structure_block_idx >= iter.teb_.structure_.m_bits.size()) {
           // Implicit leaf nodes.
+          std::cout << " implicit leaf" << std::endl;
           structure_cache = word_type(0);
         }
         else {
@@ -495,8 +508,8 @@ public:
 
       void __teb_inline__
       advance(const iter& iter, u1 current_node_is_leaf) {
-        ++idx;
 //        label_idx += !is_inner_node(iter);
+        ++idx;
         label_idx += current_node_is_leaf;
         ++bitmap_cache_idx;
         if (unlikely(bitmap_cache_idx == cache_word_bitlength)) {
@@ -508,9 +521,15 @@ public:
       /// false otherwise.
       u1 __teb_inline__
       is_inner_node(const iter& iter) {
-//        assert(bitmap_cache_idx < (sizeof(word_type) * 8));
-//        return dtl::bits::bit_test(structure_cache, bitmap_cache_idx);
-        return iter.teb_.is_inner_node(idx);
+        assert(bitmap_cache_idx < (sizeof(word_type) * 8));
+//        if (dtl::bits::bit_test(structure_cache, bitmap_cache_idx) != iter.teb_.is_inner_node(idx)) {
+//          std::cout << "assertion failed: expected " << iter.teb_.is_inner_node(idx)
+//                    << " but got " << dtl::bits::bit_test(structure_cache, bitmap_cache_idx) << std::endl;
+//          std::cout << *this << std::endl;
+//        }
+        assert(dtl::bits::bit_test(structure_cache, bitmap_cache_idx) == iter.teb_.is_inner_node(idx));
+        return dtl::bits::bit_test(structure_cache, bitmap_cache_idx);
+//        return iter.teb_.is_inner_node(idx);
       }
 
       /// Returns the label of the current node. This function must only be
@@ -664,9 +683,6 @@ public:
       auto alpha = alpha_;
 
       auto advance_scanner = [&](std::size_t i) {
-//        D(std::cout << "advancing scanner " << i << ". "
-//                    << scanners_[i].idx
-//                    << " -> ";)
         u1 was_inner_node = dtl::bits::bit_test(alpha, i);
         scanners_[i].advance(*this, !was_inner_node);
         u1 is_inner_node = scanners_[i].is_inner_node(*this);
@@ -676,7 +692,6 @@ public:
       };
 
       while (result_cnt < batch_size_ && pos < n) {
-//        D(std::cout << "------- while" << std::endl;)
         assert(pos <= n);
         assert(pos + length <= n);
         assert(path >= 1);
