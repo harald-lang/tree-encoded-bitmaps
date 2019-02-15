@@ -487,7 +487,7 @@ public:
 
         label_block_idx = label_idx / cache_word_bitlength;
         label_cache_idx = label_idx % cache_word_bitlength;
-        iter.teb_.structure_.m_bits[label_block_idx];
+        label_cache = iter.teb_.labels_.m_bits[label_block_idx];
       }
 
       void __teb_inline__
@@ -551,7 +551,8 @@ public:
       u1 __teb_inline__
       get_label(const iter& iter) {
         assert(!is_inner_node(iter));
-        return iter.teb_.labels_[label_idx];
+        return dtl::bits::bit_test(label_cache, label_cache_idx);
+//        return iter.teb_.labels_[label_idx];
       }
     };
 
