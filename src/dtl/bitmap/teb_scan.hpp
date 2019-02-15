@@ -411,7 +411,7 @@ public:
     /// The fundamental type to encode paths within the tree.
     using path_t = $u64;
 
-    static constexpr u64 DEFAULT_BATCH_SIZE = 1;
+    static constexpr u64 DEFAULT_BATCH_SIZE = 128;
 
     struct range_t {
       $u64 pos;
@@ -522,11 +522,6 @@ public:
       u1 __teb_inline__
       is_inner_node(const iter& iter) {
         assert(bitmap_cache_idx < (sizeof(word_type) * 8));
-//        if (dtl::bits::bit_test(structure_cache, bitmap_cache_idx) != iter.teb_.is_inner_node(idx)) {
-//          std::cout << "assertion failed: expected " << iter.teb_.is_inner_node(idx)
-//                    << " but got " << dtl::bits::bit_test(structure_cache, bitmap_cache_idx) << std::endl;
-//          std::cout << *this << std::endl;
-//        }
         assert(dtl::bits::bit_test(structure_cache, bitmap_cache_idx) == iter.teb_.is_inner_node(idx));
         return dtl::bits::bit_test(structure_cache, bitmap_cache_idx);
 //        return iter.teb_.is_inner_node(idx);
@@ -791,47 +786,6 @@ public:
             to_pos - results_[result_read_pos_].pos;
         results_[result_read_pos_].pos = to_pos;
       }
-
-// The code below does not work, because we cannot init the scanners properly.
-//      result_cnt_ = 0;
-//      result_read_pos_ = 0;
-//
-//      // Initialize the scanners and alpha vector.
-//      alpha_ = 1;
-//      path_t path = 1;
-//      $u64 node_idx = 0; // root
-//      $u32 level = 0;
-//      for (std::size_t i = 0; i < teb_.encoded_tree_height_; ++i) {
-//        u1 direction_bit = dtl::bits::bit_test(to_pos, tree_height_ - (i + 1));
-//        path = (path << 1) | direction_bit;
-//        node_idx = teb_.left_child(node_idx) + direction_bit;
-//        scanners_[i + 1].init(
-//            *this, node_idx, teb_.level_offsets_labels_[i + 1]);
-//        u32 node_bit = scanners_[i + 1].is_inner_node(*this) ? 1u : 0u;
-//        alpha_ |= node_bit << (i + 1);
-//        level++;
-//        if (teb_.is_leaf_node(node_idx)) break; // TODO compute the rank only once, this has a minor impact, as the scan-iterator is not supposed to be fast forwarded
-//      }
-//
-//      std::cout << "skip_to()" << std::endl;
-//      for (std::size_t i = 0; i < teb_.encoded_tree_height_; ++i) {
-//        std::cout << "level=" << i << ": " << scanners_[i] << std::endl;
-//      }
-//      std::cout << "alpha=" << std::bitset<32>(alpha_) << std::endl;
-//
-//      // Populate pos and length.
-//      scan_pos_ = (path ^ (1ull << level)) << (tree_height_ - level);
-//      scan_length_ = teb_.n_ >> level;
-//      scan_path_ = path;
-//
-//      u1 label = scanners_[level].get_label(*this);
-//      if (label) {
-//        // Produce output.
-//        results_[0].pos = scan_pos_;
-//        results_[0].length = scan_length_;
-//        ++result_cnt_;
-//      }
-//      next_batch();
     }
 
     /// Returns true if the iterator reached the end, false otherwise.
