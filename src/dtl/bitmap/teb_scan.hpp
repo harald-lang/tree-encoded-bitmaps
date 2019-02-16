@@ -691,6 +691,13 @@ public:
         alpha ^= u32(x) << i;
       };
 
+      auto advance_scanners = [&](std::size_t advance_begin,
+                                  std::size_t advance_end) {
+        for (std::size_t i = advance_begin; i < advance_end; ++i) {
+          advance_scanner(i);
+        }
+      };
+
       while (result_cnt < batch_size_ && pos < n) {
         assert(pos <= n);
         assert(pos + length <= n);
@@ -703,7 +710,6 @@ public:
         assert(pos < n);
 
         const auto advance_end = path_level + 1;
-
         // Walk upwards until a left child is found. (might be the current one)
         const auto up_steps = dtl::bits::tz_count(~path);
         path >>= up_steps;
@@ -713,10 +719,7 @@ public:
 
         // Advance the scanners and update the alpha vector.
         const auto advance_begin = path_level;
-        for (std::size_t i = advance_begin; i < advance_end; ++i) {
-          advance_scanner(i);
-        }
-
+        advance_scanners(advance_begin, advance_end);
         // Walk downwards to the left-most leaf in that sub-tree.
         const auto down_steps = dtl::bits::tz_count(~(alpha >> path_level));
         path_level += down_steps;
@@ -729,12 +732,10 @@ public:
 
         u64 label = scanners_[path_level].get_label(*this);
 
-        if (unlikely(label)) {
-          // Produce output (a 1-fill).
-          results_[result_cnt].pos = pos;
-          results_[result_cnt].length = length;
-          ++result_cnt;
-        }
+        // Produce output (a 1-fill).
+        results_[result_cnt].pos = pos;
+        results_[result_cnt].length = length;
+        result_cnt += label;
       }
 
       if (result_cnt < batch_size_
