@@ -7,7 +7,7 @@
 
 //===----------------------------------------------------------------------===//
 TEST(bitmap_fun,
-     fetch_bits) {
+     fetch_words) {
   using bmf = dtl::bitmap_fun<$u64>;
   std::vector<$u64> bitmap;
   bitmap.push_back(0x0101010101010101);
@@ -25,5 +25,24 @@ TEST(bitmap_fun,
       (0x0101010101010101 >> 1));
   ASSERT_EQ(bmf::fetch_bits(bitmap.data(), 8,    8+64),
       (0x0101010101010101 >> 8) | (0x1010101010101010 << (64 - 8)));
+}
+//===----------------------------------------------------------------------===//
+TEST(bitmap_fun,
+     fetch_bits) {
+  using bmf = dtl::bitmap_fun<$u64>;
+  std::vector<$u64> bitmap;
+  bitmap.push_back(0x0101010101010101);
+  bitmap.push_back(0x1010101010101010);
+  bitmap.push_back(0xFFFFFFFFFFFFFFFF);
+  ASSERT_EQ(bmf::fetch_bits(bitmap.data(), 0, 0+1),
+            0x0000000000000001);
+  ASSERT_EQ(bmf::fetch_bits(bitmap.data(), 0, 0+9),
+            0x0000000000000101);
+  ASSERT_EQ(bmf::fetch_bits(bitmap.data(), 1, 1+8),
+            0b00000010000000);
+  ASSERT_EQ(bmf::fetch_bits(bitmap.data(), 8, 64),
+            0x0001010101010101);
+  ASSERT_EQ(bmf::fetch_bits(bitmap.data(), 63,  63+8),
+            0x0000000000000020);
 }
 //===----------------------------------------------------------------------===//
