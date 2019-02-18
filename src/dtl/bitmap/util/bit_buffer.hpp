@@ -1,6 +1,7 @@
 #pragma once
 
 #include <dtl/dtl.hpp>
+#include <dtl/bits.hpp>
 #include <immintrin.h>
 
 namespace dtl {
@@ -76,7 +77,7 @@ public:
   }
 
   inline u64
-  get_read_mask() noexcept {
+  get_read_mask() const noexcept {
     return read_mask_;
   }
 
@@ -89,12 +90,12 @@ public:
   }
 
   inline u64
-  read(u64 mask) noexcept {
+  read(u64 mask) const noexcept {
     return _pext_u64(buf_, read_mask_) & mask;
   }
 
   inline u64
-  read() noexcept {
+  read() const noexcept {
     return _pext_u64(buf_, read_mask_);
   }
 
