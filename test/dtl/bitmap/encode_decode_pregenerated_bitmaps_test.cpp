@@ -5,7 +5,7 @@
 #include <experiments/compression/common.hpp>
 
 TEST(common,
-     DISABLED_encode_decode_pregenerated_bitmaps_test) {
+     encode_decode_pregenerated_bitmaps_test) {
 
   // The implementations under test.
   std::vector<bitmap_t> bitmap_types;

@@ -10,8 +10,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -march=native")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_DYNAMIC_BITSET_DONT_USE_FRIENDS")
 
 # Enable ASAN in debug builds.
-set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
-set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+#set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
+#set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 
 include_directories(src)
 
@@ -109,9 +109,10 @@ set(TEST_FILES
         ${BENCHMARK_SOURCE_FILES}
         test/dtl/bitmap/api_encode_decode_test.cpp
         test/dtl/bitmap/api_encode_decode_using_iterator_test.cpp
-#        test/dtl/bitmap/bitmap_fun_test.cpp
-        test/dtl/bitmap/encode_decode_pregenerated_bitmaps_test.cpp
+        test/dtl/bitmap/bit_buffer_test.cpp
+        test/dtl/bitmap/bitmap_fun_test.cpp
         test/dtl/bitmap/teb_test.cpp
+        test/dtl/bitmap/teb_scan_util_test.cpp
         test/dtl/bitmap/api_range_iterator_skip_test.cpp
 #        test/dtl/bitmap/api_set_operation_test.cpp
 #        test/dtl/bitmap/static_api_test.cpp
@@ -119,6 +120,21 @@ set(TEST_FILES
         )
 add_executable(tester ${TEST_FILES})
 target_link_libraries(tester gtest gtest_main fastbit roaring dl)
+
+set(VALIDATOR_FILES
+        ${BENCHMARK_SOURCE_FILES}
+        test/dtl/bitmap/encode_decode_pregenerated_bitmaps_test.cpp
+        )
+add_executable(validator ${VALIDATOR_FILES})
+target_link_libraries(validator gtest gtest_main fastbit roaring dl)
+
+# To be removed
+set(TEST_FILES
+        ${BENCHMARK_SOURCE_FILES}
+        test/dtl/bitmap/sandbox_test.cpp
+        )
+add_executable(sandbox_test ${TEST_FILES})
+target_link_libraries(sandbox_test gtest gtest_main fastbit roaring dl)
 
 # TODO removed
 #set(TEST_ITER_FILES
@@ -135,6 +151,7 @@ set(TEB_SOURCE_FILES
         src/dtl/bitmap/dynamic_partitioned_tree_mask.hpp
 #        src/dtl/bitmap/dynamic_tree_mask_lo.hpp
         src/dtl/bitmap/util/base64.hpp
+        src/dtl/bitmap/util/bit_buffer.hpp
         src/dtl/bitmap/util/bitmap_fun.hpp
         src/dtl/bitmap/util/bitmap_tree.hpp
         src/dtl/bitmap/util/bitmap_view.hpp
@@ -151,6 +168,7 @@ set(TEB_SOURCE_FILES
         src/dtl/bitmap/util/two_state_markov_process.hpp
         src/dtl/bitmap/teb.hpp
         src/dtl/bitmap/teb_scan.hpp
+        src/dtl/bitmap/teb_scan_util.hpp
         src/dtl/bitmap/tree_mask_util.hpp
         src/dtl/iterator.hpp
         src/dtl/static_stack.hpp
