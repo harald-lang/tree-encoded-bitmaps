@@ -81,6 +81,12 @@ public:
     return read_mask_;
   }
 
+  inline u64
+  get_read_pos(u64 slot_idx) const noexcept {
+    u64 t = (read_mask_ >> (slot_idx * slot_bitlength)) & slot_mask;
+    return dtl::bits::tz_count(t);
+  }
+
   inline void
   increment(u64 mask) noexcept {
     u64 slot_mask =

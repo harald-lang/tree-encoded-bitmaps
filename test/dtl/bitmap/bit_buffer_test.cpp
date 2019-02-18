@@ -59,3 +59,18 @@ TEST(bit_buffer,
   ASSERT_EQ(0b10101010, bb.read(0b10101010));
 }
 //===----------------------------------------------------------------------===//
+TEST(bit_buffer,
+     get_read_position) {
+  dtl::bit_buffer<> bb;
+  bb.increment((1ul << 0) | (1ul << 3) | (1ul << 7));
+  bb.increment((1ul << 7));
+  ASSERT_EQ(bb.get_read_pos(0), 1);
+  ASSERT_EQ(bb.get_read_pos(1), 0);
+  ASSERT_EQ(bb.get_read_pos(2), 0);
+  ASSERT_EQ(bb.get_read_pos(3), 1);
+  ASSERT_EQ(bb.get_read_pos(4), 0);
+  ASSERT_EQ(bb.get_read_pos(5), 0);
+  ASSERT_EQ(bb.get_read_pos(6), 0);
+  ASSERT_EQ(bb.get_read_pos(7), 2);
+}
+//===----------------------------------------------------------------------===//
