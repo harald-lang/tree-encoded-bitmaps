@@ -13,6 +13,7 @@
 #include <dtl/bitmap/util/rank1.hpp>
 #include <dtl/bitmap/util/rank1_surf.hpp>
 #include <dtl/bitmap/util/rank1_surf_cached.hpp>
+#include <dtl/bitmap/util/bit_buffer.hpp>
 #include <dtl/bitmap/util/bitmap_tree.hpp>
 #include <dtl/bitmap/util/binary_tree_structure.hpp>
 #include <dtl/static_stack.hpp>
@@ -22,6 +23,8 @@
 #include <dtl/bitmap/util/rank1_super_fast.hpp>
 #include <dtl/bitmap/util/bitmap_view.hpp>
 #include <dtl/math.hpp>
+
+#include "teb_scan_util.hpp"
 
 namespace dtl {
 
@@ -418,125 +421,21 @@ public:
       $u64 length;
     };
 
-    struct scan_t {
-//      using cache_word_type = $u64;
-      using cache_word_type = word_type;
-      static constexpr u64 cache_word_bitlength = (sizeof(cache_word_type) * 8);
+    struct scanner_state_t {
+      $u64 node_idx_;
+      $u64 label_idx_;
 
-      cache_word_type structure_cache;
-      $i64 structure_block_idx;
-      $u64 structure_cache_idx;
+      void __teb_inline__
+      init(const iter& /*iter*/, u64 node_idx, u64 label_offset) {
+        node_idx_ = node_idx;
+        label_idx_ = label_offset;
+      }
 
-      cache_word_type label_cache;
-      $i64 label_block_idx;
-      $u64 label_cache_idx;
-
-      void
+        void
       print(std::ostream& os) const noexcept {
-        os << "scan["
-           << "structure_cache_idx=" << structure_cache_idx
-           << ",structure_block_idx=" << structure_block_idx
-           << ",structure_cache=";
-        for (std::size_t i = structure_cache_idx; i < cache_word_bitlength; ++i) {
-          std::cout << (dtl::bits::bit_test(structure_cache, i) ? "1" : "0");
-        }
-        std::cout << "]";
-      }
-
-      void __teb_inline__
-      init(const iter& iter, u64 node_idx, u64 label_offset) {
-        // Fetch the corresponding word from the tree structure.
-        const std::size_t implicit_1bit_cnt =
-            iter.teb_.implicit_inner_node_cnt_;
-        const std::size_t implicit_leaf_begin =
-            iter.teb_.structure_bit_cnt_ + implicit_1bit_cnt;
-
-        i64 phys_node_idx = i64(node_idx) - implicit_1bit_cnt;
-        if (phys_node_idx >= 0) {
-          structure_block_idx = phys_node_idx / i64(cache_word_bitlength);
-          structure_cache_idx = phys_node_idx % cache_word_bitlength;
-        }
-        else {
-          structure_block_idx = (phys_node_idx / i64(cache_word_bitlength)) - 1;
-          structure_cache_idx = phys_node_idx % cache_word_bitlength;
-          if (phys_node_idx % cache_word_bitlength == 0) {
-            ++structure_block_idx;
-          }
-        }
-
-        if (structure_block_idx < 0) {
-          // Implicit inner node.
-          structure_cache = ~word_type(0);
-        }
-        else if (structure_block_idx >= iter.teb_.structure_.m_bits.size()) {
-          // Implicit leaf node.
-          structure_cache = word_type(0);
-        }
-        else {
-          structure_cache = iter.teb_.structure_.m_bits[structure_block_idx];
-        }
-        assert(structure_cache_idx < cache_word_bitlength);
-
-        label_block_idx = label_offset / cache_word_bitlength;
-        label_cache_idx = label_offset % cache_word_bitlength;
-        label_cache = iter.teb_.labels_.m_bits[label_block_idx];
-      }
-
-      void __teb_inline__
-      advance_fetch_structure(const iter& iter) {
-        // The cached bitmap fragment has been fully consumed.
-        ++structure_block_idx;
-        if (structure_block_idx < 0) {
-          // Implicit inner nodes.
-          structure_cache = ~word_type(0);
-        }
-        else if (structure_block_idx >= iter.teb_.structure_.m_bits.size()) {
-          // Implicit leaf nodes.
-          structure_cache = word_type(0);
-        }
-        else {
-          structure_cache = iter.teb_.structure_.m_bits[structure_block_idx];
-        }
-        structure_cache_idx = 0;
-      }
-
-      void __teb_inline__
-      advance_fetch_label(const iter& iter) {
-        // The cached bitmap fragment has been fully consumed.
-        ++label_block_idx;
-        if (label_block_idx < iter.teb_.labels_.m_bits.size()) {
-          label_cache = iter.teb_.labels_.m_bits[label_block_idx];
-        }
-        label_cache_idx = 0;
-      }
-
-      void __teb_inline__
-      advance(const iter& iter, u1 current_node_is_leaf) {
-        ++structure_cache_idx;
-        label_cache_idx += current_node_is_leaf;
-        if (structure_cache_idx == cache_word_bitlength) {
-          advance_fetch_structure(iter);
-        }
-        if (label_cache_idx == cache_word_bitlength) {
-          advance_fetch_label(iter);
-        }
-      }
-
-      /// Returns true if the scanner currently points to an inner node,
-      /// false otherwise.
-      u1 __teb_inline__
-      is_inner_node(const iter& iter) {
-        assert(structure_cache_idx < (sizeof(word_type) * 8));
-        return dtl::bits::bit_test(structure_cache, structure_cache_idx);
-      }
-
-      /// Returns the label of the current node. This function must only be
-      /// called, when the current node is a leaf node.
-      u1 __teb_inline__
-      get_label(const iter& iter) {
-        assert(!is_inner_node(iter));
-        return dtl::bits::bit_test(label_cache, label_cache_idx);
-//        return iter.teb_.labels_[label_idx];
+        os << "scan_state["
+           << "node_idx=" << node_idx_
+           << ",label_idx=" << label_idx_ << "]";
       }
     };
 
@@ -552,8 +451,9 @@ public:
     u64 top_node_idx_end_;
     /// The current top node.
     $u64 top_node_idx_current_;
-    /// One scanner / stream per level.
-    std::array<scan_t, 32> scanners_;
+
+    /// One scanner (or stream) per level.
+    std::array<scanner_state_t, 32> scanner_states_;
 
     /// A batch of results.
     std::vector<range_t> results_;
@@ -620,28 +520,27 @@ public:
       }
       // Initialize the scanners.
       for (std::size_t level = 0; level < teb_.encoded_tree_height_; ++level) {
-        scanners_[level].init(*this,
+        scanner_states_[level].init(*this,
                               teb_.level_offsets_structure_[level],
                               teb_.level_offsets_labels_[level]);
       }
       // Initialize alpha vector.
       alpha_ = 0;
       for (std::size_t level = 0; level < teb_.encoded_tree_height_; ++level) {
-        u32 node_bit = scanners_[level].is_inner_node(*this) ? 1u : 0u;
+        u64 node_idx = teb_.level_offsets_structure_[level];
+        u32 node_bit = teb_.is_inner_node(node_idx) ? 1u : 0u;
         alpha_ |= node_bit << level;
       }
-
       // Populate pos and length.
       u32 level =  dtl::bits::tz_count(~alpha_);
       scan_pos_ = 0;
       scan_length_ = teb_.n_ >> level;
       scan_path_ = path_t(0);
       scan_path_level_ = level;
-
-      // Iterator is positioned at the first leaf node.
+      // Iterator is now positioned at the first leaf node.
       const auto first_leaf_node_idx = teb_.level_offsets_structure_[level];
       // Determine the label.
-      u1 first_leaf_label = scanners_[level].get_label(*this);
+      u1 first_leaf_label = teb_.get_label(first_leaf_node_idx);
       if (first_leaf_label) {
         results_[0].pos = 0;
         results_[0].length = scan_length_;
@@ -677,72 +576,197 @@ public:
       const auto n = teb_.size();
       auto pos = scan_pos_;
       auto length = scan_length_;
+      if (pos + length >= n) {
+        results_[result_cnt_].pos = n;
+        results_[result_cnt_].length = 0;
+        ++result_cnt_;
+        return;
+      }
+      // Note: The path variable does NOT contain a sentinel bit. Instead, we
+      //       keep track of the paths' level using a separate variable.
       register auto path = scan_path_;
-//      register auto path_level = determine_level_of(path);
       register auto path_level = scan_path_level_;
       auto result_cnt = result_cnt_;
       auto alpha = alpha_;
 
-      auto advance_scanner = [&](std::size_t i) {
-        u1 was_inner_node = dtl::bits::bit_test(alpha, i);
-        scanners_[i].advance(*this, !was_inner_node);
-        u1 is_inner_node = scanners_[i].is_inner_node(*this);
-        u1 x = was_inner_node ^ is_inner_node;
-        alpha ^= u32(x) << i;
+      // Initialize the scanners.
+      const data_view<const word_type> T {
+          teb_.structure_.m_bits.data(),
+          teb_.structure_.m_bits.data() + teb_.structure_.m_bits.size(),
+      };
+      const data_view<const word_type> L {
+          teb_.labels_.m_bits.data(),
+          teb_.labels_.m_bits.data() + teb_.labels_.m_bits.size(),
       };
 
-      auto advance_scanners = [&](std::size_t advance_begin,
-                                  std::size_t advance_end) {
-        for (std::size_t i = advance_begin; i < advance_end; ++i) {
-          advance_scanner(i);
+      // Bit buffers for the tree structure.
+      dtl::bit_buffer<8> t_bb0;
+      dtl::bit_buffer<8> t_bb1;
+      dtl::bit_buffer<8> t_bb2;
+      dtl::bit_buffer<8> t_bb3;
+
+      // Bit buffers for the labels.
+      dtl::bit_buffer<8> l_bb0;
+      dtl::bit_buffer<8> l_bb1;
+      dtl::bit_buffer<8> l_bb2;
+      dtl::bit_buffer<8> l_bb3;
+
+      // Perfect levels. (all bits set to 1)
+      for (std::size_t level = 0; level < perfect_levels_ - 1; ++level) {
+        u64 buffer_idx = level / 8;
+        u64 slot_idx = level % 8;
+        switch (buffer_idx) {
+          case 0: t_bb0.set(slot_idx, ~0ul); l_bb0.set(slot_idx, ~0ul); break;
+          case 1: t_bb1.set(slot_idx, ~0ul); l_bb1.set(slot_idx, ~0ul); break;
+          case 2: t_bb2.set(slot_idx, ~0ul); l_bb2.set(slot_idx, ~0ul); break;
+          case 3: t_bb3.set(slot_idx, ~0ul); l_bb3.set(slot_idx, ~0ul); break;
+        }
+      }
+      // --
+
+      // Advance the tree structure bit buffers.
+      auto advance_tree_scanners = [&](std::size_t level_begin,
+                                       std::size_t level_end) {
+        static constexpr u64 p = (1ul << 8) - 1;
+        u64 a = (~0ul) << level_begin;
+        u64 b = (~0ul) >> (64 - level_end);
+        u64 m = a & b;
+        D(std::cout << std::bitset<32>(m) << std::endl;)
+        u64 m0 = (m >> (8 * 0)) & p; t_bb0.increment(m0); u64 r0 = t_bb0.read();
+        u64 m1 = (m >> (8 * 1)) & p; t_bb1.increment(m1); u64 r1 = t_bb1.read();
+        u64 m2 = (m >> (8 * 2)) & p; t_bb2.increment(m2); u64 r2 = t_bb2.read();
+        u64 m3 = (m >> (8 * 3)) & p; t_bb3.increment(m3); u64 r3 = t_bb3.read();
+        // Update the alpha vector.
+        alpha = (r3 << (8 * 3)) | (r2 << (8 * 2)) | (r1 << (8 * 1)) | r0;
+        D(std::cout << "alpha: " << std::bitset<32>(alpha) << std::endl;)
+      };
+
+      // Advance the label bit buffers.
+      auto advance_label_scanner = [&](u32 level) {
+        u64 buffer_idx = level / 8;
+        u64 slot_idx = level % 8;
+        u64 slot_mask = 1ul << slot_idx;
+        $u64 label = 0;
+        std::cout << "label++" << std::endl;
+        switch (buffer_idx) {
+          case 0: l_bb0.increment(slot_mask); break;
+          case 1: l_bb1.increment(slot_mask); break;
+          case 2: l_bb2.increment(slot_mask); break;
+          case 3: l_bb3.increment(slot_mask); break;
         }
       };
 
-      while (result_cnt < batch_size_ && pos < n) {
-        assert(pos <= n);
-        assert(pos + length <= n);
-        assert(path_level >= 1);
-        assert(length > 0);
+      while (result_cnt < batch_size_ - 8 && pos < n) {
 
-        // Increment the current position.
-        pos += length;
-        if (pos == n) break; // TODO eliminate branch
-        assert(pos < n);
+        // Initialize the bit buffers.
+        std::cout << "--fetch--" << std::endl;
+        for (std::size_t level = perfect_levels_ - 1;
+             level < teb_.encoded_tree_height_; ++level) {
+          u64 buffer_idx = level / 8;
+          u64 slot_idx = level % 8;
+          i64 delta = - static_cast<i64>(teb_.implicit_inner_node_cnt_);
+          switch (buffer_idx) {
+            case 0: t_bb0.set(slot_idx, fetch_n_bits(T, static_cast<i64>(scanner_states_[level].node_idx_) + delta, 8)); l_bb0.set(slot_idx, fetch_n_bits(L, static_cast<i64>(scanner_states_[level].label_idx_), 8)); break;
+            case 1: t_bb1.set(slot_idx, fetch_n_bits(T, static_cast<i64>(scanner_states_[level].node_idx_) + delta, 8)); l_bb1.set(slot_idx, fetch_n_bits(L, static_cast<i64>(scanner_states_[level].label_idx_), 8)); break;
+            case 2: t_bb2.set(slot_idx, fetch_n_bits(T, static_cast<i64>(scanner_states_[level].node_idx_) + delta, 8)); l_bb2.set(slot_idx, fetch_n_bits(L, static_cast<i64>(scanner_states_[level].label_idx_), 8)); break;
+            case 3: t_bb3.set(slot_idx, fetch_n_bits(T, static_cast<i64>(scanner_states_[level].node_idx_) + delta, 8)); l_bb3.set(slot_idx, fetch_n_bits(L, static_cast<i64>(scanner_states_[level].label_idx_), 8)); break;
+          }
+        }
 
-        const auto advance_end = path_level + 1;
-        // Walk upwards until a left child is found. (might be the current one)
-        const auto up_steps = dtl::bits::tz_count(~path);
-        path >>= up_steps;
-        path_level -= up_steps;
-        // Go to right sibling.
-        path = path | 1;
+        // Do eight iterations. (which is the number of buffered bits per level)
+        for ($i32 b = 0; b < 8; ++b) {
+          assert(pos <= n);
+          assert(pos + length <= n);
+          assert(path_level >= 1);
+          assert(length > 0);
 
-        // Advance the scanners and update the alpha vector.
-        const auto advance_begin = path_level;
-        advance_scanners(advance_begin, advance_end);
-        // Walk downwards to the left-most leaf in that sub-tree.
-        const auto down_steps = dtl::bits::tz_count(~(alpha >> path_level));
-        path_level += down_steps;
-        path <<= down_steps;
+          // Increment the current position.
+          pos += length;
+          if (pos == n) goto done; // TODO eliminate branch
+          assert(pos < n);
 
-        // Toggle sentinel bit (= highest bit set) and add offset.
-        pos = path << (h - path_level);
-        // The length of the 1-fill.
-        length = n >> path_level;
+          const auto advance_end = path_level + 1;
+          // Walk upwards until a left child is found. (might be the current one)
+          const auto up_steps = dtl::bits::tz_count(~path);
+          path >>= up_steps;
+          path_level -= up_steps;
+          // Go to right sibling.
+          path = path | 1;
 
-        u64 label = scanners_[path_level].get_label(*this);
+          // Advance the scanners and update the alpha vector.
+          const auto advance_begin = path_level;
+          advance_tree_scanners(advance_begin, advance_end);
+          advance_label_scanner(advance_end - 1);
+          // Walk downwards to the left-most leaf in that sub-tree.
+          const auto down_steps = dtl::bits::tz_count(~(alpha >> path_level));
+          path_level += down_steps;
+          path <<= down_steps;
 
-        // Produce output (a 1-fill).
-        results_[result_cnt].pos = pos;
-        results_[result_cnt].length = length;
-        result_cnt += label;
+          // Toggle sentinel bit (= highest bit set) and add offset.
+          pos = path << (h - path_level); // FIXME remove. pos already set
+          // The length of the 1-fill.
+          length = n >> path_level;
+
+          // Read the label.
+          u64 buffer_idx = path_level / 8;
+          u64 slot_idx = path_level % 8;
+          u64 label_mask = 1ul << slot_idx;
+          $u64 label = 0;
+          switch (buffer_idx) {
+            case 0: label = l_bb0.read(label_mask) != 0; break;
+            case 1: label = l_bb1.read(label_mask) != 0; break;
+            case 2: label = l_bb2.read(label_mask) != 0; break;
+            case 3: label = l_bb3.read(label_mask) != 0; break;
+          }
+          // Produce output (a 1-fill).
+          std::cout << "pos=" << pos
+                    << ", length=" << length
+                    << ", label=" << label
+                    << std::endl;
+          results_[result_cnt].pos = pos;
+          results_[result_cnt].length = length;
+          result_cnt += label;
+        }
+
+        // Update the scanner states.
+        auto get_tree_scanner_read_pos = [&](u32 level) {
+          u64 buffer_idx = level / 8;
+          u64 slot_idx = level % 8;
+          $i64 ret_val = 0;
+          switch (buffer_idx) {
+            case 0: ret_val = t_bb0.get_read_pos(slot_idx); break;
+            case 1: ret_val = t_bb1.get_read_pos(slot_idx); break;
+            case 2: ret_val = t_bb2.get_read_pos(slot_idx); break;
+            case 3: ret_val = t_bb3.get_read_pos(slot_idx); break;
+          }
+          return ret_val;
+        };
+        auto get_label_scanner_read_pos = [&](u32 level) {
+          u64 buffer_idx = level / 8;
+          u64 slot_idx = level % 8;
+          $i64 ret_val = 0;
+          switch (buffer_idx) {
+            case 0: ret_val = l_bb0.get_read_pos(slot_idx); break;
+            case 1: ret_val = l_bb1.get_read_pos(slot_idx); break;
+            case 2: ret_val = l_bb2.get_read_pos(slot_idx); break;
+            case 3: ret_val = l_bb3.get_read_pos(slot_idx); break;
+          }
+          return ret_val;
+        };
+        for ($u32 level = perfect_levels_ - 1;
+             level < teb_.encoded_tree_height_; ++level) {
+          scanner_states_[level].node_idx_ += get_tree_scanner_read_pos(level);
+          scanner_states_[level].label_idx_ += get_label_scanner_read_pos(level);
+        }
       }
 
+done:
       if (result_cnt < batch_size_
           && pos == n) {
         results_[result_cnt].pos = n;
         results_[result_cnt].length = 0;
         ++result_cnt;
+        length = 0;
       }
       scan_pos_ = pos;
       scan_length_ = length;
@@ -900,5 +924,4 @@ private:
 
 };
 //===----------------------------------------------------------------------===//
-
 }; // namespace dtl
