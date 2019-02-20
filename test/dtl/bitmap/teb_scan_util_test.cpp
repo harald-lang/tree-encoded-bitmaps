@@ -10,7 +10,7 @@ TEST(teb_scan_util,
   bitmap.push_back(0x0101010101010101);
   bitmap.push_back(0x1010101010101010);
   bitmap.push_back(0xFFFFFFFFFFFFFFFF);
-  dtl::data_view<$u64> bitmap_view {
+  dtl::data_view<u64> bitmap_view {
       bitmap.data(), bitmap.data() + 3,
   };
   ASSERT_EQ(fetch_bits(bitmap_view, -3,   -1),
@@ -26,7 +26,7 @@ TEST(teb_scan_util,
 TEST(teb_scan_util,
      fetch_bits_from_empty_bitmap) {
   std::vector<$u64> bitmap;
-  dtl::data_view<$u64> bitmap_view { bitmap.data(), bitmap.data() };
+  dtl::data_view<u64> bitmap_view { bitmap.data(), bitmap.data() };
   ASSERT_EQ(fetch_bits(bitmap_view, -3,   3),
             0b000111);
   ASSERT_EQ(fetch_bits(bitmap_view, -63,  1),
