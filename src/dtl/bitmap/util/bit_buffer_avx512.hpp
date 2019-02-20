@@ -115,7 +115,7 @@ public:
     return _mm512_mask_test_epi16_mask(mask, buf_, read_mask_);
   }
 
-  inline u64
+  inline u32
   read() const noexcept {
     return _mm512_test_epi16_mask(buf_, read_mask_);
   }

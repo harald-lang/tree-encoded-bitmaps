@@ -14,6 +14,9 @@
 #include <dtl/bitmap/util/rank1_surf.hpp>
 #include <dtl/bitmap/util/rank1_surf_cached.hpp>
 #include <dtl/bitmap/util/bit_buffer.hpp>
+#ifdef __AVX512BW__
+#include <dtl/bitmap/util/bit_buffer_avx512.hpp>
+#endif // __AVX512BW__
 #include <dtl/bitmap/util/bitmap_tree.hpp>
 #include <dtl/bitmap/util/binary_tree_structure.hpp>
 #include <dtl/static_stack.hpp>
@@ -533,7 +536,11 @@ public:
       }
       scan_path_level_ = level;
       // Iterator is now positioned at the first leaf node.
+#ifdef __AVX512BW__
+      next_batch_avx512();
+#else
       next_batch();
+#endif // __AVX512BW__
     }
 
     __teb_inline__
@@ -553,7 +560,11 @@ public:
       if (result_read_pos_ == result_cnt_) {
         result_read_pos_ = 0;
         result_cnt_ = 0;
+#ifdef __AVX512BW__
+        next_batch_avx512();
+#else
         next_batch();
+#endif // __AVX512BW__
       }
     }
 
@@ -790,6 +801,188 @@ done:
       result_cnt_ = result_cnt;
       alpha_ = alpha;
     }
+
+#ifdef __AVX512BW__
+    void //__teb_inline__
+    next_batch_avx512() noexcept __attribute__ ((flatten, hot, noinline)) {
+      const auto h = tree_height_;
+      const auto n = teb_.size();
+      // Note: The path variable does NOT contain a sentinel bit. Instead, we
+      //       keep track of the paths' level using a separate variable.
+      register auto path = scan_path_;
+      register auto path_level = scan_path_level_;
+      auto pos = path << (h - path_level);
+      auto length = n >> path_level;
+      auto result_cnt = result_cnt_;
+      auto alpha = 0u;
+
+      dtl::r512 tmp_t { .u16 = {
+          0,0,0,0,
+          0,0,0,0,
+          0,0,0,0,
+          0,0,0,0,
+          0,0,0,0,
+          0,0,0,0,
+          0,0,0,0,
+          0,0,0,0 }};
+      dtl::r512 tmp_l { .u16 = {
+          0,0,0,0,
+          0,0,0,0,
+          0,0,0,0,
+          0,0,0,0,
+          0,0,0,0,
+          0,0,0,0,
+          0,0,0,0,
+          0,0,0,0 }};
+
+      const data_view<const word_type> T {
+          teb_.structure_.m_bits.data(),
+          teb_.structure_.m_bits.data() + teb_.structure_.m_bits.size(),
+      };
+      const data_view<const word_type> L {
+          teb_.labels_.m_bits.data(),
+          teb_.labels_.m_bits.data() + teb_.labels_.m_bits.size(),
+      };
+
+      // Bit buffers for the tree structure.
+      dtl::bit_buffer_avx512<> t_bb;
+
+      // Bit buffers for the labels.
+      dtl::bit_buffer_avx512<> l_bb;
+
+      // Perfect levels. (all bits set to 1)
+      for (std::size_t level = 0; level < perfect_levels_ - 1; ++level) {
+        const auto slot_idx = level;
+        tmp_t.u16[slot_idx] = ~0ul;
+        tmp_l.u16[slot_idx] = ~0ul;
+//        t_bb.set(slot_idx, ~0ul);
+//        l_bb.set(slot_idx, ~0ul);
+      }
+      t_bb.set_raw(tmp_t.i);
+      l_bb.set_raw(tmp_l.i);
+      // --
+
+      // Advance the tree structure bit buffers.
+      auto advance_tree_scanners = [&](std::size_t level_begin,
+                                       std::size_t level_end) {
+        u64 a = (~0ul) << level_begin;
+        u64 b = (~0ul) >> (64 - level_end);
+        u64 m = a & b;
+        t_bb.increment(m);
+        // Update the alpha vector.
+        alpha = t_bb.read();;
+      };
+
+      auto advance_tree_scanners_mask = [&](__mmask32 m) {
+        t_bb.increment(m);
+        // Update the alpha vector.
+        alpha = t_bb.read();;
+      };
+
+      // Advance the label bit buffer.
+      auto advance_label_scanner = [&](u32 level) {
+        const auto slot_idx = level;
+        const auto slot_mask = 1ul << slot_idx;
+        l_bb.increment(slot_mask);
+      };
+
+      auto advance_label_scanner_mask = [&](__mmask32 m) {
+        l_bb.increment(m);
+      };
+
+      while (result_cnt < batch_size_ - 16) {
+
+        // Initialize the bit buffers.
+        t_bb.reset_read_mask();
+        l_bb.reset_read_mask();
+        for (std::size_t level = perfect_levels_ - 1;
+             level < teb_.encoded_tree_height_; ++level) {
+          const auto slot_idx = level;
+          i64 delta = - static_cast<i64>(teb_.implicit_inner_node_cnt_);
+          tmp_t.u16[slot_idx] = fetch_n_bits(T, static_cast<i64>(scanner_states_[level].node_idx_) + delta, 16);
+          tmp_l.u16[slot_idx] = fetch_n_bits(L, static_cast<i64>(scanner_states_[level].label_idx_), 16);
+//          t_bb.set(slot_idx, fetch_n_bits(T, static_cast<i64>(scanner_states_[level].node_idx_) + delta, 16));
+//          l_bb.set(slot_idx, fetch_n_bits(L, static_cast<i64>(scanner_states_[level].label_idx_), 16));
+        }
+        t_bb.set_raw(tmp_t.i);
+        l_bb.set_raw(tmp_l.i);
+
+        // Initialize alpha. (which reads the first bits in the bit buffers)
+        alpha = t_bb.read();
+
+        // Do multiple iteration to consume the bit buffers.
+        for ($i32 b = 0; b < 15; ++b) {
+          u64 length = n >> path_level;
+
+          assert(pos < n);
+          assert(pos + length <= n);
+          assert(path_level >= 1);
+          assert(length > 0);
+
+          // Read the label of the current leaf node.
+          u64 slot_idx = path_level;
+          u64 label_mask = 1ul << slot_idx;
+          $u64 label = l_bb.read(label_mask) != 0;
+
+          // Produce output (a 1-fill).
+          results_[result_cnt].pos = pos;
+          results_[result_cnt].length = length;
+          result_cnt += label;
+
+          // Increment the current position.
+          pos += length;
+          if (pos == n) goto done; // TODO eliminate branch
+
+          // Walk upwards until a left child is found. (might be the current one)
+          const auto advance_end = path_level + 1;
+          __mmask32 ml = __mmask32(1) << path_level;
+          __mmask32 mb = (~__mmask32(0)) >> (32 - advance_end);
+          const auto up_steps = dtl::bits::tz_count(~path);
+          path >>= up_steps;
+          path_level -= up_steps;
+          // Go to right sibling.
+          path = path | 1;
+
+          // Advance the scanners and update the alpha vector.
+          const auto advance_begin = path_level;
+//          advance_tree_scanners(advance_begin, advance_end);
+          __mmask32 ma = (~__mmask32(0)) << advance_begin;
+          __mmask32 advance_mask = _mm512_kand(ma, mb);
+          advance_label_scanner_mask(ml);
+          advance_tree_scanners_mask(advance_mask);
+//          advance_label_scanner(advance_end - 1);
+          // Walk downwards to the left-most leaf in that sub-tree.
+          const auto down_steps = dtl::bits::tz_count(~(alpha >> path_level));
+          path_level += down_steps;
+          path <<= down_steps;
+        }
+
+        // Update the scanner states.
+        dtl::r512 tmp_tm {.i = t_bb.get_read_mask()};
+        dtl::r512 tmp_lm {.i = l_bb.get_read_mask()};
+        for ($u32 level = perfect_levels_ - 1;
+             level < teb_.encoded_tree_height_; ++level) {
+//          scanner_states_[level].node_idx_ += t_bb.get_read_pos(level);
+//          scanner_states_[level].label_idx_ += l_bb.get_read_pos(level);
+          scanner_states_[level].node_idx_ += dtl::bits::tz_count(tmp_tm.u16[level]);
+          scanner_states_[level].label_idx_ += dtl::bits::tz_count(tmp_lm.u16[level]);
+        }
+      }
+
+done:
+      if (result_cnt < batch_size_
+          && pos == n) {
+        results_[result_cnt].pos = n;
+        results_[result_cnt].length = 0;
+        ++result_cnt;
+        length = 0;
+      }
+      scan_path_ = path;
+      scan_path_level_ = path_level;
+      result_cnt_ = result_cnt;
+      alpha_ = alpha;
+    }
+#endif // __AVX512BW__
 
     /// Forwards the iterator to the given position. - Note: This functions
     /// simply calls next() until the desired position has been reached.
