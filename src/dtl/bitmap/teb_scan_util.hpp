@@ -6,8 +6,8 @@
 
 namespace dtl {
 //===----------------------------------------------------------------------===//
-u64 __forceinline__
-fetch_bits(const dtl::data_view<$u64>& bitmap,
+static u64 __forceinline__
+fetch_bits(const dtl::data_view<u64>& bitmap,
            i64 bit_idx_begin,
            i64 bit_idx_end /* non-inclusive */) {
   using word_type = $u64;
@@ -42,8 +42,8 @@ fetch_bits(const dtl::data_view<$u64>& bitmap,
   }
 }
 //===----------------------------------------------------------------------===//
-u64 __forceinline__
-fetch_n_bits(const dtl::data_view<$u64>& bitmap,
+static u64 __forceinline__
+fetch_n_bits(const dtl::data_view<u64>& bitmap,
              i64 bit_idx_begin,
              i64 cnt) {
   return fetch_bits(bitmap, bit_idx_begin, bit_idx_begin + cnt);
