@@ -106,18 +106,23 @@ public:
   }
 
   inline void
-  increment(u64 mask) noexcept {
+  increment(__mmask32 mask) noexcept {
     read_mask_ = _mm512_mask_slli_epi16(read_mask_, mask, read_mask_, 1u);
   }
 
-  inline u64
-  read(u64 mask) const noexcept {
+  inline __mmask32
+  read(__mmask32 mask) const noexcept {
     return _mm512_mask_test_epi16_mask(mask, buf_, read_mask_);
   }
 
-  inline u32
+  inline __mmask32
   read() const noexcept {
     return _mm512_test_epi16_mask(buf_, read_mask_);
+  }
+
+  inline __mmask32
+  read_ahead() const noexcept {
+    return _mm512_test_epi16_mask(buf_, _mm512_slli_epi16(read_mask_, 1u));
   }
 
 };
