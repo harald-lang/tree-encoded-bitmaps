@@ -49,7 +49,7 @@ struct position_list {
 
   /// Return the size in bytes.
   std::size_t
-  size_in_byte() {
+  size_in_byte() const {
     return positions_.size() * sizeof(position_t) /* positions */
         + sizeof(position_t) /* number of positions */
         + sizeof(n_) /* bit-length of the original bitmap */;
@@ -287,7 +287,7 @@ struct position_list {
   /// Returns the name of the instance including the most important parameters
   /// in JSON.
   std::string
-  info() {
+  info() const {
     return "{\"name\":\"" + name() + "\""
         + ",\"n\":" + std::to_string(n_)
         + ",\"size\":" + std::to_string(size_in_byte())

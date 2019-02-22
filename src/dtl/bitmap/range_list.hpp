@@ -72,7 +72,7 @@ struct range_list {
 
   /// Return the size in bytes.
   std::size_t
-  size_in_byte() {
+  size_in_byte() const {
     return ranges_.size() * sizeof(range) /* ranges */
         + sizeof(position_t) /* number of ranges */
         + sizeof(n_) /* bit-length of the original bitmap */;
@@ -242,6 +242,10 @@ struct range_list {
                         : 0) {
     }
 
+    iter(iter&&) noexcept = default;
+    iter&
+    operator=(iter&& other) noexcept = default;
+
     void __forceinline__
     next() {
       ++read_pos_;
@@ -301,13 +305,13 @@ struct range_list {
 
   iter __forceinline__
   it() const {
-    return iter(*this);
+    return std::move(iter(*this));
   }
 
   /// Returns the name of the instance including the most important parameters
   /// in JSON.
   std::string
-  info() {
+  info() const {
     return "{\"name\":\"" + name() + "\""
         + ",\"n\":" + std::to_string(n_)
         + ",\"size\":" + std::to_string(size_in_byte())
