@@ -19,6 +19,7 @@
 #include <dtl/bitmap/dynamic_wah.hpp>
 #include <dtl/bitmap/util/two_state_markov_process.hpp>
 #include <dtl/bitmap/util/random.hpp>
+#include <dtl/bitmap/util/convert.hpp>
 #include <dtl/bitmap/position_list.hpp>
 #include <dtl/bitmap/partitioned_position_list.hpp>
 #include <dtl/bitmap/partitioned_range_list.hpp>
@@ -111,15 +112,25 @@ run(const config& c, std::ostream& os) {
   const auto duration_nanos = RUN_DURATION_NANOS;
   const std::size_t MIN_REPS = 10;
   // Load the bitmap from DB.
-  auto bs = db.load_bitmap(c.bitmap_id);
+  const auto bs = db.load_bitmap(c.bitmap_id);
   const auto bs_count = bs.count();
   // Encode the bitmap.
-  T enc_bs(bs);
+  const T enc_bs(bs);
 
-  std::size_t pos_sink = 0;
-  std::size_t length_sink = 0;
+  // Validation code.
+  {
+    const auto dec_bs = dtl::to_bitmap_using_iterator(enc_bs);
+    if (bs != dec_bs) {
+      std::cerr << "Validation failed: " << c << std::endl;
+      std::cerr << "Failed to decode the bitmap " << enc_bs.info()
+                << "." << std::endl;
+      std::exit(1);
+    }
+  }
 
   // Warm up run
+  std::size_t pos_sink = 0;
+  std::size_t length_sink = 0;
   {
     auto it = enc_bs.it();
     while (!it.end()) {
@@ -127,15 +138,16 @@ run(const config& c, std::ostream& os) {
       length_sink += it.length();
       it.next();
     }
+
+    // Validation. (Fail fast)
+    if ((length_sink != bs_count)) {
+      std::cerr << "Validation failed (during warm-up run): " << c << std::endl;
+      std::cerr << "Expected length to be " << bs.count()
+                << " but got " << length_sink << std::endl;
+      std::exit(1);
+    }
   }
 
-  // Validation. (Fail fast)
-  if (!(length_sink == bs_count)) {
-    std::cerr << "Validation failed: " << c << std::endl;
-    std::cerr << "Expected length to be " << bs.count()
-              << " but got " << length_sink << std::endl;
-    std::exit(1);
-  }
 
   // The actual measurement.
   const auto nanos_begin = now_nanos();
@@ -155,7 +167,7 @@ run(const config& c, std::ostream& os) {
   const auto nanos_end = now_nanos();
 
 
-  if (!(length_sink / (rep_cntr + 1) == bs_count)) {
+  if ((length_sink / (rep_cntr + 1)) != bs_count) {
     std::cerr << "Validation failed: " << c << std::endl;
     std::cerr << "Expected length to be " << bs_count
               << " but got " << (length_sink / (rep_cntr + 1)) << std::endl;
