@@ -3,8 +3,8 @@ project(navin)
 
 set(CMAKE_CXX_STANDARD 14)
 
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -march=native")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -march=knl -mavx512bw")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -march=native")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -march=native -mavx512bw -mavx512f")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -march=corei7")
 
 # Hack: This gives us access to the private members of the dynamic_bitset.
@@ -111,6 +111,7 @@ set(TEST_FILES
         test/dtl/bitmap/api_encode_decode_test.cpp
         test/dtl/bitmap/api_encode_decode_using_iterator_test.cpp
         test/dtl/bitmap/bit_buffer_test.cpp
+        test/dtl/bitmap/bit_buffer_avx2_test.cpp
         test/dtl/bitmap/bit_buffer_avx512_test.cpp
         test/dtl/bitmap/bitmap_fun_test.cpp
         test/dtl/bitmap/teb_test.cpp
@@ -154,6 +155,7 @@ set(TEB_SOURCE_FILES
 #        src/dtl/bitmap/dynamic_tree_mask_lo.hpp
         src/dtl/bitmap/util/base64.hpp
         src/dtl/bitmap/util/bit_buffer.hpp
+        src/dtl/bitmap/util/bit_buffer_avx2.hpp
         src/dtl/bitmap/util/bit_buffer_avx512.hpp
         src/dtl/bitmap/util/bitmap_fun.hpp
         src/dtl/bitmap/util/bitmap_tree.hpp
