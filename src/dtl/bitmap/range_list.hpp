@@ -53,7 +53,7 @@ struct range_list {
       ranges_.emplace_back(
           range{static_cast<position_t>(current_begin),
                 static_cast<position_t>(current_length)});
-      current_begin = in.find_next(current_begin);
+      current_begin = in.find_next(current_begin + current_length);
       current_length = 1;
     }
   }
