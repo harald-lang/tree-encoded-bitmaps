@@ -26,6 +26,7 @@ to_bitmap_using_iterator(const T& encoded_bitmap) {
   auto it = encoded_bitmap.it();
   while (!it.end()) {
     for (std::size_t i = it.pos(); i < it.pos() + it.length(); ++i) {
+      assert(bm[i] == false);
       bm[i] = true;
     }
     it.next();
