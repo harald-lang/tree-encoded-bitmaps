@@ -156,4 +156,21 @@ determine_clustering_factor(const std::vector<$u32>& b, u32 val) {
 }
 //===----------------------------------------------------------------------===//
 
+//===----------------------------------------------------------------------===//
+/// Determine the average run-length.
+static f64
+determine_clustering_factor(const std::vector<$u32>& b) {
+  if (b.size() == 0) return 0;
+  auto last_val = b[0];
+  std::size_t run_cntr = 1;
+  for (std::size_t i = 1; i < b.size(); i++) {
+    const auto current_val = b[i];
+    run_cntr += last_val != current_val;
+    last_val = current_val;
+  }
+  assert(run_cntr > 0);
+  return (b.size() * 1.0) / run_cntr;
+}
+//===----------------------------------------------------------------------===//
+
 } // namespace dtl
