@@ -95,9 +95,9 @@ public:
     // limited by the given false positive rate (FPR).
     if (fpr > 0.0) {
       // Determine maximum number of false positives.
-      const auto tp_cnt = bitmap.count();
-      const auto tn_cnt = n_ - tp_cnt;
-      u64 max_fp_cnt = static_cast<u64>(tn_cnt * fpr);
+//      const auto tp_cnt = bitmap.count();
+//      const auto tn_cnt = n_ - tp_cnt;
+      u64 max_fp_cnt = static_cast<u64>(n_ * fpr);
       // The total number of false positives introduced so far.
       $u64 total_fp_cntr = 0;
 
