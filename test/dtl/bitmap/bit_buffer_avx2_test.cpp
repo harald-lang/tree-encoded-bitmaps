@@ -68,6 +68,16 @@ TEST(bit_buffer_avx2,
 }
 //===----------------------------------------------------------------------===//
 TEST(bit_buffer_avx2,
+     read_ahead) {
+  dtl::r256 b = {.u8 =   {2,1,1,2,1,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2}};
+  dtl::bit_buffer_avx2<> bb(b.i);
+  $u64 ra = 0b10000000000000000000000010001001;
+  ASSERT_EQ(ra, bb.read_ahead());
+  bb.increment(~u32(0));
+  ASSERT_EQ(ra, bb.read());
+}
+//===----------------------------------------------------------------------===//
+TEST(bit_buffer_avx2,
      masked_read) {
   dtl::bit_buffer_avx2<> bb(_mm256_set1_epi32(-1));
   ASSERT_EQ(0b00100101, bb.read(0b00100101));
