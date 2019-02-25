@@ -14,6 +14,9 @@
 #include <dtl/bitmap/util/rank1_surf.hpp>
 #include <dtl/bitmap/util/rank1_surf_cached.hpp>
 #include <dtl/bitmap/util/bit_buffer.hpp>
+#ifdef __AVX2__
+#include <dtl/bitmap/util/bit_buffer_avx2.hpp>
+#endif // __AVX2__
 #ifdef __AVX512BW__
 #include <dtl/bitmap/util/bit_buffer_avx512.hpp>
 #endif // __AVX512BW__
@@ -531,7 +534,7 @@ public:
       $u32 level = 0;
       for (; level < teb_.encoded_tree_height_; ++level) {
         u64 node_idx = teb_.level_offsets_structure_[level];
-        u32 node_bit = teb_.is_inner_node(node_idx) ? 1u : 0u;
+        const auto node_bit = teb_.is_inner_node(node_idx);
         if (!node_bit) break;
       }
       scan_path_level_ = level;
@@ -539,8 +542,12 @@ public:
 #ifdef __AVX512BW__
       next_batch_avx512();
 #else
-      next_batch();
-#endif // __AVX512BW__
+#ifdef __AVX2__
+      next_batch_avx2();
+#else
+//      next_batch();
+#endif
+#endif
     }
 
     __teb_inline__
@@ -563,8 +570,12 @@ public:
 #ifdef __AVX512BW__
         next_batch_avx512();
 #else
-        next_batch();
-#endif // __AVX512BW__
+#ifdef __AVX2__
+        next_batch_avx2();
+#else
+//        next_batch();
+#endif
+#endif
       }
     }
 
@@ -801,6 +812,175 @@ done:
       result_cnt_ = result_cnt;
       alpha_ = alpha;
     }
+
+#ifdef __AVX2__
+    void //__teb_inline__
+    next_batch_avx2() noexcept __attribute__ ((flatten, hot, noinline)) {
+      const auto h = tree_height_;
+      const auto n = teb_.size();
+      // Note: The path variable does NOT contain a sentinel bit. Instead, we
+      //       keep track of the paths' level using a separate variable.
+      register auto path = scan_path_;
+      register auto path_level = scan_path_level_;
+      auto pos = path << (h - path_level);
+      auto length = n >> path_level;
+      auto result_cnt = result_cnt_;
+      auto alpha = 0u;
+      auto alpha_la = 0u;
+      auto beta = 0u;
+
+      dtl::r256 tmp_t { .u8 = {
+          0,0,0,0,
+          0,0,0,0,
+          0,0,0,0,
+          0,0,0,0,
+          0,0,0,0,
+          0,0,0,0,
+          0,0,0,0,
+          0,0,0,0 }};
+      dtl::r256 tmp_l { .u8 = {
+          0,0,0,0,
+          0,0,0,0,
+          0,0,0,0,
+          0,0,0,0,
+          0,0,0,0,
+          0,0,0,0,
+          0,0,0,0,
+          0,0,0,0 }};
+
+      const data_view<const word_type> T {
+          teb_.structure_.m_bits.data(),
+          teb_.structure_.m_bits.data() + teb_.structure_.m_bits.size(),
+      };
+      const data_view<const word_type> L {
+          teb_.labels_.m_bits.data(),
+          teb_.labels_.m_bits.data() + teb_.labels_.m_bits.size(),
+      };
+
+      // Bit buffers for the tree structure.
+      dtl::bit_buffer_avx2<> tree_bit_buffer;
+
+      // Bit buffers for the labels.
+      dtl::bit_buffer_avx2<> label_bit_buffer;
+
+      // Perfect levels. (all bits set to 1)
+      for (std::size_t level = 0; level < perfect_levels_ - 1; ++level) {
+        const auto slot_idx = level;
+        tmp_t.u8[slot_idx] = ~u8(0);
+        tmp_l.u8[slot_idx] = ~u8(0);
+      }
+      tree_bit_buffer.set_raw(tmp_t.i);
+      label_bit_buffer.set_raw(tmp_l.i);
+
+      assert(batch_size_ > 8);
+      while (result_cnt < batch_size_ - 8
+          && pos < n) {
+//        std::cout << "--" << std::endl;
+        // Initialize the bit buffers.
+        tree_bit_buffer.reset_read_mask();
+        label_bit_buffer.reset_read_mask();
+        for (std::size_t level = perfect_levels_ - 1;
+             level < teb_.encoded_tree_height_; ++level) {
+          const auto slot_idx = level;
+          i64 delta = - static_cast<i64>(teb_.implicit_inner_node_cnt_);
+          tmp_t.u8[slot_idx] = fetch_n_bits(T, static_cast<i64>(scanner_states_[level].node_idx_) + delta, 8);
+          tmp_l.u8[slot_idx] = fetch_n_bits(L, static_cast<i64>(scanner_states_[level].label_idx_), 8);
+        }
+        tree_bit_buffer.set_raw(tmp_t.i);
+        label_bit_buffer.set_raw(tmp_l.i);
+
+        // Initialize alpha. (which reads the first bits in the bit buffers)
+        alpha = tree_bit_buffer.read();
+        alpha_la = tree_bit_buffer.read_ahead();
+
+        // Initialize beta.
+        beta = label_bit_buffer.read();
+
+
+        // Do multiple iteration to consume the bit buffers.
+        $u1 is_not_done = true;
+        for ($i32 b = 0; b < 6 && is_not_done; ++b) {
+          u64 length = n >> path_level;
+
+          assert(pos < n);
+          assert(pos + length <= n);
+          assert(path_level >= 1);
+          assert(length > 0);
+
+          // Produce output (a 1-fill).
+          results_[result_cnt].pos = pos;
+          results_[result_cnt].length = length;
+          // Read the label of the current leaf node.
+          u64 label = (beta >> path_level) & 1;
+          result_cnt += label;
+
+//          std::cout << "pos: " << std::setw(2) << pos
+//              << ", path: " << std::bitset<32>(path)
+//              << ", level: " << path_level
+//              << ", alpha: " << std::bitset<32>(alpha)
+//              << ", alpha_la: " << std::bitset<32>(alpha_la)
+//              << std::endl;
+
+          // Increment the current position.
+          pos += length;
+          is_not_done = pos != n;
+
+          // Advance the label scanner.
+          label_bit_buffer.increment(u32(1) << path_level);
+          beta = label_bit_buffer.read();
+
+          // Walk upwards until a left child is found. (might be the current one)
+          const auto advance_end = path_level + 1;
+          u32 advance_mask_hi = (~u32(0)) >> (32 - advance_end);
+          const auto up_steps = dtl::bits::tz_count(~path);
+          path >>= up_steps;
+          path_level -= up_steps;
+          // Go to right sibling.
+          path = path | 1;
+
+          // Advance the scanners and update the alpha vector.
+          const auto advance_begin = path_level;
+          u32 advance_mask_lo = (~u32(0)) << advance_begin;
+          u32 advance_mask = advance_mask_lo & advance_mask_hi;
+
+          const auto alpha_next =
+              (alpha_la & advance_mask) | (alpha & (~advance_mask));
+          tree_bit_buffer.increment(advance_mask);
+
+          // Walk downwards to the left-most leaf in that sub-tree.
+          const auto down_steps =
+              dtl::bits::tz_count(~(alpha_next >> path_level));
+          path_level += down_steps;
+          path <<= down_steps;
+
+          // Update the alpha vector.
+          alpha = alpha_next;
+          alpha_la = tree_bit_buffer.read_ahead();
+        }
+
+        // Update the scanner states.
+        dtl::r256 tmp_tm {.i = tree_bit_buffer.get_read_mask()};
+        dtl::r256 tmp_lm {.i = label_bit_buffer.get_read_mask()};
+        for ($u32 level = perfect_levels_ - 1;
+             level < teb_.encoded_tree_height_; ++level) {
+          scanner_states_[level].node_idx_ += dtl::bits::tz_count(tmp_tm.u8[level]);
+          scanner_states_[level].label_idx_ += dtl::bits::tz_count(tmp_lm.u8[level]);
+        }
+      }
+
+done:
+      if (result_cnt < batch_size_
+          && pos == n) {
+        results_[result_cnt].pos = n;
+        results_[result_cnt].length = 0;
+        ++result_cnt;
+      }
+      scan_path_ = path;
+      scan_path_level_ = path_level;
+      result_cnt_ = result_cnt;
+      alpha_ = alpha;
+    }
+#endif // __AVX2__
 
 #ifdef __AVX512BW__
     void //__teb_inline__
