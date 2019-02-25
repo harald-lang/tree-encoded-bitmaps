@@ -80,7 +80,7 @@ TYPED_TEST(api_encode_decode_using_iterator_test, encode_decode_0_to_255) {
   }
 }
 
-TYPED_TEST(api_encode_decode_using_iterator_test, DISABLED_encode_decode_0_to_65536) {
+TYPED_TEST(api_encode_decode_using_iterator_test, encode_decode_0_to_65536) {
   using T = TypeParam;
   constexpr std::size_t LEN = 16;
 
