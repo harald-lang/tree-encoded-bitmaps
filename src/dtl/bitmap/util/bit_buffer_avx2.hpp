@@ -116,6 +116,10 @@ public:
 
   inline void
   increment(u32 mask) noexcept {
+    D(r256 m {.i = read_mask_};)
+    D(for (std::size_t i = 0; i < 32; ++i) {)
+    D(  assert(dtl::bits::tz_count(m.u8[i]) <= 8 - dtl::bits::bit_test(mask, i));)
+    D(})
     const auto avx2_mask = get_mask3(mask);
     const auto inc = _mm256_slli_epi64(read_mask_, 1);
     read_mask_ = _mm256_blendv_epi8(read_mask_, inc, avx2_mask);
@@ -123,6 +127,10 @@ public:
 
   inline u32
   read(u32 mask) const noexcept {
+    D(r256 m {.i = read_mask_};)
+    D(for (std::size_t i = 0; i < 32; ++i) {)
+    D(  assert(dtl::bits::tz_count(m.u8[i]) <= 8);)
+    D(})
     return _mm256_movemask_epi8(
         _mm256_cmpgt_epi8(_mm256_and_si256(buf_, read_mask_),
             _mm256_setzero_si256())) & mask;
@@ -130,6 +138,10 @@ public:
 
   inline u32
   read() const noexcept {
+    D(r256 m {.i = read_mask_};)
+    D(for (std::size_t i = 0; i < 32; ++i) {)
+    D(  assert(dtl::bits::tz_count(m.u8[i]) <= 8);)
+    D(})
     return _mm256_movemask_epi8(
         _mm256_cmpgt_epi8(_mm256_and_si256(buf_, read_mask_),
             _mm256_setzero_si256()));
@@ -137,6 +149,10 @@ public:
 
   inline u32
   read_ahead() const noexcept {
+    D(r256 m {.i = read_mask_};)
+    D(for (std::size_t i = 0; i < 32; ++i) {)
+    D(  assert(dtl::bits::tz_count(m.u8[i]) < 8);)
+    D(})
     return _mm256_movemask_epi8(
         _mm256_cmpgt_epi8(_mm256_and_si256(buf_,
             _mm256_slli_epi64(read_mask_, 1u)),
