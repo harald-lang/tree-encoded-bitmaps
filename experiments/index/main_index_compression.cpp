@@ -333,7 +333,7 @@ run(const config& conf, std::ostream& os) {
   delete bmi[conf.c - 1];
   bmi.pop_back();
 
-  // Compress the rnage-encoded bitmap index.
+  // Compress the range-encoded bitmap index.
   std::size_t re_compressed_size = 0;
   for (auto bm : bmi) {
     T bmc(*bm);
