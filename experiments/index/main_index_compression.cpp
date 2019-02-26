@@ -209,7 +209,6 @@ $i32 main() {
 
   std::vector<$u32> cardinalities;
   for ($u32 c = 8; c <= 8192; c *= 2) {
-    std::cout << c << std::endl;
     cardinalities.push_back(c);
   }
 
