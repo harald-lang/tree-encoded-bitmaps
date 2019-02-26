@@ -23,10 +23,10 @@
 #include <dtl/bitmap/position_list.hpp>
 #include <dtl/bitmap/partitioned_position_list.hpp>
 #include <dtl/bitmap/partitioned_range_list.hpp>
-#include <dtl/bitmap/range_list.hpp>
 
+#include <dtl/bitmap/range_list.hpp>
 #include <experiments/util/threading.hpp>
-#include <dtl/bitmap/teb_scan.hpp>
+#include <experiments/util/bitmap_types.hpp>
 
 #include "version.h"
 
@@ -52,42 +52,6 @@ now_nanos() {
 }
 
 
-//===----------------------------------------------------------------------===//
-enum class bitmap_t {
-  bitmap,
-  roaring,
-  teb,
-  teb_scan,
-  wah,
-  position_list,
-  partitioned_position_list_u8,
-  partitioned_position_list_u16,
-  range_list,
-  partitioned_range_list_u8,
-  partitioned_range_list_u16,
-  _first = bitmap,
-  _last = partitioned_range_list_u16
-};
-std::vector<std::string> bitmap_names {
-    "bitmap",
-    "roaring",
-    "teb",
-    "teb_scan",
-    "wah",
-    "position_list",
-    "partitioned_position_list_u8",
-    "partitioned_position_list_u16",
-    "range_list",
-    "partitioned_range_list_u8",
-    "partitioned_range_list_u16",
-};
-std::ostream& operator<<(std::ostream& out, const bitmap_t& b) {
-  const auto i = static_cast<int>(b);
-  assert(i < bitmap_names.size());
-  out << bitmap_names[i];
-  return out;
-}
-//===----------------------------------------------------------------------===//
 struct config {
   bitmap_t bitmap_type;
   $u64 n;
