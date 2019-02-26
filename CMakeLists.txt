@@ -97,9 +97,12 @@ set(BENCHMARK_SOURCE_FILES
         ${SQLITE_SOURCE_FILES}
         experiments/compression/common.hpp
         experiments/performance/common.hpp
+        experiments/util/bitmap_types.hpp
         experiments/util/database.hpp
         experiments/util/database.cpp
         experiments/util/gen.hpp
+        experiments/util/seq_db.hpp
+        experiments/util/seq_db.cpp
         experiments/util/threading.hpp
         )
 
@@ -277,6 +280,16 @@ set(EXPERIMENT_COMPRESSION_VARYING_F_SOURCE_FILES
         )
 add_executable(ex_compression_varying_f ${EXPERIMENT_COMPRESSION_VARYING_F_SOURCE_FILES})
 target_link_libraries(ex_compression_varying_f fastbit roaring pthread dl)
+
+# Index compression
+set(EXPERIMENT_INDEX_COMPRESSION_SOURCE_FILES
+        ${SOURCE_FILES}
+        ${BENCHMARK_SOURCE_FILES}
+        experiments/compression/common.hpp
+        experiments/index/main_index_compression.cpp
+        )
+add_executable(ex_index_compression ${EXPERIMENT_INDEX_COMPRESSION_SOURCE_FILES})
+target_link_libraries(ex_index_compression fastbit roaring pthread dl)
 
 
 # copy shell scripts
