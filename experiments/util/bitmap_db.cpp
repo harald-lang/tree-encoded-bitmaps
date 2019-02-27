@@ -4,7 +4,7 @@
 #include <dtl/bitmap.hpp>
 #include <dtl/bitmap/util/random.hpp>
 #include <dtl/bitmap/util/base64.hpp>
-#include "database.hpp"
+#include "bitmap_db.hpp"
 
 //===----------------------------------------------------------------------===//
 bitmap_db::bitmap_db(const std::string& file)

@@ -1,6 +1,6 @@
 #include <iostream>
 #include <dtl/dtl.hpp>
-#include <experiments/util/database.hpp>
+#include <experiments/util/bitmap_db.hpp>
 #include <experiments/util/gen.hpp>
 #include "common.hpp"
 

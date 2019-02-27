@@ -98,8 +98,8 @@ set(BENCHMARK_SOURCE_FILES
         experiments/compression/common.hpp
         experiments/performance/common.hpp
         experiments/util/bitmap_types.hpp
-        experiments/util/database.hpp
-        experiments/util/database.cpp
+        experiments/util/bitmap_db.hpp
+        experiments/util/bitmap_db.cpp
         experiments/util/gen.hpp
         experiments/util/seq_db.hpp
         experiments/util/seq_db.cpp

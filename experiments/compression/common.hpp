@@ -24,7 +24,7 @@
 #include <dtl/bitmap/range_list.hpp>
 
 #include <experiments/util/threading.hpp>
-#include <experiments/util/database.hpp>
+#include <experiments/util/bitmap_db.hpp>
 #include <dtl/bitmap/util/convert.hpp>
 #include <dtl/bitmap/teb_scan.hpp>
 

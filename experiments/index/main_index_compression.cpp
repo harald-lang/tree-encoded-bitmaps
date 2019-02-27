@@ -12,7 +12,9 @@
 #include "version.h"
 
 //===----------------------------------------------------------------------===//
-// Experiment: TODO
+// Experiment: This experiment constructs and compresses bitmap indexes from
+//             randomly generated integer sequences. Thereby varying the
+//             parameters n, c, and f.
 //===----------------------------------------------------------------------===//
 
 //===----------------------------------------------------------------------===//
@@ -29,7 +31,7 @@ static seq_db db(DB_FILE);
 static u64 GEN_DATA = dtl::env<$u64>::get("GEN_DATA", 0);
 
 //===----------------------------------------------------------------------===//
-
+// An instance of config contains all information to run a single measurement.
 struct config {
   /// Sequence ID (in the database).
   $u64 seq_id;
@@ -42,11 +44,9 @@ struct config {
   /// Clustering factor.
   $f64 f;
 };
-
 //===----------------------------------------------------------------------===//
-
+// Forward declaration.
 void bmi_benchmark(const config& conf, std::ostream& os);
-
 //===----------------------------------------------------------------------===//
 /// Data generation.
 void gen_data(const std::vector<$u64>& n_values,
@@ -389,7 +389,7 @@ void bmi_benchmark(const config& conf, std::ostream& os) {
       run<type_of<bitmap_t::teb>::type>(conf, os);
       break;
     case bitmap_t::teb_scan:
-//      run<type_of<bitmap_t::teb_scan>::type>(conf, os);
+//      run<type_of<bitmap_t::teb_scan>::type>(conf, os); // TODO remove
       break;
     case bitmap_t::wah:
       run<type_of<bitmap_t::wah>::type>(conf, os);
