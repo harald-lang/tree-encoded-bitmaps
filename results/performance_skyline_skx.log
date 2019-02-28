@@ -1,0 +1,1534 @@
+run_id=1550842239
+build_id=2019-02-22 14:30:29, harry_dev/7c24172+, gcc-8.2.0
+n=1048576, f=1, d=0.100974
+n=1048576, f=1, d=0.126218
+n=1048576, f=1, d=0.157772
+n=1048576, f=1, d=0.197215
+n=1048576, f=1, d=0.246519
+n=1048576, f=1, d=0.308149
+n=1048576, f=1, d=0.385186
+n=1048576, f=1, d=0.481482
+n=1048576, f=1, d=0.601853
+n=1048576, f=1, d=0.752316
+n=1048576, f=1, d=0.940395
+n=1048576, f=2, d=0.100974
+n=1048576, f=2, d=0.126218
+n=1048576, f=2, d=0.157772
+n=1048576, f=2, d=0.197215
+n=1048576, f=2, d=0.246519
+n=1048576, f=2, d=0.308149
+n=1048576, f=2, d=0.385186
+n=1048576, f=2, d=0.481482
+n=1048576, f=2, d=0.601853
+n=1048576, f=2, d=0.752316
+n=1048576, f=2, d=0.940395
+n=1048576, f=4, d=0.100974
+n=1048576, f=4, d=0.126218
+n=1048576, f=4, d=0.157772
+n=1048576, f=4, d=0.197215
+n=1048576, f=4, d=0.246519
+n=1048576, f=4, d=0.308149
+n=1048576, f=4, d=0.385186
+n=1048576, f=4, d=0.481482
+n=1048576, f=4, d=0.601853
+n=1048576, f=4, d=0.752316
+n=1048576, f=4, d=0.940395
+n=1048576, f=8, d=0.100974
+n=1048576, f=8, d=0.126218
+n=1048576, f=8, d=0.157772
+n=1048576, f=8, d=0.197215
+n=1048576, f=8, d=0.246519
+n=1048576, f=8, d=0.308149
+n=1048576, f=8, d=0.385186
+n=1048576, f=8, d=0.481482
+n=1048576, f=8, d=0.601853
+n=1048576, f=8, d=0.752316
+n=1048576, f=8, d=0.940395
+n=1048576, f=16, d=0.100974
+n=1048576, f=16, d=0.126218
+n=1048576, f=16, d=0.157772
+n=1048576, f=16, d=0.197215
+n=1048576, f=16, d=0.246519
+n=1048576, f=16, d=0.308149
+n=1048576, f=16, d=0.385186
+n=1048576, f=16, d=0.481482
+n=1048576, f=16, d=0.601853
+n=1048576, f=16, d=0.752316
+n=1048576, f=16, d=0.940395
+n=1048576, f=32, d=0.100974
+n=1048576, f=32, d=0.126218
+n=1048576, f=32, d=0.157772
+n=1048576, f=32, d=0.197215
+n=1048576, f=32, d=0.246519
+n=1048576, f=32, d=0.308149
+n=1048576, f=32, d=0.385186
+n=1048576, f=32, d=0.481482
+n=1048576, f=32, d=0.601853
+n=1048576, f=32, d=0.752316
+n=1048576, f=32, d=0.940395
+n=1048576, f=64, d=0.100974
+n=1048576, f=64, d=0.126218
+n=1048576, f=64, d=0.157772
+n=1048576, f=64, d=0.197215
+n=1048576, f=64, d=0.246519
+n=1048576, f=64, d=0.308149
+n=1048576, f=64, d=0.385186
+n=1048576, f=64, d=0.481482
+n=1048576, f=64, d=0.601853
+n=1048576, f=64, d=0.752316
+n=1048576, f=64, d=0.940395
+n=1048576, f=128, d=0.100974
+n=1048576, f=128, d=0.126218
+n=1048576, f=128, d=0.157772
+n=1048576, f=128, d=0.197215
+n=1048576, f=128, d=0.246519
+n=1048576, f=128, d=0.308149
+n=1048576, f=128, d=0.385186
+n=1048576, f=128, d=0.481482
+n=1048576, f=128, d=0.601853
+n=1048576, f=128, d=0.752316
+n=1048576, f=128, d=0.940395
+n=1048576, f=256, d=0.100974
+n=1048576, f=256, d=0.126218
+n=1048576, f=256, d=0.157772
+n=1048576, f=256, d=0.197215
+n=1048576, f=256, d=0.246519
+n=1048576, f=256, d=0.308149
+n=1048576, f=256, d=0.385186
+n=1048576, f=256, d=0.481482
+n=1048576, f=256, d=0.601853
+n=1048576, f=256, d=0.752316
+n=1048576, f=256, d=0.940395
+n=1048576, f=512, d=0.100974
+n=1048576, f=512, d=0.126218
+n=1048576, f=512, d=0.157772
+n=1048576, f=512, d=0.197215
+n=1048576, f=512, d=0.246519
+n=1048576, f=512, d=0.308149
+n=1048576, f=512, d=0.385186
+n=1048576, f=512, d=0.481482
+n=1048576, f=512, d=0.601853
+n=1048576, f=512, d=0.752316
+n=1048576, f=512, d=0.940395
+n=1048576, f=1024, d=0.100974
+n=1048576, f=1024, d=0.126218
+n=1048576, f=1024, d=0.157772
+n=1048576, f=1024, d=0.197215
+n=1048576, f=1024, d=0.246519
+n=1048576, f=1024, d=0.308149
+n=1048576, f=1024, d=0.385186
+n=1048576, f=1024, d=0.481482
+n=1048576, f=1024, d=0.601853
+n=1048576, f=1024, d=0.752316
+n=1048576, f=1024, d=0.940395
+n=1048576, f=2048, d=0.100974
+n=1048576, f=2048, d=0.126218
+n=1048576, f=2048, d=0.157772
+n=1048576, f=2048, d=0.197215
+n=1048576, f=2048, d=0.246519
+n=1048576, f=2048, d=0.308149
+n=1048576, f=2048, d=0.385186
+n=1048576, f=2048, d=0.481482
+n=1048576, f=2048, d=0.601853
+n=1048576, f=2048, d=0.752316
+n=1048576, f=2048, d=0.940395
+n=1048576, f=4096, d=0.100974
+n=1048576, f=4096, d=0.126218
+n=1048576, f=4096, d=0.157772
+n=1048576, f=4096, d=0.197215
+n=1048576, f=4096, d=0.246519
+n=1048576, f=4096, d=0.308149
+n=1048576, f=4096, d=0.385186
+n=1048576, f=4096, d=0.481482
+n=1048576, f=4096, d=0.601853
+n=1048576, f=4096, d=0.752316
+n=1048576, f=4096, d=0.940395
+n=1048576, f=8192, d=0.100974
+n=1048576, f=8192, d=0.126218
+n=1048576, f=8192, d=0.157772
+n=1048576, f=8192, d=0.197215
+n=1048576, f=8192, d=0.246519
+n=1048576, f=8192, d=0.308149
+n=1048576, f=8192, d=0.385186
+n=1048576, f=8192, d=0.481482
+n=1048576, f=8192, d=0.601853
+n=1048576, f=8192, d=0.752316
+n=1048576, f=8192, d=0.940395
+n=1048576, f=16384, d=0.100974
+n=1048576, f=16384, d=0.126218
+n=1048576, f=16384, d=0.157772
+n=1048576, f=16384, d=0.197215
+n=1048576, f=16384, d=0.246519
+n=1048576, f=16384, d=0.308149
+n=1048576, f=16384, d=0.385186
+n=1048576, f=16384, d=0.481482
+n=1048576, f=16384, d=0.601853
+n=1048576, f=16384, d=0.752316
+n=1048576, f=16384, d=0.940395
+n=1048576, f=32768, d=0.100974
+n=1048576, f=32768, d=0.126218
+n=1048576, f=32768, d=0.157772
+n=1048576, f=32768, d=0.197215
+n=1048576, f=32768, d=0.246519
+n=1048576, f=32768, d=0.308149
+n=1048576, f=32768, d=0.385186
+n=1048576, f=32768, d=0.481482
+n=1048576, f=32768, d=0.601853
+n=1048576, f=32768, d=0.752316
+n=1048576, f=32768, d=0.940395
+n=1048576, f=65536, d=0.100974
+n=1048576, f=65536, d=0.126218
+n=1048576, f=65536, d=0.157772
+n=1048576, f=65536, d=0.197215
+n=1048576, f=65536, d=0.246519
+n=1048576, f=65536, d=0.308149
+n=1048576, f=65536, d=0.385186
+n=1048576, f=65536, d=0.481482
+n=1048576, f=65536, d=0.601853
+n=1048576, f=65536, d=0.752316
+n=1048576, f=65536, d=0.940395
+n=1048576, f=131072, d=0.100974
+n=1048576, f=131072, d=0.126218
+n=1048576, f=131072, d=0.157772
+n=1048576, f=131072, d=0.197215
+n=1048576, f=131072, d=0.246519
+n=1048576, f=131072, d=0.308149
+n=1048576, f=131072, d=0.385186
+n=1048576, f=131072, d=0.481482
+n=1048576, f=131072, d=0.601853
+n=1048576, f=131072, d=0.752316
+n=1048576, f=131072, d=0.940395
+n=1048576, f=262144, d=0.100974
+n=1048576, f=262144, d=0.126218
+n=1048576, f=262144, d=0.157772
+n=1048576, f=262144, d=0.197215
+n=1048576, f=262144, d=0.246519
+n=1048576, f=262144, d=0.308149
+n=1048576, f=262144, d=0.385186
+n=1048576, f=262144, d=0.481482
+n=1048576, f=262144, d=0.601853
+n=1048576, f=262144, d=0.752316
+n=1048576, f=262144, d=0.940395
+n=1048576, f=524288, d=0.100974
+n=1048576, f=524288, d=0.126218
+n=1048576, f=524288, d=0.157772
+n=1048576, f=524288, d=0.197215
+n=1048576, f=524288, d=0.246519
+n=1048576, f=524288, d=0.308149
+n=1048576, f=524288, d=0.385186
+n=1048576, f=524288, d=0.481482
+n=1048576, f=524288, d=0.601853
+n=1048576, f=524288, d=0.752316
+n=1048576, f=524288, d=0.940395
+n=1048576, f=1.04858e+06, d=0.100974
+n=1048576, f=1.04858e+06, d=0.126218
+n=1048576, f=1.04858e+06, d=0.157772
+n=1048576, f=1.04858e+06, d=0.197215
+n=1048576, f=1.04858e+06, d=0.246519
+n=1048576, f=1.04858e+06, d=0.308149
+n=1048576, f=1.04858e+06, d=0.385186
+n=1048576, f=1.04858e+06, d=0.481482
+n=1048576, f=1.04858e+06, d=0.601853
+n=1048576, f=1.04858e+06, d=0.752316
+n=1048576, f=1.04858e+06, d=0.940395
+thread 0 got 32 task(s)
+Progress: [33/20790] - estimated time until completion: 1h 39m
+thread 0 got 32 task(s)
+Progress: [65/20790] - estimated time until completion: 1h 39m
+thread 0 got 32 task(s)
+Progress: [97/20790] - estimated time until completion: 1h 40m
+thread 0 got 32 task(s)
+Progress: [129/20790] - estimated time until completion: 1h 41m
+thread 0 got 32 task(s)
+Progress: [161/20790] - estimated time until completion: 1h 40m
+thread 0 got 32 task(s)
+Progress: [193/20790] - estimated time until completion: 1h 41m
+thread 0 got 32 task(s)
+Progress: [225/20790] - estimated time until completion: 1h 39m
+thread 0 got 32 task(s)
+Progress: [257/20790] - estimated time until completion: 1h 39m
+thread 0 got 32 task(s)
+Progress: [289/20790] - estimated time until completion: 1h 41m
+thread 0 got 32 task(s)
+Progress: [321/20790] - estimated time until completion: 1h 42m
+thread 0 got 32 task(s)
+Progress: [353/20790] - estimated time until completion: 1h 41m
+thread 0 got 32 task(s)
+Progress: [385/20790] - estimated time until completion: 1h 43m
+thread 0 got 32 task(s)
+Progress: [417/20790] - estimated time until completion: 1h 41m
+thread 0 got 32 task(s)
+Progress: [449/20790] - estimated time until completion: 1h 41m
+thread 0 got 32 task(s)
+Progress: [481/20790] - estimated time until completion: 1h 41m
+thread 0 got 32 task(s)
+Progress: [513/20790] - estimated time until completion: 1h 40m
+thread 0 got 32 task(s)
+Progress: [545/20790] - estimated time until completion: 1h 40m
+thread 0 got 32 task(s)
+Progress: [577/20790] - estimated time until completion: 1h 41m
+thread 0 got 32 task(s)
+Progress: [609/20790] - estimated time until completion: 1h 41m
+thread 0 got 32 task(s)
+Progress: [641/20790] - estimated time until completion: 1h 41m
+thread 0 got 32 task(s)
+Progress: [673/20790] - estimated time until completion: 1h 40m
+thread 0 got 32 task(s)
+Progress: [705/20790] - estimated time until completion: 1h 39m
+thread 0 got 32 task(s)
+Progress: [737/20790] - estimated time until completion: 1h 39m
+thread 0 got 32 task(s)
+Progress: [769/20790] - estimated time until completion: 1h 39m
+thread 0 got 32 task(s)
+Progress: [801/20790] - estimated time until completion: 1h 40m
+thread 0 got 32 task(s)
+Progress: [833/20790] - estimated time until completion: 1h 39m
+thread 0 got 32 task(s)
+Progress: [865/20790] - estimated time until completion: 1h 39m
+thread 0 got 32 task(s)
+Progress: [897/20790] - estimated time until completion: 1h 39m
+thread 0 got 32 task(s)
+Progress: [929/20790] - estimated time until completion: 1h 39m
+thread 0 got 32 task(s)
+Progress: [961/20790] - estimated time until completion: 1h 39m
+thread 0 got 32 task(s)
+Progress: [993/20790] - estimated time until completion: 1h 38m
+thread 0 got 32 task(s)
+Progress: [1025/20790] - estimated time until completion: 1h 38m
+thread 0 got 32 task(s)
+Progress: [1057/20790] - estimated time until completion: 1h 37m
+thread 0 got 32 task(s)
+Progress: [1089/20790] - estimated time until completion: 1h 37m
+thread 0 got 32 task(s)
+Progress: [1121/20790] - estimated time until completion: 1h 37m
+thread 0 got 32 task(s)
+Progress: [1153/20790] - estimated time until completion: 1h 37m
+thread 0 got 32 task(s)
+Progress: [1185/20790] - estimated time until completion: 1h 37m
+thread 0 got 32 task(s)
+Progress: [1217/20790] - estimated time until completion: 1h 36m
+thread 0 got 32 task(s)
+Progress: [1249/20790] - estimated time until completion: 1h 36m
+thread 0 got 32 task(s)
+Progress: [1281/20790] - estimated time until completion: 1h 37m
+thread 0 got 32 task(s)
+Progress: [1313/20790] - estimated time until completion: 1h 36m
+thread 0 got 32 task(s)
+Progress: [1345/20790] - estimated time until completion: 1h 36m
+thread 0 got 32 task(s)
+Progress: [1377/20790] - estimated time until completion: 1h 36m
+thread 0 got 32 task(s)
+Progress: [1409/20790] - estimated time until completion: 1h 36m
+thread 0 got 32 task(s)
+Progress: [1441/20790] - estimated time until completion: 1h 36m
+thread 0 got 32 task(s)
+Progress: [1473/20790] - estimated time until completion: 1h 36m
+thread 0 got 32 task(s)
+Progress: [1505/20790] - estimated time until completion: 1h 36m
+thread 0 got 32 task(s)
+Progress: [1537/20790] - estimated time until completion: 1h 35m
+thread 0 got 32 task(s)
+Progress: [1569/20790] - estimated time until completion: 1h 35m
+thread 0 got 32 task(s)
+Progress: [1601/20790] - estimated time until completion: 1h 35m
+thread 0 got 32 task(s)
+Progress: [1633/20790] - estimated time until completion: 1h 34m
+thread 0 got 32 task(s)
+Progress: [1665/20790] - estimated time until completion: 1h 35m
+thread 0 got 32 task(s)
+Progress: [1697/20790] - estimated time until completion: 1h 34m
+thread 0 got 32 task(s)
+Progress: [1729/20790] - estimated time until completion: 1h 34m
+thread 0 got 32 task(s)
+Progress: [1761/20790] - estimated time until completion: 1h 34m
+thread 0 got 32 task(s)
+Progress: [1793/20790] - estimated time until completion: 1h 34m
+thread 0 got 32 task(s)
+Progress: [1825/20790] - estimated time until completion: 1h 34m
+thread 0 got 32 task(s)
+Progress: [1857/20790] - estimated time until completion: 1h 34m
+thread 0 got 32 task(s)
+Progress: [1889/20790] - estimated time until completion: 1h 34m
+thread 0 got 32 task(s)
+Progress: [1921/20790] - estimated time until completion: 1h 34m
+thread 0 got 32 task(s)
+Progress: [1953/20790] - estimated time until completion: 1h 33m
+thread 0 got 32 task(s)
+Progress: [1985/20790] - estimated time until completion: 1h 33m
+thread 0 got 32 task(s)
+Progress: [2017/20790] - estimated time until completion: 1h 33m
+thread 0 got 32 task(s)
+Progress: [2049/20790] - estimated time until completion: 1h 33m
+thread 0 got 32 task(s)
+Progress: [2081/20790] - estimated time until completion: 1h 32m
+thread 0 got 32 task(s)
+Progress: [2113/20790] - estimated time until completion: 1h 32m
+thread 0 got 32 task(s)
+Progress: [2145/20790] - estimated time until completion: 1h 32m
+thread 0 got 32 task(s)
+Progress: [2177/20790] - estimated time until completion: 1h 32m
+thread 0 got 32 task(s)
+Progress: [2209/20790] - estimated time until completion: 1h 32m
+thread 0 got 32 task(s)
+Progress: [2241/20790] - estimated time until completion: 1h 32m
+thread 0 got 32 task(s)
+Progress: [2273/20790] - estimated time until completion: 1h 32m
+thread 0 got 32 task(s)
+Progress: [2305/20790] - estimated time until completion: 1h 31m
+thread 0 got 32 task(s)
+Progress: [2337/20790] - estimated time until completion: 1h 31m
+thread 0 got 32 task(s)
+Progress: [2369/20790] - estimated time until completion: 1h 31m
+thread 0 got 32 task(s)
+Progress: [2401/20790] - estimated time until completion: 1h 31m
+thread 0 got 32 task(s)
+Progress: [2433/20790] - estimated time until completion: 1h 31m
+thread 0 got 32 task(s)
+Progress: [2465/20790] - estimated time until completion: 1h 31m
+thread 0 got 32 task(s)
+Progress: [2497/20790] - estimated time until completion: 1h 31m
+thread 0 got 32 task(s)
+Progress: [2529/20790] - estimated time until completion: 1h 30m
+thread 0 got 32 task(s)
+Progress: [2561/20790] - estimated time until completion: 1h 30m
+thread 0 got 32 task(s)
+Progress: [2593/20790] - estimated time until completion: 1h 30m
+thread 0 got 32 task(s)
+Progress: [2625/20790] - estimated time until completion: 1h 30m
+thread 0 got 32 task(s)
+Progress: [2657/20790] - estimated time until completion: 1h 30m
+thread 0 got 32 task(s)
+Progress: [2689/20790] - estimated time until completion: 1h 29m
+thread 0 got 32 task(s)
+Progress: [2721/20790] - estimated time until completion: 1h 29m
+thread 0 got 32 task(s)
+Progress: [2753/20790] - estimated time until completion: 1h 29m
+thread 0 got 32 task(s)
+Progress: [2785/20790] - estimated time until completion: 1h 29m
+thread 0 got 32 task(s)
+Progress: [2817/20790] - estimated time until completion: 1h 29m
+thread 0 got 32 task(s)
+Progress: [2849/20790] - estimated time until completion: 1h 29m
+thread 0 got 32 task(s)
+Progress: [2881/20790] - estimated time until completion: 1h 28m
+thread 0 got 32 task(s)
+Progress: [2913/20790] - estimated time until completion: 1h 28m
+thread 0 got 32 task(s)
+Progress: [2945/20790] - estimated time until completion: 1h 28m
+thread 0 got 32 task(s)
+Progress: [2977/20790] - estimated time until completion: 1h 28m
+thread 0 got 32 task(s)
+Progress: [3009/20790] - estimated time until completion: 1h 28m
+thread 0 got 32 task(s)
+Progress: [3041/20790] - estimated time until completion: 1h 28m
+thread 0 got 32 task(s)
+Progress: [3073/20790] - estimated time until completion: 1h 27m
+thread 0 got 32 task(s)
+Progress: [3105/20790] - estimated time until completion: 1h 27m
+thread 0 got 32 task(s)
+Progress: [3137/20790] - estimated time until completion: 1h 27m
+thread 0 got 32 task(s)
+Progress: [3169/20790] - estimated time until completion: 1h 27m
+thread 0 got 32 task(s)
+Progress: [3201/20790] - estimated time until completion: 1h 27m
+thread 0 got 32 task(s)
+Progress: [3233/20790] - estimated time until completion: 1h 27m
+thread 0 got 32 task(s)
+Progress: [3265/20790] - estimated time until completion: 1h 26m
+thread 0 got 32 task(s)
+Progress: [3297/20790] - estimated time until completion: 1h 27m
+thread 0 got 32 task(s)
+Progress: [3329/20790] - estimated time until completion: 1h 26m
+thread 0 got 32 task(s)
+Progress: [3361/20790] - estimated time until completion: 1h 26m
+thread 0 got 32 task(s)
+Progress: [3393/20790] - estimated time until completion: 1h 26m
+thread 0 got 32 task(s)
+Progress: [3425/20790] - estimated time until completion: 1h 26m
+thread 0 got 32 task(s)
+Progress: [3457/20790] - estimated time until completion: 1h 26m
+thread 0 got 32 task(s)
+Progress: [3489/20790] - estimated time until completion: 1h 26m
+thread 0 got 32 task(s)
+Progress: [3521/20790] - estimated time until completion: 1h 25m
+thread 0 got 32 task(s)
+Progress: [3553/20790] - estimated time until completion: 1h 25m
+thread 0 got 32 task(s)
+Progress: [3585/20790] - estimated time until completion: 1h 25m
+thread 0 got 32 task(s)
+Progress: [3617/20790] - estimated time until completion: 1h 25m
+thread 0 got 32 task(s)
+Progress: [3649/20790] - estimated time until completion: 1h 25m
+thread 0 got 32 task(s)
+Progress: [3681/20790] - estimated time until completion: 1h 25m
+thread 0 got 32 task(s)
+Progress: [3713/20790] - estimated time until completion: 1h 24m
+thread 0 got 32 task(s)
+Progress: [3745/20790] - estimated time until completion: 1h 24m
+thread 0 got 32 task(s)
+Progress: [3777/20790] - estimated time until completion: 1h 24m
+thread 0 got 32 task(s)
+Progress: [3809/20790] - estimated time until completion: 1h 24m
+thread 0 got 32 task(s)
+Progress: [3841/20790] - estimated time until completion: 1h 24m
+thread 0 got 32 task(s)
+Progress: [3873/20790] - estimated time until completion: 1h 24m
+thread 0 got 32 task(s)
+Progress: [3905/20790] - estimated time until completion: 1h 23m
+thread 0 got 32 task(s)
+Progress: [3937/20790] - estimated time until completion: 1h 23m
+thread 0 got 32 task(s)
+Progress: [3969/20790] - estimated time until completion: 1h 23m
+thread 0 got 32 task(s)
+Progress: [4001/20790] - estimated time until completion: 1h 23m
+thread 0 got 32 task(s)
+Progress: [4033/20790] - estimated time until completion: 1h 23m
+thread 0 got 32 task(s)
+Progress: [4065/20790] - estimated time until completion: 1h 23m
+thread 0 got 32 task(s)
+Progress: [4097/20790] - estimated time until completion: 1h 22m
+thread 0 got 32 task(s)
+Progress: [4129/20790] - estimated time until completion: 1h 22m
+thread 0 got 32 task(s)
+Progress: [4161/20790] - estimated time until completion: 1h 22m
+thread 0 got 32 task(s)
+Progress: [4193/20790] - estimated time until completion: 1h 22m
+thread 0 got 32 task(s)
+Progress: [4225/20790] - estimated time until completion: 1h 22m
+thread 0 got 32 task(s)
+Progress: [4257/20790] - estimated time until completion: 1h 22m
+thread 0 got 32 task(s)
+Progress: [4289/20790] - estimated time until completion: 1h 21m
+thread 0 got 32 task(s)
+Progress: [4321/20790] - estimated time until completion: 1h 21m
+thread 0 got 32 task(s)
+Progress: [4353/20790] - estimated time until completion: 1h 21m
+thread 0 got 32 task(s)
+Progress: [4385/20790] - estimated time until completion: 1h 21m
+thread 0 got 32 task(s)
+Progress: [4417/20790] - estimated time until completion: 1h 21m
+thread 0 got 32 task(s)
+Progress: [4449/20790] - estimated time until completion: 1h 21m
+thread 0 got 32 task(s)
+Progress: [4481/20790] - estimated time until completion: 1h 20m
+thread 0 got 32 task(s)
+Progress: [4513/20790] - estimated time until completion: 1h 20m
+thread 0 got 32 task(s)
+Progress: [4545/20790] - estimated time until completion: 1h 20m
+thread 0 got 32 task(s)
+Progress: [4577/20790] - estimated time until completion: 1h 20m
+thread 0 got 32 task(s)
+Progress: [4609/20790] - estimated time until completion: 1h 20m
+thread 0 got 32 task(s)
+Progress: [4641/20790] - estimated time until completion: 1h 20m
+thread 0 got 32 task(s)
+Progress: [4673/20790] - estimated time until completion: 1h 20m
+thread 0 got 32 task(s)
+Progress: [4705/20790] - estimated time until completion: 1h 19m
+thread 0 got 32 task(s)
+Progress: [4737/20790] - estimated time until completion: 1h 19m
+thread 0 got 32 task(s)
+Progress: [4769/20790] - estimated time until completion: 1h 19m
+thread 0 got 32 task(s)
+Progress: [4801/20790] - estimated time until completion: 1h 19m
+thread 0 got 32 task(s)
+Progress: [4833/20790] - estimated time until completion: 1h 19m
+thread 0 got 32 task(s)
+Progress: [4865/20790] - estimated time until completion: 1h 19m
+thread 0 got 32 task(s)
+Progress: [4897/20790] - estimated time until completion: 1h 18m
+thread 0 got 32 task(s)
+Progress: [4929/20790] - estimated time until completion: 1h 18m
+thread 0 got 32 task(s)
+Progress: [4961/20790] - estimated time until completion: 1h 18m
+thread 0 got 32 task(s)
+Progress: [4993/20790] - estimated time until completion: 1h 18m
+thread 0 got 32 task(s)
+Progress: [5025/20790] - estimated time until completion: 1h 18m
+thread 0 got 32 task(s)
+Progress: [5057/20790] - estimated time until completion: 1h 18m
+thread 0 got 32 task(s)
+Progress: [5089/20790] - estimated time until completion: 1h 17m
+thread 0 got 32 task(s)
+Progress: [5121/20790] - estimated time until completion: 1h 17m
+thread 0 got 32 task(s)
+Progress: [5153/20790] - estimated time until completion: 1h 17m
+thread 0 got 32 task(s)
+Progress: [5185/20790] - estimated time until completion: 1h 17m
+thread 0 got 32 task(s)
+Progress: [5217/20790] - estimated time until completion: 1h 17m
+thread 0 got 32 task(s)
+Progress: [5249/20790] - estimated time until completion: 1h 17m
+thread 0 got 32 task(s)
+Progress: [5281/20790] - estimated time until completion: 1h 17m
+thread 0 got 32 task(s)
+Progress: [5313/20790] - estimated time until completion: 1h 16m
+thread 0 got 32 task(s)
+Progress: [5345/20790] - estimated time until completion: 1h 16m
+thread 0 got 32 task(s)
+Progress: [5377/20790] - estimated time until completion: 1h 16m
+thread 0 got 32 task(s)
+Progress: [5409/20790] - estimated time until completion: 1h 16m
+thread 0 got 32 task(s)
+Progress: [5441/20790] - estimated time until completion: 1h 16m
+thread 0 got 32 task(s)
+Progress: [5473/20790] - estimated time until completion: 1h 16m
+thread 0 got 32 task(s)
+Progress: [5505/20790] - estimated time until completion: 1h 15m
+thread 0 got 32 task(s)
+Progress: [5537/20790] - estimated time until completion: 1h 15m
+thread 0 got 32 task(s)
+Progress: [5569/20790] - estimated time until completion: 1h 15m
+thread 0 got 32 task(s)
+Progress: [5601/20790] - estimated time until completion: 1h 15m
+thread 0 got 32 task(s)
+Progress: [5633/20790] - estimated time until completion: 1h 15m
+thread 0 got 32 task(s)
+Progress: [5665/20790] - estimated time until completion: 1h 15m
+thread 0 got 32 task(s)
+Progress: [5697/20790] - estimated time until completion: 1h 15m
+thread 0 got 32 task(s)
+Progress: [5729/20790] - estimated time until completion: 1h 14m
+thread 0 got 32 task(s)
+Progress: [5761/20790] - estimated time until completion: 1h 14m
+thread 0 got 32 task(s)
+Progress: [5793/20790] - estimated time until completion: 1h 14m
+thread 0 got 32 task(s)
+Progress: [5825/20790] - estimated time until completion: 1h 14m
+thread 0 got 32 task(s)
+Progress: [5857/20790] - estimated time until completion: 1h 14m
+thread 0 got 32 task(s)
+Progress: [5889/20790] - estimated time until completion: 1h 14m
+thread 0 got 32 task(s)
+Progress: [5921/20790] - estimated time until completion: 1h 13m
+thread 0 got 32 task(s)
+Progress: [5953/20790] - estimated time until completion: 1h 13m
+thread 0 got 32 task(s)
+Progress: [5985/20790] - estimated time until completion: 1h 13m
+thread 0 got 32 task(s)
+Progress: [6017/20790] - estimated time until completion: 1h 13m
+thread 0 got 32 task(s)
+Progress: [6049/20790] - estimated time until completion: 1h 13m
+thread 0 got 32 task(s)
+Progress: [6081/20790] - estimated time until completion: 1h 13m
+thread 0 got 32 task(s)
+Progress: [6113/20790] - estimated time until completion: 1h 13m
+thread 0 got 32 task(s)
+Progress: [6145/20790] - estimated time until completion: 1h 12m
+thread 0 got 32 task(s)
+Progress: [6177/20790] - estimated time until completion: 1h 12m
+thread 0 got 32 task(s)
+Progress: [6209/20790] - estimated time until completion: 1h 12m
+thread 0 got 32 task(s)
+Progress: [6241/20790] - estimated time until completion: 1h 12m
+thread 0 got 32 task(s)
+Progress: [6273/20790] - estimated time until completion: 1h 12m
+thread 0 got 32 task(s)
+Progress: [6305/20790] - estimated time until completion: 1h 12m
+thread 0 got 32 task(s)
+Progress: [6337/20790] - estimated time until completion: 1h 11m
+thread 0 got 32 task(s)
+Progress: [6369/20790] - estimated time until completion: 1h 11m
+thread 0 got 32 task(s)
+Progress: [6401/20790] - estimated time until completion: 1h 11m
+thread 0 got 32 task(s)
+Progress: [6433/20790] - estimated time until completion: 1h 11m
+thread 0 got 32 task(s)
+Progress: [6465/20790] - estimated time until completion: 1h 11m
+thread 0 got 32 task(s)
+Progress: [6497/20790] - estimated time until completion: 1h 11m
+thread 0 got 32 task(s)
+Progress: [6529/20790] - estimated time until completion: 1h 10m
+thread 0 got 32 task(s)
+Progress: [6561/20790] - estimated time until completion: 1h 10m
+thread 0 got 32 task(s)
+Progress: [6593/20790] - estimated time until completion: 1h 10m
+thread 0 got 32 task(s)
+Progress: [6625/20790] - estimated time until completion: 1h 10m
+thread 0 got 32 task(s)
+Progress: [6657/20790] - estimated time until completion: 1h 10m
+thread 0 got 32 task(s)
+Progress: [6689/20790] - estimated time until completion: 1h 10m
+thread 0 got 32 task(s)
+Progress: [6721/20790] - estimated time until completion: 1h 9m
+thread 0 got 32 task(s)
+Progress: [6753/20790] - estimated time until completion: 1h 9m
+thread 0 got 32 task(s)
+Progress: [6785/20790] - estimated time until completion: 1h 9m
+thread 0 got 32 task(s)
+Progress: [6817/20790] - estimated time until completion: 1h 9m
+thread 0 got 32 task(s)
+Progress: [6849/20790] - estimated time until completion: 1h 9m
+thread 0 got 32 task(s)
+Progress: [6881/20790] - estimated time until completion: 1h 9m
+thread 0 got 32 task(s)
+Progress: [6913/20790] - estimated time until completion: 1h 8m
+thread 0 got 32 task(s)
+Progress: [6945/20790] - estimated time until completion: 1h 8m
+thread 0 got 32 task(s)
+Progress: [6977/20790] - estimated time until completion: 1h 8m
+thread 0 got 32 task(s)
+Progress: [7009/20790] - estimated time until completion: 1h 8m
+thread 0 got 32 task(s)
+Progress: [7041/20790] - estimated time until completion: 1h 8m
+thread 0 got 32 task(s)
+Progress: [7073/20790] - estimated time until completion: 1h 8m
+thread 0 got 32 task(s)
+Progress: [7105/20790] - estimated time until completion: 1h 8m
+thread 0 got 32 task(s)
+Progress: [7137/20790] - estimated time until completion: 1h 7m
+thread 0 got 32 task(s)
+Progress: [7169/20790] - estimated time until completion: 1h 7m
+thread 0 got 32 task(s)
+Progress: [7201/20790] - estimated time until completion: 1h 7m
+thread 0 got 32 task(s)
+Progress: [7233/20790] - estimated time until completion: 1h 7m
+thread 0 got 32 task(s)
+Progress: [7265/20790] - estimated time until completion: 1h 7m
+thread 0 got 32 task(s)
+Progress: [7297/20790] - estimated time until completion: 1h 7m
+thread 0 got 32 task(s)
+Progress: [7329/20790] - estimated time until completion: 1h 7m
+thread 0 got 32 task(s)
+Progress: [7361/20790] - estimated time until completion: 1h 6m
+thread 0 got 32 task(s)
+Progress: [7393/20790] - estimated time until completion: 1h 6m
+thread 0 got 32 task(s)
+Progress: [7425/20790] - estimated time until completion: 1h 6m
+thread 0 got 32 task(s)
+Progress: [7457/20790] - estimated time until completion: 1h 6m
+thread 0 got 32 task(s)
+Progress: [7489/20790] - estimated time until completion: 1h 6m
+thread 0 got 32 task(s)
+Progress: [7521/20790] - estimated time until completion: 1h 6m
+thread 0 got 32 task(s)
+Progress: [7553/20790] - estimated time until completion: 1h 5m
+thread 0 got 32 task(s)
+Progress: [7585/20790] - estimated time until completion: 1h 5m
+thread 0 got 32 task(s)
+Progress: [7617/20790] - estimated time until completion: 1h 5m
+thread 0 got 32 task(s)
+Progress: [7649/20790] - estimated time until completion: 1h 5m
+thread 0 got 32 task(s)
+Progress: [7681/20790] - estimated time until completion: 1h 5m
+thread 0 got 32 task(s)
+Progress: [7713/20790] - estimated time until completion: 1h 5m
+thread 0 got 32 task(s)
+Progress: [7745/20790] - estimated time until completion: 1h 4m
+thread 0 got 32 task(s)
+Progress: [7777/20790] - estimated time until completion: 1h 4m
+thread 0 got 32 task(s)
+Progress: [7809/20790] - estimated time until completion: 1h 4m
+thread 0 got 32 task(s)
+Progress: [7841/20790] - estimated time until completion: 1h 4m
+thread 0 got 32 task(s)
+Progress: [7873/20790] - estimated time until completion: 1h 4m
+thread 0 got 32 task(s)
+Progress: [7905/20790] - estimated time until completion: 1h 4m
+thread 0 got 32 task(s)
+Progress: [7937/20790] - estimated time until completion: 1h 3m
+thread 0 got 32 task(s)
+Progress: [7969/20790] - estimated time until completion: 1h 3m
+thread 0 got 32 task(s)
+Progress: [8001/20790] - estimated time until completion: 1h 3m
+thread 0 got 32 task(s)
+Progress: [8033/20790] - estimated time until completion: 1h 3m
+thread 0 got 32 task(s)
+Progress: [8065/20790] - estimated time until completion: 1h 3m
+thread 0 got 32 task(s)
+Progress: [8097/20790] - estimated time until completion: 1h 3m
+thread 0 got 32 task(s)
+Progress: [8129/20790] - estimated time until completion: 1h 3m
+thread 0 got 32 task(s)
+Progress: [8161/20790] - estimated time until completion: 1h 2m
+thread 0 got 32 task(s)
+Progress: [8193/20790] - estimated time until completion: 1h 2m
+thread 0 got 32 task(s)
+Progress: [8225/20790] - estimated time until completion: 1h 2m
+thread 0 got 32 task(s)
+Progress: [8257/20790] - estimated time until completion: 1h 2m
+thread 0 got 32 task(s)
+Progress: [8289/20790] - estimated time until completion: 1h 2m
+thread 0 got 32 task(s)
+Progress: [8321/20790] - estimated time until completion: 1h 2m
+thread 0 got 32 task(s)
+Progress: [8353/20790] - estimated time until completion: 1h 1m
+thread 0 got 32 task(s)
+Progress: [8385/20790] - estimated time until completion: 1h 1m
+thread 0 got 32 task(s)
+Progress: [8417/20790] - estimated time until completion: 1h 1m
+thread 0 got 32 task(s)
+Progress: [8449/20790] - estimated time until completion: 1h 1m
+thread 0 got 32 task(s)
+Progress: [8481/20790] - estimated time until completion: 1h 1m
+thread 0 got 32 task(s)
+Progress: [8513/20790] - estimated time until completion: 1h 1m
+thread 0 got 32 task(s)
+Progress: [8545/20790] - estimated time until completion: 1h 0m
+thread 0 got 32 task(s)
+Progress: [8577/20790] - estimated time until completion: 1h 0m
+thread 0 got 32 task(s)
+Progress: [8609/20790] - estimated time until completion: 1h 0m
+thread 0 got 32 task(s)
+Progress: [8641/20790] - estimated time until completion: 1h 0m
+thread 0 got 32 task(s)
+Progress: [8673/20790] - estimated time until completion: 1h 0m
+thread 0 got 32 task(s)
+Progress: [8705/20790] - estimated time until completion: 1h 0m
+thread 0 got 32 task(s)
+Progress: [8737/20790] - estimated time until completion: 0h 59m
+thread 0 got 32 task(s)
+Progress: [8769/20790] - estimated time until completion: 0h 59m
+thread 0 got 32 task(s)
+Progress: [8801/20790] - estimated time until completion: 0h 59m
+thread 0 got 32 task(s)
+Progress: [8833/20790] - estimated time until completion: 0h 59m
+thread 0 got 32 task(s)
+Progress: [8865/20790] - estimated time until completion: 0h 59m
+thread 0 got 32 task(s)
+Progress: [8897/20790] - estimated time until completion: 0h 59m
+thread 0 got 32 task(s)
+Progress: [8929/20790] - estimated time until completion: 0h 59m
+thread 0 got 32 task(s)
+Progress: [8961/20790] - estimated time until completion: 0h 58m
+thread 0 got 32 task(s)
+Progress: [8993/20790] - estimated time until completion: 0h 58m
+thread 0 got 32 task(s)
+Progress: [9025/20790] - estimated time until completion: 0h 58m
+thread 0 got 32 task(s)
+Progress: [9057/20790] - estimated time until completion: 0h 58m
+thread 0 got 32 task(s)
+Progress: [9089/20790] - estimated time until completion: 0h 58m
+thread 0 got 32 task(s)
+Progress: [9121/20790] - estimated time until completion: 0h 58m
+thread 0 got 32 task(s)
+Progress: [9153/20790] - estimated time until completion: 0h 57m
+thread 0 got 32 task(s)
+Progress: [9185/20790] - estimated time until completion: 0h 57m
+thread 0 got 32 task(s)
+Progress: [9217/20790] - estimated time until completion: 0h 57m
+thread 0 got 32 task(s)
+Progress: [9249/20790] - estimated time until completion: 0h 57m
+thread 0 got 32 task(s)
+Progress: [9281/20790] - estimated time until completion: 0h 57m
+thread 0 got 32 task(s)
+Progress: [9313/20790] - estimated time until completion: 0h 57m
+thread 0 got 32 task(s)
+Progress: [9345/20790] - estimated time until completion: 0h 56m
+thread 0 got 32 task(s)
+Progress: [9377/20790] - estimated time until completion: 0h 56m
+thread 0 got 32 task(s)
+Progress: [9409/20790] - estimated time until completion: 0h 56m
+thread 0 got 32 task(s)
+Progress: [9441/20790] - estimated time until completion: 0h 56m
+thread 0 got 32 task(s)
+Progress: [9473/20790] - estimated time until completion: 0h 56m
+thread 0 got 32 task(s)
+Progress: [9505/20790] - estimated time until completion: 0h 56m
+thread 0 got 32 task(s)
+Progress: [9537/20790] - estimated time until completion: 0h 55m
+thread 0 got 32 task(s)
+Progress: [9569/20790] - estimated time until completion: 0h 55m
+thread 0 got 32 task(s)
+Progress: [9601/20790] - estimated time until completion: 0h 55m
+thread 0 got 32 task(s)
+Progress: [9633/20790] - estimated time until completion: 0h 55m
+thread 0 got 32 task(s)
+Progress: [9665/20790] - estimated time until completion: 0h 55m
+thread 0 got 32 task(s)
+Progress: [9697/20790] - estimated time until completion: 0h 55m
+thread 0 got 32 task(s)
+Progress: [9729/20790] - estimated time until completion: 0h 54m
+thread 0 got 32 task(s)
+Progress: [9761/20790] - estimated time until completion: 0h 54m
+thread 0 got 32 task(s)
+Progress: [9793/20790] - estimated time until completion: 0h 54m
+thread 0 got 32 task(s)
+Progress: [9825/20790] - estimated time until completion: 0h 54m
+thread 0 got 32 task(s)
+Progress: [9857/20790] - estimated time until completion: 0h 54m
+thread 0 got 32 task(s)
+Progress: [9889/20790] - estimated time until completion: 0h 54m
+thread 0 got 32 task(s)
+Progress: [9921/20790] - estimated time until completion: 0h 54m
+thread 0 got 32 task(s)
+Progress: [9953/20790] - estimated time until completion: 0h 53m
+thread 0 got 32 task(s)
+Progress: [9985/20790] - estimated time until completion: 0h 53m
+thread 0 got 32 task(s)
+Progress: [10017/20790] - estimated time until completion: 0h 53m
+thread 0 got 32 task(s)
+Progress: [10049/20790] - estimated time until completion: 0h 53m
+thread 0 got 32 task(s)
+Progress: [10081/20790] - estimated time until completion: 0h 53m
+thread 0 got 32 task(s)
+Progress: [10113/20790] - estimated time until completion: 0h 53m
+thread 0 got 32 task(s)
+Progress: [10145/20790] - estimated time until completion: 0h 52m
+thread 0 got 32 task(s)
+Progress: [10177/20790] - estimated time until completion: 0h 52m
+thread 0 got 32 task(s)
+Progress: [10209/20790] - estimated time until completion: 0h 52m
+thread 0 got 32 task(s)
+Progress: [10241/20790] - estimated time until completion: 0h 52m
+thread 0 got 32 task(s)
+Progress: [10273/20790] - estimated time until completion: 0h 52m
+thread 0 got 32 task(s)
+Progress: [10305/20790] - estimated time until completion: 0h 52m
+thread 0 got 32 task(s)
+Progress: [10337/20790] - estimated time until completion: 0h 51m
+thread 0 got 32 task(s)
+Progress: [10369/20790] - estimated time until completion: 0h 51m
+thread 0 got 32 task(s)
+Progress: [10401/20790] - estimated time until completion: 0h 51m
+thread 0 got 32 task(s)
+Progress: [10433/20790] - estimated time until completion: 0h 51m
+thread 0 got 32 task(s)
+Progress: [10465/20790] - estimated time until completion: 0h 51m
+thread 0 got 32 task(s)
+Progress: [10497/20790] - estimated time until completion: 0h 51m
+thread 0 got 32 task(s)
+Progress: [10529/20790] - estimated time until completion: 0h 50m
+thread 0 got 32 task(s)
+Progress: [10561/20790] - estimated time until completion: 0h 50m
+thread 0 got 32 task(s)
+Progress: [10593/20790] - estimated time until completion: 0h 50m
+thread 0 got 32 task(s)
+Progress: [10625/20790] - estimated time until completion: 0h 50m
+thread 0 got 32 task(s)
+Progress: [10657/20790] - estimated time until completion: 0h 50m
+thread 0 got 32 task(s)
+Progress: [10689/20790] - estimated time until completion: 0h 50m
+thread 0 got 32 task(s)
+Progress: [10721/20790] - estimated time until completion: 0h 49m
+thread 0 got 32 task(s)
+Progress: [10753/20790] - estimated time until completion: 0h 49m
+thread 0 got 32 task(s)
+Progress: [10785/20790] - estimated time until completion: 0h 49m
+thread 0 got 32 task(s)
+Progress: [10817/20790] - estimated time until completion: 0h 49m
+thread 0 got 32 task(s)
+Progress: [10849/20790] - estimated time until completion: 0h 49m
+thread 0 got 32 task(s)
+Progress: [10881/20790] - estimated time until completion: 0h 49m
+thread 0 got 32 task(s)
+Progress: [10913/20790] - estimated time until completion: 0h 49m
+thread 0 got 32 task(s)
+Progress: [10945/20790] - estimated time until completion: 0h 48m
+thread 0 got 32 task(s)
+Progress: [10977/20790] - estimated time until completion: 0h 48m
+thread 0 got 32 task(s)
+Progress: [11009/20790] - estimated time until completion: 0h 48m
+thread 0 got 32 task(s)
+Progress: [11041/20790] - estimated time until completion: 0h 48m
+thread 0 got 32 task(s)
+Progress: [11073/20790] - estimated time until completion: 0h 48m
+thread 0 got 32 task(s)
+Progress: [11105/20790] - estimated time until completion: 0h 48m
+thread 0 got 32 task(s)
+Progress: [11137/20790] - estimated time until completion: 0h 47m
+thread 0 got 32 task(s)
+Progress: [11169/20790] - estimated time until completion: 0h 47m
+thread 0 got 32 task(s)
+Progress: [11201/20790] - estimated time until completion: 0h 47m
+thread 0 got 32 task(s)
+Progress: [11233/20790] - estimated time until completion: 0h 47m
+thread 0 got 32 task(s)
+Progress: [11265/20790] - estimated time until completion: 0h 47m
+thread 0 got 32 task(s)
+Progress: [11297/20790] - estimated time until completion: 0h 47m
+thread 0 got 32 task(s)
+Progress: [11329/20790] - estimated time until completion: 0h 47m
+thread 0 got 32 task(s)
+Progress: [11361/20790] - estimated time until completion: 0h 46m
+thread 0 got 32 task(s)
+Progress: [11393/20790] - estimated time until completion: 0h 46m
+thread 0 got 32 task(s)
+Progress: [11425/20790] - estimated time until completion: 0h 46m
+thread 0 got 32 task(s)
+Progress: [11457/20790] - estimated time until completion: 0h 46m
+thread 0 got 32 task(s)
+Progress: [11489/20790] - estimated time until completion: 0h 46m
+thread 0 got 32 task(s)
+Progress: [11521/20790] - estimated time until completion: 0h 46m
+thread 0 got 32 task(s)
+Progress: [11553/20790] - estimated time until completion: 0h 45m
+thread 0 got 32 task(s)
+Progress: [11585/20790] - estimated time until completion: 0h 45m
+thread 0 got 32 task(s)
+Progress: [11617/20790] - estimated time until completion: 0h 45m
+thread 0 got 32 task(s)
+Progress: [11649/20790] - estimated time until completion: 0h 45m
+thread 0 got 32 task(s)
+Progress: [11681/20790] - estimated time until completion: 0h 45m
+thread 0 got 32 task(s)
+Progress: [11713/20790] - estimated time until completion: 0h 45m
+thread 0 got 32 task(s)
+Progress: [11745/20790] - estimated time until completion: 0h 44m
+thread 0 got 32 task(s)
+Progress: [11777/20790] - estimated time until completion: 0h 44m
+thread 0 got 32 task(s)
+Progress: [11809/20790] - estimated time until completion: 0h 44m
+thread 0 got 32 task(s)
+Progress: [11841/20790] - estimated time until completion: 0h 44m
+thread 0 got 32 task(s)
+Progress: [11873/20790] - estimated time until completion: 0h 44m
+thread 0 got 32 task(s)
+Progress: [11905/20790] - estimated time until completion: 0h 44m
+thread 0 got 32 task(s)
+Progress: [11937/20790] - estimated time until completion: 0h 44m
+thread 0 got 32 task(s)
+Progress: [11969/20790] - estimated time until completion: 0h 43m
+thread 0 got 32 task(s)
+Progress: [12001/20790] - estimated time until completion: 0h 43m
+thread 0 got 32 task(s)
+Progress: [12033/20790] - estimated time until completion: 0h 43m
+thread 0 got 32 task(s)
+Progress: [12065/20790] - estimated time until completion: 0h 43m
+thread 0 got 32 task(s)
+Progress: [12097/20790] - estimated time until completion: 0h 43m
+thread 0 got 32 task(s)
+Progress: [12129/20790] - estimated time until completion: 0h 43m
+thread 0 got 32 task(s)
+Progress: [12161/20790] - estimated time until completion: 0h 42m
+thread 0 got 32 task(s)
+Progress: [12193/20790] - estimated time until completion: 0h 42m
+thread 0 got 32 task(s)
+Progress: [12225/20790] - estimated time until completion: 0h 42m
+thread 0 got 32 task(s)
+Progress: [12257/20790] - estimated time until completion: 0h 42m
+thread 0 got 32 task(s)
+Progress: [12289/20790] - estimated time until completion: 0h 42m
+thread 0 got 32 task(s)
+Progress: [12321/20790] - estimated time until completion: 0h 42m
+thread 0 got 32 task(s)
+Progress: [12353/20790] - estimated time until completion: 0h 41m
+thread 0 got 32 task(s)
+Progress: [12385/20790] - estimated time until completion: 0h 41m
+thread 0 got 32 task(s)
+Progress: [12417/20790] - estimated time until completion: 0h 41m
+thread 0 got 32 task(s)
+Progress: [12449/20790] - estimated time until completion: 0h 41m
+thread 0 got 32 task(s)
+Progress: [12481/20790] - estimated time until completion: 0h 41m
+thread 0 got 32 task(s)
+Progress: [12513/20790] - estimated time until completion: 0h 41m
+thread 0 got 32 task(s)
+Progress: [12545/20790] - estimated time until completion: 0h 41m
+thread 0 got 32 task(s)
+Progress: [12577/20790] - estimated time until completion: 0h 40m
+thread 0 got 32 task(s)
+Progress: [12609/20790] - estimated time until completion: 0h 40m
+thread 0 got 32 task(s)
+Progress: [12641/20790] - estimated time until completion: 0h 40m
+thread 0 got 32 task(s)
+Progress: [12673/20790] - estimated time until completion: 0h 40m
+thread 0 got 32 task(s)
+Progress: [12705/20790] - estimated time until completion: 0h 40m
+thread 0 got 32 task(s)
+Progress: [12737/20790] - estimated time until completion: 0h 40m
+thread 0 got 32 task(s)
+Progress: [12769/20790] - estimated time until completion: 0h 39m
+thread 0 got 32 task(s)
+Progress: [12801/20790] - estimated time until completion: 0h 39m
+thread 0 got 32 task(s)
+Progress: [12833/20790] - estimated time until completion: 0h 39m
+thread 0 got 32 task(s)
+Progress: [12865/20790] - estimated time until completion: 0h 39m
+thread 0 got 32 task(s)
+Progress: [12897/20790] - estimated time until completion: 0h 39m
+thread 0 got 32 task(s)
+Progress: [12929/20790] - estimated time until completion: 0h 39m
+thread 0 got 32 task(s)
+Progress: [12961/20790] - estimated time until completion: 0h 38m
+thread 0 got 32 task(s)
+Progress: [12993/20790] - estimated time until completion: 0h 38m
+thread 0 got 32 task(s)
+Progress: [13025/20790] - estimated time until completion: 0h 38m
+thread 0 got 32 task(s)
+Progress: [13057/20790] - estimated time until completion: 0h 38m
+thread 0 got 32 task(s)
+Progress: [13089/20790] - estimated time until completion: 0h 38m
+thread 0 got 32 task(s)
+Progress: [13121/20790] - estimated time until completion: 0h 38m
+thread 0 got 32 task(s)
+Progress: [13153/20790] - estimated time until completion: 0h 38m
+thread 0 got 32 task(s)
+Progress: [13185/20790] - estimated time until completion: 0h 37m
+thread 0 got 32 task(s)
+Progress: [13217/20790] - estimated time until completion: 0h 37m
+thread 0 got 32 task(s)
+Progress: [13249/20790] - estimated time until completion: 0h 37m
+thread 0 got 32 task(s)
+Progress: [13281/20790] - estimated time until completion: 0h 37m
+thread 0 got 32 task(s)
+Progress: [13313/20790] - estimated time until completion: 0h 37m
+thread 0 got 32 task(s)
+Progress: [13345/20790] - estimated time until completion: 0h 37m
+thread 0 got 32 task(s)
+Progress: [13377/20790] - estimated time until completion: 0h 36m
+thread 0 got 32 task(s)
+Progress: [13409/20790] - estimated time until completion: 0h 36m
+thread 0 got 32 task(s)
+Progress: [13441/20790] - estimated time until completion: 0h 36m
+thread 0 got 32 task(s)
+Progress: [13473/20790] - estimated time until completion: 0h 36m
+thread 0 got 32 task(s)
+Progress: [13505/20790] - estimated time until completion: 0h 36m
+thread 0 got 32 task(s)
+Progress: [13537/20790] - estimated time until completion: 0h 36m
+thread 0 got 32 task(s)
+Progress: [13569/20790] - estimated time until completion: 0h 35m
+thread 0 got 32 task(s)
+Progress: [13601/20790] - estimated time until completion: 0h 35m
+thread 0 got 32 task(s)
+Progress: [13633/20790] - estimated time until completion: 0h 35m
+thread 0 got 32 task(s)
+Progress: [13665/20790] - estimated time until completion: 0h 35m
+thread 0 got 32 task(s)
+Progress: [13697/20790] - estimated time until completion: 0h 35m
+thread 0 got 32 task(s)
+Progress: [13729/20790] - estimated time until completion: 0h 35m
+thread 0 got 32 task(s)
+Progress: [13761/20790] - estimated time until completion: 0h 35m
+thread 0 got 32 task(s)
+Progress: [13793/20790] - estimated time until completion: 0h 34m
+thread 0 got 32 task(s)
+Progress: [13825/20790] - estimated time until completion: 0h 34m
+thread 0 got 32 task(s)
+Progress: [13857/20790] - estimated time until completion: 0h 34m
+thread 0 got 32 task(s)
+Progress: [13889/20790] - estimated time until completion: 0h 34m
+thread 0 got 32 task(s)
+Progress: [13921/20790] - estimated time until completion: 0h 34m
+thread 0 got 32 task(s)
+Progress: [13953/20790] - estimated time until completion: 0h 34m
+thread 0 got 32 task(s)
+Progress: [13985/20790] - estimated time until completion: 0h 33m
+thread 0 got 32 task(s)
+Progress: [14017/20790] - estimated time until completion: 0h 33m
+thread 0 got 32 task(s)
+Progress: [14049/20790] - estimated time until completion: 0h 33m
+thread 0 got 32 task(s)
+Progress: [14081/20790] - estimated time until completion: 0h 33m
+thread 0 got 32 task(s)
+Progress: [14113/20790] - estimated time until completion: 0h 33m
+thread 0 got 32 task(s)
+Progress: [14145/20790] - estimated time until completion: 0h 33m
+thread 0 got 32 task(s)
+Progress: [14177/20790] - estimated time until completion: 0h 32m
+thread 0 got 32 task(s)
+Progress: [14209/20790] - estimated time until completion: 0h 32m
+thread 0 got 32 task(s)
+Progress: [14241/20790] - estimated time until completion: 0h 32m
+thread 0 got 32 task(s)
+Progress: [14273/20790] - estimated time until completion: 0h 32m
+thread 0 got 32 task(s)
+Progress: [14305/20790] - estimated time until completion: 0h 32m
+thread 0 got 32 task(s)
+Progress: [14337/20790] - estimated time until completion: 0h 32m
+thread 0 got 32 task(s)
+Progress: [14369/20790] - estimated time until completion: 0h 31m
+thread 0 got 32 task(s)
+Progress: [14401/20790] - estimated time until completion: 0h 31m
+thread 0 got 32 task(s)
+Progress: [14433/20790] - estimated time until completion: 0h 31m
+thread 0 got 32 task(s)
+Progress: [14465/20790] - estimated time until completion: 0h 31m
+thread 0 got 32 task(s)
+Progress: [14497/20790] - estimated time until completion: 0h 31m
+thread 0 got 32 task(s)
+Progress: [14529/20790] - estimated time until completion: 0h 31m
+thread 0 got 32 task(s)
+Progress: [14561/20790] - estimated time until completion: 0h 31m
+thread 0 got 32 task(s)
+Progress: [14593/20790] - estimated time until completion: 0h 30m
+thread 0 got 32 task(s)
+Progress: [14625/20790] - estimated time until completion: 0h 30m
+thread 0 got 32 task(s)
+Progress: [14657/20790] - estimated time until completion: 0h 30m
+thread 0 got 32 task(s)
+Progress: [14689/20790] - estimated time until completion: 0h 30m
+thread 0 got 32 task(s)
+Progress: [14721/20790] - estimated time until completion: 0h 30m
+thread 0 got 32 task(s)
+Progress: [14753/20790] - estimated time until completion: 0h 30m
+thread 0 got 32 task(s)
+Progress: [14785/20790] - estimated time until completion: 0h 29m
+thread 0 got 32 task(s)
+Progress: [14817/20790] - estimated time until completion: 0h 29m
+thread 0 got 32 task(s)
+Progress: [14849/20790] - estimated time until completion: 0h 29m
+thread 0 got 32 task(s)
+Progress: [14881/20790] - estimated time until completion: 0h 29m
+thread 0 got 32 task(s)
+Progress: [14913/20790] - estimated time until completion: 0h 29m
+thread 0 got 32 task(s)
+Progress: [14945/20790] - estimated time until completion: 0h 29m
+thread 0 got 32 task(s)
+Progress: [14977/20790] - estimated time until completion: 0h 28m
+thread 0 got 32 task(s)
+Progress: [15009/20790] - estimated time until completion: 0h 28m
+thread 0 got 32 task(s)
+Progress: [15041/20790] - estimated time until completion: 0h 28m
+thread 0 got 32 task(s)
+Progress: [15073/20790] - estimated time until completion: 0h 28m
+thread 0 got 32 task(s)
+Progress: [15105/20790] - estimated time until completion: 0h 28m
+thread 0 got 32 task(s)
+Progress: [15137/20790] - estimated time until completion: 0h 28m
+thread 0 got 32 task(s)
+Progress: [15169/20790] - estimated time until completion: 0h 27m
+thread 0 got 32 task(s)
+Progress: [15201/20790] - estimated time until completion: 0h 27m
+thread 0 got 32 task(s)
+Progress: [15233/20790] - estimated time until completion: 0h 27m
+thread 0 got 32 task(s)
+Progress: [15265/20790] - estimated time until completion: 0h 27m
+thread 0 got 32 task(s)
+Progress: [15297/20790] - estimated time until completion: 0h 27m
+thread 0 got 32 task(s)
+Progress: [15329/20790] - estimated time until completion: 0h 27m
+thread 0 got 32 task(s)
+Progress: [15361/20790] - estimated time until completion: 0h 27m
+thread 0 got 32 task(s)
+Progress: [15393/20790] - estimated time until completion: 0h 26m
+thread 0 got 32 task(s)
+Progress: [15425/20790] - estimated time until completion: 0h 26m
+thread 0 got 32 task(s)
+Progress: [15457/20790] - estimated time until completion: 0h 26m
+thread 0 got 32 task(s)
+Progress: [15489/20790] - estimated time until completion: 0h 26m
+thread 0 got 32 task(s)
+Progress: [15521/20790] - estimated time until completion: 0h 26m
+thread 0 got 32 task(s)
+Progress: [15553/20790] - estimated time until completion: 0h 26m
+thread 0 got 32 task(s)
+Progress: [15585/20790] - estimated time until completion: 0h 25m
+thread 0 got 32 task(s)
+Progress: [15617/20790] - estimated time until completion: 0h 25m
+thread 0 got 32 task(s)
+Progress: [15649/20790] - estimated time until completion: 0h 25m
+thread 0 got 32 task(s)
+Progress: [15681/20790] - estimated time until completion: 0h 25m
+thread 0 got 32 task(s)
+Progress: [15713/20790] - estimated time until completion: 0h 25m
+thread 0 got 32 task(s)
+Progress: [15745/20790] - estimated time until completion: 0h 25m
+thread 0 got 32 task(s)
+Progress: [15777/20790] - estimated time until completion: 0h 24m
+thread 0 got 32 task(s)
+Progress: [15809/20790] - estimated time until completion: 0h 24m
+thread 0 got 32 task(s)
+Progress: [15841/20790] - estimated time until completion: 0h 24m
+thread 0 got 32 task(s)
+Progress: [15873/20790] - estimated time until completion: 0h 24m
+thread 0 got 32 task(s)
+Progress: [15905/20790] - estimated time until completion: 0h 24m
+thread 0 got 32 task(s)
+Progress: [15937/20790] - estimated time until completion: 0h 24m
+thread 0 got 32 task(s)
+Progress: [15969/20790] - estimated time until completion: 0h 24m
+thread 0 got 32 task(s)
+Progress: [16001/20790] - estimated time until completion: 0h 23m
+thread 0 got 32 task(s)
+Progress: [16033/20790] - estimated time until completion: 0h 23m
+thread 0 got 32 task(s)
+Progress: [16065/20790] - estimated time until completion: 0h 23m
+thread 0 got 32 task(s)
+Progress: [16097/20790] - estimated time until completion: 0h 23m
+thread 0 got 32 task(s)
+Progress: [16129/20790] - estimated time until completion: 0h 23m
+thread 0 got 32 task(s)
+Progress: [16161/20790] - estimated time until completion: 0h 23m
+thread 0 got 32 task(s)
+Progress: [16193/20790] - estimated time until completion: 0h 22m
+thread 0 got 32 task(s)
+Progress: [16225/20790] - estimated time until completion: 0h 22m
+thread 0 got 32 task(s)
+Progress: [16257/20790] - estimated time until completion: 0h 22m
+thread 0 got 32 task(s)
+Progress: [16289/20790] - estimated time until completion: 0h 22m
+thread 0 got 32 task(s)
+Progress: [16321/20790] - estimated time until completion: 0h 22m
+thread 0 got 32 task(s)
+Progress: [16353/20790] - estimated time until completion: 0h 22m
+thread 0 got 32 task(s)
+Progress: [16385/20790] - estimated time until completion: 0h 21m
+thread 0 got 32 task(s)
+Progress: [16417/20790] - estimated time until completion: 0h 21m
+thread 0 got 32 task(s)
+Progress: [16449/20790] - estimated time until completion: 0h 21m
+thread 0 got 32 task(s)
+Progress: [16481/20790] - estimated time until completion: 0h 21m
+thread 0 got 32 task(s)
+Progress: [16513/20790] - estimated time until completion: 0h 21m
+thread 0 got 32 task(s)
+Progress: [16545/20790] - estimated time until completion: 0h 21m
+thread 0 got 32 task(s)
+Progress: [16577/20790] - estimated time until completion: 0h 20m
+thread 0 got 32 task(s)
+Progress: [16609/20790] - estimated time until completion: 0h 20m
+thread 0 got 32 task(s)
+Progress: [16641/20790] - estimated time until completion: 0h 20m
+thread 0 got 32 task(s)
+Progress: [16673/20790] - estimated time until completion: 0h 20m
+thread 0 got 32 task(s)
+Progress: [16705/20790] - estimated time until completion: 0h 20m
+thread 0 got 32 task(s)
+Progress: [16737/20790] - estimated time until completion: 0h 20m
+thread 0 got 32 task(s)
+Progress: [16769/20790] - estimated time until completion: 0h 20m
+thread 0 got 32 task(s)
+Progress: [16801/20790] - estimated time until completion: 0h 19m
+thread 0 got 32 task(s)
+Progress: [16833/20790] - estimated time until completion: 0h 19m
+thread 0 got 32 task(s)
+Progress: [16865/20790] - estimated time until completion: 0h 19m
+thread 0 got 32 task(s)
+Progress: [16897/20790] - estimated time until completion: 0h 19m
+thread 0 got 32 task(s)
+Progress: [16929/20790] - estimated time until completion: 0h 19m
+thread 0 got 32 task(s)
+Progress: [16961/20790] - estimated time until completion: 0h 19m
+thread 0 got 32 task(s)
+Progress: [16993/20790] - estimated time until completion: 0h 18m
+thread 0 got 32 task(s)
+Progress: [17025/20790] - estimated time until completion: 0h 18m
+thread 0 got 32 task(s)
+Progress: [17057/20790] - estimated time until completion: 0h 18m
+thread 0 got 32 task(s)
+Progress: [17089/20790] - estimated time until completion: 0h 18m
+thread 0 got 32 task(s)
+Progress: [17121/20790] - estimated time until completion: 0h 18m
+thread 0 got 32 task(s)
+Progress: [17153/20790] - estimated time until completion: 0h 18m
+thread 0 got 32 task(s)
+Progress: [17185/20790] - estimated time until completion: 0h 17m
+thread 0 got 32 task(s)
+Progress: [17217/20790] - estimated time until completion: 0h 17m
+thread 0 got 32 task(s)
+Progress: [17249/20790] - estimated time until completion: 0h 17m
+thread 0 got 32 task(s)
+Progress: [17281/20790] - estimated time until completion: 0h 17m
+thread 0 got 32 task(s)
+Progress: [17313/20790] - estimated time until completion: 0h 17m
+thread 0 got 32 task(s)
+Progress: [17345/20790] - estimated time until completion: 0h 17m
+thread 0 got 32 task(s)
+Progress: [17377/20790] - estimated time until completion: 0h 16m
+thread 0 got 32 task(s)
+Progress: [17409/20790] - estimated time until completion: 0h 16m
+thread 0 got 32 task(s)
+Progress: [17441/20790] - estimated time until completion: 0h 16m
+thread 0 got 32 task(s)
+Progress: [17473/20790] - estimated time until completion: 0h 16m
+thread 0 got 32 task(s)
+Progress: [17505/20790] - estimated time until completion: 0h 16m
+thread 0 got 32 task(s)
+Progress: [17537/20790] - estimated time until completion: 0h 16m
+thread 0 got 32 task(s)
+Progress: [17569/20790] - estimated time until completion: 0h 16m
+thread 0 got 32 task(s)
+Progress: [17601/20790] - estimated time until completion: 0h 15m
+thread 0 got 32 task(s)
+Progress: [17633/20790] - estimated time until completion: 0h 15m
+thread 0 got 32 task(s)
+Progress: [17665/20790] - estimated time until completion: 0h 15m
+thread 0 got 32 task(s)
+Progress: [17697/20790] - estimated time until completion: 0h 15m
+thread 0 got 32 task(s)
+Progress: [17729/20790] - estimated time until completion: 0h 15m
+thread 0 got 32 task(s)
+Progress: [17761/20790] - estimated time until completion: 0h 15m
+thread 0 got 32 task(s)
+Progress: [17793/20790] - estimated time until completion: 0h 14m
+thread 0 got 32 task(s)
+Progress: [17825/20790] - estimated time until completion: 0h 14m
+thread 0 got 32 task(s)
+Progress: [17857/20790] - estimated time until completion: 0h 14m
+thread 0 got 32 task(s)
+Progress: [17889/20790] - estimated time until completion: 0h 14m
+thread 0 got 32 task(s)
+Progress: [17921/20790] - estimated time until completion: 0h 14m
+thread 0 got 32 task(s)
+Progress: [17953/20790] - estimated time until completion: 0h 14m
+thread 0 got 32 task(s)
+Progress: [17985/20790] - estimated time until completion: 0h 13m
+thread 0 got 32 task(s)
+Progress: [18017/20790] - estimated time until completion: 0h 13m
+thread 0 got 32 task(s)
+Progress: [18049/20790] - estimated time until completion: 0h 13m
+thread 0 got 32 task(s)
+Progress: [18081/20790] - estimated time until completion: 0h 13m
+thread 0 got 32 task(s)
+Progress: [18113/20790] - estimated time until completion: 0h 13m
+thread 0 got 32 task(s)
+Progress: [18145/20790] - estimated time until completion: 0h 13m
+thread 0 got 32 task(s)
+Progress: [18177/20790] - estimated time until completion: 0h 13m
+thread 0 got 32 task(s)
+Progress: [18209/20790] - estimated time until completion: 0h 12m
+thread 0 got 32 task(s)
+Progress: [18241/20790] - estimated time until completion: 0h 12m
+thread 0 got 32 task(s)
+Progress: [18273/20790] - estimated time until completion: 0h 12m
+thread 0 got 32 task(s)
+Progress: [18305/20790] - estimated time until completion: 0h 12m
+thread 0 got 32 task(s)
+Progress: [18337/20790] - estimated time until completion: 0h 12m
+thread 0 got 32 task(s)
+Progress: [18369/20790] - estimated time until completion: 0h 12m
+thread 0 got 32 task(s)
+Progress: [18401/20790] - estimated time until completion: 0h 11m
+thread 0 got 32 task(s)
+Progress: [18433/20790] - estimated time until completion: 0h 11m
+thread 0 got 32 task(s)
+Progress: [18465/20790] - estimated time until completion: 0h 11m
+thread 0 got 32 task(s)
+Progress: [18497/20790] - estimated time until completion: 0h 11m
+thread 0 got 32 task(s)
+Progress: [18529/20790] - estimated time until completion: 0h 11m
+thread 0 got 32 task(s)
+Progress: [18561/20790] - estimated time until completion: 0h 11m
+thread 0 got 32 task(s)
+Progress: [18593/20790] - estimated time until completion: 0h 10m
+thread 0 got 32 task(s)
+Progress: [18625/20790] - estimated time until completion: 0h 10m
+thread 0 got 32 task(s)
+Progress: [18657/20790] - estimated time until completion: 0h 10m
+thread 0 got 32 task(s)
+Progress: [18689/20790] - estimated time until completion: 0h 10m
+thread 0 got 32 task(s)
+Progress: [18721/20790] - estimated time until completion: 0h 10m
+thread 0 got 32 task(s)
+Progress: [18753/20790] - estimated time until completion: 0h 10m
+thread 0 got 32 task(s)
+Progress: [18785/20790] - estimated time until completion: 0h 9m
+thread 0 got 32 task(s)
+Progress: [18817/20790] - estimated time until completion: 0h 9m
+thread 0 got 32 task(s)
+Progress: [18849/20790] - estimated time until completion: 0h 9m
+thread 0 got 32 task(s)
+Progress: [18881/20790] - estimated time until completion: 0h 9m
+thread 0 got 32 task(s)
+Progress: [18913/20790] - estimated time until completion: 0h 9m
+thread 0 got 32 task(s)
+Progress: [18945/20790] - estimated time until completion: 0h 9m
+thread 0 got 32 task(s)
+Progress: [18977/20790] - estimated time until completion: 0h 9m
+thread 0 got 32 task(s)
+Progress: [19009/20790] - estimated time until completion: 0h 8m
+thread 0 got 32 task(s)
+Progress: [19041/20790] - estimated time until completion: 0h 8m
+thread 0 got 32 task(s)
+Progress: [19073/20790] - estimated time until completion: 0h 8m
+thread 0 got 32 task(s)
+Progress: [19105/20790] - estimated time until completion: 0h 8m
+thread 0 got 32 task(s)
+Progress: [19137/20790] - estimated time until completion: 0h 8m
+thread 0 got 32 task(s)
+Progress: [19169/20790] - estimated time until completion: 0h 8m
+thread 0 got 32 task(s)
+Progress: [19201/20790] - estimated time until completion: 0h 7m
+thread 0 got 32 task(s)
+Progress: [19233/20790] - estimated time until completion: 0h 7m
+thread 0 got 32 task(s)
+Progress: [19265/20790] - estimated time until completion: 0h 7m
+thread 0 got 32 task(s)
+Progress: [19297/20790] - estimated time until completion: 0h 7m
+thread 0 got 32 task(s)
+Progress: [19329/20790] - estimated time until completion: 0h 7m
+thread 0 got 32 task(s)
+Progress: [19361/20790] - estimated time until completion: 0h 7m
+thread 0 got 32 task(s)
+Progress: [19393/20790] - estimated time until completion: 0h 6m
+thread 0 got 32 task(s)
+Progress: [19425/20790] - estimated time until completion: 0h 6m
+thread 0 got 32 task(s)
+Progress: [19457/20790] - estimated time until completion: 0h 6m
+thread 0 got 32 task(s)
+Progress: [19489/20790] - estimated time until completion: 0h 6m
+thread 0 got 32 task(s)
+Progress: [19521/20790] - estimated time until completion: 0h 6m
+thread 0 got 32 task(s)
+Progress: [19553/20790] - estimated time until completion: 0h 6m
+thread 0 got 32 task(s)
+Progress: [19585/20790] - estimated time until completion: 0h 5m
+thread 0 got 32 task(s)
+Progress: [19617/20790] - estimated time until completion: 0h 5m
+thread 0 got 32 task(s)
+Progress: [19649/20790] - estimated time until completion: 0h 5m
+thread 0 got 32 task(s)
+Progress: [19681/20790] - estimated time until completion: 0h 5m
+thread 0 got 32 task(s)
+Progress: [19713/20790] - estimated time until completion: 0h 5m
+thread 0 got 32 task(s)
+Progress: [19745/20790] - estimated time until completion: 0h 5m
+thread 0 got 32 task(s)
+Progress: [19777/20790] - estimated time until completion: 0h 5m
+thread 0 got 32 task(s)
+Progress: [19809/20790] - estimated time until completion: 0h 4m
+thread 0 got 32 task(s)
+Progress: [19841/20790] - estimated time until completion: 0h 4m
+thread 0 got 32 task(s)
+Progress: [19873/20790] - estimated time until completion: 0h 4m
+thread 0 got 32 task(s)
+Progress: [19905/20790] - estimated time until completion: 0h 4m
+thread 0 got 32 task(s)
+Progress: [19937/20790] - estimated time until completion: 0h 4m
+thread 0 got 32 task(s)
+Progress: [19969/20790] - estimated time until completion: 0h 4m
+thread 0 got 32 task(s)
+Progress: [20001/20790] - estimated time until completion: 0h 3m
+thread 0 got 32 task(s)
+Progress: [20033/20790] - estimated time until completion: 0h 3m
+thread 0 got 32 task(s)
+Progress: [20065/20790] - estimated time until completion: 0h 3m
+thread 0 got 32 task(s)
+Progress: [20097/20790] - estimated time until completion: 0h 3m
+thread 0 got 32 task(s)
+Progress: [20129/20790] - estimated time until completion: 0h 3m
+thread 0 got 32 task(s)
+Progress: [20161/20790] - estimated time until completion: 0h 3m
+thread 0 got 32 task(s)
+Progress: [20193/20790] - estimated time until completion: 0h 2m
+thread 0 got 32 task(s)
+Progress: [20225/20790] - estimated time until completion: 0h 2m
+thread 0 got 32 task(s)
+Progress: [20257/20790] - estimated time until completion: 0h 2m
+thread 0 got 32 task(s)
+Progress: [20289/20790] - estimated time until completion: 0h 2m
+thread 0 got 32 task(s)
+Progress: [20321/20790] - estimated time until completion: 0h 2m
+thread 0 got 32 task(s)
+Progress: [20353/20790] - estimated time until completion: 0h 2m
+thread 0 got 32 task(s)
+Progress: [20385/20790] - estimated time until completion: 0h 2m
+thread 0 got 32 task(s)
+Progress: [20417/20790] - estimated time until completion: 0h 1m
+thread 0 got 32 task(s)
+Progress: [20449/20790] - estimated time until completion: 0h 1m
+thread 0 got 32 task(s)
+Progress: [20481/20790] - estimated time until completion: 0h 1m
+thread 0 got 32 task(s)
+Progress: [20513/20790] - estimated time until completion: 0h 1m
+thread 0 got 32 task(s)
+Progress: [20545/20790] - estimated time until completion: 0h 1m
+thread 0 got 32 task(s)
+Progress: [20577/20790] - estimated time until completion: 0h 1m
+thread 0 got 32 task(s)
+Progress: [20609/20790] - estimated time until completion: 0h 0m
+thread 0 got 32 task(s)
+Progress: [20641/20790] - estimated time until completion: 0h 0m
+thread 0 got 32 task(s)
+Progress: [20673/20790] - estimated time until completion: 0h 0m
+thread 0 got 32 task(s)
+Progress: [20705/20790] - estimated time until completion: 0h 0m
+thread 0 got 32 task(s)
+Progress: [20737/20790] - estimated time until completion: 0h 0m
+thread 0 got 32 task(s)
+Progress: [20769/20790] - estimated time until completion: 0h 0m
+thread 0 got 22 task(s)
+Progress: [20790/20790] - estimated time until completion: 0h 0m
+thread 0 done
