@@ -18,12 +18,14 @@ u64 header_size = 2; // words
 /// truncates the given input values to k bits and stores them consecutively in the output vector
 template<typename T>
 std::vector<word_t>
-bitpack_horizontal(u32 k, const std::vector<T> in) {
+//bitpack_horizontal(u32 k, const std::vector<T> in) {
+bitpack_horizontal(u32 k, const T* begin, const T* end) {
   assert(k > 0 && k < word_bitlength);
   assert(k < (sizeof(T) * 8));
 
   // allocate memory for the output
-  u64 data_size = ((in.size() * k) / word_bitlength) + 1;
+  const auto input_cnt = std::distance(begin, end);
+  u64 data_size = ((input_cnt * k) / word_bitlength) + 1;
   std::vector<word_t> packed;
   packed.resize(header_size + data_size, 0);
 
