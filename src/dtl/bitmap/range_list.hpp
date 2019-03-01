@@ -308,6 +308,11 @@ struct range_list {
     return std::move(iter(*this));
   }
 
+  iter __forceinline__
+  scan_it() const {
+    return std::move(iter(*this));
+  }
+
   /// Returns the name of the instance including the most important parameters
   /// in JSON.
   std::string
