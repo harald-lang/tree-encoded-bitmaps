@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
 #include <vector>
 
@@ -22,19 +23,24 @@ struct partitioned_position_list {
   struct partition_info {
     /// The index of the first element in the partition.
     position_t begin;
-    /// Offset within the concatenated partition vector.
-    position_t offset;
+    /// Offsets within the concatenated positions vector.
+    position_t offset_begin;
+    position_t offset_end;
 
     void
     print(std::ostream& os) const {
       os << "["
-         << static_cast<u64>(begin) << ","
-         << static_cast<u64>(offset)
+         << static_cast<u64>(begin)
+         << ", ["
+         << static_cast<u64>(offset_begin)
+         << ", "
+         << static_cast<u64>(offset_end)
+         << ")"
          << "]";
     }
   };
 
-  /// The number of entries per partition.
+  /// The max number of entries per partition.
   static constexpr std::size_t partition_size =
       1ull << sizeof(local_position_t) * 8;
 
@@ -92,9 +98,9 @@ struct partitioned_position_list {
   to_bitset() {
     boost::dynamic_bitset<_block_type> ret(n_);
     for (const partition_info& part : partitions_) {
-      auto curr_local_pos = positions_[part.offset];
+      auto curr_local_pos = positions_[part.offset_begin];
       ret[part.begin + curr_local_pos] = true;
-      for (std::size_t i = part.offset + 1; i < positions_.size(); ++i) {
+      for (std::size_t i = part.offset_begin + 1; i < positions_.size(); ++i) {
         if (positions_[i] <= curr_local_pos) {
           break;
         }
@@ -105,94 +111,94 @@ struct partitioned_position_list {
     return ret;
   }
 
-  /// Bitwise AND
-  partitioned_position_list __forceinline__
-  operator&(const partitioned_position_list& other) const {
-    partitioned_position_list ret;
-    ret.n_ = n_;
-    auto this_it = positions_.begin();
-    const auto this_it_end = positions_.end();
-    auto other_it = other.positions_.begin();
-    const auto other_it_end = other.positions_.end();
-    while (!(this_it == this_it_end || other_it == other_it_end)) {
-      if (*this_it == *other_it) {
-        ret.positions_.push_back(*this_it);
-        ++this_it;
-        ++other_it;
-      }
-      else {
-        if (*this_it < *other_it) {
-          ++this_it;
-        }
-        else {
-          ++other_it;
-        }
-      }
-    }
-    return ret;
-  }
-
-  /// Bitwise AND (range encoding)
-  partitioned_position_list __forceinline__
-  and_re(const partitioned_position_list& other) const {
-    return *this & other; // nothing special here. fall back to AND
-  }
-
-  /// Bitwise XOR
-  partitioned_position_list __forceinline__
-  operator^(const partitioned_position_list& other) const {
-    partitioned_position_list ret;
-    ret.n_ = n_;
-
-    auto this_it = positions_.begin();
-    const auto this_it_end = positions_.end();
-    auto other_it = other.positions_.begin();
-    const auto other_it_end = other.positions_.end();
-    while (!(this_it == this_it_end || other_it == other_it_end)) {
-      if (*this_it < *other_it) {
-        ret.positions_.push_back(*this_it);
-        ++this_it;
-      }
-      else if (*other_it < *this_it) {
-        ret.positions_.push_back(*other_it);
-        ++other_it;
-      }
-      else {
-        ++this_it;
-        ++other_it;
-      }
-    }
-    if (this_it != this_it_end) {
-      while (this_it != this_it_end) {
-        ret.positions_.push_back(*this_it);
-        ++this_it;
-      }
-    }
-    if (other_it != other_it_end) {
-      while (other_it != other_it_end) {
-        ret.positions_.push_back(*other_it);
-        ++other_it;
-      }
-    }
-    return ret;
-  }
-
-  /// Bitwise XOR (range encoding)
-  partitioned_position_list __forceinline__
-  xor_re(const partitioned_position_list& other) const {
-    return *this ^ other; // nothing special here. fall back to XOR
-  }
-
-  /// Computes (a XOR b) & this
-  /// Note: this, a and b must be different instances. Otherwise, the behavior
-  /// is undefined.
-  __forceinline__ partitioned_position_list&
-  fused_xor_and(const partitioned_position_list& a, const partitioned_position_list& b) {
-    const auto x = a ^ b;
-    auto y = *this & x;
-    std::swap(positions_, y.positions_);
-    return *this;
-  }
+//  /// Bitwise AND
+//  partitioned_position_list __forceinline__
+//  operator&(const partitioned_position_list& other) const {
+//    partitioned_position_list ret;
+//    ret.n_ = n_;
+//    auto this_it = positions_.begin();
+//    const auto this_it_end = positions_.end();
+//    auto other_it = other.positions_.begin();
+//    const auto other_it_end = other.positions_.end();
+//    while (!(this_it == this_it_end || other_it == other_it_end)) {
+//      if (*this_it == *other_it) {
+//        ret.positions_.push_back(*this_it);
+//        ++this_it;
+//        ++other_it;
+//      }
+//      else {
+//        if (*this_it < *other_it) {
+//          ++this_it;
+//        }
+//        else {
+//          ++other_it;
+//        }
+//      }
+//    }
+//    return ret;
+//  }
+//
+//  /// Bitwise AND (range encoding)
+//  partitioned_position_list __forceinline__
+//  and_re(const partitioned_position_list& other) const {
+//    return *this & other; // nothing special here. fall back to AND
+//  }
+//
+//  /// Bitwise XOR
+//  partitioned_position_list __forceinline__
+//  operator^(const partitioned_position_list& other) const {
+//    partitioned_position_list ret;
+//    ret.n_ = n_;
+//
+//    auto this_it = positions_.begin();
+//    const auto this_it_end = positions_.end();
+//    auto other_it = other.positions_.begin();
+//    const auto other_it_end = other.positions_.end();
+//    while (!(this_it == this_it_end || other_it == other_it_end)) {
+//      if (*this_it < *other_it) {
+//        ret.positions_.push_back(*this_it);
+//        ++this_it;
+//      }
+//      else if (*other_it < *this_it) {
+//        ret.positions_.push_back(*other_it);
+//        ++other_it;
+//      }
+//      else {
+//        ++this_it;
+//        ++other_it;
+//      }
+//    }
+//    if (this_it != this_it_end) {
+//      while (this_it != this_it_end) {
+//        ret.positions_.push_back(*this_it);
+//        ++this_it;
+//      }
+//    }
+//    if (other_it != other_it_end) {
+//      while (other_it != other_it_end) {
+//        ret.positions_.push_back(*other_it);
+//        ++other_it;
+//      }
+//    }
+//    return ret;
+//  }
+//
+//  /// Bitwise XOR (range encoding)
+//  partitioned_position_list __forceinline__
+//  xor_re(const partitioned_position_list& other) const {
+//    return *this ^ other; // nothing special here. fall back to XOR
+//  }
+//
+//  /// Computes (a XOR b) & this
+//  /// Note: this, a and b must be different instances. Otherwise, the behavior
+//  /// is undefined.
+//  __forceinline__ partitioned_position_list&
+//  fused_xor_and(const partitioned_position_list& a, const partitioned_position_list& b) {
+//    const auto x = a ^ b;
+//    auto y = *this & x;
+//    std::swap(positions_, y.positions_);
+//    return *this;
+//  }
 
   void
   print(std::ostream& os) const {
@@ -223,6 +229,7 @@ struct partitioned_position_list {
   /// Returns the value of the bit at the position pos.
   u1
   test(const std::size_t pos) const {
+    // FIXME search the partitions first
     auto it = std::lower_bound(positions_.begin(), positions_.end(), pos);
     return *it == pos;
   }
@@ -324,11 +331,35 @@ struct partitioned_position_list {
 
     void __forceinline__
     skip_to(const std::size_t to_pos) {
-      auto search = std::lower_bound(
-          outer_.positions_.begin(), outer_.positions_.end(), to_pos);
-      if (search != outer_.positions_.end()) {
-        range_begin_ = *search;
-        positions_read_pos_ = std::distance(outer_.positions_.begin(), search) + 1ull;
+      assert(to_pos >= range_begin_);
+      // check if the destination position is within the current partition.
+      if (to_pos > outer_.partitions_[partitions_read_pos_].begin
+          + outer_.partition_size) {
+        auto part_search = std::lower_bound(
+            outer_.partitions_.begin() + partitions_read_pos_,
+            outer_.partitions_.end(),
+            to_pos,
+            [](const partition_info& part, const std::size_t pos) {
+              return pos < (part.begin + partition_size);
+            }
+        );
+        partitions_read_pos_ = static_cast<u64>(std::distance(
+            outer_.partitions_.begin(), part_search));
+        if (part_search == outer_.partitions_.end()) {
+          range_begin_ = outer_.n_;
+          range_length_ = 0;
+          return;
+        }
+      }
+      const auto& part = outer_.partitions_[partitions_read_pos_];
+      auto pos_search = std::lower_bound(
+          outer_.positions_.begin() + part.offset_begin,
+          outer_.positions_.begin() + part.offset_end,
+          to_pos - part.begin);
+      if (pos_search != outer_.positions_.end()) {
+        range_begin_ = *pos_search + part.begin;
+        positions_read_pos_ = std::distance(outer_.positions_.begin(), pos_search) + 1ull;
+        range_length_ = 1;
         while (positions_read_pos_ < outer_.positions_.size()
             && outer_.positions_[positions_read_pos_] == range_begin_
                 + range_length_
@@ -366,6 +397,11 @@ struct partitioned_position_list {
     return iter(*this);
   }
 
+  iter __forceinline__
+  scan_it() const {
+    return iter(*this);
+  }
+
   /// Returns the name of the instance including the most important parameters
   /// in JSON.
   std::string
@@ -394,7 +430,10 @@ private:
       create_partition(pos);
     }
     partition_info& part_info = partitions_.back();
+    // Append the position to the position list.
     positions_.push_back(pos - part_info.begin);
+    // Extend the partitions' range.
+    part_info.offset_end++;
   }
 
   /// Creates a new partition.
@@ -403,7 +442,8 @@ private:
     partitions_.emplace_back();
     partition_info& part_info = partitions_.back();
     part_info.begin = pos;
-    part_info.offset = positions_.size();
+    part_info.offset_begin = static_cast<position_t>(positions_.size());
+    part_info.offset_end = static_cast<position_t>(positions_.size());
   }
   //===--------------------------------------------------------------------===//
 
