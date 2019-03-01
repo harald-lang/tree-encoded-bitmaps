@@ -24,18 +24,14 @@ struct partitioned_position_list {
     /// The index of the first element in the partition.
     position_t begin;
     /// Offsets within the concatenated positions vector.
-    position_t offset_begin;
-    position_t offset_end;
+    position_t offset;
 
     void
     print(std::ostream& os) const {
-      os << "["
+      os << "[b:"
          << static_cast<u64>(begin)
-         << ", ["
-         << static_cast<u64>(offset_begin)
-         << ", "
-         << static_cast<u64>(offset_end)
-         << ")"
+         << ",o:"
+         << static_cast<u64>(offset)
          << "]";
     }
   };
@@ -98,9 +94,9 @@ struct partitioned_position_list {
   to_bitset() {
     boost::dynamic_bitset<_block_type> ret(n_);
     for (const partition_info& part : partitions_) {
-      auto curr_local_pos = positions_[part.offset_begin];
+      auto curr_local_pos = positions_[part.offset];
       ret[part.begin + curr_local_pos] = true;
-      for (std::size_t i = part.offset_begin + 1; i < positions_.size(); ++i) {
+      for (std::size_t i = part.offset + 1; i < positions_.size(); ++i) {
         if (positions_[i] <= curr_local_pos) {
           break;
         }
@@ -332,14 +328,14 @@ struct partitioned_position_list {
     void __forceinline__
     skip_to(const std::size_t to_pos) {
       assert(to_pos >= range_begin_);
-      // check if the destination position is within the current partition.
+      // Check if the destination position is within the current partition.
       if (to_pos > outer_.partitions_[partitions_read_pos_].begin
           + outer_.partition_size) {
         auto part_search = std::lower_bound(
             outer_.partitions_.begin() + partitions_read_pos_,
             outer_.partitions_.end(),
             to_pos,
-            [](const partition_info& part, const std::size_t pos) {
+            [](const partition_info& part, const std::size_t pos) -> u1 {
               return pos < (part.begin + partition_size);
             }
         );
@@ -352,9 +348,14 @@ struct partitioned_position_list {
         }
       }
       const auto& part = outer_.partitions_[partitions_read_pos_];
+      const auto part_offset_begin = part.offset;
+      const auto part_offset_end =
+          partitions_read_pos_ + 1 == outer_.partitions_.size()
+          ? outer_.positions_.size()
+          : (outer_.partitions_[partitions_read_pos_ + 1]).offset;
       auto pos_search = std::lower_bound(
-          outer_.positions_.begin() + part.offset_begin,
-          outer_.positions_.begin() + part.offset_end,
+          outer_.positions_.begin() + part_offset_begin,
+          outer_.positions_.begin() + part_offset_end,
           to_pos - part.begin);
       if (pos_search != outer_.positions_.end()) {
         range_begin_ = *pos_search + part.begin;
@@ -432,8 +433,6 @@ private:
     partition_info& part_info = partitions_.back();
     // Append the position to the position list.
     positions_.push_back(pos - part_info.begin);
-    // Extend the partitions' range.
-    part_info.offset_end++;
   }
 
   /// Creates a new partition.
@@ -442,8 +441,7 @@ private:
     partitions_.emplace_back();
     partition_info& part_info = partitions_.back();
     part_info.begin = pos;
-    part_info.offset_begin = static_cast<position_t>(positions_.size());
-    part_info.offset_end = static_cast<position_t>(positions_.size());
+    part_info.offset = static_cast<position_t>(positions_.size());
   }
   //===--------------------------------------------------------------------===//
 
