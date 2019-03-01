@@ -249,6 +249,7 @@ struct position_list {
       if (search != outer_.positions_.end()) {
         range_begin_ = *search;
         read_pos_ = std::distance(outer_.positions_.begin(), search) + 1ull;
+        range_length_ = 1;
         while (read_pos_ < outer_.positions_.size()
             && outer_.positions_[read_pos_] == range_begin_ + range_length_) {
           ++read_pos_;
@@ -281,6 +282,11 @@ struct position_list {
 
   iter __forceinline__
   it() const {
+    return iter(*this);
+  }
+
+  iter __forceinline__
+  scan_it() const {
     return iter(*this);
   }
 
