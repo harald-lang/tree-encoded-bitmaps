@@ -176,6 +176,11 @@ struct dynamic_bitmap {
 
     void __forceinline__
     skip_to(const std::size_t to_pos) {
+      if (to_pos >= outer_.n_) {
+        pos_ = outer_.n_;
+        length_ = 0;
+        return;
+      }
       pos_ = to_pos;
       length_ = 0;
       if (!outer_.bitmap_.test(pos_)) {
@@ -213,6 +218,11 @@ struct dynamic_bitmap {
 
   iter __forceinline__
   it() const {
+    return iter(*this);
+  }
+
+  iter __forceinline__
+  scan_it() const {
     return iter(*this);
   }
 
