@@ -194,25 +194,34 @@ struct dynamic_wah {
 
     void __forceinline__
     skip_to(const std::size_t to_pos) {
+      assert(pos_ <= to_pos);
+      if (to_pos >= outer_.size_) {
+        pos_ = outer_.size_;
+        length_ = 0;
+        return;
+      }
+      if (to_pos < (pos_ + length_)) {
+        length_ -= to_pos - pos_;
+        pos_ = to_pos;
+        return;
+      }
+      while (*pit < to_pos) {
+        pit.next();
+      }
+      // Determine the length of the current 1-fill.
       if (*pit < outer_.size_) {
-        while (*pit < to_pos) {
+        pos_ = *pit;
+        length_ = 1;
+        pit.next();
+        while (*pit < outer_.size_
+            && *pit == pos_ + length_) {
+          ++length_;
           pit.next();
         }
-        // Determine the length of the current 1-fill.
-        if (*pit < outer_.size_) {
-          pos_ = *pit;
-          length_ = 1;
-          pit.next();
-          while (*pit < outer_.size_
-              && *pit == pos_ + length_) {
-            ++length_;
-            pit.next();
-          }
-        }
-        else {
-          pos_ = outer_.size_;
-          length_ = 0;
-        }
+      }
+      else {
+        pos_ = outer_.size_;
+        length_ = 0;
       }
     }
 
@@ -236,6 +245,11 @@ struct dynamic_wah {
 
   iter __forceinline__
   it() const {
+    return iter(*this);
+  }
+
+  iter __forceinline__
+  scan_it() const {
     return iter(*this);
   }
 
