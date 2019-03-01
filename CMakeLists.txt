@@ -43,7 +43,8 @@ include_directories(thirdparty)
 # Inspired from
 # http://xit0.org/2013/04/cmake-use-git-branch-and-commit-details-in-project/
 # and
-# https://stackoverflow.com/questions/1704907/how-can-i-get-my-c-code-to-automatically-print-out-its-git-version-hash
+# https://stackoverflow.com/questions/1704907/how-can-i-get-my-c-code-to-automat
+# ically-print-out-its-git-version-hash
 ##===----------------------------------------------------------------------===##
 
 # Get the current wo.king branch.
@@ -120,7 +121,7 @@ set(TEST_FILES
         test/dtl/bitmap/teb_test.cpp
         test/dtl/bitmap/teb_scan_util_test.cpp
         test/dtl/bitmap/api_range_iterator_skip_test.cpp
-#        test/dtl/bitmap/api_set_operation_test.cpp
+        test/dtl/bitmap/api_set_operation_test.cpp
 #        test/dtl/bitmap/static_api_test.cpp
 #        test/dtl/bitmap/iterate_test.cpp
         )
