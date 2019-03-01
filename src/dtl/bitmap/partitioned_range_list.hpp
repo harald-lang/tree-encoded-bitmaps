@@ -314,46 +314,56 @@ struct partitioned_range_list {
     void __forceinline__
     skip_to(const std::size_t to_pos) {
       constexpr position_t dont_care = 0;
-      // Find the partition.
-      auto part_search = std::lower_bound(
-          outer_.partitions_.begin(), outer_.partitions_.end(),
-          partition_info {to_pos, dont_care},
-          [](const partition_info& lhs, const partition_info& rhs) -> bool {
-            return lhs.begin + partition_size < rhs.begin;
-          });
-      if (part_search != outer_.partitions_.end()) {
-        // Find the range (within the partition).
-        const auto to_pos_local = to_pos - (*part_search).begin;
-
-        const auto part_begin = (*part_search).offset;
-        const auto part_end = part_search + 1 == outer_.partitions_.end()
-            ? outer_.ranges_.size()
-            : (*(part_search + 1)).offset;
-        auto range_search = std::lower_bound(
-            outer_.ranges_.begin() + part_begin,
-            outer_.ranges_.begin() + part_end, range{to_pos_local, dont_care},
-            [](const range& lhs, const range& rhs) -> bool {
-              return lhs.begin + lhs.length <= rhs.begin;
+      // Check if the destination position is within the current partition.
+      if (to_pos > outer_.partitions_[partitions_read_pos_].begin
+          + outer_.partition_size) {
+        // Find the partition.
+        auto part_search = std::lower_bound(
+            outer_.partitions_.begin(),
+            outer_.partitions_.end(),
+            to_pos,
+            [](const partition_info& lhs, const std::size_t pos) -> u1 {
+              return (lhs.begin + partition_size) < pos;
             });
-        if (range_search != outer_.ranges_.begin() + part_end) {
-          ranges_read_pos_ = std::distance(outer_.ranges_.begin(), range_search);
-          if (to_pos_local < (*range_search).begin) {
-            // No match at the given position. Forward to the next match.
-            range_begin_ = (*part_search).begin + (*range_search).begin;
-            range_length_ = (*range_search).length;
-          }
-          else {
-            // The given skip-to position matches with a range, but may not
-            // necessarily match exactly with the beginning. Thus, the length
-            // of the matching range may need to be adjusted.
-            range_begin_ = to_pos;
-            range_length_ = (*range_search).length - to_pos_local
-                - (*range_search).begin;
-          }
-        }
-        else {
+        partitions_read_pos_ = static_cast<u64>(std::distance(
+            outer_.partitions_.begin(), part_search));
+        if (part_search == outer_.partitions_.end()) {
           range_begin_ = outer_.n_;
           range_length_ = 0;
+          return;
+        }
+      }
+      // Find the range (within the partition).
+      const auto& part = outer_.partitions_[partitions_read_pos_];
+      const auto to_pos_local = to_pos - part.begin;
+
+      const auto part_offset_begin = part.offset;
+      const auto part_offset_end =
+          partitions_read_pos_ + 1 == outer_.partitions_.size()
+          ? outer_.ranges_.size()
+          : (outer_.partitions_[partitions_read_pos_ + 1]).offset;
+      auto range_search = std::lower_bound(
+          outer_.ranges_.begin() + part_offset_begin,
+          outer_.ranges_.begin() + part_offset_end,
+          range{to_pos_local, dont_care},
+          [](const range& lhs, const range& rhs) -> u1 {
+            return lhs.begin + lhs.length <= rhs.begin;
+          });
+      if (range_search != outer_.ranges_.begin() + part_offset_end) {
+        ranges_read_pos_ = static_cast<position_t>(
+            std::distance(outer_.ranges_.begin(), range_search));
+        if (to_pos_local < (*range_search).begin) {
+          // No match at the given position. Forward to the next match.
+          range_begin_ = part.begin + (*range_search).begin;
+          range_length_ = (*range_search).length;
+        }
+        else {
+          // The given skip-to position matches with a range, but may not
+          // necessarily match exactly with the beginning. Thus, the length
+          // of the matching range may need to be adjusted.
+          range_begin_ = to_pos;
+          range_length_ = (*range_search).length -
+              (to_pos_local - (*range_search).begin);
         }
       }
       else {
