@@ -313,45 +313,49 @@ struct partitioned_range_list {
 
     void __forceinline__
     skip_to(const std::size_t to_pos) {
-      constexpr position_t dont_care = 0;
+      const auto& parts = outer_.partitions_;
+      const auto& ranges = outer_.ranges_;
+
       // Check if the destination position is within the current partition.
-      if (to_pos > outer_.partitions_[partitions_read_pos_].begin
-          + outer_.partition_size) {
-        // Find the partition.
+      if (to_pos > (parts[partitions_read_pos_].begin + partition_size)) {
+        // Find the corresponding partition.
         auto part_search = std::lower_bound(
-            outer_.partitions_.begin(),
-            outer_.partitions_.end(),
+            parts.begin(),
+            parts.end(),
             to_pos,
-            [](const partition_info& lhs, const std::size_t pos) -> u1 {
-              return (lhs.begin + partition_size) < pos;
+            [](const partition_info& part, const std::size_t pos) -> u1 {
+              return (part.begin + partition_size) < pos;
             });
         partitions_read_pos_ = static_cast<u64>(std::distance(
-            outer_.partitions_.begin(), part_search));
-        if (part_search == outer_.partitions_.end()) {
+            parts.begin(), part_search));
+        if (part_search == parts.end()) {
           range_begin_ = outer_.n_;
           range_length_ = 0;
           return;
         }
       }
       // Find the range (within the partition).
-      const auto& part = outer_.partitions_[partitions_read_pos_];
-      const auto to_pos_local = to_pos - part.begin;
+      const auto& part = parts[partitions_read_pos_];
+      const auto to_pos_local = part.begin > to_pos
+          ? 0
+          : to_pos - part.begin;
+      assert(to_pos_local <= partition_size);
 
       const auto part_offset_begin = part.offset;
       const auto part_offset_end =
-          partitions_read_pos_ + 1 == outer_.partitions_.size()
-          ? outer_.ranges_.size()
-          : (outer_.partitions_[partitions_read_pos_ + 1]).offset;
+          partitions_read_pos_ + 1 == parts.size()
+          ? ranges.size()
+          : (parts[partitions_read_pos_ + 1]).offset;
       auto range_search = std::lower_bound(
-          outer_.ranges_.begin() + part_offset_begin,
-          outer_.ranges_.begin() + part_offset_end,
-          range{to_pos_local, dont_care},
+          ranges.begin() + part_offset_begin,
+          ranges.begin() + part_offset_end,
+          range{to_pos_local, 0 /*don't care*/},
           [](const range& lhs, const range& rhs) -> u1 {
             return lhs.begin + lhs.length <= rhs.begin;
           });
-      if (range_search != outer_.ranges_.begin() + part_offset_end) {
-        ranges_read_pos_ = static_cast<position_t>(
-            std::distance(outer_.ranges_.begin(), range_search));
+      ranges_read_pos_ = static_cast<position_t>(
+          std::distance(ranges.begin(), range_search));
+      if (range_search != ranges.begin() + part_offset_end) {
         if (to_pos_local < (*range_search).begin) {
           // No match at the given position. Forward to the next match.
           range_begin_ = part.begin + (*range_search).begin;
@@ -361,14 +365,25 @@ struct partitioned_range_list {
           // The given skip-to position matches with a range, but may not
           // necessarily match exactly with the beginning. Thus, the length
           // of the matching range may need to be adjusted.
-          range_begin_ = to_pos;
+          range_begin_ = part.begin + to_pos_local;
           range_length_ = (*range_search).length -
               (to_pos_local - (*range_search).begin);
         }
       }
       else {
-        range_begin_ = outer_.n_;
-        range_length_ = 0;
+        // No match found in the current partition.
+        // Check whether this was the last partition.
+        if (range_search != ranges.end()) {
+          // Forward the iterator to the next partition.
+          ++partitions_read_pos_;
+          range_begin_ = parts[partitions_read_pos_].begin;
+          range_length_ = (*range_search).length;
+        }
+        else {
+          // Reached the end.
+          range_begin_ = outer_.n_;
+          range_length_ = 0;
+        }
       }
     }
 

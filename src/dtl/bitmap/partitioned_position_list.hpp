@@ -275,14 +275,20 @@ struct partitioned_position_list {
       range_begin_ = parts[partitions_read_pos_].begin + pos[0];
       range_length_ = 1;
       ++positions_read_pos_;
+      determine_length_of_current_run();
+    }
 
-      // Determine the length of the current range.
+    /// Determines the length of the current run.
+    void
+    determine_length_of_current_run() {
+      const auto& parts = outer_.partitions_;
+      const auto& pos = outer_.positions_;
       while (positions_read_pos_ < pos.size()
           && pos[positions_read_pos_ - 1] < pos[positions_read_pos_]
           && pos[positions_read_pos_] ==
               range_begin_
-              + range_length_
-              - parts[partitions_read_pos_].begin) {
+                  + range_length_
+                  - parts[partitions_read_pos_].begin) {
         ++positions_read_pos_;
         ++range_length_;
       }
@@ -304,20 +310,7 @@ struct partitioned_position_list {
             parts[partitions_read_pos_].begin + pos[positions_read_pos_];
         range_length_ = 1;
         ++positions_read_pos_;
-        while (positions_read_pos_ < pos.size()
-            && pos[positions_read_pos_ - 1] < pos[positions_read_pos_]
-            && pos[positions_read_pos_] == range_begin_
-                + range_length_
-                - parts[partitions_read_pos_].begin) {
-          ++positions_read_pos_;
-          ++range_length_;
-        }
-        // Check, whether we reached the end of the partition.
-        if (positions_read_pos_ < pos.size()) {
-          if (pos[positions_read_pos_] <= pos[positions_read_pos_ - 1]) {
-            ++partitions_read_pos_;
-          }
-        }
+        determine_length_of_current_run();
       }
       else {
         range_begin_ = outer_.n_;
@@ -328,51 +321,73 @@ struct partitioned_position_list {
     void __forceinline__
     skip_to(const std::size_t to_pos) {
       assert(to_pos >= range_begin_);
+
+      if (to_pos < (range_begin_ + range_length_)) {
+        range_length_ -= to_pos - range_begin_;
+        range_begin_ = to_pos;
+        return;
+      }
+
+      const auto& parts = outer_.partitions_;
+      const auto& pos = outer_.positions_;
+
       // Check if the destination position is within the current partition.
-      if (to_pos > outer_.partitions_[partitions_read_pos_].begin
-          + outer_.partition_size) {
+      if (to_pos > parts[partitions_read_pos_].begin + partition_size) {
+        // Search the corresponding partition.
         auto part_search = std::lower_bound(
-            outer_.partitions_.begin() + partitions_read_pos_,
-            outer_.partitions_.end(),
+            parts.begin(), // + partitions_read_pos_,
+            parts.end(),
             to_pos,
             [](const partition_info& part, const std::size_t pos) -> u1 {
-              return pos < (part.begin + partition_size);
+              return (part.begin + partition_size) < pos;
             }
         );
         partitions_read_pos_ = static_cast<u64>(std::distance(
-            outer_.partitions_.begin(), part_search));
-        if (part_search == outer_.partitions_.end()) {
+            parts.begin(), part_search));
+        if (part_search == parts.end()) {
           range_begin_ = outer_.n_;
           range_length_ = 0;
           return;
         }
       }
-      const auto& part = outer_.partitions_[partitions_read_pos_];
+
+      const auto& part = parts[partitions_read_pos_];
+
+      // Check partition boundary. - As multiple partitions are contiguous,
+      // the target position may not be part of any partition.
+      if (to_pos < part.begin) {
+        positions_read_pos_ = part.offset;
+        next();
+        return;
+      }
+
+      // Search within the current partition.
       const auto part_offset_begin = part.offset;
       const auto part_offset_end =
           partitions_read_pos_ + 1 == outer_.partitions_.size()
           ? outer_.positions_.size()
           : (outer_.partitions_[partitions_read_pos_ + 1]).offset;
+      const auto part_begin = pos.begin() + part_offset_begin;
+      const auto part_end = pos.begin() + part_offset_end;
       auto pos_search = std::lower_bound(
-          outer_.positions_.begin() + part_offset_begin,
-          outer_.positions_.begin() + part_offset_end,
+          part_begin,
+          part_end,
           to_pos - part.begin);
-      if (pos_search != outer_.positions_.end()) {
+      if (pos_search == part_end) {
+        // No match within the current partition. Forward the iterator to the
+        // beginning of the next partition.
+        ++partitions_read_pos_;
+        positions_read_pos_ = part_offset_end;
+        next();
+      }
+      else {
         range_begin_ = *pos_search + part.begin;
         positions_read_pos_ = std::distance(outer_.positions_.begin(), pos_search) + 1ull;
         range_length_ = 1;
-        while (positions_read_pos_ < outer_.positions_.size()
-            && outer_.positions_[positions_read_pos_] == range_begin_
-                + range_length_
-                - outer_.partitions_[partitions_read_pos_].begin) {
-          ++positions_read_pos_;
-          ++range_length_;
-        }
+        determine_length_of_current_run();
       }
-      else {
-        range_begin_ = outer_.n_;
-        range_length_ = 0;
-      }
+      assert(range_begin_ <= outer_.n_);
+      assert(range_begin_ + range_length_ <= outer_.n_);
     }
 
     u1 __forceinline__
@@ -395,12 +410,12 @@ struct partitioned_position_list {
 
   iter __forceinline__
   it() const {
-    return iter(*this);
+    return std::move(iter(*this));
   }
 
   iter __forceinline__
   scan_it() const {
-    return iter(*this);
+    return std::move(iter(*this));
   }
 
   /// Returns the name of the instance including the most important parameters
