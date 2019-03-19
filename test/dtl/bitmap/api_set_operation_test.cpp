@@ -13,6 +13,7 @@
 #include <dtl/bitmap/teb_scan.hpp>
 #include <dtl/bitmap/util/convert.hpp>
 #include <dtl/bitmap/util/random.hpp>
+#include <navin/experiments/util/gen.hpp>
 
 #include "util/bitwise_operations.hpp"
 
@@ -21,6 +22,10 @@
 //===----------------------------------------------------------------------===//
 
 constexpr std::size_t LEN = 8;
+
+constexpr std::size_t RANDOM_REPEAT = 50;
+constexpr std::size_t RANDOM_LENGTH = 1ull << 16;
+
 
 // Types under test.
 using teb_o0 = dtl::teb<0>;
@@ -91,6 +96,24 @@ TYPED_TEST(api_set_operation_test, bitwise_and) {
   }
 }
 //===----------------------------------------------------------------------===//
+TYPED_TEST(api_set_operation_test, bitwise_and_random) {
+  using T = TypeParam;
+  static u64 n = RANDOM_LENGTH;
+  for (std::size_t r = 0; r < RANDOM_REPEAT; ++r) {
+    auto bm_a = gen_random_bitmap_uniform(n, std::min(0.01 * r, 1.0));
+    auto bm_b = gen_random_bitmap_uniform(n, std::min(0.025 * r, 1.0));
+
+    auto bm_expected = bm_a & bm_b;
+    T tm_expected(bm_expected);
+
+    T tm_a(bm_a);
+    T tm_b(bm_b);
+    const auto bm_actual = bitwise_and(tm_a, tm_b);
+
+    ASSERT_EQ(bm_actual, bm_expected);
+  }
+}
+//===----------------------------------------------------------------------===//
 // Intersection / bitwise or.
 TYPED_TEST(api_set_operation_test, bitwise_or) {
   using T = TypeParam;
@@ -117,6 +140,23 @@ TYPED_TEST(api_set_operation_test, bitwise_or) {
   }
 }
 //===----------------------------------------------------------------------===//
+TYPED_TEST(api_set_operation_test, bitwise_or_random) {
+  using T = TypeParam;
+  static u64 n = RANDOM_LENGTH;
+  for (std::size_t r = 0; r < RANDOM_REPEAT; ++r) {
+    auto bm_a = gen_random_bitmap_uniform(n, std::min(0.01 * r, 1.0));
+    auto bm_b = gen_random_bitmap_uniform(n, std::min(0.025 * r, 1.0));
+
+    auto bm_expected = bm_a | bm_b;
+
+    T tm_a(bm_a);
+    T tm_b(bm_b);
+    const auto bm_actual = bitwise_or(tm_a, tm_b);
+
+    ASSERT_EQ(bm_actual, bm_expected);
+  }
+}
+//===----------------------------------------------------------------------===//
 // Difference / bitwise xor.
 TYPED_TEST(api_set_operation_test, bitwise_xor) {
   using T = TypeParam;
@@ -139,6 +179,33 @@ TYPED_TEST(api_set_operation_test, bitwise_xor) {
           << "Test (a ^ b) failed for a=" << bm_a << " (" << a << ")"
           << " and b=" << bm_b << "(" << b << ")" << std::endl;
     }
+  }
+}
+//===----------------------------------------------------------------------===//
+TYPED_TEST(api_set_operation_test, bitwise_xor_random) {
+  using T = TypeParam;
+  static u64 n = RANDOM_LENGTH;
+
+  for (std::size_t r = 0; r < RANDOM_REPEAT; ++r) {
+    auto bm_a = gen_random_bitmap_uniform(n, std::min(0.01 * r, 1.0));
+    auto bm_b = gen_random_bitmap_uniform(n, std::min(0.025 * r, 1.0));
+
+    auto bm_expected = bm_a ^ bm_b;
+    for (std::size_t i = 0; i < bm_a.size(); ++i) {
+      assert(bm_expected[i] == bm_a[i] ^ bm_b[i]);
+    }
+
+    T tm_a(bm_a);
+    T tm_b(bm_b);
+
+    auto bm_actual = bitwise_xor(tm_a, tm_b);
+    ASSERT_EQ(bm_actual, bm_expected)
+        << "Test (a ^ b) failed for"
+        << "\na=" << bm_a
+        << "\nb=" << bm_b
+        << "\nd=" << (bm_actual ^ bm_expected)
+        << "\nf=" << (bm_actual ^ bm_expected).find_first()
+        << std::endl;
   }
 }
 //===----------------------------------------------------------------------===//
