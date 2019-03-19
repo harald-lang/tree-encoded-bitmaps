@@ -262,6 +262,11 @@ struct range_list {
 
     void __forceinline__
     skip_to(const std::size_t to_pos) {
+      if (to_pos < (range_begin_ + range_length_)) {
+        range_length_ -= to_pos - range_begin_;
+        range_begin_ = to_pos;
+        return;
+      }
       auto search = std::lower_bound(
           outer_.ranges_.begin(), outer_.ranges_.end(),
           range{to_pos, 1},

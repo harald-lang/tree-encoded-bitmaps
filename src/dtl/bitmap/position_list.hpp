@@ -244,6 +244,11 @@ struct position_list {
 
     void __forceinline__
     skip_to(const std::size_t to_pos) {
+      if (to_pos < (range_begin_ + range_length_)) {
+        range_length_ -= to_pos - range_begin_;
+        range_begin_ = to_pos;
+        return;
+      }
       auto search = std::lower_bound(
           outer_.positions_.begin(), outer_.positions_.end(), to_pos);
       if (search != outer_.positions_.end()) {
