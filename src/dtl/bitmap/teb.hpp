@@ -399,11 +399,11 @@ public:
   determine_common_ancestor_path(u64 src_path, u64 dst_path) {
     //TODO should use positions instead of paths (at least for the second argument)
     assert(src_path != dst_path);
-    const auto a = src_path << (dtl::bits::lz_count(src_path) + 1);
+    const auto t0 = dtl::bits::lz_count(src_path) + 1;
+    const auto a = src_path << t0;
     const auto b = dst_path << (dtl::bits::lz_count(dst_path) + 1);
     assert(a < b);
-    const auto src_path_len = sizeof(src_path) * 8
-        - (dtl::bits::lz_count(src_path) + 1);
+    const auto src_path_len = sizeof(src_path) * 8 - t0;
     const auto common_prefix_length = dtl::bits::lz_count(a ^ b);
     const auto common_ancestor_path =
         src_path >> (src_path_len - common_prefix_length);
@@ -919,7 +919,7 @@ produce_output:
 
     // Walk up the tree to the common ancestor.
     stack_entry node;
-    while (path_ != right_child_of_common_ancestor_path) {
+    while (path_ != right_child_of_common_ancestor_path) { // FIXME avoid excessive upward navigation
       if (stack_.empty()) {
         // Note: It is no longer guaranteed, that the common ancestor is on
         //       the stack since we push only inner nodes and leaf nodes with
