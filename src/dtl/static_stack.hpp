@@ -78,8 +78,19 @@ public:
     assert(cnt_ >= 0 && cnt_ <= N);
   }
 
+  __forceinline__ T&
+  back() {
+    return stack_[cnt_ - 1];
+    assert(cnt_ >= 0 && cnt_ <= N);
+  }
+
   __forceinline__ T
   top() const {
+    return back();
+  }
+
+  __forceinline__ T&
+  top() {
     return back();
   }
 
@@ -92,6 +103,13 @@ public:
   __forceinline__ void
   pop() {
     pop_back();
+  }
+
+  __forceinline__ T&
+  push() {
+    T& ret_val = stack_[cnt_];
+    ++cnt_;
+    return ret_val;
   }
 
 };
