@@ -599,8 +599,8 @@ public:
     entry.node_idx = top_node_idx_begin_;
     entry.path = path_t(1) << (perfect_levels_ - 1);
     entry.rank = teb_.rank_inclusive(top_node_idx_begin_);
-    // TODO populate level
-//      entry.level = 0;
+    entry.level = determine_level_of(entry.path);
+//    entry.level = perfect_levels_ - 1;
     next();
   }
 
@@ -615,6 +615,7 @@ public:
     while (top_node_idx_current_ < top_node_idx_end_) {
       outer_loop_begin:
       while (!stack_.empty()) {
+        // The current node.
         stack_entry node_info = stack_.top();
         stack_.pop();
 
@@ -668,6 +669,7 @@ public:
                 node_info.node_idx =
                     left_child_label ? left_child_idx : right_child_idx;
                 node_info.path = (node_info.path << 1) | !left_child_label;
+                node_info.level++;
                 node_info.rank = left_child_rank;
                 goto produce_output;
               }
@@ -681,12 +683,14 @@ public:
                   case 0b01: {
                     node_info.node_idx = right_child_idx;
                     node_info.path = (node_info.path << 1) | 1;
-                    node_info.rank = left_child_rank + 1; // TODO double check
+                    node_info.level++;
+                    node_info.rank = left_child_rank + 1;
                     goto produce_output;
                   }
                   case 0b10: {
                     node_info.node_idx = left_child_idx;
                     node_info.path <<= 1;
+                    node_info.level++;
                     node_info.rank = left_child_rank;
                     goto produce_output;
                   }
@@ -706,7 +710,7 @@ public:
 
               // Derive rank of the right child.  The following works, because
               // the left child is leaf (0-bit) and the right is inner (1-bit).
-              u64 right_child_rank = left_child_rank + 1; // TODO paper
+              u64 right_child_rank = left_child_rank + 1;
 
               if (left_child_label) {
                 // Produce the output for the left child iff it has a 1-label,
@@ -715,23 +719,25 @@ public:
                 label = true; // TODO remove
                 node_info.path <<= 1;
                 node_info.rank = left_child_rank;
+                node_info.level++;
                 // Push the right child on the stack.
                 stack_entry& right_child_info = stack_.push();;
                 right_child_info.node_idx = right_child_idx;
                 right_child_info.path = node_info.path | 1;
+                right_child_info.level = node_info.level;
                 right_child_info.rank = right_child_rank;
-                // TODO also memorize the rank of the node
                 goto produce_output;
               }
               // Else, go to right child, ignoring the left child.
               node_info.node_idx = right_child_idx;
               node_info.path = (node_info.path << 1) | 1;
+              node_info.level++;
               node_info.rank = right_child_rank;
               goto loop_begin;
             }
             case 0b10: {
               //===------------------------------------------------------===//
-              // Left child is an inner, right child is a leaf node.
+              // Left child is an inner node, right child is a leaf node.
               //===------------------------------------------------------===//
 
               // Determine whether the right child produces an output
@@ -743,31 +749,35 @@ public:
                 stack_entry& right_child_info = stack_.push();
                 right_child_info.node_idx = right_child_idx;
                 right_child_info.path = (node_info.path << 1) | 1;
+                right_child_info.level = node_info.level + 1;
                 // Rank of the right child is equal to the rank of the left
                 // child.
-                u64 right_child_rank = left_child_rank; // TODO paper
+                u64 right_child_rank = left_child_rank;
                 right_child_info.rank = right_child_rank;
               }
               // Go to left child.
               node_info.node_idx = left_child_idx;
               node_info.path <<= 1;
+              node_info.level++;
               node_info.rank = left_child_rank;
               goto loop_begin;
             }
             case 0b11: {
               //===------------------------------------------------------===//
-              // Both childs are an inner nodes.
+              // Both children are an inner nodes.
               //===------------------------------------------------------===//
 
-              u64 right_child_rank = left_child_rank + 1; // TODO paper (maybe)
+              u64 right_child_rank = left_child_rank + 1;
               // Go to left child.
               node_info.node_idx = left_child_idx;
               node_info.path <<= 1;
+              node_info.level++;
               node_info.rank = left_child_rank;
               // Push the right child on the stack.
               stack_entry& right_child_info = stack_.push();
               right_child_info.node_idx = right_child_idx;
               right_child_info.path = node_info.path | 1;
+              right_child_info.level = node_info.level;
               right_child_info.rank = right_child_rank;
               goto loop_begin;
             }
@@ -799,6 +809,8 @@ produce_output:
       next_node.path = path_t(top_node_idx_current_ - top_node_idx_begin_);
       // Set the sentinel bit.
       next_node.path |= path_t(1) << (perfect_levels_ - 1);
+      next_node.level = determine_level_of(next_node.path);
+//    next_node.level = perfect_levels_ - 1;
       next_node.rank = teb_.rank_inclusive(top_node_idx_current_);
     }
     pos_ = teb_.n_;
@@ -876,6 +888,7 @@ produce_output:
           stack_entry& right_child_info = stack_.push();
           right_child_info.node_idx = right_child_idx;
           right_child_info.path = (path_ << 1) | 1;
+          right_child_info.level = level;
           right_child_info.rank = right_child_rank;
         }
         // Go to left child.
@@ -908,31 +921,37 @@ produce_output:
     const auto right_child_of_common_ancestor_path =
         (common_ancestor_path << 1) | 1ull;
 
+    const auto common_ancestor_level = determine_level_of(common_ancestor_path);
     // The common ancestor must be in the perfect tree part. - The reason is,
     // that the perfect levels are skipped during downward traversal and
     // therefore no nodes from these levels will ever be pushed on the stack.
     // TODO change the condition to something like this:
     // TODO level_of(ca) - (perfect_levels_ - 1) < level_of(current node) - level_of(ca)
-    if (determine_level_of(common_ancestor_path) <= perfect_levels_) {
+    if (common_ancestor_level <= perfect_levels_) {
       nav_from_root_to(to_pos);
       return;
     }
 
     // Walk up the tree to the common ancestor.
-    stack_entry node;
-    while (path_ != right_child_of_common_ancestor_path) { // FIXME avoid excessive upward navigation
-      if (stack_.empty()) {
+    $u64 node_idx = node_idx_;
+    auto path = from_path;
+    $u64 level = tree_height_;
+    while (path != right_child_of_common_ancestor_path) {
+      if (stack_.empty() || level < common_ancestor_level) {
         // Note: It is no longer guaranteed, that the common ancestor is on
         //       the stack since we push only inner nodes and leaf nodes with
         //       1-labels on the stack.
         nav_from_root_to(to_pos);
         return;
       }
-      node = stack_.top();
-      path_ = node.path;
+      const stack_entry& node = stack_.top();
+      node_idx = node.node_idx;
+      level = node.level;
+      path = node.path;
       stack_.pop();
     }
-    node_idx_ = node.node_idx;
+    node_idx_ = node_idx;
+    path_ = path;
     nav_downwards(to_pos);
   }
 
