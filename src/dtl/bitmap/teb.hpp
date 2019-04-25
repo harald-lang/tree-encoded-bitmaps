@@ -595,13 +595,12 @@ public:
       path_(path_t(1) << (perfect_levels_ - 1))
   {
     // Initialize the stack.
-    stack_entry entry; // TODO emplace back
+    stack_entry& entry = stack_.push();
     entry.node_idx = top_node_idx_begin_;
     entry.path = path_t(1) << (perfect_levels_ - 1);
     entry.rank = teb_.rank_inclusive(top_node_idx_begin_);
     // TODO populate level
 //      entry.level = 0;
-    stack_.push(entry);
     next();
   }
 
@@ -717,11 +716,10 @@ public:
                 node_info.path <<= 1;
                 node_info.rank = left_child_rank;
                 // Push the right child on the stack.
-                stack_entry right_child_info;
+                stack_entry& right_child_info = stack_.push();;
                 right_child_info.node_idx = right_child_idx;
                 right_child_info.path = node_info.path | 1;
                 right_child_info.rank = right_child_rank;
-                stack_.push(right_child_info);
                 // TODO also memorize the rank of the node
                 goto produce_output;
               }
@@ -742,15 +740,13 @@ public:
               if (right_child_label) { // FIXME DEP
                 // Push the right child on the stack iff it has a 1-label,
                 // otherwise the right child is ignored.
-                stack_entry right_child_info;
+                stack_entry& right_child_info = stack_.push();
                 right_child_info.node_idx = right_child_idx;
                 right_child_info.path = (node_info.path << 1) | 1;
                 // Rank of the right child is equal to the rank of the left
                 // child.
                 u64 right_child_rank = left_child_rank; // TODO paper
                 right_child_info.rank = right_child_rank;
-                stack_.push(right_child_info);
-                // TODO also memorize the rank of the node
               }
               // Go to left child.
               node_info.node_idx = left_child_idx;
@@ -769,11 +765,10 @@ public:
               node_info.path <<= 1;
               node_info.rank = left_child_rank;
               // Push the right child on the stack.
-              stack_entry right_child_info;
+              stack_entry& right_child_info = stack_.push();
               right_child_info.node_idx = right_child_idx;
               right_child_info.path = node_info.path | 1;
               right_child_info.rank = right_child_rank;
-              stack_.push(right_child_info);
               goto loop_begin;
             }
             default:
@@ -799,13 +794,12 @@ produce_output:
 
       // TODO bypass the stack here
       ++top_node_idx_current_;
-      stack_entry next_node;
+      stack_entry& next_node = stack_.push();
       next_node.node_idx = top_node_idx_current_;
       next_node.path = path_t(top_node_idx_current_ - top_node_idx_begin_);
       // Set the sentinel bit.
       next_node.path |= path_t(1) << (perfect_levels_ - 1);
       next_node.rank = teb_.rank_inclusive(top_node_idx_current_);
-      stack_.push(next_node);
     }
     pos_ = teb_.n_;
     length_ = 0;
@@ -839,12 +833,15 @@ produce_output:
   void __teb_inline__
   nav_downwards(const std::size_t to_pos) noexcept {
     $u64 level = determine_level_of(path_);
+    auto rank = teb_.rank_inclusive(node_idx_);
     std::size_t i = tree_height_ - level - 1;
     while (true) {
       // First check, if this is already a leaf node.
       if (teb_.is_leaf_node(node_idx_)) {
         // Reached the desired position.
-        if (teb_.get_label(node_idx_)) {
+        const auto label_idx = node_idx_ - rank;
+        const auto label = teb_.L_[label_idx];
+        if (label) {
           // Found the corresponding leaf node.
           // Toggle sentinel bit (= highest bit set) and add offset.
           pos_ = (path_ ^ (1ull << level)) << (tree_height_ - level);
@@ -866,27 +863,31 @@ produce_output:
       // 0 -> go to left child, 1 -> go to right child
       u1 direction_bit = dtl::bits::bit_test(to_pos, i);
       i--;
-      const auto right_child_idx = teb_.right_child(node_idx_);
+      const auto right_child_idx = 2 * rank;
       const auto left_child_idx = right_child_idx - 1;
+      const auto right_child_rank = teb_.rank_inclusive(right_child_idx);
+      const auto right_child_is_inner = teb_.is_inner_node(right_child_idx);
+      const auto left_child_rank = right_child_rank - right_child_is_inner;
       level++;
       if (!direction_bit) {
         // Push the right child only if necessary.
-        if (teb_.is_inner_node(right_child_idx)
+        if (right_child_is_inner
             || teb_.get_label(right_child_idx)) {
-          stack_entry right_child_info;
+          stack_entry& right_child_info = stack_.push();
           right_child_info.node_idx = right_child_idx;
           right_child_info.path = (path_ << 1) | 1;
-          right_child_info.rank = teb_.rank_inclusive(right_child_idx); // FIXME re-use previously computed rank (get_label())
-          stack_.push(right_child_info);
+          right_child_info.rank = right_child_rank;
         }
         // Go to left child.
         path_ <<= 1;
         node_idx_ = left_child_idx;
+        rank = left_child_rank;
       }
       else {
         // Go to right child.
         path_ = (path_ << 1) | 1;
         node_idx_ = right_child_idx;
+        rank = right_child_rank;
       }
     }
   }
