@@ -922,32 +922,45 @@ produce_output:
         (common_ancestor_path << 1) | 1ull;
 
     const auto common_ancestor_level = determine_level_of(common_ancestor_path);
+    const auto right_child_of_common_ancestor_level = common_ancestor_level + 1;
+
     // The common ancestor must be in the perfect tree part. - The reason is,
     // that the perfect levels are skipped during downward traversal and
     // therefore no nodes from these levels will ever be pushed on the stack.
     // TODO change the condition to something like this:
     // TODO level_of(ca) - (perfect_levels_ - 1) < level_of(current node) - level_of(ca)
-    if (common_ancestor_level <= perfect_levels_) {
+    if (common_ancestor_level <= perfect_levels_
+        || stack_.empty()) {
       nav_from_root_to(to_pos);
       return;
     }
 
-    // Walk up the tree to the common ancestor.
+    assert(!stack_.empty());
+
+    // Walk up the tree to the right child of the common ancestor.
     $u64 node_idx = node_idx_;
     auto path = from_path;
     $u64 level = tree_height_;
     while (path != right_child_of_common_ancestor_path) {
-      if (stack_.empty() || level < common_ancestor_level) {
-        // Note: It is no longer guaranteed, that the common ancestor is on
-        //       the stack since we push only inner nodes and leaf nodes with
-        //       1-labels on the stack.
-        nav_from_root_to(to_pos);
-        return;
-      }
+      assert(!stack_.empty());
       const stack_entry& node = stack_.top();
       node_idx = node.node_idx;
       level = node.level;
       path = node.path;
+      // Check if we missed the right child of the common ancestor (could
+      // happen because it might not be on the stack).
+      //
+      // Note: It is no longer guaranteed, that the common ancestor is on
+      //   the stack since we push only inner nodes and leaf nodes with 1-labels
+      //   on the stack.  Which means that if we cannot find the common ancestor
+      //   on the stack, it is either (i) an implicit node or (ii) it is a leaf
+      //   node with a 0-label. The first case is handled before we walk the
+      //   tree upwards, and in the second case we forward the iterator to
+      //   the next 1-fill.
+      if (level < right_child_of_common_ancestor_level) {
+        next();
+        return;
+      }
       stack_.pop();
     }
     node_idx_ = node_idx;
