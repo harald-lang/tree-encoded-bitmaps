@@ -94,8 +94,14 @@ set(SQLITE_SOURCE_FILES
         )
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSQLITE_OMIT_LOAD_EXTENSION")
 
+set(OTHER_SOURCE_FILES
+        thirdparty/types/Types.cpp
+        thirdparty/types/Types.hpp
+        )
+
 set(BENCHMARK_SOURCE_FILES
         ${SQLITE_SOURCE_FILES}
+        ${OTHER_SOURCE_FILES}
         experiments/compression/common.hpp
         experiments/performance/common.hpp
         experiments/util/bitmap_types.hpp
@@ -122,6 +128,7 @@ set(TEST_FILES
         test/dtl/bitmap/teb_scan_util_test.cpp
         test/dtl/bitmap/api_range_iterator_skip_test.cpp
         test/dtl/bitmap/api_set_operation_test.cpp
+        test/dtl/bitmap/util/bitwise_operations.hpp
 #        test/dtl/bitmap/static_api_test.cpp
 #        test/dtl/bitmap/iterate_test.cpp
         )
@@ -175,6 +182,7 @@ set(TEB_SOURCE_FILES
         src/dtl/bitmap/util/random.hpp
         src/dtl/bitmap/util/markov_process.hpp
         src/dtl/bitmap/util/two_state_markov_process.hpp
+        src/dtl/bitmap/bitwise_operations.hpp
         src/dtl/bitmap/teb.hpp
         src/dtl/bitmap/teb_scan.hpp
         src/dtl/bitmap/teb_scan_util.hpp
