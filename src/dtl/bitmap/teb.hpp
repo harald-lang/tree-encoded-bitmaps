@@ -679,7 +679,10 @@ public:
           u64 right_child_label_idx = left_child_label_idx + 1
               - left_child_is_inner; // adjust index if necessary
 
-          // TODO Eagerly fetch the labels.
+//          // TODO Eagerly fetch the labels.
+//          u1 left_child_label = teb_.L_[left_child_label_idx];
+//          u1 right_child_label = teb_.L_[right_child_label_idx];
+
 
 
           // Switch over the different cases.
@@ -689,11 +692,6 @@ public:
               // Both childs are leaf nodes.
               //===------------------------------------------------------===//
 
-              u1 left_child_label = teb_.L_[left_child_label_idx];
-              u1 right_child_label = teb_.L_[right_child_label_idx];
-
-              // Fetch the labels.
-              //
               // Note for UN-optimized TEBs the following holds:
               //   One child has a 1-label the other has
               //   a 0-label, which is guaranteed by the bottom-up pruning.
@@ -703,6 +701,11 @@ public:
               // expand nodes and replicate labels. Thus, the sub-tree is no
               // longer guaranteed to be 'compressed', and therefore, both
               // labels need to be inspected.
+
+              // Fetch the labels.
+              u1 left_child_label = teb_.L_[left_child_label_idx];
+              u1 right_child_label = teb_.L_[right_child_label_idx];
+
               if (optimization_level_ < 2) {
                 // Go to the node which has the 1-label.
                 node_info.node_idx =
@@ -755,7 +758,7 @@ public:
                 // Produce the output for the left child iff it has a 1-label,
                 // otherwise it can be ignored.
                 node_info.node_idx = left_child_idx;
-                label = true; // TODO remove
+//                label = true; // TODO remove
                 node_info.path <<= 1;
                 node_info.rank = left_child_rank;
                 node_info.level++;
@@ -829,8 +832,9 @@ public:
         if (label) {
 produce_output:
           // Produce output (a 1-fill).
-          const auto lz_cnt_path = dtl::bits::lz_count(node_info.path);
-          const auto level = sizeof(path_t) * 8 - 1 - lz_cnt_path;
+//          const auto lz_cnt_path = dtl::bits::lz_count(node_info.path);
+//          const auto level = sizeof(path_t) * 8 - 1 - lz_cnt_path;
+          const auto level = node_info.level;
           // Toggle sentinel bit (= highest bit set) and add offset.
           pos_ = (node_info.path ^ (1ull << level)) << (tree_height_ - level);
           // The length of the 1-fill.
