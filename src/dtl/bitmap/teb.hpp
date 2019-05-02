@@ -410,6 +410,22 @@ public:
     return common_ancestor_path;
   }
 
+  static inline void
+  determine_common_ancestor_path(u64 src_path, u64 dst_path,
+      $u64& out_common_ancestor_path, $u64& out_common_ancestor_level) {
+    //TODO should use positions instead of paths (at least for the second argument)
+    assert(src_path != dst_path);
+    const auto t0 = dtl::bits::lz_count(src_path) + 1;
+    const auto a = src_path << t0;
+    const auto b = dst_path << (dtl::bits::lz_count(dst_path) + 1);
+    assert(a < b);
+    const auto src_path_len = sizeof(src_path) * 8 - t0;
+    const auto common_prefix_length = dtl::bits::lz_count(a ^ b);
+    out_common_ancestor_path =
+        src_path >> (src_path_len - common_prefix_length);
+    out_common_ancestor_level = common_prefix_length;
+  }
+
   static inline u64
   determine_level_of(u64 path) {
     const auto lz_cnt_path = dtl::bits::lz_count(path);
@@ -489,6 +505,26 @@ private:
       return false;
     }
     return T_[node_idx - implicit_1bit_cnt];
+  }
+
+  u1 __teb_inline__
+  is_inner_node_branchfree(u64 node_idx) const { // SLOW!!!
+    const std::size_t implicit_1bit_cnt = implicit_inner_node_cnt_;
+    auto node_offset = node_idx - implicit_1bit_cnt;
+    const std::size_t implicit_leaf_begin =
+        structure_bit_cnt_ + implicit_inner_node_cnt_;
+    u1 is_implicit_inner = node_idx < implicit_1bit_cnt;
+    u1 is_implicit_leaf = node_idx >= implicit_leaf_begin;
+
+    u1 is_implicit = is_implicit_inner | is_implicit_leaf;
+    u1 implicit_ret_val = is_implicit_inner;
+    node_offset -= (is_implicit) * node_offset;
+    u1 read_val = T_[node_offset] & !is_implicit;
+
+    u1 ret_val = is_implicit
+        ? implicit_ret_val
+        : read_val;
+    return ret_val;
   }
 
   u1 __teb_inline__
@@ -634,12 +670,17 @@ public:
           const auto children_are_inner =
               (left_child_is_inner << 1) | right_child_is_inner; // TODO fetch both bits in one go
 
-          // Eagerly fetch the labels.
+          // Compute the rank for one child, and derive the rank of the
+          // other one.
+          // Rank is required to compute the label index.
           u64 left_child_rank = teb_.rank_inclusive(left_child_idx);
           u64 left_child_label_idx = left_child_idx - left_child_rank
               + left_child_is_inner; // prevent underflow
           u64 right_child_label_idx = left_child_label_idx + 1
               - left_child_is_inner; // adjust index if necessary
+
+          // TODO Eagerly fetch the labels.
+
 
           // Switch over the different cases.
           switch (children_are_inner) {
@@ -647,9 +688,7 @@ public:
               //===------------------------------------------------------===//
               // Both childs are leaf nodes.
               //===------------------------------------------------------===//
-              // Compute the rank for one child, and derive the rank of the
-              // other one.
-              // Rank is required to compute the label index.
+
               u1 left_child_label = teb_.L_[left_child_label_idx];
               u1 right_child_label = teb_.L_[right_child_label_idx];
 
@@ -809,8 +848,8 @@ produce_output:
       next_node.path = path_t(top_node_idx_current_ - top_node_idx_begin_);
       // Set the sentinel bit.
       next_node.path |= path_t(1) << (perfect_levels_ - 1);
-      next_node.level = determine_level_of(next_node.path);
-//    next_node.level = perfect_levels_ - 1;
+//      next_node.level = determine_level_of(next_node.path);
+    next_node.level = perfect_levels_ - 1;
       next_node.rank = teb_.rank_inclusive(top_node_idx_current_);
     }
     pos_ = teb_.n_;
@@ -831,7 +870,6 @@ produce_output:
 
     // Determine the top-node idx.
     top_node_idx_current_ = top_node_idx_begin_ + foo;
-    const auto bar = determine_level_of(path_);
     //===----------------------------------------------------------------===//
 
     node_idx_ = top_node_idx_current_;
@@ -912,6 +950,79 @@ produce_output:
   void __teb_inline__
   nav_to(const std::size_t to_pos) {
     assert(to_pos >= pos_ + length_);
+    assert(perfect_levels_ > 0);
+    // Fast path. If the skip distance is larger than the range spanned by
+    // the current subtree, we immediately start navigating downwards from the
+    // root node.  Thus, we do not need to compute the common ancestor node.
+    if ((to_pos - pos_) > (1ull << (tree_height_ - perfect_levels_ + 1) )) {
+      nav_from_root_to(to_pos);
+      return;
+    }
+
+    // Determine the common ancestor node.
+    const path_t to_path = to_pos | path_t(1) << tree_height_;
+    const path_t from_path = path_;
+
+    path_t common_ancestor_path;
+    $u64 common_ancestor_level;
+    determine_common_ancestor_path(from_path, to_path, common_ancestor_path,
+        common_ancestor_level);
+
+    // The common ancestor must be in the perfect tree part. - The reason is,
+    // that the perfect levels are skipped during downward traversal and
+    // therefore no nodes from these levels will ever be pushed on the stack.
+    // TODO change the condition to something like this:
+    // TODO level_of(ca) - (perfect_levels_ - 1) < level_of(current node) - level_of(ca)
+    if (common_ancestor_level <= perfect_levels_
+        || stack_.empty()) {
+      nav_from_root_to(to_pos);
+      return;
+    }
+
+    assert(!stack_.empty());
+
+    // Determine the right child of the common ancestor node.
+    const auto right_child_of_common_ancestor_path =
+        (common_ancestor_path << 1) | 1ull;
+    const auto right_child_of_common_ancestor_level = common_ancestor_level + 1;
+
+    // Walk up the tree to the right child of the common ancestor.
+    $u64 node_idx = node_idx_;
+    auto path = from_path;
+    $u64 level = tree_height_;
+    while (path != right_child_of_common_ancestor_path) {
+      if(stack_.empty()) {
+        nav_from_root_to(to_pos);
+        return;
+      };
+      const stack_entry& node = stack_.top();
+      node_idx = node.node_idx;
+      level = node.level;
+      path = node.path;
+      // Check if we missed the right child of the common ancestor (could
+      // happen because it might not be on the stack).
+      //
+      // Note: It is no longer guaranteed, that the common ancestor is on
+      //   the stack since we push only inner nodes and leaf nodes with 1-labels
+      //   on the stack.  Which means that if we cannot find the common ancestor
+      //   on the stack, it is either (i) an implicit node or (ii) it is a leaf
+      //   node with a 0-label. The first case is handled before we walk the
+      //   tree upwards, and in the second case we forward the iterator to
+      //   the next 1-fill.
+      if (level < right_child_of_common_ancestor_level) {
+        next();
+        return;
+      }
+      stack_.pop();
+    }
+    node_idx_ = node_idx;
+    path_ = path;
+    nav_downwards(to_pos);
+  }
+
+  void __teb_inline__
+  nav_to_new(const std::size_t to_pos) {
+    assert(to_pos >= pos_ + length_);
 
     const path_t to_path = to_pos | path_t(1) << tree_height_;
     const path_t from_path = path_;
@@ -929,7 +1040,15 @@ produce_output:
     // therefore no nodes from these levels will ever be pushed on the stack.
     // TODO change the condition to something like this:
     // TODO level_of(ca) - (perfect_levels_ - 1) < level_of(current node) - level_of(ca)
-    if (common_ancestor_level <= perfect_levels_
+
+    const auto current_level = determine_level_of(from_path);
+    const auto up_step_cnt = current_level - common_ancestor_level;
+    const auto down_step_cnt = common_ancestor_level <= perfect_levels_
+        ? 0
+        : common_ancestor_level - perfect_levels_;
+
+    if (down_step_cnt < up_step_cnt
+//    if (common_ancestor_level <= perfect_levels_
         || stack_.empty()) {
       nav_from_root_to(to_pos);
       return;
@@ -942,7 +1061,10 @@ produce_output:
     auto path = from_path;
     $u64 level = tree_height_;
     while (path != right_child_of_common_ancestor_path) {
-      assert(!stack_.empty());
+      if (stack_.empty()) {
+        nav_from_root_to(to_pos);
+        return;
+      };
       const stack_entry& node = stack_.top();
       node_idx = node.node_idx;
       level = node.level;
@@ -982,6 +1104,8 @@ produce_output:
       return;
     }
     nav_to(to_pos);
+//    nav_to_new(to_pos);
+//    nav_from_root_to(to_pos);
   }
 
   /// Returns true if the iterator reached the end, false otherwise.
