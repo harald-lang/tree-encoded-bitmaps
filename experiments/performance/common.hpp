@@ -4,6 +4,7 @@
 #include <chrono>
 #include <cmath>
 #include <limits>
+#include <utility>
 #include <iostream>
 
 #include <boost/algorithm/string.hpp>
@@ -30,6 +31,7 @@
 
 #include "version.h"
 
+//===----------------------------------------------------------------------===//
 // The number of independent runs.
 static $u64 RUNS = 10;
 static constexpr u64 N = 1u << 20;
@@ -44,14 +46,13 @@ static u64 GEN_DATA = dtl::env<$u64>::get("GEN_DATA", 0);
 static bitmap_db db(DB_FILE);
 
 static $u64 RUN_DURATION_NANOS = 250e6; // run for at least 250ms
-
+//===----------------------------------------------------------------------===//
 u64
 now_nanos() {
   return std::chrono::duration_cast<std::chrono::nanoseconds>(
       std::chrono::steady_clock::now().time_since_epoch()).count();
 }
-
-
+//===----------------------------------------------------------------------===//
 struct config {
   bitmap_t bitmap_type;
   $u64 n;
@@ -93,15 +94,18 @@ run(const config& c, std::ostream& os) {
   }
 
   // Warm up run
-  std::size_t pos_sink = 0;
-  std::size_t length_sink = 0;
+  std::size_t checksum = 0;
   {
-    auto it = enc_bs.it();
+    std::size_t pos_sink = 0;
+    std::size_t length_sink = 0;
+    auto it = enc_bs.scan_it();
     while (!it.end()) {
       pos_sink += it.pos();
       length_sink += it.length();
       it.next();
     }
+
+    checksum += pos_sink + length_sink;
 
     // Validation. (Fail fast)
     if ((length_sink != bs_count)) {
@@ -114,31 +118,81 @@ run(const config& c, std::ostream& os) {
 
 
   // The actual measurement.
-  const auto nanos_begin = now_nanos();
-  const auto tsc_begin = _rdtsc();
-  std::size_t rep_cntr = 0;
-  while (now_nanos() - nanos_begin < duration_nanos
-      || rep_cntr < MIN_REPS) {
-    ++rep_cntr;
-    auto it = enc_bs.it();
-    while (!it.end()) {
-      pos_sink += it.pos();
-      length_sink += it.length();
-      it.next();
+  $u64 runtime_nanos_scan_it = 0;
+  $u64 runtime_cycles_scan_it = 0;
+  $u64 runtime_nanos_skip_it = 0;
+  $u64 runtime_cycles_skip_it = 0;
+
+  {
+    std::size_t pos_sink = 0;
+    std::size_t length_sink = 0;
+    const auto nanos_begin = now_nanos();
+    const auto tsc_begin = _rdtsc();
+    std::size_t rep_cntr = 0;
+    while (now_nanos() - nanos_begin < duration_nanos
+        || rep_cntr < MIN_REPS) {
+      ++rep_cntr;
+      auto it = enc_bs.scan_it();
+      while (!it.end()) {
+        pos_sink += it.pos();
+        length_sink += it.length();
+        it.next();
+      }
     }
+    const auto tsc_end = _rdtsc();
+    const auto nanos_end = now_nanos();
+
+    if ((length_sink / rep_cntr) != bs_count) {
+      std::cerr << "Validation failed: " << c << std::endl;
+      std::cerr << "Expected length to be " << bs_count
+          << " but got " << (length_sink / rep_cntr) << std::endl;
+      std::exit(1);
+    }
+
+    runtime_nanos_scan_it = (nanos_end - nanos_begin) / rep_cntr;
+    runtime_cycles_scan_it = (tsc_end - tsc_begin) / rep_cntr;
+    checksum += pos_sink + length_sink;
   }
-  const auto tsc_end = _rdtsc();
-  const auto nanos_end = now_nanos();
 
+  using scan_iter_t = decltype(std::declval<T>().scan_it());
+  using skip_iter_t = decltype(std::declval<T>().it());
 
-  if ((length_sink / (rep_cntr + 1)) != bs_count) {
-    std::cerr << "Validation failed: " << c << std::endl;
-    std::cerr << "Expected length to be " << bs_count
-              << " but got " << (length_sink / (rep_cntr + 1)) << std::endl;
-    std::exit(1);
+  if (std::is_same<scan_iter_t, skip_iter_t>::value) {
+    // Scan and skip iterator are of the same type, thus replicate the results.
+    runtime_nanos_skip_it = runtime_nanos_scan_it;
+    runtime_cycles_skip_it = runtime_cycles_scan_it;
   }
+  else {
+    // Re-run the experiment with the other iterator.
+    std::size_t pos_sink = 0;
+    std::size_t length_sink = 0;
+    const auto nanos_begin = now_nanos();
+    const auto tsc_begin = _rdtsc();
+    std::size_t rep_cntr = 0;
+    while (now_nanos() - nanos_begin < duration_nanos
+        || rep_cntr < MIN_REPS) {
+      ++rep_cntr;
+      auto it = enc_bs.it();
+      while (!it.end()) {
+        pos_sink += it.pos();
+        length_sink += it.length();
+        it.next();
+      }
+    }
+    const auto tsc_end = _rdtsc();
+    const auto nanos_end = now_nanos();
 
-  const std::size_t checksum = pos_sink + length_sink;
+    if ((length_sink / rep_cntr) != bs_count) {
+      std::cerr << "Validation failed: " << c << std::endl;
+      std::cerr << "Expected length to be " << bs_count
+          << " but got " << (length_sink / rep_cntr) << std::endl;
+      std::exit(1);
+    }
+
+    runtime_nanos_skip_it = (nanos_end - nanos_begin) / rep_cntr;
+    runtime_cycles_skip_it = (tsc_end - tsc_begin) / rep_cntr;
+    checksum += pos_sink + length_sink;
+  }
 
   std::string type_info = enc_bs.info();
   boost::replace_all(type_info, "\"", "\"\""); // Escape JSON for CSV output.
@@ -147,8 +201,10 @@ run(const config& c, std::ostream& os) {
      << ",\"" << BUILD_ID << "\""
      << "," << c.n
      << "," << T::name()
-     << "," << (nanos_end - nanos_begin) / rep_cntr
-     << "," << (tsc_end - tsc_begin) / rep_cntr
+     << "," << runtime_nanos_skip_it
+     << "," << runtime_cycles_skip_it
+     << "," << runtime_nanos_scan_it
+     << "," << runtime_cycles_scan_it
      << "," << c.density
      << "," << dtl::determine_bit_density(bs)
      << "," << c.clustering_factor
@@ -159,6 +215,8 @@ run(const config& c, std::ostream& os) {
      << "," << checksum
      << std::endl;
 }
+//===----------------------------------------------------------------------===//
+
 //===----------------------------------------------------------------------===//
 void run(config c, std::ostream& os) {
   switch (c.bitmap_type) {
@@ -171,9 +229,9 @@ void run(config c, std::ostream& os) {
     case bitmap_t::teb:
       run<dtl::teb<>>(c, os);
       break;
-    case bitmap_t::teb_scan:
-      run<dtl::teb_scan<>>(c, os);
-      break;
+//    case bitmap_t::teb_scan:
+//      run<dtl::teb_scan<>>(c, os);
+//      break;
     case bitmap_t::wah:
       run<dtl::dynamic_wah32>(c, os);
       break;

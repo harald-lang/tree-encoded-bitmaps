@@ -154,6 +154,8 @@ $i32 main() {
 
   // Prepare benchmark settings.
 //  u64 n_min = 1ull << 10;
+//  u64 n_min = 1ull << 16;
+//  u64 n_max = 1ull << 16;
   u64 n_min = 1ull << 20;
   u64 n_max = 1ull << 20;
 
@@ -167,9 +169,14 @@ $i32 main() {
 
   std::vector<$f64> bit_densities;
   for ($f64 d = 1; d <= 10000; d *= 1.25) {
-    if (d < 1000) continue;
+    if (d < 100) continue;
+//    if (d > 1000) continue;
     bit_densities.push_back(d/10000);
   }
+//  std::cout << "densities:" << std::endl;
+//  for (auto d : bit_densities) {
+//    std::cout << d << std::endl;
+//  }
 
   std::vector<$u64> n_values;
   for ($u64 n = n_min; n <= n_max; n <<= 1) {
