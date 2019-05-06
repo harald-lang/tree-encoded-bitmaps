@@ -23,7 +23,7 @@ template<typename T>
 boost::dynamic_bitset<$u32>
 to_bitmap_using_iterator(const T& encoded_bitmap) {
   boost::dynamic_bitset<$u32> bm(encoded_bitmap.size());
-  auto it = encoded_bitmap.it();
+  auto it = encoded_bitmap.scan_it();
   while (!it.end()) {
     for (std::size_t i = it.pos(); i < it.pos() + it.length(); ++i) {
       assert(bm[i] == false);
