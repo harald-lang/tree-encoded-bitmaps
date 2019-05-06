@@ -13,11 +13,11 @@ static const auto cpu_mask = dtl::this_thread::get_cpu_affinity();
 //===----------------------------------------------------------------------===//
 template<typename T>
 void dispatch(const std::vector<T>& tasks,
-              std::function<void(const T&, std::ostream&)> fn,
-              i64 thread_cnt = dtl::env<$u64>::get("THREAD_CNT", cpu_mask.count())) {
+    std::function<void(const T&, std::ostream&)> fn,
+    i64 thread_cnt = dtl::env<$u64>::get("THREAD_CNT", cpu_mask.count())) {
   i64 config_cnt = tasks.size();
   i64 min_batch_size = 1;
-  i64 max_batch_size = 32;
+  i64 max_batch_size = 8;
 
   const auto time_start = std::chrono::system_clock::now();
   std::atomic<$i64> cntr { 0 };
