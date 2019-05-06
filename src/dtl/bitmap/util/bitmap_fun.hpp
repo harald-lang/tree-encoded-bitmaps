@@ -14,8 +14,10 @@ struct bitmap_fun {
   static u1 __forceinline__
   test(const word_type* b, std::size_t i) noexcept {
     const auto block_idx = i / word_bitlength;
+    const auto word = b[block_idx];
     const auto bit_idx = i % word_bitlength;
-    return dtl::bits::bit_test(b[block_idx], bit_idx);
+//    return dtl::bits::bit_test(b[block_idx], bit_idx);
+    return (word & (word_type(1) << i)) != 0;
   }
 
   static void __forceinline__
