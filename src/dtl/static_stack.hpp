@@ -112,6 +112,21 @@ public:
     return ret_val;
   }
 
+  __forceinline__ const T&
+  operator[](std::size_t i) const {
+    return stack_[i];
+  }
+
+  __forceinline__ std::size_t
+  size() const {
+    return cnt_;
+  }
+
+  __forceinline__ void
+  rewind(std::size_t i) {
+    cnt_ = i + 1;
+  }
+
 };
 //===----------------------------------------------------------------------===//
 } // namespace dtl
