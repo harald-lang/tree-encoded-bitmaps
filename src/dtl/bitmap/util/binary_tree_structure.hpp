@@ -214,7 +214,7 @@ private:
   /// Mark the given node as a leaf node.
   inline void
   set_leaf_rec(u64 node_idx) {
-    const auto recurse = is_inner_node_[node_idx];
+    u1 recurse = is_inner_node_[node_idx];
     is_inner_node_[node_idx] = false;
     if (recurse) {
       set_leaf_rec(left_child_of(node_idx));
