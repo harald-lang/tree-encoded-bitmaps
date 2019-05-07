@@ -926,7 +926,7 @@ produce_output:
       if (!direction_bit) {
         // Push the right child only if necessary.
         if (right_child_is_inner
-            || teb_.get_label(right_child_idx)) {
+            || teb_.L_[right_child_idx - right_child_rank]) {
           stack_entry& right_child_info = stack_.push();
           right_child_info.node_idx = right_child_idx;
           right_child_info.path = (path_ << 1) | 1;
@@ -1134,6 +1134,12 @@ produce_output:
   u64 __teb_inline__
   path() const noexcept {
     return path_;
+  }
+
+  /// Returns the level of the current tree node.
+  u64 __teb_inline__
+  level() const noexcept {
+    return determine_level_of(path_);
   }
 
 };
