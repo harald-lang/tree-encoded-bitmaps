@@ -396,7 +396,7 @@ public:
   /// Determines the path to the common ancestor of the two nodes specified
   /// by there paths.
   static inline u64
-  determine_common_ancestor_path(u64 src_path, u64 dst_path) {
+  determine_common_ancestor_path(u64 src_path, u64 dst_path) noexcept {
     //TODO should use positions instead of paths (at least for the second argument)
     assert(src_path != dst_path);
     const auto t0 = dtl::bits::lz_count(src_path) + 1;
@@ -412,7 +412,7 @@ public:
 
   static inline void
   determine_common_ancestor_path(u64 src_path, u64 dst_path,
-      $u64& out_common_ancestor_path, $u64& out_common_ancestor_level) {
+      $u64& out_common_ancestor_path, $u64& out_common_ancestor_level) noexcept {
     //TODO should use positions instead of paths (at least for the second argument)
     assert(src_path != dst_path);
     const auto t0 = dtl::bits::lz_count(src_path) + 1;
@@ -428,7 +428,7 @@ public:
 
   static inline void
   determine_common_ancestor_path2(u64 src_path, u64 dst_pos, u64 tree_height,
-      $u64& out_common_ancestor_path, $u64& out_common_ancestor_level) {
+      $u64& out_common_ancestor_path, $u64& out_common_ancestor_level) noexcept {
     const auto t0 = dtl::bits::lz_count(src_path) + 1;
     const auto a = src_path << t0;
     const auto b = dst_pos << (sizeof(dst_pos) * 8 - tree_height);
@@ -441,7 +441,7 @@ public:
   }
 
   static inline u64
-  determine_level_of(u64 path) {
+  determine_level_of(u64 path) noexcept {
     const auto lz_cnt_path = dtl::bits::lz_count(path);
     const auto level = sizeof(u64) * 8 - 1 - lz_cnt_path;
     return level;
@@ -506,7 +506,7 @@ public:
 private:
 
   u1 __teb_inline__
-  is_inner_node(u64 node_idx) const {
+  is_inner_node(u64 node_idx) const noexcept {
     const std::size_t implicit_1bit_cnt = implicit_inner_node_cnt_;
     const std::size_t implicit_leaf_begin =
         structure_bit_cnt_ + implicit_inner_node_cnt_;
@@ -522,7 +522,7 @@ private:
   }
 
   u1 __teb_inline__
-  is_inner_node_branchfree(u64 node_idx) const { // SLOW!!!
+  is_inner_node_branchfree(u64 node_idx) const noexcept { // SLOW!!!
     const std::size_t implicit_1bit_cnt = implicit_inner_node_cnt_;
     auto node_offset = node_idx - implicit_1bit_cnt;
     const std::size_t implicit_leaf_begin =
@@ -542,33 +542,33 @@ private:
   }
 
   u1 __teb_inline__
-  is_leaf_node(u64 node_idx) const {
+  is_leaf_node(u64 node_idx) const noexcept {
     return !is_inner_node(node_idx);
   }
 
   u64 __teb_inline__
-  left_child(u64 node_idx) const {
+  left_child(u64 node_idx) const noexcept {
     return 2 * rank_inclusive(node_idx) - 1;
   }
 
   u64 __teb_inline__
-  right_child(u64 node_idx) const {
+  right_child(u64 node_idx) const noexcept {
     return 2 * rank_inclusive(node_idx);
   }
 
   std::size_t __teb_inline__
-  get_label_idx(u64 node_idx) const {
+  get_label_idx(u64 node_idx) const noexcept {
     return node_idx - rank_inclusive(node_idx);
   }
 
   u1 __teb_inline__
-  get_label(u64 node_idx) const {
+  get_label(u64 node_idx) const noexcept {
     u64 label_idx = get_label_idx(node_idx);
     return labels_[label_idx];
   }
 
   u64 __teb_inline__
-  rank_inclusive(u64 node_idx) const {
+  rank_inclusive(u64 node_idx) const noexcept {
     const std::size_t implicit_1bit_cnt = implicit_inner_node_cnt_;
     if (node_idx < implicit_1bit_cnt) {
       return node_idx + 1;
@@ -968,7 +968,7 @@ produce_output:
   /// cheaper to navigate starting from the current node or from the root
   /// node.
   void __teb_inline__
-  nav_to(const std::size_t to_pos) {
+  nav_to(const std::size_t to_pos) noexcept {
     assert(to_pos >= pos_ + length_);
     assert(perfect_levels_ > 0);
     // Fast path.  If the skip distance is larger than the range spanned by
