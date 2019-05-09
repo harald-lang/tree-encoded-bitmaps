@@ -972,7 +972,8 @@ produce_output:
     // Fast path. If the skip distance is larger than the range spanned by
     // the current subtree, we immediately start navigating downwards from the
     // root node.  Thus, we do not need to compute the common ancestor node.
-    if ((to_pos - pos_) > (1ull << (tree_height_ - perfect_levels_ + 1) )) {
+    const auto u = tree_height_ - (perfect_levels_ - 1);
+    if (pos_ >> u != to_pos >> u) {
       nav_from_root_to(to_pos);
       return;
     }
