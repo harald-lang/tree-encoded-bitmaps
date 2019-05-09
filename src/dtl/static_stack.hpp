@@ -124,7 +124,7 @@ public:
 
   __forceinline__ void
   rewind(std::size_t i) {
-    cnt_ = i + 1;
+    cnt_ = i;
   }
 
 };
