@@ -426,6 +426,20 @@ public:
     out_common_ancestor_level = common_prefix_length;
   }
 
+  static inline void
+  determine_common_ancestor_path2(u64 src_path, u64 dst_pos, u64 tree_height,
+      $u64& out_common_ancestor_path, $u64& out_common_ancestor_level) {
+    const auto t0 = dtl::bits::lz_count(src_path) + 1;
+    const auto a = src_path << t0;
+    const auto b = dst_pos << (sizeof(dst_pos) * 8 - tree_height);
+    assert(a < b);
+    const auto src_path_len = sizeof(src_path) * 8 - t0;
+    const auto common_prefix_length = dtl::bits::lz_count(a ^ b);
+    out_common_ancestor_path =
+        src_path >> (src_path_len - common_prefix_length);
+    out_common_ancestor_level = common_prefix_length;
+  }
+
   static inline u64
   determine_level_of(u64 path) {
     const auto lz_cnt_path = dtl::bits::lz_count(path);
@@ -964,13 +978,15 @@ produce_output:
     }
 
     // Determine the common ancestor node.
-    const path_t to_path = to_pos | path_t(1) << tree_height_;
     const path_t from_path = path_;
 
     path_t common_ancestor_path;
     $u64 common_ancestor_level;
-    determine_common_ancestor_path(from_path, to_path, common_ancestor_path,
-        common_ancestor_level);
+//    const path_t to_path = to_pos | path_t(1) << tree_height_;
+//    determine_common_ancestor_path(from_path, to_path, common_ancestor_path,
+//        common_ancestor_level);
+    determine_common_ancestor_path2(from_path, to_pos, tree_height_,
+        common_ancestor_path, common_ancestor_level);
 
     // The common ancestor must be in the perfect tree part. - The reason is,
     // that the perfect levels are skipped during downward traversal and
