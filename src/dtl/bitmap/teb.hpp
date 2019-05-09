@@ -452,9 +452,6 @@ public:
   /// 1-fill iterator, with skip support.
   class iter;
 
-  using scan_iter_type = iter;
-  using skip_iter_type = iter;
-
   iter __teb_inline__
   it() const noexcept {
     return std::move(iter(*this));
@@ -462,7 +459,7 @@ public:
   //===--------------------------------------------------------------------===//
 
   //===--------------------------------------------------------------------===//
-  /// Scan iterator, with skip support.
+  /// Scan iterator, with INEFFICIENT skip support.
   class scan_iter;
 
   scan_iter __teb_inline__
@@ -470,6 +467,9 @@ public:
     return std::move(scan_iter(*this));
   }
   //===--------------------------------------------------------------------===//
+
+  using scan_iter_type = scan_iter;
+  using skip_iter_type = iter;
 
   /// Returns the name of the instance including the most important parameters
   /// in JSON.
