@@ -971,32 +971,37 @@ produce_output:
   nav_to(const std::size_t to_pos) {
     assert(to_pos >= pos_ + length_);
     assert(perfect_levels_ > 0);
-    // Fast path. If the skip distance is larger than the range spanned by
+    // Fast path.  If the skip distance is larger than the range spanned by
     // the current subtree, we immediately start navigating downwards from the
     // root node.  Thus, we do not need to compute the common ancestor node.
-    if (pos_ >> partition_shift_ != to_pos >> partition_shift_) {
+    if (pos_ >> partition_shift_ != to_pos >> partition_shift_
+        || stack_.empty()) {
       nav_from_root_to(to_pos);
       return;
     }
 
-    // Determine the common ancestor node.
+    // Determine the common ancestor node.  Note that the common ancestor is
+    // guaranteed to be in the lower (non-perfect) tree part. Otherwise, we
+    // would have taken the fast path above.
     const path_t from_path = path_;
-
     path_t common_ancestor_path;
     $u64 common_ancestor_level;
-//    const path_t to_path = to_pos | path_t(1) << tree_height_;
-//    determine_common_ancestor_path(from_path, to_path, common_ancestor_path,
-//        common_ancestor_level);
     determine_common_ancestor_path2(from_path, to_pos, tree_height_,
         common_ancestor_path, common_ancestor_level);
 
-    // The common ancestor must be in the perfect tree part. - The reason is,
-    // that the perfect levels are skipped during downward traversal and
-    // therefore no nodes from these levels will ever be pushed on the stack.
-    // TODO change the condition to something like this:
-    // TODO level_of(ca) - (perfect_levels_ - 1) < level_of(current node) - level_of(ca)
-    if (common_ancestor_level <= perfect_levels_
-        || stack_.empty()) {
+    // Decide whether to start navigating from the current or from the root node.
+
+    // Determine the number of upward steps from the current node to the common
+    // ancestor node. - We use a fast approximation. The actual step count is
+    // at most 2 steps higher.
+    const auto upstep_cnt = stack_.top().level - common_ancestor_level;
+
+    // Determine the number of downward steps when starting from the root node.
+    const auto downstep_cnt = common_ancestor_level - (perfect_levels_ - 1);
+    assert(downstep_cnt < tree_height_);
+
+    if ((upstep_cnt > tree_height_) // underflow happens if the common ancestor is not on the stack
+        || (upstep_cnt << 3) > downstep_cnt) { // cost(downstep) is approx. 9 x cost(upstep), however, we use << 3 instead of * 9
       nav_from_root_to(to_pos);
       return;
     }
