@@ -39,91 +39,91 @@ public:
   operator=(static_stack&& other) noexcept = default;
 
   __forceinline__ u1
-  empty() const {
+  empty() const noexcept {
     return cnt_ == 0;
   }
 
   __forceinline__ void
-  clear() {
+  clear() noexcept {
     cnt_ = 0;
   }
 
   __forceinline__ void
-  push_back(const T& item) {
+  push_back(const T& item) noexcept {
     stack_[cnt_] = item;
     ++cnt_;
     assert(cnt_ <= N);
   }
 
   __forceinline__ void
-  push(const T& item) {
+  push(const T& item) noexcept {
     push_back(item);
   }
 
   __forceinline__ void
-  push_back(const T&& item) {
+  push_back(const T&& item) noexcept {
     stack_[cnt_] = item;
     ++cnt_;
     assert(cnt_ <= N);
   }
 
   __forceinline__ void
-  push(const T&& item) {
+  push(const T&& item) noexcept {
     push_back(item);
   }
 
   __forceinline__ T
-  back() const {
+  back() const noexcept {
     return stack_[cnt_ - 1];
     assert(cnt_ >= 0 && cnt_ <= N);
   }
 
   __forceinline__ T&
-  back() {
+  back() noexcept {
     return stack_[cnt_ - 1];
     assert(cnt_ >= 0 && cnt_ <= N);
   }
 
   __forceinline__ T
-  top() const {
+  top() const noexcept {
     return back();
   }
 
   __forceinline__ T&
-  top() {
+  top() noexcept {
     return back();
   }
 
   __forceinline__ void
-  pop_back() {
+  pop_back() noexcept {
     --cnt_;
     assert(cnt_ >= 0 && cnt_ <= N);
   }
 
   __forceinline__ void
-  pop() {
+  pop() noexcept {
     pop_back();
   }
 
   __forceinline__ T&
-  push() {
+  push() noexcept {
     T& ret_val = stack_[cnt_];
     ++cnt_;
     return ret_val;
   }
 
   __forceinline__ const T&
-  operator[](std::size_t i) const {
+  operator[](std::size_t i) const noexcept {
     return stack_[i];
   }
 
   __forceinline__ std::size_t
-  size() const {
+  size() const noexcept {
     return cnt_;
   }
 
   __forceinline__ void
-  rewind(std::size_t i) {
+  rewind(std::size_t i) noexcept {
     cnt_ = i;
   }
 
