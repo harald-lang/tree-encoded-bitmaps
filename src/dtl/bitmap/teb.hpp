@@ -1110,6 +1110,73 @@ produce_output:
     nav_downwards(to_pos);
   }
 
+  /// ------------------ FOR BENCHMARKING PURPOSES ONLY. -----------------------
+  /// Used to determine the costs for upwards navigation.
+  void __attribute__((noinline))
+  bench_nav_upwards(
+      const path_t right_child_of_common_ancestor_path,
+      u64 right_child_of_common_ancestor_level) {
+//
+//    // Walk up the tree to the right child of the common ancestor.
+//    path_t path = 1;
+//    $u1 found = false;
+//    $u1 missed = false;
+//    std::size_t i = stack_.size();
+//    for (; i > 0; --i) {
+//      path = stack_[i - 1].path;
+//      const auto level = stack_[i - 1].level;
+//      found = (path == right_child_of_common_ancestor_path);
+//      missed = (level < right_child_of_common_ancestor_level);
+//      if (found | missed) break;
+//    }
+//
+//    if (missed) {
+//      node_idx_ = 0;
+//      path_ = 1;
+//      return;
+//    }
+//
+//    if (found) {
+//      stack_.rewind(i - 1);
+//      node_idx_ = stack_[i - 1].node_idx;
+//      path_ = path;
+//      return;
+//    }
+//
+//    node_idx_ = 0;
+//    path_ = 1;
+//    return;
+
+    // Walk up the tree to the right child of the common ancestor.
+    $u64 node_idx = node_idx_;
+    auto path = path_;
+    $u64 level = tree_height_;
+    while (path != right_child_of_common_ancestor_path) {
+      if (stack_.empty()) {
+        node_idx_ = 0;
+        path_ = 1;
+        return;
+      };
+      const stack_entry& node = stack_.top();
+      node_idx = node.node_idx;
+      level = node.level;
+      path = node.path;
+      if (level < right_child_of_common_ancestor_level) {
+        node_idx_ = 0;
+        path_ = 1;
+        return;
+      }
+      stack_.pop();
+    }
+    node_idx_ = node_idx;
+    path_ = path;
+  }
+  auto __teb_inline__
+  bench_nav_upwards_get_stack_size() {
+    return stack_.size();
+  }
+  /// --------------------------------------------------------------------------
+
   /// Fast-forwards the iterator to the given position.
   void __teb_inline__
   skip_to(const std::size_t to_pos) noexcept {
@@ -1156,6 +1223,12 @@ produce_output:
   u64 __teb_inline__
   level() const noexcept {
     return determine_level_of(path_);
+  }
+
+  /// Returns the number of perfect tree levels.
+  u64 __teb_inline__
+  perfect_levels() const noexcept {
+    return perfect_levels_;
   }
 
 };
