@@ -609,6 +609,7 @@ class teb<optimization_level_>::iter {
   u64 tree_height_;
   /// The number of perfect levels in the tree structure.
   u64 perfect_levels_;
+  // TODO
   u64 partition_shift_;
   /// First node index in the last perfect level.
   u64 top_node_idx_begin_;
@@ -651,8 +652,7 @@ public:
     entry.node_idx = top_node_idx_begin_;
     entry.path = path_t(1) << (perfect_levels_ - 1);
     entry.rank = teb_.rank_inclusive(top_node_idx_begin_);
-    entry.level = determine_level_of(entry.path);
-//    entry.level = perfect_levels_ - 1;
+    entry.level = perfect_levels_ - 1;
     next();
   }
 
@@ -1013,77 +1013,38 @@ produce_output:
         (common_ancestor_path << 1) | 1ull;
     const auto right_child_of_common_ancestor_level = common_ancestor_level + 1;
 
-    // Walk up the tree to the right child of the common ancestor.
-    $u64 node_idx = node_idx_;
-    auto path = from_path;
-    $u64 level = tree_height_;
-    while (path != right_child_of_common_ancestor_path) {
-      if(stack_.empty()) {
-        nav_from_root_to(to_pos);
-        return;
-      };
-      const stack_entry& node = stack_.top();
-      node_idx = node.node_idx;
-      level = node.level;
-      path = node.path;
-      // Check if we missed the right child of the common ancestor (could
-      // happen because it might not be on the stack).
-      //
-      // Note: It is no longer guaranteed, that the common ancestor is on
-      //   the stack since we push only inner nodes and leaf nodes with 1-labels
-      //   on the stack.  Which means that if we cannot find the common ancestor
-      //   on the stack, it is either (i) an implicit node or (ii) it is a leaf
-      //   node with a 0-label. The first case is handled before we walk the
-      //   tree upwards, and in the second case we forward the iterator to
-      //   the next 1-fill.
-      if (level < right_child_of_common_ancestor_level) {
-        next();
-        return;
-      }
-      stack_.pop();
-    }
-    node_idx_ = node_idx;
-    path_ = path;
-    nav_downwards(to_pos);
-  }
+// --- slower ---
+//    // Walk up the tree to the right child of the common ancestor.
+//    path_t path = 1;
+//    $u1 found = false;
+//    $u1 missed = false;
+//    std::size_t i = stack_.size();
+//    for (; i > 0; --i) {
+//      path = stack_[i - 1].path;
+//      const auto level = stack_[i - 1].level;
+//      found = (path == right_child_of_common_ancestor_path);
+//      missed = (level < right_child_of_common_ancestor_level);
+//      if (found | missed) break;
+//    }
+//
+//    if (missed) {
+//      stack_.rewind(i);
+//      next();
+//      return;
+//    }
+//
+//    if (found) {
+//      stack_.rewind(i - 1);
+//      node_idx_ = stack_[i - 1].node_idx;
+//      path_ = path;
+//      nav_downwards(to_pos);
+//      return;
+//    }
+//
+//    nav_from_root_to(to_pos);
+//    return;
+// --- slower ---
 
-  void __teb_inline__
-  nav_to_new(const std::size_t to_pos) {
-    assert(to_pos >= pos_ + length_);
-
-    const path_t to_path = to_pos | path_t(1) << tree_height_;
-    const path_t from_path = path_;
-
-    const auto common_ancestor_path =
-        determine_common_ancestor_path(from_path, to_path);
-    const auto right_child_of_common_ancestor_path =
-        (common_ancestor_path << 1) | 1ull;
-
-    const auto common_ancestor_level = determine_level_of(common_ancestor_path);
-    const auto right_child_of_common_ancestor_level = common_ancestor_level + 1;
-
-    // The common ancestor must be in the perfect tree part. - The reason is,
-    // that the perfect levels are skipped during downward traversal and
-    // therefore no nodes from these levels will ever be pushed on the stack.
-    // TODO change the condition to something like this:
-    // TODO level_of(ca) - (perfect_levels_ - 1) < level_of(current node) - level_of(ca)
-
-    const auto current_level = determine_level_of(from_path);
-    const auto up_step_cnt = current_level - common_ancestor_level;
-    const auto down_step_cnt = common_ancestor_level <= perfect_levels_
-        ? 0
-        : common_ancestor_level - perfect_levels_;
-
-    if (down_step_cnt < up_step_cnt
-//    if (common_ancestor_level <= perfect_levels_
-        || stack_.empty()) {
-      nav_from_root_to(to_pos);
-      return;
-    }
-
-    assert(!stack_.empty());
-
-    // Walk up the tree to the right child of the common ancestor.
     $u64 node_idx = node_idx_;
     auto path = from_path;
     $u64 level = tree_height_;
@@ -1123,7 +1084,7 @@ produce_output:
   bench_nav_upwards(
       const path_t right_child_of_common_ancestor_path,
       u64 right_child_of_common_ancestor_level) {
-//
+// --- slower ---
 //    // Walk up the tree to the right child of the common ancestor.
 //    path_t path = 1;
 //    $u1 found = false;
@@ -1153,6 +1114,7 @@ produce_output:
 //    node_idx_ = 0;
 //    path_ = 1;
 //    return;
+// --- ------ ---
 
     // Walk up the tree to the right child of the common ancestor.
     $u64 node_idx = node_idx_;
@@ -1198,8 +1160,6 @@ produce_output:
       return;
     }
     nav_to(to_pos);
-//    nav_to_new(to_pos);
-//    nav_from_root_to(to_pos);
   }
 
   /// Returns true if the iterator reached the end, false otherwise.
