@@ -609,6 +609,7 @@ class teb<optimization_level_>::iter {
   u64 tree_height_;
   /// The number of perfect levels in the tree structure.
   u64 perfect_levels_;
+  u64 partition_shift_;
   /// First node index in the last perfect level.
   u64 top_node_idx_begin_;
   /// Last node index + 1 in the last perfect level.
@@ -638,6 +639,7 @@ public:
       tree_height_(determine_tree_height(teb.n_)),
       perfect_levels_(
           determine_perfect_tree_levels(teb_.implicit_inner_node_cnt_)),
+      partition_shift_(tree_height_ - (perfect_levels_ - 1)),
       top_node_idx_begin_((1ull << (perfect_levels_ - 1)) - 1),
       top_node_idx_end_((1ull << perfect_levels_) - 1),
       top_node_idx_current_(top_node_idx_begin_),
@@ -972,8 +974,7 @@ produce_output:
     // Fast path. If the skip distance is larger than the range spanned by
     // the current subtree, we immediately start navigating downwards from the
     // root node.  Thus, we do not need to compute the common ancestor node.
-    const auto u = tree_height_ - (perfect_levels_ - 1);
-    if (pos_ >> u != to_pos >> u) {
+    if (pos_ >> partition_shift_ != to_pos >> partition_shift_) {
       nav_from_root_to(to_pos);
       return;
     }
