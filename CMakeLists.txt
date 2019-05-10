@@ -20,8 +20,9 @@ include_directories(src)
 add_subdirectory(../fastbit Fastbit) # Fastbit includes the WAH bitmap compression
 include_directories(../fastbit/src)
 
-add_subdirectory(../CRoaring CRoaring)
-include_directories(../CRoaring/include)
+# Roaring Bitmaps
+#add_subdirectory(../CRoaring CRoaring)
+#include_directories(../CRoaring/include)
 
 #include_directories(../sdsl-lite/include)
 
@@ -97,6 +98,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSQLITE_OMIT_LOAD_EXTENSION")
 set(OTHER_SOURCE_FILES
         thirdparty/types/Types.cpp
         thirdparty/types/Types.hpp
+        thirdparty/roaring/roaring.c
         )
 
 set(BENCHMARK_SOURCE_FILES
@@ -133,14 +135,14 @@ set(TEST_FILES
 #        test/dtl/bitmap/iterate_test.cpp
         )
 add_executable(tester ${TEST_FILES})
-target_link_libraries(tester gtest gtest_main fastbit roaring dl)
+target_link_libraries(tester gtest gtest_main fastbit dl)
 
 set(VALIDATOR_FILES
         ${BENCHMARK_SOURCE_FILES}
         test/dtl/bitmap/encode_decode_pregenerated_bitmaps_test.cpp
         )
 add_executable(validator ${VALIDATOR_FILES})
-target_link_libraries(validator gtest gtest_main fastbit roaring dl)
+target_link_libraries(validator gtest gtest_main fastbit dl)
 
 # To be removed
 set(TEST_FILES
@@ -148,7 +150,7 @@ set(TEST_FILES
         test/dtl/bitmap/sandbox_test.cpp
         )
 add_executable(sandbox_test ${TEST_FILES})
-target_link_libraries(sandbox_test gtest gtest_main fastbit roaring dl)
+target_link_libraries(sandbox_test gtest gtest_main fastbit dl)
 
 # TODO removed
 #set(TEST_ITER_FILES
@@ -249,7 +251,7 @@ set(EXPERIMENT_COMPRESSION_SOURCE_FILES
         experiments/compression/main_compression.cpp
         )
 add_executable(ex_compression ${EXPERIMENT_COMPRESSION_SOURCE_FILES})
-target_link_libraries(ex_compression fastbit roaring)
+target_link_libraries(ex_compression fastbit)
 
 # Space optimizations. - Compares the different optimizations levels.
 set(EXPERIMENT_COMPRESSION_OPT_SOURCE_FILES
@@ -258,7 +260,7 @@ set(EXPERIMENT_COMPRESSION_OPT_SOURCE_FILES
         experiments/compression/main_compression_optimizations.cpp
         )
 add_executable(ex_compression_opt ${EXPERIMENT_COMPRESSION_OPT_SOURCE_FILES})
-target_link_libraries(ex_compression_opt fastbit roaring)
+target_link_libraries(ex_compression_opt fastbit)
 
 # Skyline (markov)
 set(EXPERIMENT_COMPRESSION_SKYLINE_SOURCE_FILES
@@ -268,7 +270,7 @@ set(EXPERIMENT_COMPRESSION_SKYLINE_SOURCE_FILES
         experiments/compression/main_compression_skyline.cpp
         )
 add_executable(ex_compression_skyline ${EXPERIMENT_COMPRESSION_SKYLINE_SOURCE_FILES})
-target_link_libraries(ex_compression_skyline fastbit roaring pthread dl)
+target_link_libraries(ex_compression_skyline fastbit pthread dl)
 
 # Compression (uniform)
 set(EXPERIMENT_COMPRESSION_UNIFORM_SOURCE_FILES
@@ -278,7 +280,7 @@ set(EXPERIMENT_COMPRESSION_UNIFORM_SOURCE_FILES
         experiments/compression/main_compression_uniform.cpp
         )
 add_executable(ex_compression_uniform ${EXPERIMENT_COMPRESSION_UNIFORM_SOURCE_FILES})
-target_link_libraries(ex_compression_uniform fastbit roaring pthread dl)
+target_link_libraries(ex_compression_uniform fastbit pthread dl)
 
 # Compression, varying f (markov)
 set(EXPERIMENT_COMPRESSION_VARYING_F_SOURCE_FILES
@@ -288,7 +290,7 @@ set(EXPERIMENT_COMPRESSION_VARYING_F_SOURCE_FILES
         experiments/compression/main_compression_varying_f.cpp
         )
 add_executable(ex_compression_varying_f ${EXPERIMENT_COMPRESSION_VARYING_F_SOURCE_FILES})
-target_link_libraries(ex_compression_varying_f fastbit roaring pthread dl)
+target_link_libraries(ex_compression_varying_f fastbit pthread dl)
 
 # Index compression
 set(EXPERIMENT_INDEX_COMPRESSION_SOURCE_FILES
@@ -298,7 +300,7 @@ set(EXPERIMENT_INDEX_COMPRESSION_SOURCE_FILES
         experiments/index/main_index_compression.cpp
         )
 add_executable(ex_index_compression ${EXPERIMENT_INDEX_COMPRESSION_SOURCE_FILES})
-target_link_libraries(ex_index_compression fastbit roaring pthread dl)
+target_link_libraries(ex_index_compression fastbit pthread dl)
 
 
 # copy shell scripts
@@ -311,7 +313,7 @@ set(EXPERIMENT_PERFORMANCE_SKYLINE_SOURCE_FILES
         experiments/performance/main_performance_skyline.cpp
         )
 add_executable(ex_performance_skyline ${EXPERIMENT_PERFORMANCE_SKYLINE_SOURCE_FILES})
-target_link_libraries(ex_performance_skyline fastbit roaring pthread dl)
+target_link_libraries(ex_performance_skyline fastbit pthread dl)
 
 set(EXPERIMENT_PERFORMANCE_PROFILING_SOURCE_FILES
         ${SOURCE_FILES}
@@ -319,7 +321,7 @@ set(EXPERIMENT_PERFORMANCE_PROFILING_SOURCE_FILES
         experiments/performance/main_performance_profiling.cpp
         )
 add_executable(ex_performance_profiling ${EXPERIMENT_PERFORMANCE_PROFILING_SOURCE_FILES})
-target_link_libraries(ex_performance_profiling fastbit roaring pthread dl)
+target_link_libraries(ex_performance_profiling fastbit pthread dl)
 
 set(EXPERIMENT_PERFORMANCE_SOURCE_FILES
         ${SOURCE_FILES}
@@ -327,13 +329,14 @@ set(EXPERIMENT_PERFORMANCE_SOURCE_FILES
         experiments/performance/main_performance.cpp
         )
 add_executable(ex_performance ${EXPERIMENT_PERFORMANCE_SOURCE_FILES})
-target_link_libraries(ex_performance fastbit roaring)
+target_link_libraries(ex_performance fastbit)
 
 
 set(EXPERIMENT_LOSSY_COMPRESSION_SOURCE_FILES
         ${SOURCE_FILES}
+        ${BENCHMARK_SOURCE_FILES}
         experiments/compression/main_lossycompression.cpp
         )
 add_executable(ex_lossycompression ${EXPERIMENT_LOSSY_COMPRESSION_SOURCE_FILES})
-target_link_libraries(ex_lossycompression fastbit roaring)
+target_link_libraries(ex_lossycompression fastbit pthread dl)
 ##===----------------------------------------------------------------------===##
