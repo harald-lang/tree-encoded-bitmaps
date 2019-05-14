@@ -1,7 +1,7 @@
 #pragma once
 
 // TODO remove
-//#define __teb_inline__ __attribute__((noinline))
+#define __teb_inline__ __attribute__((noinline))
 
 #if !defined(__teb_inline__)
 #if defined(NDEBUG)
@@ -1163,19 +1163,19 @@ produce_output:
   }
 
   /// Returns true if the iterator reached the end, false otherwise.
-  u1 __teb_inline__
+  u1 __forceinline__ //__teb_inline__
   end() const noexcept {
     return pos_ == teb_.n_;
   }
 
   /// Returns the starting position of the current 1-fill.
-  u64 __teb_inline__
+  u64 __forceinline__ //__teb_inline__
   pos() const noexcept {
     return pos_;
   }
 
   /// Returns the length of the current 1-fill.
-  u64 __teb_inline__
+  u64 __forceinline__ //__teb_inline__
   length() const noexcept {
     return length_;
   }
@@ -1312,8 +1312,9 @@ public:
     }
     // Initialize the scanners.
     for (std::size_t level = 0; level < teb_.encoded_tree_height_; ++level) {
-      scanner_states_[level].init(teb_.level_offsets_structure_[level],
-                                  teb_.level_offsets_labels_[level]);
+      const auto node_offset = teb_.level_offsets_structure_[level];
+      const auto label_offset = teb_.level_offsets_labels_[level];
+      scanner_states_[level].init(node_offset, label_offset);
     }
     // Initialize path and level variable.
     scan_path_ = path_t(0);
@@ -1764,6 +1765,8 @@ done:
   void //__teb_inline__
   next_batch_avx512() noexcept __attribute__ ((flatten, hot, noinline)) {
     const auto h = tree_height_;
+    const auto eth = teb_.encoded_tree_height_;
+    const auto u = perfect_levels_ - 1;
     const auto n = teb_.size();
     // Note: The path variable does NOT contain a sentinel bit. Instead, we
     //       keep track of the paths' level using a separate variable.
@@ -1811,7 +1814,7 @@ done:
     dtl::bit_buffer_avx512<> label_bit_buffer;
 
     // Perfect levels. (all bits set to 1)
-    for (std::size_t level = 0; level < perfect_levels_ - 1; ++level) {
+    for (std::size_t level = 0; level < u; ++level) {
       const auto slot_idx = level;
       tmp_t.u16[slot_idx] = ~u16(0);
       tmp_l.u16[slot_idx] = ~u16(0);
@@ -1819,14 +1822,13 @@ done:
     tree_bit_buffer.set_raw(tmp_t.i);
     label_bit_buffer.set_raw(tmp_l.i);
 
-    while (result_cnt < batch_size_ - 16
-        && pos < n) {
+    const auto batch_size = DEFAULT_BATCH_SIZE;
+    while (result_cnt < batch_size - 16 && pos < n) {
 
       // Initialize the bit buffers.
       tree_bit_buffer.reset_read_mask();
       label_bit_buffer.reset_read_mask();
-      for (std::size_t level = perfect_levels_ - 1;
-           level < teb_.encoded_tree_height_; ++level) {
+      for (std::size_t level = u; level < eth; ++level) {
         const auto slot_idx = level;
         i64 delta = - static_cast<i64>(teb_.implicit_inner_node_cnt_);
         tmp_t.u16[slot_idx] = fetch_n_bits(T, static_cast<i64>(scanner_states_[level].node_idx_) + delta, 16);
@@ -1841,7 +1843,6 @@ done:
 
       // Initialize beta.
       beta = label_bit_buffer.read();
-
 
       // Do multiple iteration to consume the bit buffers.
       $u1 is_not_done = true;
@@ -1900,16 +1901,14 @@ done:
       // Update the scanner states.
       dtl::r512 tmp_tm {.i = tree_bit_buffer.get_read_mask()};
       dtl::r512 tmp_lm {.i = label_bit_buffer.get_read_mask()};
-      for ($u32 level = perfect_levels_ - 1;
-           level < teb_.encoded_tree_height_; ++level) {
+      for ($u32 level = u; level < eth; ++level) {
         scanner_states_[level].node_idx_ += dtl::bits::tz_count(tmp_tm.u16[level]);
         scanner_states_[level].label_idx_ += dtl::bits::tz_count(tmp_lm.u16[level]);
       }
     }
 
 done:
-    if (result_cnt < batch_size_
-        && pos == n) {
+    if (result_cnt < batch_size && pos == n) {
       results_[result_cnt].pos = n;
       results_[result_cnt].length = 0;
       ++result_cnt;
@@ -1945,20 +1944,20 @@ done:
   }
 
   /// Returns true if the iterator reached the end, false otherwise.
-  u1 __teb_inline__
+  u1 __forceinline__ //__teb_inline__
   end() const noexcept {
     return results_[result_read_pos_].pos == teb_.n_;
   }
 
   /// Returns the starting position of the current 1-fill.
-  u64 __teb_inline__
+  u64 __forceinline__ //__teb_inline__
   pos() const noexcept {
     assert(result_read_pos_ < result_cnt_);
     return results_[result_read_pos_].pos;
   }
 
   /// Returns the length of the current 1-fill.
-  u64 __teb_inline__
+  u64 __forceinline__ //__teb_inline__
   length() const noexcept {
     assert(result_read_pos_ < result_cnt_);
     return results_[result_read_pos_].length;
