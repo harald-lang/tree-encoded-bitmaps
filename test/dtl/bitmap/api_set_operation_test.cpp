@@ -24,7 +24,7 @@
 constexpr std::size_t LEN = 8;
 
 constexpr std::size_t RANDOM_REPEAT = 50;
-constexpr std::size_t RANDOM_LENGTH = 1ull << 16;
+constexpr std::size_t RANDOM_LENGTH = 1ull << 10;
 
 
 // Types under test.
@@ -51,21 +51,24 @@ class api_set_operation_test : public ::testing::Test {};
 
 // Specify the types for which we want to run the API tests.
 using types_under_test = ::testing::Types<
-    teb_o0,
-    teb_o1,
+//    teb_o0,
+//    teb_o1,
     teb_o2,
+
 //    teb_scan_o0,
 //    teb_scan_o1,
 //    teb_scan_o2,
-    plain_bitmap_32,
-    position_list_32,
-    partitioned_position_list_32_u8,
-    partitioned_position_list_32_u16,
-    range_list_32,
-    partitioned_range_list_32_u8,
-    partitioned_range_list_32_u16,
-    roaring_bitmap,
-    wah
+
+//    plain_bitmap_32,
+//    position_list_32,
+//    partitioned_position_list_32_u8,
+//    partitioned_position_list_32_u16,
+//    range_list_32,
+//    partitioned_range_list_32_u8,
+//    partitioned_range_list_32_u16,
+    roaring_bitmap
+//    ,
+//    wah
 >;
 TYPED_TEST_CASE(api_set_operation_test, types_under_test);
 
@@ -88,6 +91,30 @@ TYPED_TEST(api_set_operation_test, bitwise_and) {
 
       T tm_b(bm_b);
       const auto bm_actual = bitwise_and(tm_a, tm_b);
+
+      ASSERT_EQ(bm_actual, bm_expected)
+          << "Test (a & b) failed for a=" << bm_a << " (" << a << ")"
+          << " and b=" << bm_b << "(" << b << ")" << std::endl;
+    }
+  }
+}
+//===----------------------------------------------------------------------===//
+TYPED_TEST(api_set_operation_test, bitwise_and_iter) {
+  using T = TypeParam;
+
+  for (std::size_t a = 1; a < (1u << LEN); a++) {
+    dtl::bitmap bm_a(LEN, a);
+    T tm_a(bm_a);
+
+    for (std::size_t b = 0; b < (1u << LEN); b++) {
+      dtl::bitmap bm_b(LEN, b);
+      dtl::bitmap bm_expected = bm_a & bm_b;
+      std::cout << "a=" << bm_a << " (" << a <<  ")"
+                << ", b=" << bm_b << " (" << b <<  ")"
+                << ", r=" << bm_expected << std::endl;
+
+      T tm_b(bm_b);
+      const auto bm_actual = bitwise_and_iter(tm_a, tm_b);
 
       ASSERT_EQ(bm_actual, bm_expected)
           << "Test (a & b) failed for a=" << bm_a << " (" << a << ")"
@@ -140,6 +167,31 @@ TYPED_TEST(api_set_operation_test, bitwise_or) {
   }
 }
 //===----------------------------------------------------------------------===//
+TYPED_TEST(api_set_operation_test, bitwise_or_iter) {
+  using T = TypeParam;
+
+  for (std::size_t a = 1; a < (1u << LEN); a++) {
+    dtl::bitmap bm_a(LEN, a);
+    T tm_a(bm_a);
+
+    for (std::size_t b = 0; b < (1u << LEN); b++) {
+      dtl::bitmap bm_b(LEN, b);
+      dtl::bitmap bm_expected = bm_a | bm_b;
+      std::cout << "a=" << bm_a << " (" << a <<  ")"
+                << ", b=" << bm_b << " (" << b <<  ")"
+                << ", r=" << bm_expected << std::endl;
+
+      T tm_b(bm_b);
+      const auto bm_actual = bitwise_or_iter(tm_a, tm_b);
+
+      ASSERT_EQ(bm_actual, bm_expected)
+          << "Test (a | b) failed for a=" << bm_a << " (" << a << ")"
+          << " and b=" << bm_b << "(" << b << ")" << std::endl;
+
+    }
+  }
+}
+//===----------------------------------------------------------------------===//
 TYPED_TEST(api_set_operation_test, bitwise_or_random) {
   using T = TypeParam;
   static u64 n = RANDOM_LENGTH;
@@ -182,6 +234,30 @@ TYPED_TEST(api_set_operation_test, bitwise_xor) {
   }
 }
 //===----------------------------------------------------------------------===//
+TYPED_TEST(api_set_operation_test, bitwise_xor_iter) {
+  using T = TypeParam;
+
+  for (std::size_t a = 1; a < (1u << LEN); a++) {
+    dtl::bitmap bm_a(LEN, a);
+    T tm_a(bm_a);
+
+    for (std::size_t b = 0; b < (1u << LEN); b++) {
+      dtl::bitmap bm_b(LEN, b);
+      dtl::bitmap bm_expected = bm_a ^ bm_b;
+      std::cout << "a=" << bm_a << " (" << a <<  ")"
+                << ", b=" << bm_b << " (" << b <<  ")"
+                << ", r=" << bm_expected << std::endl;
+
+      T tm_b(bm_b);
+      const auto bm_actual = bitwise_xor_iter(tm_a, tm_b);
+
+      ASSERT_EQ(bm_actual, bm_expected)
+          << "Test (a ^ b) failed for a=" << bm_a << " (" << a << ")"
+          << " and b=" << bm_b << "(" << b << ")" << std::endl;
+    }
+  }
+}
+//===----------------------------------------------------------------------===//
 TYPED_TEST(api_set_operation_test, bitwise_xor_random) {
   using T = TypeParam;
   static u64 n = RANDOM_LENGTH;
@@ -199,6 +275,89 @@ TYPED_TEST(api_set_operation_test, bitwise_xor_random) {
     T tm_b(bm_b);
 
     auto bm_actual = bitwise_xor(tm_a, tm_b);
+    ASSERT_EQ(bm_actual, bm_expected)
+        << "Test (a ^ b) failed for"
+        << "\na=" << bm_a
+        << "\nb=" << bm_b
+        << "\nd=" << (bm_actual ^ bm_expected)
+        << "\nf=" << (bm_actual ^ bm_expected).find_first()
+        << std::endl;
+  }
+}
+//===----------------------------------------------------------------------===//
+// Special case of bitwise xor which occurs with range encoding (RE). In
+// range-encoded indexes, the following holds: Each bit that is set in the i-th
+// bitmap, then these bits are also set in the (i+1)-th bitmap.
+TYPED_TEST(api_set_operation_test, bitwise_xor_re) {
+  using T = TypeParam;
+
+  for (std::size_t a = 1; a < (1u << LEN); a++) {
+    dtl::bitmap bm_a(LEN, a);
+    T tm_a(bm_a);
+
+    for (std::size_t b = 0; b < (1u << LEN); b++) {
+      dtl::bitmap bm_b(LEN, b);
+      // consider only RE cases
+      if ((bm_a & bm_b) != bm_a) continue;
+      dtl::bitmap bm_expected = bm_a ^ bm_b;
+      std::cout << "a=" << bm_a << " (" << a <<  ")"
+                << ", b=" << bm_b << " (" << b <<  ")"
+                << ", r=" << bm_expected << std::endl;
+
+      T tm_b(bm_b);
+      const auto bm_actual = bitwise_xor_re(tm_a, tm_b);
+
+      ASSERT_EQ(bm_actual, bm_expected)
+          << "Test (a ^ b) failed for a=" << bm_a << " (" << a << ")"
+          << " and b=" << bm_b << "(" << b << ")" << std::endl;
+    }
+  }
+}
+//===----------------------------------------------------------------------===//
+TYPED_TEST(api_set_operation_test, bitwise_xor_re_iter) {
+  using T = TypeParam;
+
+  for (std::size_t a = 1; a < (1u << LEN); a++) {
+    dtl::bitmap bm_a(LEN, a);
+    T tm_a(bm_a);
+
+    for (std::size_t b = 0; b < (1u << LEN); b++) {
+      dtl::bitmap bm_b(LEN, b);
+      // consider only RE cases
+      if ((bm_a & bm_b) != bm_a) continue;
+      dtl::bitmap bm_expected = bm_a ^ bm_b;
+      std::cout << "a=" << bm_a << " (" << a <<  ")"
+                << ", b=" << bm_b << " (" << b <<  ")"
+                << ", r=" << bm_expected << std::endl;
+
+      T tm_b(bm_b);
+      const auto bm_actual = bitwise_xor_re_iter(tm_a, tm_b);
+
+      ASSERT_EQ(bm_actual, bm_expected)
+          << "Test (a ^ b) failed for a=" << bm_a << " (" << a << ")"
+          << " and b=" << bm_b << "(" << b << ")" << std::endl;
+    }
+  }
+}
+//===----------------------------------------------------------------------===//
+TYPED_TEST(api_set_operation_test, bitwise_xor_re_random) {
+  using T = TypeParam;
+  static u64 n = RANDOM_LENGTH;
+
+  for (std::size_t r = 0; r < RANDOM_REPEAT; ++r) {
+    auto bm_a = gen_random_bitmap_uniform(n, std::min(0.01 * r, 1.0));
+    auto bm_b = gen_random_bitmap_uniform(n, std::min(0.025 * r, 1.0));
+    bm_b |= bm_a; // RE case
+
+    auto bm_expected = bm_a ^ bm_b;
+    for (std::size_t i = 0; i < bm_a.size(); ++i) {
+      assert(bm_expected[i] == bm_a[i] ^ bm_b[i]);
+    }
+
+    T tm_a(bm_a);
+    T tm_b(bm_b);
+
+    auto bm_actual = bitwise_xor_re(tm_a, tm_b);
     ASSERT_EQ(bm_actual, bm_expected)
         << "Test (a ^ b) failed for"
         << "\na=" << bm_a
