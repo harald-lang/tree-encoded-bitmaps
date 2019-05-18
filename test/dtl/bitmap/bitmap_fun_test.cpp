@@ -4,6 +4,9 @@
 
 #include <dtl/dtl.hpp>
 #include <dtl/bitmap/util/bitmap_fun.hpp>
+#include <boost/dynamic_bitset.hpp>
+#include <dtl/iterator.hpp>
+#include <dtl/bitmap/util/bitmap_view.hpp>
 
 //===----------------------------------------------------------------------===//
 TEST(bitmap_fun,
@@ -44,5 +47,35 @@ TEST(bitmap_fun,
             0x0001010101010101);
   ASSERT_EQ(bmf::fetch_bits(bitmap.data(), 63,  63+8),
             0x0000000000000020);
+}
+//===----------------------------------------------------------------------===//
+TEST(bitmap_fun,
+    find_first_find_last) {
+  boost::dynamic_bitset<$u64> bs_fun(128);
+  dtl::data_view<u64> bs_data {
+      bs_fun.m_bits.data(),
+      bs_fun.m_bits.data() + bs_fun.m_bits.size()
+  };
+  dtl::bitmap_view<$u64> bs_view(bs_data);
+  ASSERT_EQ(bs_view.find_first(), 128);
+  ASSERT_EQ(bs_view.find_last(), 128);
+  bs_fun[0] = true;
+  ASSERT_EQ(bs_view.find_first(), 0);
+  ASSERT_EQ(bs_view.find_last(), 0);
+  bs_fun[0] = false;
+  bs_fun[127] = true;
+  ASSERT_EQ(bs_view.find_first(), 127);
+  ASSERT_EQ(bs_view.find_last(), 127);
+  bs_fun[127] = false;
+  for (std::size_t i = 0; i < 128; ++i) {
+    bs_fun[i] = true;
+    ASSERT_EQ(bs_view.find_first(), i);
+    ASSERT_EQ(bs_view.find_last(), i);
+    bs_fun[i] = false;
+  }
+  bs_fun[2] = true;
+  bs_fun[3] = true;
+  ASSERT_EQ(bs_view.find_first(), 2);
+  ASSERT_EQ(bs_view.find_last(), 3);
 }
 //===----------------------------------------------------------------------===//
