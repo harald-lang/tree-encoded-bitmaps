@@ -24,7 +24,9 @@ markov_parameters_are_valid(u64 n, $f64 f, $f64 d) {
 static dtl::bitmap
 gen_random_bitmap_markov(u64 n, $f64 f, $f64 d) {
   if (!markov_parameters_are_valid(n, f, d)) {
-    throw std::invalid_argument("Invalid parameters for the Markov process.");
+    throw std::invalid_argument("Invalid parameters for the Markov process: "
+        "n=" + std::to_string(n) + ", f=" + std::to_string(f) + ", d="
+         + std::to_string(d));
   }
   two_state_markov_process mp(f, d);
   dtl::bitmap bs(n);
