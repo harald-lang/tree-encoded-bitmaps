@@ -34,6 +34,20 @@ to_bitmap_using_iterator(const T& encoded_bitmap) {
   return bm;
 }
 //===----------------------------------------------------------------------===//
+template<typename It>
+boost::dynamic_bitset<$u32>
+to_bitmap_from_iterator(It& it, u64 n) {
+  boost::dynamic_bitset<$u32> bm(n);
+  while (!it.end()) {
+    for (std::size_t i = it.pos(); i < it.pos() + it.length(); ++i) {
+      assert(bm[i] == false);
+      bm[i] = true;
+    }
+    it.next();
+  }
+  return bm;
+}
+//===----------------------------------------------------------------------===//
 
 
 } // namespace dtl
