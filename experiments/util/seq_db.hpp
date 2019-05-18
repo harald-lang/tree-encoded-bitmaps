@@ -48,7 +48,7 @@ private:
   void open();
   /// Initialize the database schema and prepare the SQL statements.
   void init();
-  /// Close the database. Called by the constructor.
+  /// Close the database. Called by the destructor.
   void close();
 
 };

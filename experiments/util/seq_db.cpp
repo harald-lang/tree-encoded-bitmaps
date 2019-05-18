@@ -95,7 +95,7 @@ seq_db::init() {
       throw std::runtime_error(err.str());
     }
   }
-{
+  {
     const std::string sql_stmt =
         "insert into seq_data (id, data)\n"
          "  values (:id, :data )";
