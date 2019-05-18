@@ -372,14 +372,18 @@ private:
       }
     }
 
-    // Pruning loop.
-    while (true) {
-      // Look for largest sub-tree to prune, so that the FPR is not exceeded.
-      $u64 candidate_node_idx = 0;
-      $f64 candidate_saved_bit_cnt = 0.0;
-      for (std::size_t level = 0; level < height_; ++level) {
+
+    {
+      // Top-down pruning loop (starts at level 0).
+      std::size_t level = 0;
+      while (level <= height) {
+        // Look for largest sub-tree to prune, so that the FPR is not exceeded.
+        $u64 candidate_node_idx = 0;
+        $f64 candidate_saved_bit_cnt = 0.0;
+
         u64 node_idx_from = (1ull << level) - 1;
         u64 node_idx_to = (1ull << (level + 1)) - 1;
+
         for ($u64 node_idx = node_idx_from; node_idx < node_idx_to; ++node_idx) {
           if (is_leaf_node(node_idx)) {
             continue;
@@ -406,46 +410,69 @@ private:
             candidate_saved_bit_cnt = saved_bit_cnt;
           }
         }
-        // Check, whether we found a candidate on the current tree level.
-        if (candidate_saved_bit_cnt > 0.0) break;
-      }
 
-      if (candidate_saved_bit_cnt > 0.0) {
-        // The actual pruning.
-        set_leaf(candidate_node_idx);
-        total_fp_cntr += fp_cntrs[candidate_node_idx];
+        // Check if we have found a candidate to prune.
+        if (candidate_saved_bit_cnt > 0.0) {
+          // The actual pruning.
+          set_leaf(candidate_node_idx);
+          total_fp_cntr += fp_cntrs[candidate_node_idx];
+        }
+        else {
+          // No pruning candidate found at the current level.  Continue with the
+          // next level.
+          level++;
+        }
 
-        // TODO check whether this is necessary. as lossy compression works top-down, this case might have been already covered
-//        // Ensure that the tree bitmap is still compressed. (bottom-up pruning)
-//        auto node_idx = candidate_node_idx;
-//        while (true) {
-//          if (node_idx == root()) break;
-//          // Go to the parent node.
-//          node_idx = parent_of(node_idx);
-//          u64 left_child_idx = left_child_of(node_idx);
-//          u64 right_child_idx = right_child_of(node_idx);
-//
-//          u1 both_childs_are_leaves =
-//              !is_inner_node(left_child_idx)
-//                  & !is_inner_node(right_child_idx);
-//
-//          u1 left_bit = labels_[left_child_idx];
-//          u1 right_bit = labels_[right_child_idx];
-//          u1 can_prune = both_childs_are_leaves && (left_bit == right_bit);
-//
-//          if (can_prune) {
-//            set_leaf(node_idx);
-//          }
-//          else {
-//            break;
-//          }
-//        }
-      }
-      else {
-        // Exit the pruning loop, because no candidate has been found.
-        break;
       }
     }
+//
+//    while (true) {
+//      // Look for largest sub-tree to prune, so that the FPR is not exceeded.
+//      $u64 candidate_node_idx = 0;
+//      $f64 candidate_saved_bit_cnt = 0.0;
+//      for (std::size_t level = 0; level < height_; ++level) {
+//        u64 node_idx_from = (1ull << level) - 1;
+//        u64 node_idx_to = (1ull << (level + 1)) - 1;
+//        for ($u64 node_idx = node_idx_from; node_idx < node_idx_to; ++node_idx) {
+//          if (is_leaf_node(node_idx)) {
+//            continue;
+//          }
+//          // Check whether pruning would not exceed the specified FPR.
+//          if (fp_cntrs[node_idx] + total_fp_cntr > max_fp_cnt) {
+//            continue;
+//          }
+//
+//          // Count the number of nodes that would be eliminated from the tree
+//          // if the current node is turned into a leaf node.
+//          const auto subtree_size = this->subtree_size(node_idx);
+//          const auto pruned_node_cnt = subtree_size - 1;
+//          // Count the number of leaf nodes that would be eliminated from the
+//          // tree.
+//          const auto leaf_node_cnt = count_leaf_nodes(node_idx);
+//          const auto pruned_leaf_node_cnt = leaf_node_cnt - 1;
+//          // Compute the amount of bits saved.  One bit per node and one per
+//          // label.
+//          const auto saved_bit_cnt = pruned_node_cnt * 1.0625 + pruned_leaf_node_cnt;
+//
+//          if (saved_bit_cnt > candidate_saved_bit_cnt) {
+//            candidate_node_idx = node_idx;
+//            candidate_saved_bit_cnt = saved_bit_cnt;
+//          }
+//        }
+//        // Check, whether we found a candidate on the current tree level.
+//        if (candidate_saved_bit_cnt > 0.0) break;
+//      }
+//
+//      if (candidate_saved_bit_cnt > 0.0) {
+//        // The actual pruning.
+//        set_leaf(candidate_node_idx);
+//        total_fp_cntr += fp_cntrs[candidate_node_idx];
+//      }
+//      else {
+//        // Exit the pruning loop, because no candidate has been found.
+//        break;
+//      }
+//    }
   }
 
 };
