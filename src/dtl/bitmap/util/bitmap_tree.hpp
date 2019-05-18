@@ -33,6 +33,8 @@ class bitmap_tree : public binary_tree_structure {
   std::size_t leading_inner_node_cnt_;
   std::size_t trailing_leaf_node_cnt_;
   range_t explicit_node_idxs_;
+  std::size_t leading_0label_cnt_;
+  std::size_t trailing_0label_cnt_;
 
 
 public:
@@ -45,7 +47,9 @@ public:
         inner_node_cnt_(0),
         leaf_node_cnt_(0),
         leading_inner_node_cnt_(0),
-        trailing_leaf_node_cnt_(0) {
+        trailing_leaf_node_cnt_(0),
+        leading_0label_cnt_(0),
+        trailing_0label_cnt_(0) {
 
     // TODO: Support arbitrarily sized bitmaps.
     if (!dtl::is_power_of_two(n_)) {
@@ -150,24 +154,52 @@ public:
   /// This function basically resembles the size_in_bytes() function of TEBs.
   std::size_t
   estimate_encoded_size_in_bytes() {
-    constexpr u64 block_bitlength = 32;
-    constexpr u64 block_size = 4;
+    constexpr u64 block_bitlength = 64;
+    constexpr u64 block_size = block_bitlength / 8;
     $u64 bytes = 0;
+
+    // Bit-length of the original bitmap.
+    bytes += sizeof(n_);
+
     // Tree structure
     u64 explicit_tree_node_cnt = inner_node_cnt_ + leaf_node_cnt_
         - leading_inner_node_cnt_ - trailing_leaf_node_cnt_;
     bytes += ((explicit_tree_node_cnt + block_bitlength - 1) / block_bitlength)
         * block_size;
-    // Labels
-    bytes += ((leaf_node_cnt_ + block_bitlength - 1) / block_bitlength)
-        * block_size;
-    // Rank support
-    bytes += dtl::rank1<u64>::estimate_size_in_bytes(explicit_tree_node_cnt);
-    // Bit-length of the original bitmap.
-    bytes += sizeof(n_);
+    // The stored length of the tree structure.
+    bytes += 4;
     // The number of implicit inner nodes.
     bytes += 4;
-    // FIXME: + number of tree bits + number of label bits
+    // The number of implicit leaf nodes can then be computed as
+    //  2n-1 - # implicit nodes - length of the tree structure bit sequence
+    // The offset to the beginning of T can also be computed.
+    // The height of the encoded tree (after pruning).
+    bytes += 1; // actually 5 bits
+
+    // Rank helper structure
+    bytes += dtl::rank1<u64>::estimate_size_in_bytes(explicit_tree_node_cnt);
+
+    // Labels
+    u64 explicit_label_cnt = leaf_node_cnt_
+        - leading_0label_cnt_ - trailing_0label_cnt_;
+    bytes += ((explicit_label_cnt + block_bitlength - 1) / block_bitlength)
+        * block_size;
+    // The stored length of L.
+    bytes += 4;
+    // The number of implicit labels.
+    bytes += 4;
+    // The offset to the beginning of L can also be computed based on the
+    // size of the header, T and R.
+
+    // Level offsets for T and L, which are required by the tree scan algorithm.
+    const auto perfect_levels = dtl::log_2(leading_inner_node_cnt_ + 1) + 1;
+    const auto encoded_tree_height = dtl::log_2(n_) + 1; // FIXME could be lower, but its unlikely
+    assert(encoded_tree_height >= perfect_levels);
+    bytes += (4 + 4) * (encoded_tree_height - perfect_levels);
+
+    // Padding. We want T to be 8-byte aligned.
+    bytes += ((bytes + 7) / 8) * 8;
+
     return bytes;
   }
 
@@ -261,7 +293,8 @@ private:
         u64 idx = (*it).idx;
         if (is_inner_node(idx)) continue;
         if (right_child_of(idx) >= max_node_cnt_) break;
-        // Expand inner node.
+
+        // Expand the leaf node to an inner node.
         set_inner(idx);
         // Update the counters.
         ++inner_node_cnt_;
@@ -312,9 +345,9 @@ private:
     // The total number of false positives introduced so far.
     $u64 total_fp_cntr = 0;
 
-    // Compute the number of associated false positives for each tree node.
+    // Pre-compute the number of associated false positives for each tree node.
     // The value fp_cntrs[i] refers to the number of false positives when
-    // node i is turned into a leaf node (ie., the sub-tree is pruned).
+    // node i is turned into a leaf node (i.e., its sub-tree is pruned).
     std::vector<uint32_t> fp_cntrs(max_node_cnt_, 0);
     u64 length = max_node_cnt_;
     u64 height = height_;
