@@ -38,6 +38,17 @@ struct bitmap_view {
     return fn::test(data_.begin(), pos);
   }
 
+  std::size_t
+  find_first() const {
+    return fn::find_first(data_.begin(), data_.end());
+  }
+
+  std::size_t
+  find_last() const {
+    return fn::find_last(data_.begin(), data_.end());
+  }
+
+
 };
 //===----------------------------------------------------------------------===//
 
