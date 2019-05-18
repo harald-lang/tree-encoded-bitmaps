@@ -105,7 +105,8 @@ bitmap_db::init() {
   {
     const std::string sql_stmt =
         "select id from bitmaps\n"
-        " where n = :n and f = :f and d = :d";
+        " where n = :n and f = :f and d = :d"
+        " order by id";
     rc = sqlite3_prepare_v2(db_, sql_stmt.c_str(), -1, &select_ids_stmt_,
         nullptr);
     if (rc) {
