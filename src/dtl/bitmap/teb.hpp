@@ -53,6 +53,7 @@ namespace dtl {
 ///   0 = implements the core idea of TEBs
 ///   1 = uses the implicit inner node optimization
 ///   2 = additionally applies the gradual decompression optimization.
+///   3 = uses the implicit labels optimization.
 /// Please note, that the different optimization levels can be chosen due to
 /// academic reasons only. I.e., to analyse and compare the different
 /// optimizations levels.
@@ -65,7 +66,7 @@ namespace dtl {
 /// - perfect levels: the number of tree levels in which the tree is perfect.
 /// - top nodes: refer to the nodes within the last perfect level.
 ///
-template<i32 optimization_level_ = 2>
+template<i32 optimization_level_ = 3>
 class teb {
 
 public:
@@ -88,6 +89,7 @@ public:
   bitmap_view<word_type> T_;
   $u64 structure_bit_cnt_;
   bitmap_view<word_type> L_;
+  $u64 label_bit_cnt_;
 
   /// Support data structure for rank1 operations on the tree structure.
   static constexpr u1 inclusive = true;
@@ -99,6 +101,12 @@ public:
 
   /// For testing purposes only.
   $u32 implicit_leaf_node_cnt_;
+
+  /// The number of implicit leading 0-labels.
+  $u32 implicit_leading_label_cnt_;
+
+  /// For testing purposes only.
+  $u32 implicit_trailing_label_cnt_;
 
   std::array<std::size_t, 32> level_offsets_structure_;
   std::array<std::size_t, 32> level_offsets_labels_;
@@ -123,6 +131,11 @@ public:
       // Implicit tree nodes are only considered with -o1 or higher.
       implicit_inner_node_cnt_ = bitmap_tree.get_leading_inner_node_cnt();
       implicit_leaf_node_cnt_ = bitmap_tree.get_trailing_leaf_node_cnt();
+    }
+    if (optimization_level_ > 2) {
+      // Implicit labels are only considered with -o3 or higher.
+      implicit_leading_label_cnt_ = bitmap_tree.get_leading_0label_cnt();
+      implicit_trailing_label_cnt_ = bitmap_tree.get_trailing_0label_cnt();
     }
     std::size_t node_cntr = 0;
     std::size_t leaf_node_cntr = 0;
@@ -157,8 +170,17 @@ public:
         structure_.push_back(is_inner);
       }
       if (!is_inner) {
-        // Add the label of the leaf node.
-        labels_.push_back(bitmap_tree.label_of_node(idx));
+        if (optimization_level_ > 2) {
+          // Add the label of the leaf node (if necessary).
+          if (idx >= bitmap_tree.get_first_node_idx_with_1label()
+              && idx <= bitmap_tree.get_last_node_idx_with_1label()) {
+            labels_.push_back(bitmap_tree.label_of_node(idx));
+          }
+        }
+        else {
+          // Add the label of the leaf node.
+          labels_.push_back(bitmap_tree.label_of_node(idx));
+        }
       }
     }
 
@@ -188,6 +210,7 @@ public:
         labels_.m_bits.data(),
         labels_.m_bits.data() + labels_.m_bits.size(),
     });
+    label_bit_cnt_ = labels_.size();
   }
 
   teb(const teb& other) = default;
@@ -202,21 +225,46 @@ public:
     constexpr u64 block_bitlength = sizeof(_block_type) * 8;
     constexpr u64 block_size = sizeof(_block_type);
     $u64 bytes = 0;
-    // Tree structure
-    bytes += ((structure_.size() + block_bitlength - 1) / block_bitlength) * block_size;
-    // Labels
-    bytes += ((labels_.size() + block_bitlength - 1) / block_bitlength) * block_size;
-    // Rank support
-    bytes += rank_.size_in_bytes();
+
     // Bit-length of the original bitmap.
     bytes += sizeof(n_);
-    // The number of implicit inner nodes.
-    bytes += sizeof(implicit_inner_node_cnt_);
 
-    bytes += 1; // encoded tree height
-    u64 perfect_levels = determine_perfect_tree_levels(implicit_inner_node_cnt_);
-    assert(perfect_levels <= encoded_tree_height_);
-    bytes += (encoded_tree_height_ - perfect_levels) * 8 * 2; // level offsets
+    // Tree structure
+    bytes += ((structure_.size() + block_bitlength - 1) / block_bitlength)
+        * block_size;
+    // The stored length of the tree structure.
+    bytes += 4;
+    // The number of implicit inner nodes.
+    bytes += optimization_level_ > 0 ? 4 : 0;
+    // The number of implicit leaf nodes can then be computed as
+    //  2n-1 - # implicit nodes - length of the tree structure bit sequence
+    // The offset to the beginning of T can also be computed.
+    // The height of the encoded tree (after pruning).
+    bytes += 1; // actually 5 bits
+
+    // Rank helper structure
+    bytes += rank_.size_in_bytes();
+
+    // Labels
+    bytes += ((labels_.size() + block_bitlength - 1) / block_bitlength)
+        * block_size;
+    // The stored length of L.
+    bytes += 4;
+    // The number of implicit labels.
+    bytes += optimization_level_ > 2 ? 4 : 0;
+    // The offset to the beginning of L can also be computed based on the
+    // size of the header, T and R.
+
+    // Level offsets for T and L, which are required by the tree scan algorithm.
+    const auto perfect_levels =
+        determine_perfect_tree_levels(implicit_inner_node_cnt_);
+    const auto encoded_tree_height = dtl::log_2(n_) + 1; // FIXME could be lower, but its unlikely
+    assert(encoded_tree_height >= perfect_levels);
+    bytes += (4 + 4) * (encoded_tree_height - perfect_levels);
+
+    // Padding. We want T to be 8-byte aligned.
+    bytes += ((bytes + 7) / 8) * 8;
+
     return bytes;
   }
 
@@ -238,6 +286,10 @@ public:
        << implicit_inner_node_cnt_
        << "/"
        << implicit_leaf_node_cnt_
+       << ", implicit labels (leading/trailing) = "
+       << implicit_leading_label_cnt_
+       << "/"
+       << implicit_trailing_label_cnt_
        << ", perfect levels = "
        << determine_perfect_tree_levels(implicit_inner_node_cnt_)
        << ", tree bits = " << structure_.size()
@@ -255,6 +307,9 @@ public:
       os << (structure_[i] ? "1" : "0");
     }
     os << "\n | ";
+    if (implicit_leading_label_cnt_ > 0) {
+      os << "'";
+    }
     for ($i64 i = 0; i < labels_.size(); i++) {
       os << (labels_[i] ? "1" : "0");
     }
@@ -435,6 +490,8 @@ public:
           + std::to_string(determine_perfect_tree_levels(implicit_inner_node_cnt_))
         + ",\"opt_level\":" + std::to_string(optimization_level_)
         + ",\"rank\":" + rank_.info()
+        + ",\"leading_zero_labels\":" + std::to_string(implicit_leading_label_cnt_)
+        + ",\"trailing_zero_labels\":" + std::to_string(implicit_trailing_label_cnt_)
         + "}";
   }
 
@@ -497,9 +554,30 @@ private:
   }
 
   u1 __teb_inline__
+  get_label_by_idx(u64 label_idx) const noexcept {
+    if (optimization_level_ > 2) {
+      const auto implicit_leading_label_cnt = implicit_leading_label_cnt_;
+      const std::size_t implicit_trailing_0labels_begin =
+          label_bit_cnt_ + implicit_leading_label_cnt;
+      if (label_idx < implicit_leading_label_cnt) {
+        // An implicit leading 0-label.
+        return false;
+      }
+      if (label_idx >= implicit_trailing_0labels_begin) {
+        // An implicit trailing 0-label.
+        return false;
+      }
+      return L_[label_idx - implicit_leading_label_cnt];
+    }
+    else {
+      return labels_[label_idx];
+    }
+  }
+
+  u1 __teb_inline__
   get_label(u64 node_idx) const noexcept {
     u64 label_idx = get_label_idx(node_idx);
-    return labels_[label_idx];
+    return get_label_by_idx(label_idx);
   }
 
   u64 __teb_inline__
@@ -654,8 +732,8 @@ public:
               // labels need to be inspected.
 
               // Fetch the labels.
-              u1 left_child_label = teb_.L_[left_child_label_idx];
-              u1 right_child_label = teb_.L_[right_child_label_idx];
+              u1 left_child_label = teb_.get_label_by_idx(left_child_label_idx);
+              u1 right_child_label = teb_.get_label_by_idx(right_child_label_idx);
 
               if (optimization_level_ < 2) {
                 // Go to the node which has the 1-label.
@@ -699,7 +777,7 @@ public:
               //===------------------------------------------------------===//
               // Determine whether the left child produces an output
               // (label = 1).
-              u1 left_child_label = teb_.L_[left_child_label_idx];
+              u1 left_child_label = teb_.get_label_by_idx(left_child_label_idx);
 
               // Derive rank of the right child.  The following works, because
               // the left child is leaf (0-bit) and the right is inner (1-bit).
@@ -714,7 +792,7 @@ public:
                 node_info.rank = left_child_rank;
                 node_info.level++;
                 // Push the right child on the stack.
-                stack_entry& right_child_info = stack_.push();;
+                stack_entry& right_child_info = stack_.push();
                 right_child_info.node_idx = right_child_idx;
                 right_child_info.path = node_info.path | 1;
                 right_child_info.level = node_info.level;
@@ -735,7 +813,7 @@ public:
 
               // Determine whether the right child produces an output
               // (label = 1).
-              u1 right_child_label = teb_.L_[right_child_label_idx];
+              u1 right_child_label = teb_.get_label_by_idx(right_child_label_idx);
               if (right_child_label) { // FIXME DEP
                 // Push the right child on the stack iff it has a 1-label,
                 // otherwise the right child is ignored.
@@ -779,7 +857,7 @@ public:
           }
         }
         // Reached a leaf node.
-        label = teb_.L_[node_info.node_idx - node_info.rank];
+        label = teb_.get_label_by_idx(node_info.node_idx - node_info.rank);
         if (label) {
 produce_output:
           // Produce output (a 1-fill).
@@ -804,7 +882,7 @@ produce_output:
       // Set the sentinel bit.
       next_node.path |= path_t(1) << (perfect_levels_ - 1);
 //      next_node.level = determine_level_of(next_node.path);
-    next_node.level = perfect_levels_ - 1;
+      next_node.level = perfect_levels_ - 1;
       next_node.rank = teb_.rank_inclusive(top_node_idx_current_);
     }
     pos_ = teb_.n_;
@@ -845,7 +923,7 @@ produce_output:
       if (teb_.is_leaf_node(node_idx_)) {
         // Reached the desired position.
         const auto label_idx = node_idx_ - rank;
-        const auto label = teb_.L_[label_idx];
+        const auto label = teb_.get_label_by_idx(label_idx);
         if (label) {
           // Found the corresponding leaf node.
           // Toggle sentinel bit (= highest bit set) and add offset.
@@ -877,12 +955,13 @@ produce_output:
       if (!direction_bit) {
         // Push the right child only if necessary.
         if (right_child_is_inner
-            || teb_.L_[right_child_idx - right_child_rank]) {
+            || teb_.get_label_by_idx(right_child_idx - right_child_rank)) {
           stack_entry& right_child_info = stack_.push();
           right_child_info.node_idx = right_child_idx;
           right_child_info.path = (path_ << 1) | 1;
           right_child_info.level = level;
           right_child_info.rank = right_child_rank;
+          right_child_info.is_inner = 0ull + right_child_is_inner;
         }
         // Go to left child.
         path_ <<= 1;
@@ -1193,6 +1272,8 @@ class teb<optimization_level_>::scan_iter {
   $u64 scan_path_level_;
 
   $u32 alpha_;
+
+  std::size_t first_1label_idx_ = 0;
   //===--------------------------------------------------------------------===//
 
 

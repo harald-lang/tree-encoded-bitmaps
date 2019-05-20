@@ -33,8 +33,11 @@ class bitmap_tree : public binary_tree_structure {
   std::size_t leading_inner_node_cnt_;
   std::size_t trailing_leaf_node_cnt_;
   range_t explicit_node_idxs_;
+
   std::size_t leading_0label_cnt_;
   std::size_t trailing_0label_cnt_;
+  std::size_t first_node_idx_with_1label_;
+  std::size_t last_node_idx_with_1label_;
 
 
 public:
@@ -49,7 +52,9 @@ public:
         leading_inner_node_cnt_(0),
         trailing_leaf_node_cnt_(0),
         leading_0label_cnt_(0),
-        trailing_0label_cnt_(0) {
+        trailing_0label_cnt_(0),
+        first_node_idx_with_1label_(0),
+        last_node_idx_with_1label_(0) {
 
     // TODO: Support arbitrarily sized bitmaps.
     if (!dtl::is_power_of_two(n_)) {
@@ -128,11 +133,48 @@ public:
           ++trailing_leaf_node_cnt_;
         } else {
           trailing_leaf_node_cnt_ = 0;
-          explicit_node_idxs_.end = (*it).idx;
+          explicit_node_idxs_.end = idx;
         }
       }
 
       explicit_node_idxs_.begin = leading_inner_node_cnt_;
+    }
+
+    // Determine the number of labels that need to be stored explicitly.
+    {
+      $u1 found_leaf_node_with_1label = false;
+      leading_0label_cnt_ = 0;
+      trailing_0label_cnt_ = 0;
+      first_node_idx_with_1label_ = 0;
+      last_node_idx_with_1label_ = 0;
+
+      for (auto it = breadth_first_begin(); it != breadth_first_end(); ++it) {
+        u64 idx = (*it).idx;
+        u64 level = (*it).level;
+        u1 is_leaf = is_leaf_node(idx);
+
+        if (!found_leaf_node_with_1label && is_leaf) {
+          if (label_of_node(idx) == false) {
+            ++leading_0label_cnt_;
+          }
+          else {
+            found_leaf_node_with_1label = true;
+            first_node_idx_with_1label_ = idx;
+          }
+        }
+
+        // Count the trailing 0-labels nodes.
+        if (is_leaf) {
+          if (label_of_node(idx) == false) {
+            ++trailing_0label_cnt_;
+          }
+          else {
+            trailing_0label_cnt_ = 0;
+            last_node_idx_with_1label_ = idx;
+          }
+        }
+      }
+
     }
 
     // Run space optimizations.
@@ -169,7 +211,7 @@ public:
     // The stored length of the tree structure.
     bytes += 4;
     // The number of implicit inner nodes.
-    bytes += 4;
+    bytes += optimization_level_ > 0 ? 4 : 0;
     // The number of implicit leaf nodes can then be computed as
     //  2n-1 - # implicit nodes - length of the tree structure bit sequence
     // The offset to the beginning of T can also be computed.
@@ -180,14 +222,15 @@ public:
     bytes += dtl::rank1<u64>::estimate_size_in_bytes(explicit_tree_node_cnt);
 
     // Labels
-    u64 explicit_label_cnt = leaf_node_cnt_
-        - leading_0label_cnt_ - trailing_0label_cnt_;
+    u64 explicit_label_cnt = optimization_level_ > 2
+        ? leaf_node_cnt_ - leading_0label_cnt_ - trailing_0label_cnt_
+        : leaf_node_cnt_;
     bytes += ((explicit_label_cnt + block_bitlength - 1) / block_bitlength)
         * block_size;
     // The stored length of L.
     bytes += 4;
     // The number of implicit labels.
-    bytes += 4;
+    bytes += optimization_level_ > 2 ? 4 : 0;
     // The offset to the beginning of L can also be computed based on the
     // size of the header, T and R.
 
@@ -248,6 +291,30 @@ public:
     return explicit_node_idxs_.end;
   }
 
+  /// Returns the number of leading 0-labels (in level order).
+  inline u32
+  get_leading_0label_cnt() const noexcept {
+    return leading_0label_cnt_;
+  }
+
+  /// Returns the number of trailing leaf nodes (in level order).
+  inline u32
+  get_trailing_0label_cnt() const noexcept {
+    return trailing_0label_cnt_;
+  }
+
+  inline u32
+  get_first_node_idx_with_1label() const noexcept {
+    return first_node_idx_with_1label_;
+  }
+
+  inline u32
+  get_last_node_idx_with_1label() const noexcept {
+    return last_node_idx_with_1label_;
+  }
+
+
+
   void
   print(std::ostream& os) const noexcept {
     for (std::size_t level = 0; level <= height_; ++level) {
@@ -300,11 +367,15 @@ private:
         ++inner_node_cnt_;
         ++leaf_node_cnt_;
 
+        // The number of leading inner nodes increases at least by one.
         ++leading_inner_node_cnt_;
+        // Check if the newly created inner node is followed by more inner nodes.
         for (auto i = idx + 1; i < max_node_cnt_ && is_inner_node(i); ++i) {
           ++leading_inner_node_cnt_;
         }
+        // Update the index of the first explicit node.
         explicit_node_idxs_.begin = leading_inner_node_cnt_;
+        // Update the number of trailing leaf nodes.
         if (explicit_node_idxs_.begin >= explicit_node_idxs_.end) {
           // The entire tree became implicit.
           leading_inner_node_cnt_ = inner_node_cnt_;
@@ -321,6 +392,66 @@ private:
             // The newly created leaf is implicit.
             trailing_leaf_node_cnt_ += 1;
           }
+        }
+
+        // Update the number of implicit 0-labels.
+        if (idx < first_node_idx_with_1label_) {
+          // The current node, that has been expanded had a 0-label that was
+          // implicit.
+          leading_0label_cnt_ -= 1;
+
+          const auto left_child_idx = left_child_of(idx);
+          if (left_child_idx < first_node_idx_with_1label_) {
+            // The label of the newly created leaf is implicit.
+            leading_0label_cnt_ += 1;
+          }
+          if (left_child_idx > last_node_idx_with_1label_) {
+            // The label of the newly created leaf is implicit.
+            trailing_0label_cnt_ += 1;
+          }
+          const auto right_child_idx = right_child_of(idx);
+          if (left_child_idx < first_node_idx_with_1label_) {
+            // The label of the newly created leaf is implicit.
+            leading_0label_cnt_ += 1;
+          }
+          if (right_child_idx > last_node_idx_with_1label_) {
+            // The label of the newly created leaf is implicit.
+            trailing_0label_cnt_ += 1;
+          }
+        }
+
+        if (idx == first_node_idx_with_1label_) {
+          // The current node is the first node with a 1-label.
+          // Now that this node has been expanded, the node idx with the first
+          // 1-label is somewhere in (idx, left-child(idx)].
+          for (std::size_t i = idx + 1; i <= left_child_of(idx); ++i) {
+            if (is_leaf_node(i)) {
+              if (label_of_node(i) == true) {
+                first_node_idx_with_1label_ = i;
+                break;
+              }
+              else {
+                leading_0label_cnt_ += 1;
+                if (i > last_node_idx_with_1label_) {
+                  trailing_0label_cnt_ -= 1;
+                }
+              }
+            }
+          }
+          // The node idx with the last 1-label is now the
+          // max(last_node_idx_with_1label_, right-child(idx)).
+          if (right_child_of(idx) > last_node_idx_with_1label_) {
+            // Update the number of trailing 0-labels.
+            for (std::size_t i = first_node_idx_with_1label_ + 1;
+                 i < left_child_of(idx); ++i) {
+              if (is_leaf_node(i) && label_of_node(i) == false) {
+                trailing_0label_cnt_ -= 1;
+              }
+            }
+
+          }
+          last_node_idx_with_1label_ =
+              std::max(last_node_idx_with_1label_, right_child_of(idx));
         }
 
         const auto compressed_size = size();
