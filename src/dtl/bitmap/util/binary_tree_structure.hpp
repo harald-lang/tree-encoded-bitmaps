@@ -119,6 +119,11 @@ public:
     set_leaf_rec(node_idx);
   }
 
+  inline void
+  visit(u64 node_idx, std::function<void(u64)> fn) {
+    visit_rec(node_idx, fn);
+  }
+
   /// Turns the given node into an inner node.
   inline void
   set_inner(u64 node_idx) {
@@ -219,6 +224,17 @@ private:
     if (recurse) {
       set_leaf_rec(left_child_of(node_idx));
       set_leaf_rec(right_child_of(node_idx));
+    }
+  }
+
+  inline void
+  visit_rec(u64 node_idx, std::function<void(u64)> fn) {
+    fn(node_idx);
+    u1 recurse = is_inner_node_[node_idx];
+    is_inner_node_[node_idx] = false;
+    if (recurse) {
+      visit_rec(left_child_of(node_idx), fn);
+      visit_rec(right_child_of(node_idx), fn);
     }
   }
 

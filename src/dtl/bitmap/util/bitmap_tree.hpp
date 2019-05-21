@@ -547,6 +547,13 @@ private:
         // Check if we have found a candidate to prune.
         if (candidate_saved_bit_cnt > 0.0) {
           // The actual pruning.
+          // Set the labels to 1 in the entire sub-tree.
+          visit(candidate_node_idx, [&](u64 i) {
+            labels_[i] = true;
+          });
+          // Make the current node a leaf node. Note that we need to update
+          // the labels in the entire subtree otherwise we get side effects
+          // during gradual decompression.
           set_leaf(candidate_node_idx);
           total_fp_cntr += fp_cntrs[candidate_node_idx];
         }
