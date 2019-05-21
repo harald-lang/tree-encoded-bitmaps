@@ -203,11 +203,6 @@ public:
     // Bit-length of the original bitmap.
     bytes += sizeof(n_);
 
-    // Tree structure
-    u64 explicit_tree_node_cnt = inner_node_cnt_ + leaf_node_cnt_
-        - leading_inner_node_cnt_ - trailing_leaf_node_cnt_;
-    bytes += ((explicit_tree_node_cnt + block_bitlength - 1) / block_bitlength)
-        * block_size;
     // The stored length of the tree structure.
     bytes += 4;
     // The number of implicit inner nodes.
@@ -218,15 +213,6 @@ public:
     // The height of the encoded tree (after pruning).
     bytes += 1; // actually 5 bits
 
-    // Rank helper structure
-    bytes += dtl::rank1<u64>::estimate_size_in_bytes(explicit_tree_node_cnt);
-
-    // Labels
-    u64 explicit_label_cnt = optimization_level_ > 2
-        ? leaf_node_cnt_ - leading_0label_cnt_ - trailing_0label_cnt_
-        : leaf_node_cnt_;
-    bytes += ((explicit_label_cnt + block_bitlength - 1) / block_bitlength)
-        * block_size;
     // The stored length of L.
     bytes += 4;
     // The number of implicit labels.
@@ -241,7 +227,23 @@ public:
     bytes += (4 + 4) * (encoded_tree_height - perfect_levels);
 
     // Padding. We want T to be 8-byte aligned.
-    bytes += ((bytes + 7) / 8) * 8;
+    bytes += 8 - (bytes % 8);
+
+    // Tree structure
+    u64 explicit_tree_node_cnt = inner_node_cnt_ + leaf_node_cnt_
+        - leading_inner_node_cnt_ - trailing_leaf_node_cnt_;
+    bytes += ((explicit_tree_node_cnt + block_bitlength - 1) / block_bitlength)
+        * block_size;
+
+    // Rank helper structure
+    bytes += dtl::rank1<u64>::estimate_size_in_bytes(explicit_tree_node_cnt);
+
+    // Labels
+    u64 explicit_label_cnt = optimization_level_ > 2
+        ? leaf_node_cnt_ - leading_0label_cnt_ - trailing_0label_cnt_
+        : leaf_node_cnt_;
+    bytes += ((explicit_label_cnt + block_bitlength - 1) / block_bitlength)
+        * block_size;
 
     return bytes;
   }

@@ -229,9 +229,6 @@ public:
     // Bit-length of the original bitmap.
     bytes += sizeof(n_);
 
-    // Tree structure
-    bytes += ((structure_.size() + block_bitlength - 1) / block_bitlength)
-        * block_size;
     // The stored length of the tree structure.
     bytes += 4;
     // The number of implicit inner nodes.
@@ -242,12 +239,6 @@ public:
     // The height of the encoded tree (after pruning).
     bytes += 1; // actually 5 bits
 
-    // Rank helper structure
-    bytes += rank_.size_in_bytes();
-
-    // Labels
-    bytes += ((labels_.size() + block_bitlength - 1) / block_bitlength)
-        * block_size;
     // The stored length of L.
     bytes += 4;
     // The number of implicit labels.
@@ -263,7 +254,18 @@ public:
     bytes += (4 + 4) * (encoded_tree_height - perfect_levels);
 
     // Padding. We want T to be 8-byte aligned.
-    bytes += ((bytes + 7) / 8) * 8;
+    bytes += 8 - (bytes % 8);
+
+    // Tree structure
+    bytes += ((structure_.size() + block_bitlength - 1) / block_bitlength)
+
+        * block_size;
+    // Rank helper structure
+    bytes += rank_.size_in_bytes();
+
+    // Labels
+    bytes += ((labels_.size() + block_bitlength - 1) / block_bitlength)
+        * block_size;
 
     return bytes;
   }
