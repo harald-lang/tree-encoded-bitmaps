@@ -44,6 +44,11 @@ public:
   /// Returns all bitmap IDs.
   std::vector<$i64> ids();
 
+  // FIXME HACK
+  sqlite3* get_db() {
+    return db_;
+  }
+
 private:
 
   /// Opens the database.
