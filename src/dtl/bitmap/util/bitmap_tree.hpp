@@ -14,7 +14,7 @@ namespace dtl {
 /// Represents a bitmap as a binary tree. During construction, the bitmap tree
 /// is compressed, either loss-less or lossy.
 /// The template parameter controls the space optimizations.
-template<i32 optimization_level_ = 2>
+template<i32 optimization_level_ = 3>
 class bitmap_tree : public binary_tree_structure {
 
   using tree_t = dtl::binary_tree_structure;
@@ -469,7 +469,7 @@ private:
   // Lossy compression.  The size of the tree structure is further reduced,
   // which causes false positive bits. The number of false positive bits is
   // limited by the given false positive rate (FPR).
-  void
+  void __attribute__ ((noinline))
   compress_lossy(f64 fpr) {
     // Determine maximum number of false positives.
     u64 max_fp_cnt = static_cast<u64>(n_ * fpr);
@@ -505,6 +505,26 @@ private:
       }
     }
 
+//    // Pre-compute the sub-tree sizes and the number of leaf node in each
+//    // sub-tree.
+//    std::vector<uint32_t> subtree_sizes(max_node_cnt_, 0);
+//    std::vector<uint32_t> leaf_node_cnts(max_node_cnt_, 0);
+//    for ($u64 i = 0; i < length; ++i) {
+//      u64 node_idx = length - i - 1;
+//      if (is_leaf_node(node_idx)) {
+//        subtree_sizes[node_idx] = 1;
+//        leaf_node_cnts[node_idx] = 1;
+//      }
+//      else {
+//        const auto left_child_idx = left_child_of(node_idx);
+//        const auto right_child_idx = right_child_of(node_idx);
+//        subtree_sizes[node_idx] = subtree_sizes[left_child_idx]
+//            + subtree_sizes[right_child_idx] + 1;
+//        leaf_node_cnts[node_idx] = leaf_node_cnts[left_child_idx]
+//            + leaf_node_cnts[right_child_idx];
+//      }
+//    }
+
 
     {
       // Top-down pruning loop (starts at level 0).
@@ -528,10 +548,14 @@ private:
 
           // Count the number of nodes that would be eliminated from the tree
           // if the current node is turned into a leaf node.
+          assert(this->subtree_size(node_idx) == subtree_sizes[node_idx]);
+//          const auto subtree_size = subtree_sizes[node_idx];
           const auto subtree_size = this->subtree_size(node_idx);
           const auto pruned_node_cnt = subtree_size - 1;
           // Count the number of leaf nodes that would be eliminated from the
           // tree.
+          assert(count_leaf_nodes(node_idx) == leaf_node_cnts[node_idx]);
+//          const auto leaf_node_cnt = leaf_node_cnts[node_idx];
           const auto leaf_node_cnt = count_leaf_nodes(node_idx);
           const auto pruned_leaf_node_cnt = leaf_node_cnt - 1;
           // Compute the amount of bits saved.  One bit per node and one per
