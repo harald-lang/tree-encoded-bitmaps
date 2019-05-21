@@ -66,7 +66,8 @@ namespace dtl {
 /// - perfect levels: the number of tree levels in which the tree is perfect.
 /// - top nodes: refer to the nodes within the last perfect level.
 ///
-template<i32 optimization_level_ = 3>
+static constexpr i32 teb_default_opt_level = 3;
+template<i32 optimization_level_ = teb_default_opt_level>
 class teb {
 
 public:
@@ -103,10 +104,10 @@ public:
   $u32 implicit_leaf_node_cnt_;
 
   /// The number of implicit leading 0-labels.
-  $u32 implicit_leading_label_cnt_;
+  $u32 implicit_leading_label_cnt_ = 0;
 
   /// For testing purposes only.
-  $u32 implicit_trailing_label_cnt_;
+  $u32 implicit_trailing_label_cnt_ = 0;
 
   std::array<std::size_t, 32> level_offsets_structure_;
   std::array<std::size_t, 32> level_offsets_labels_;
@@ -320,7 +321,12 @@ public:
   /// Return the name of the implementation.
   static std::string
   name() noexcept {
-    return "teb";
+    if (optimization_level_ == teb_default_opt_level) {
+      return "teb";
+    }
+    else {
+      return "teb_o" + std::to_string(optimization_level_);
+    }
   }
 
 //  /// Returns the value of the bit at the position pos.
