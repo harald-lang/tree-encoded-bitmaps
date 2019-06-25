@@ -116,30 +116,30 @@ void run(config c, std::ostream& os) {
     case bitmap_t::teb:
       run<dtl::teb<>>(c, os);
       break;
-    case bitmap_t::teb_scan:
-      run<dtl::teb_scan<>>(c, os);
-      break;
+//    case bitmap_t::teb_scan: /* deprecated*/
+//      run<dtl::teb_scan<>>(c, os);
+//      break;
     case bitmap_t::wah:
       run<dtl::dynamic_wah32>(c, os);
       break;
-    case bitmap_t::position_list:
-      run<dtl::position_list<$u32>>(c, os);
-      break;
-    case bitmap_t::partitioned_position_list_u8:
-      run<dtl::partitioned_position_list<$u32, $u8>>(c, os);
-      break;
-    case bitmap_t::partitioned_position_list_u16:
-      run<dtl::partitioned_position_list<$u32, $u16>>(c, os);
-      break;
-    case bitmap_t::range_list:
-      run<dtl::range_list<$u32>>(c, os);
-      break;
-    case bitmap_t::partitioned_range_list_u8:
-      run<dtl::partitioned_range_list<$u32, $u8>>(c, os);
-      break;
-    case bitmap_t::partitioned_range_list_u16:
-      run<dtl::partitioned_range_list<$u32, $u16>>(c, os);
-      break;
+//    case bitmap_t::position_list:
+//      run<dtl::position_list<$u32>>(c, os);
+//      break;
+//    case bitmap_t::partitioned_position_list_u8:
+//      run<dtl::partitioned_position_list<$u32, $u8>>(c, os);
+//      break;
+//    case bitmap_t::partitioned_position_list_u16:
+//      run<dtl::partitioned_position_list<$u32, $u16>>(c, os);
+//      break;
+//    case bitmap_t::range_list:
+//      run<dtl::range_list<$u32>>(c, os);
+//      break;
+//    case bitmap_t::partitioned_range_list_u8:
+//      run<dtl::partitioned_range_list<$u32, $u8>>(c, os);
+//      break;
+//    case bitmap_t::partitioned_range_list_u16:
+//      run<dtl::partitioned_range_list<$u32, $u16>>(c, os);
+//      break;
   }
 }
 //===----------------------------------------------------------------------===//

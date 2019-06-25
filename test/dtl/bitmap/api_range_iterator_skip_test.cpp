@@ -25,6 +25,7 @@ constexpr std::size_t LEN = 8;
 using teb_o0 = dtl::teb<0>;
 using teb_o1 = dtl::teb<1>;
 using teb_o2 = dtl::teb<2>;
+using teb_o3 = dtl::teb<3>;
 using teb_scan_o0 = dtl::teb_scan<0>;
 using teb_scan_o1 = dtl::teb_scan<1>;
 using teb_scan_o2 = dtl::teb_scan<2>;
@@ -46,8 +47,9 @@ class api_range_iterator_skip_test : public ::testing::Test {};
 // Specify the types for which we want to run the API tests.
 using types_under_test = ::testing::Types<
     teb_o0,
-    teb_o1,
+//    teb_o1,
     teb_o2,
+    teb_o3,
 //    teb_scan_o0,
 //    teb_scan_o1,
 //    teb_scan_o2,

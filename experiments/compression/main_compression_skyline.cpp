@@ -25,12 +25,14 @@ void gen_data(const std::vector<$u64>& n_values,
 
         if (!markov_parameters_are_valid(n, f, d)) continue;
 
+        std::cout << n << "," << d << "," << f << std::endl;
         auto ids = db.find_bitmaps(n, f, d);
         if (ids.size() < RUNS) {
           config c;
           c.n = n;
           c.clustering_factor = f;
           c.density = d;
+
           for (std::size_t i = ids.size(); i < RUNS; ++i) {
             missing_bitmaps.push_back(c);
           }
@@ -157,7 +159,8 @@ $i32 main() {
 
   // Prepare benchmark settings.
   u64 n_min = 1ull << 10;
-  u64 n_max = 1ull << 20;
+//  u64 n_min = 1ull << 20;
+  u64 n_max = 1ull << 19;
 
   std::cerr << "run_id=" << RUN_ID << std::endl;
   std::vector<$f64> clustering_factors;

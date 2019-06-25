@@ -25,6 +25,7 @@ constexpr std::size_t LEN = 8;
 using teb_o0 = dtl::teb<0>;
 using teb_o1 = dtl::teb<1>;
 using teb_o2 = dtl::teb<2>;
+using teb_o3 = dtl::teb<3>;
 using teb_scan_o0 = dtl::teb_scan<0>;
 using teb_scan_o1 = dtl::teb_scan<1>;
 using teb_scan_o2 = dtl::teb_scan<2>;
@@ -46,19 +47,20 @@ class api_encode_decode_using_iterator_test : public ::testing::Test {};
 // Specify the types for which we want to run the API tests.
 using types_under_test = ::testing::Types<
     teb_o0,
-    teb_o1,
+//    teb_o1,
     teb_o2,
+    teb_o3,
 //    teb_scan_o0,
 //    teb_scan_o1,
 //    teb_scan_o2,
-    plain_bitmap_32,
-    position_list_32,
-    partitioned_position_list_32_u8,
-    partitioned_position_list_32_u16,
-    range_list_32,
-    partitioned_range_list_32_u8,
-    partitioned_range_list_32_u16,
-    roaring_bitmap,
+//    plain_bitmap_32,
+//    position_list_32,
+//    partitioned_position_list_32_u8,
+//    partitioned_position_list_32_u16,
+//    range_list_32,
+//    partitioned_range_list_32_u8,
+//    partitioned_range_list_32_u16,
+//    roaring_bitmap,
     wah
 >;
 TYPED_TEST_CASE(api_encode_decode_using_iterator_test, types_under_test);
@@ -70,7 +72,7 @@ TYPED_TEST(api_encode_decode_using_iterator_test, encode_decode_0_to_255) {
 
   for (auto i = 0; i < (1u << LEN); ++i) {
     dtl::bitmap bs(LEN, i);
-    std::cout << bs << std::endl;
+    std::cout << bs << " (" << i << ")" << std::endl;
     T t(bs);
     dtl::bitmap dec = dtl::to_bitmap_using_iterator(t);
     ASSERT_EQ(bs, dec) << "Decoding failed for i=" << i

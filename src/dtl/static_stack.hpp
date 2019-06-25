@@ -11,9 +11,10 @@ namespace dtl {
 //===----------------------------------------------------------------------===//
 /// A statically sized stack.
 template<typename T, std::size_t N>
-class static_stack {
+class alignas(64) static_stack {
 
-private:
+//private:
+public:
 
   std::array<T, N> stack_;
   std::size_t cnt_;

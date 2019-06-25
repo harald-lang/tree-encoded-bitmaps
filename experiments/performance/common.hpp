@@ -26,6 +26,7 @@
 #include <dtl/bitmap/partitioned_range_list.hpp>
 
 #include <dtl/bitmap/range_list.hpp>
+#include <experiments/util/config.hpp>
 #include <experiments/util/threading.hpp>
 #include <experiments/util/bitmap_types.hpp>
 
@@ -45,31 +46,14 @@ static u64 GEN_DATA = dtl::env<$u64>::get("GEN_DATA", 0);
 
 static bitmap_db db(DB_FILE);
 
-static $u64 RUN_DURATION_NANOS = 250e6; // run for at least 250ms
+//static $u64 RUN_DURATION_NANOS = 250e6; // run for at least 250ms
+static $u64 RUN_DURATION_NANOS = 1250e6; // run for at least 250ms
 //===----------------------------------------------------------------------===//
 u64
 now_nanos() {
   return std::chrono::duration_cast<std::chrono::nanoseconds>(
       std::chrono::steady_clock::now().time_since_epoch()).count();
 }
-//===----------------------------------------------------------------------===//
-struct config {
-  bitmap_t bitmap_type;
-  $u64 n;
-  $f64 density;
-  $f64 clustering_factor;
-  $i64 bitmap_id; // in DB
-
-  void
-  print(std::ostream& os) const noexcept {
-    os << "config[bitmap_type=" << bitmap_type
-       << ",n=" << n
-       << ",d=" << density
-       << ",f=" << clustering_factor
-       << ",bitmap_id=" << bitmap_id
-       << "]";
-  }
-};
 //===----------------------------------------------------------------------===//
 template<typename T>
 void __attribute__ ((noinline))
@@ -235,24 +219,25 @@ void run(config c, std::ostream& os) {
     case bitmap_t::wah:
       run<dtl::dynamic_wah32>(c, os);
       break;
-    case bitmap_t::position_list:
-      run<dtl::position_list<$u32>>(c, os);
-      break;
-    case bitmap_t::partitioned_position_list_u8:
-      run<dtl::partitioned_position_list<$u32, $u8>>(c, os);
-      break;
-    case bitmap_t::partitioned_position_list_u16:
-      run<dtl::partitioned_position_list<$u32, $u16>>(c, os);
-      break;
-    case bitmap_t::range_list:
-      run<dtl::range_list<$u32>>(c, os);
-      break;
-    case bitmap_t::partitioned_range_list_u8:
-      run<dtl::partitioned_range_list<$u32, $u8>>(c, os);
-      break;
-    case bitmap_t::partitioned_range_list_u16:
-      run<dtl::partitioned_range_list<$u32, $u16>>(c, os);
-      break;
+
+//    case bitmap_t::position_list:
+//      run<dtl::position_list<$u32>>(c, os);
+//      break;
+//    case bitmap_t::partitioned_position_list_u8:
+//      run<dtl::partitioned_position_list<$u32, $u8>>(c, os);
+//      break;
+//    case bitmap_t::partitioned_position_list_u16:
+//      run<dtl::partitioned_position_list<$u32, $u16>>(c, os);
+//      break;
+//    case bitmap_t::range_list:
+//      run<dtl::range_list<$u32>>(c, os);
+//      break;
+//    case bitmap_t::partitioned_range_list_u8:
+//      run<dtl::partitioned_range_list<$u32, $u8>>(c, os);
+//      break;
+//    case bitmap_t::partitioned_range_list_u16:
+//      run<dtl::partitioned_range_list<$u32, $u16>>(c, os);
+//      break;
   }
 }
 //===----------------------------------------------------------------------===//

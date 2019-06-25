@@ -1,0 +1,48 @@
+<svg width="123pt" height="83pt" viewBox="0 0 123 83" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 78.5505)">
+<title>markov_process</title>
+<polygon fill="#ffffff" stroke="transparent" points="-4,4 -4,-78.5505 119,-78.5505 119,4 -4,4"></polygon>
+<!-- 0 -->
+<g id="node1" class="node">
+<title>0</title>
+<ellipse fill="none" stroke="#000000" cx="18" cy="-21.7505" rx="18" ry="18"></ellipse>
+<text text-anchor="middle" x="18" y="-17.5505" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
+</g>
+<!-- 0&#45;&gt;0 -->
+<g id="edge3" class="edge">
+<title>0-&gt;0</title>
+<path fill="none" stroke="#000000" d="M11.2664,-38.7878C9.8922,-48.6084 12.1367,-57.7505 18,-57.7505 21.6646,-57.7505 23.9155,-54.1794 24.7529,-49.1034"></path>
+<polygon fill="#000000" stroke="#000000" points="28.2524,-48.7812 24.7336,-38.7878 21.2524,-48.7944 28.2524,-48.7812"></polygon>
+<text text-anchor="start" x="8.6697" y="-62.9505" font-family="Times,serif" font-size="14.00" fill="#000000">1-</text>
+<text text-anchor="start" x="20.3303" y="-62.9505" font-family="Times,serif" font-style="italic" font-size="14.00" fill="#000000">p</text>
+</g>
+<!-- 1 -->
+<g id="node2" class="node">
+<title>1</title>
+<ellipse fill="none" stroke="#000000" cx="97" cy="-21.7505" rx="18" ry="18"></ellipse>
+<text text-anchor="middle" x="97" y="-17.5505" font-family="Times,serif" font-size="14.00" fill="#000000">1</text>
+</g>
+<!-- 0&#45;&gt;1 -->
+<g id="edge1" class="edge">
+<title>0-&gt;1</title>
+<path fill="none" stroke="#000000" d="M36.3228,-21.7505C45.8947,-21.7505 57.8223,-21.7505 68.5629,-21.7505"></path>
+<polygon fill="#000000" stroke="#000000" points="68.7766,-25.2506 78.7766,-21.7505 68.7766,-18.2506 68.7766,-25.2506"></polygon>
+<text text-anchor="start" x="54" y="-26.9505" font-family="Times,serif" font-style="italic" font-size="14.00" fill="#000000">p</text>
+</g>
+<!-- 1&#45;&gt;0 -->
+<g id="edge4" class="edge">
+<title>1-&gt;0</title>
+<path fill="none" stroke="#000000" d="M82.3655,-10.9571C76.1135,-6.9868 68.5297,-2.9694 61,-.9505 54.0039,.9253 46.7762,-.9002 40.2893,-4.1196"></path>
+<polygon fill="#000000" stroke="#000000" points="38.1157,-1.3473 31.4286,-9.5652 41.7809,-7.311 38.1157,-1.3473"></polygon>
+<text text-anchor="start" x="54" y="-5.9505" font-family="Times,serif" font-style="italic" font-size="14.00" fill="#000000">q</text>
+</g>
+<!-- 1&#45;&gt;1 -->
+<g id="edge2" class="edge">
+<title>1-&gt;1</title>
+<path fill="none" stroke="#000000" d="M90.2664,-38.7878C88.8922,-48.6084 91.1367,-57.7505 97,-57.7505 100.6646,-57.7505 102.9155,-54.1794 103.7529,-49.1034"></path>
+<polygon fill="#000000" stroke="#000000" points="107.2524,-48.7812 103.7336,-38.7878 100.2524,-48.7944 107.2524,-48.7812"></polygon>
+<text text-anchor="start" x="87.6697" y="-62.9505" font-family="Times,serif" font-size="14.00" fill="#000000">1-</text>
+<text text-anchor="start" x="99.3303" y="-62.9505" font-family="Times,serif" font-style="italic" font-size="14.00" fill="#000000">q</text>
+</g>
+</g>
+</svg>

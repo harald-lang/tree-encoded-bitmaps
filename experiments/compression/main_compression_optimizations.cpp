@@ -55,10 +55,10 @@ run(const config_t& config, std::ostream& os) {
     size_roaring += roaring.size_in_byte();
     dtl::teb<0> teb_o0(bm);
     size_teb_o0 += teb_o0.size_in_byte();
-    dtl::teb<1> teb_o1(bm);
-    size_teb_o1 += teb_o1.size_in_byte();
-    dtl::teb<2> teb_o2(bm);
-    size_teb_o2 += teb_o2.size_in_byte();
+//    dtl::teb<1> teb_o1(bm);
+//    size_teb_o1 += teb_o1.size_in_byte();
+//    dtl::teb<2> teb_o2(bm);
+//    size_teb_o2 += teb_o2.size_in_byte();
     dtl::teb<3> teb_o3(bm);
     size_teb_o3 += teb_o3.size_in_byte();
 //    dtl::position_list<$u32> pl(bm);
@@ -88,14 +88,14 @@ run(const config_t& config, std::ostream& os) {
         std::cerr << "Validation failed. (TEBo0)" << std::endl;
         std::exit(1);
       }
-      if (bm != dtl::to_bitmap_using_iterator(teb_o1)) {
-        std::cerr << "Validation failed. (TEBo1)" << std::endl;
-        std::exit(1);
-      }
-      if (bm != dtl::to_bitmap_using_iterator(teb_o2)) {
-        std::cerr << "Validation failed. (TEBo2)" << std::endl;
-        std::exit(1);
-      }
+//      if (bm != dtl::to_bitmap_using_iterator(teb_o1)) {
+//        std::cerr << "Validation failed. (TEBo1)" << std::endl;
+//        std::exit(1);
+//      }
+//      if (bm != dtl::to_bitmap_using_iterator(teb_o2)) {
+//        std::cerr << "Validation failed. (TEBo2)" << std::endl;
+//        std::exit(1);
+//      }
       if (bm != dtl::to_bitmap_using_iterator(teb_o3)) {
         std::cerr << "Validation failed. (TEBo3)" << std::endl;
         std::exit(1);

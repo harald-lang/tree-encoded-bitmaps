@@ -79,7 +79,7 @@ TYPED_TEST(api_encode_decode_test, encode_decode_0_to_255) {
   using T = TypeParam;
 
   for (auto i = 0; i < (1u << LEN); ++i) {
-    std::cout << std::bitset<LEN>(i) << std::endl;
+    std::cout << std::bitset<LEN>(i) << " (" << i << ")" << std::endl;
     dtl::bitmap bs(LEN, i);
     T t(bs);
     dtl::bitmap dec = t.to_bitset();

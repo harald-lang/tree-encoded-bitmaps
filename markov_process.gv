@@ -1,0 +1,9 @@
+digraph markov_process {
+	rankdir=LR;
+	size="18,5"
+	node [shape = circle];
+	0 -> 1 [ label = <<I>p</I>> ];
+	1 -> 1 [ label = <1-<I>q</I>> ];
+	0 -> 0 [ label = <1-<I>p</I>> ];
+	1 -> 0 [ label = <<I>q</I>> ];
+}

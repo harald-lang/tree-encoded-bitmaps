@@ -157,7 +157,7 @@ $i32 main() {
   u64 n_max = 1ull << 20;
 
   std::cerr << "run_id=" << RUN_ID << std::endl;
-  std::vector<$f64> clustering_factors { 8, 64, 128 };
+  std::vector<$f64> clustering_factors { 4, 8, 16, 32, 64, 128, 256, 512, 4096 };
 
   std::vector<$f64> bit_densities { 0.01 };
   std::cerr << "d:" << std::endl;

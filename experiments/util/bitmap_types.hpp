@@ -31,7 +31,7 @@ enum class bitmap_t {
   _last = partitioned_range_list_u16
 };
 static const std::vector<bitmap_t>
-    bitmap_t_list = [&]() {
+    bitmap_t_list = []() {
         std::vector<bitmap_t> l;
         for (auto bitmap_type = static_cast<int>(bitmap_t::_first);
              bitmap_type <= static_cast<int>(bitmap_t::_last);

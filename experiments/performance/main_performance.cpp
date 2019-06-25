@@ -1,6 +1,8 @@
+#include <bitset>
 #include <chrono>
 #include <iostream>
 #include <set>
+#include <vector>
 
 #include <dtl/dtl.hpp>
 

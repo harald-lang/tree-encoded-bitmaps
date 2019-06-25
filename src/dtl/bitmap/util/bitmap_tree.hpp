@@ -56,6 +56,92 @@ public:
         first_node_idx_with_1label_(0),
         last_node_idx_with_1label_(0) {
 
+    // Init the binary tree and perform bottom-up pruning.
+    init_tree(bitmap);
+
+    // Run space optimizations.
+    {
+      // Optimization level 2
+      if (optimization_level_ > 1) {
+        init_counters();
+        run_optimize();
+      }
+    }
+    const auto lossless_size = estimate_encoded_size_in_bytes();
+
+    if (fpr > 0.0) {
+      auto min_size = lossless_size;
+      auto min = *this;
+      auto min_threshold = 0.0;
+
+//      $u1 monotonic = true;
+//      $u1 first_lossy_pass = true;
+//      std::size_t prev_lossy_size = std::numeric_limits<std::size_t>::max();
+//      std::vector<std::size_t> lossy_sizes;
+
+      for (auto threshold : {1.0/8.0, 1.0/4.0, 1.0/2.0, 1.0}) {
+        bitmap_tree lossy_bt(bitmap, fpr, threshold);
+        const auto size = lossy_bt.estimate_encoded_size_in_bytes();
+        if (size < min_size) {
+          min = lossy_bt;
+          min_size = size;
+          min_threshold = threshold;
+        }
+//        if (size <= prev_lossy_size) {
+//          prev_lossy_size = size;
+//        }
+//        else {
+//          break;
+//        }
+      }
+      *this = min;
+
+//      if (lossless_size > min_size) {
+//
+//        std::cout << ">>> saved bytes through lossy compression: "
+//            << (lossless_size - min_size)
+//            << " threshold = " << min_threshold
+//            << std::endl;
+//      }
+//      else {
+//        std::cout << ">>> lossless" << std::endl;
+//      }
+    }
+  }
+
+  // TODO make private
+  explicit
+  bitmap_tree(const bitmap_t& bitmap, f64 fpr, f64 threshold)
+      : binary_tree_structure(bitmap.size()),
+        labels_(max_node_cnt_),
+        inner_node_cnt_(0),
+        leaf_node_cnt_(0),
+        leading_inner_node_cnt_(0),
+        trailing_leaf_node_cnt_(0),
+        leading_0label_cnt_(0),
+        trailing_0label_cnt_(0),
+        first_node_idx_with_1label_(0),
+        last_node_idx_with_1label_(0) {
+
+    // Init the binary tree and perform bottom-up pruning.
+    init_tree(bitmap);
+
+    compress_lossy_pre_optimization_v2(fpr, threshold);
+    init_counters();
+    if (optimization_level_ > 1) {
+      run_optimize();
+    }
+  }
+
+  bitmap_tree(const bitmap_tree& other) = default;
+  bitmap_tree(bitmap_tree&& other) noexcept = default;
+  bitmap_tree& operator=(const bitmap_tree& other) = default;
+  bitmap_tree& operator=(bitmap_tree&& other) noexcept = default;
+  ~bitmap_tree() override = default;
+
+  // TODO make private
+  void
+  init_tree(const bitmap_t& bitmap) {
     // TODO: Support arbitrarily sized bitmaps.
     if (!dtl::is_power_of_two(n_)) {
       throw std::invalid_argument(
@@ -97,21 +183,121 @@ public:
               & !is_inner_node(right_node_idx);
       u1 prune = both_nodes_are_leaves & !prune_causes_false_positives;
       if (prune) {
-        set_leaf(parent_node_idx);
+        binary_tree_structure::set_leaf(parent_node_idx);
       }
     }
+  }
 
-    // Lossy compression.
-    compress_lossy(fpr);
+  /// TODO
+  void
+  init_counters() {
+    inner_node_cnt_ = 0;
+    leaf_node_cnt_ = 0;
+    leading_inner_node_cnt_ = 0;
+    trailing_leaf_node_cnt_ = 0;
+    leading_0label_cnt_ = 0;
+    trailing_0label_cnt_ = 0;
+    first_node_idx_with_1label_ = 0;
+    last_node_idx_with_1label_ = 0;
+    explicit_node_idxs_.begin = 0;
+    explicit_node_idxs_.end = 0;
+
+    // Determine the total number of tree nodes and which of these nodes need
+    // to be stored explicitly.
+    $u1 found_leaf_node = false;
+    std::size_t node_cnt = 0;
+    inner_node_cnt_ = 0;
+    leaf_node_cnt_ = 0;
+    leading_inner_node_cnt_ = 0;
+    trailing_leaf_node_cnt_ = 0;
+    explicit_node_idxs_.end = 0;
+
+    $u1 found_leaf_node_with_1label = false;
+    leading_0label_cnt_ = 0;
+    trailing_0label_cnt_ = 0;
+    first_node_idx_with_1label_ = 0;
+    last_node_idx_with_1label_ = 0;
+
+
+    const auto it_end = breadth_first_end();
+    for (auto it = breadth_first_begin(); it != it_end; ++it) {
+      u64 idx = (*it).idx;
+      u64 level = (*it).level;
+      u1 is_inner = is_inner_node(idx);
+
+      ++node_cnt;
+      inner_node_cnt_ += is_inner;
+      leaf_node_cnt_ += !is_inner;
+
+      // Count the leading inner nodes.
+      if (!found_leaf_node && is_inner) {
+        ++leading_inner_node_cnt_;
+      }
+      if (!found_leaf_node && !is_inner) {
+        found_leaf_node = true;
+      }
+
+      // Count the trailing leaf nodes.
+      if (!is_inner) {
+        ++trailing_leaf_node_cnt_;
+      } else {
+        trailing_leaf_node_cnt_ = 0;
+        explicit_node_idxs_.end = idx;
+      }
+
+      u1 is_leaf = is_leaf_node(idx);
+
+      if (!found_leaf_node_with_1label && is_leaf) {
+        if (label_of_node(idx) == false) {
+          ++leading_0label_cnt_;
+        }
+        else {
+          found_leaf_node_with_1label = true;
+          first_node_idx_with_1label_ = idx;
+        }
+      }
+
+      // Count the trailing 0-labels nodes.
+      if (is_leaf) {
+        if (label_of_node(idx) == false) {
+          ++trailing_0label_cnt_;
+        }
+        else {
+          trailing_0label_cnt_ = 0;
+          last_node_idx_with_1label_ = idx;
+        }
+      }
+
+    }
+    explicit_node_idxs_.begin = leading_inner_node_cnt_;
+  }
+
+  void
+  init_counters_old() {
+    inner_node_cnt_ = 0;
+    leaf_node_cnt_ = 0;
+    leading_inner_node_cnt_ = 0;
+    trailing_leaf_node_cnt_ = 0;
+    leading_0label_cnt_ = 0;
+    trailing_0label_cnt_ = 0;
+    first_node_idx_with_1label_ = 0;
+    last_node_idx_with_1label_ = 0;
+    explicit_node_idxs_.begin = 0;
+    explicit_node_idxs_.end = 0;
 
     // Determine the total number of tree nodes and which of these nodes need
     // to be stored explicitly.
     {
       $u1 found_leaf_node = false;
       std::size_t node_cnt = 0;
+      inner_node_cnt_ = 0;
+      leaf_node_cnt_ = 0;
+      leading_inner_node_cnt_ = 0;
+      trailing_leaf_node_cnt_ = 0;
       explicit_node_idxs_.end = 0;
 
-      for (auto it = breadth_first_begin(); it != breadth_first_end(); ++it) {
+      const auto it_end = breadth_first_end();
+      for (auto it = breadth_first_begin(); it != it_end; ++it) {
         u64 idx = (*it).idx;
         u64 level = (*it).level;
         u1 is_inner = is_inner_node(idx);
@@ -131,7 +317,8 @@ public:
         // Count the trailing leaf nodes.
         if (!is_inner) {
           ++trailing_leaf_node_cnt_;
-        } else {
+        }
+        else {
           trailing_leaf_node_cnt_ = 0;
           explicit_node_idxs_.end = idx;
         }
@@ -148,7 +335,8 @@ public:
       first_node_idx_with_1label_ = 0;
       last_node_idx_with_1label_ = 0;
 
-      for (auto it = breadth_first_begin(); it != breadth_first_end(); ++it) {
+      const auto it_end = breadth_first_end();
+      for (auto it = breadth_first_begin(); it != it_end; ++it) {
         u64 idx = (*it).idx;
         u64 level = (*it).level;
         u1 is_leaf = is_leaf_node(idx);
@@ -176,21 +364,7 @@ public:
       }
 
     }
-
-    // Run space optimizations.
-    {
-      // Optimization level 2
-      if (optimization_level_ > 1) {
-        run_optimize();
-      }
-    }
   }
-
-  bitmap_tree(const bitmap_tree& other) = default;
-  bitmap_tree(bitmap_tree&& other) noexcept = default;
-  bitmap_tree& operator=(const bitmap_tree& other) = default;
-  bitmap_tree& operator=(bitmap_tree&& other) noexcept = default;
-  ~bitmap_tree() override = default;
 
   /// Estimates the size in bytes, when the bitmap tree is succinctly encoded.
   /// This function basically resembles the size_in_bytes() function of TEBs.
@@ -220,25 +394,33 @@ public:
     // The offset to the beginning of L can also be computed based on the
     // size of the header, T and R.
 
+    u64 explicit_tree_node_cnt = inner_node_cnt_ + leaf_node_cnt_
+        - leading_inner_node_cnt_ - trailing_leaf_node_cnt_;
+
     // Level offsets for T and L, which are required by the tree scan algorithm.
     const auto perfect_levels = dtl::log_2(leading_inner_node_cnt_ + 1) + 1;
     const auto encoded_tree_height = dtl::log_2(n_) + 1; // FIXME could be lower, but its unlikely
     assert(encoded_tree_height >= perfect_levels);
-    bytes += (4 + 4) * (encoded_tree_height - perfect_levels);
+    if (explicit_tree_node_cnt > 1024) {
+      bytes += (4 + 4) * (encoded_tree_height - perfect_levels);
+    }
 
     // Padding. We want T to be 8-byte aligned.
     bytes += 8 - (bytes % 8);
 
     // Tree structure
-    u64 explicit_tree_node_cnt = inner_node_cnt_ + leaf_node_cnt_
-        - leading_inner_node_cnt_ - trailing_leaf_node_cnt_;
-    bytes += ((explicit_tree_node_cnt + block_bitlength - 1) / block_bitlength)
-        * block_size;
-
+    if (explicit_tree_node_cnt > 1) {
+      bytes += ((explicit_tree_node_cnt + block_bitlength - 1) / block_bitlength)
+          * block_size;
+    }
     // Rank helper structure
-    bytes += dtl::rank1<u64>::estimate_size_in_bytes(explicit_tree_node_cnt);
+    if (explicit_tree_node_cnt > 1024) {
+      bytes += dtl::rank1<u64>::estimate_size_in_bytes(explicit_tree_node_cnt);
+    }
 
     // Labels
+//    assert(leading_0label_cnt_ <= leaf_node_cnt_);
+//    assert(trailing_0label_cnt_ <= leaf_node_cnt_);
     u64 explicit_label_cnt = optimization_level_ > 2
         ? leaf_node_cnt_ - leading_0label_cnt_ - trailing_0label_cnt_
         : leaf_node_cnt_;
@@ -315,8 +497,6 @@ public:
     return last_node_idx_with_1label_;
   }
 
-
-
   void
   print(std::ostream& os) const noexcept {
     for (std::size_t level = 0; level <= height_; ++level) {
@@ -346,131 +526,186 @@ public:
 
 private:
 
+  /// Expands the first explicit node.
+  void __forceinline__
+  set_inner(u64 idx) {
+//    std::cout << "set inner: " << idx << std::endl;
+    assert(is_leaf_node(idx));
+    binary_tree_structure::set_inner(idx);
+    // Update the counters.
+    ++inner_node_cnt_;
+    ++leaf_node_cnt_;
+
+    // The number of leading inner nodes increases at least by one.
+    ++leading_inner_node_cnt_;
+    // Check if the newly created inner node is followed by more inner nodes.
+    for (auto i = idx + 1; i < max_node_cnt_ && is_inner_node(i); ++i) {
+      ++leading_inner_node_cnt_;
+    }
+    // Update the index of the first explicit node.
+    explicit_node_idxs_.begin = leading_inner_node_cnt_;
+    // Update the number of trailing leaf nodes.
+    if (explicit_node_idxs_.begin >= explicit_node_idxs_.end) {
+      // The entire tree became implicit.
+      leading_inner_node_cnt_ = inner_node_cnt_;
+      trailing_leaf_node_cnt_ = leaf_node_cnt_;
+    }
+    else {
+      const auto left_child_idx = left_child_of(idx);
+      if (left_child_idx >= explicit_node_idxs_.end) {
+        // The newly created leaf is implicit.
+        trailing_leaf_node_cnt_ += 1;
+      }
+      const auto right_child_idx = right_child_of(idx);
+      if (right_child_idx >= explicit_node_idxs_.end) {
+        // The newly created leaf is implicit.
+        trailing_leaf_node_cnt_ += 1;
+      }
+    }
+
+    // Update the number of implicit 0-labels.
+    if (idx < first_node_idx_with_1label_) {
+      // The current node, that has been expanded had an implicit 0-label.
+      leading_0label_cnt_ -= 1;
+
+      const auto left_child_idx = left_child_of(idx);
+      if (left_child_idx < first_node_idx_with_1label_) {
+        // The label of the newly created leaf is implicit.
+        leading_0label_cnt_ += 1;
+      }
+      if (left_child_idx > last_node_idx_with_1label_) {
+        // The label of the newly created leaf is implicit.
+        trailing_0label_cnt_ += 1;
+      }
+      const auto right_child_idx = right_child_of(idx);
+      if (left_child_idx < first_node_idx_with_1label_) {
+        // The label of the newly created leaf is implicit.
+        leading_0label_cnt_ += 1;
+      }
+      if (right_child_idx > last_node_idx_with_1label_) {
+        // The label of the newly created leaf is implicit.
+        trailing_0label_cnt_ += 1;
+      }
+    }
+
+    if (idx == first_node_idx_with_1label_) {
+      // The current node is the first node with a 1-label.
+      // Now that this node has been expanded, the node idx with the first
+      // 1-label is somewhere in (idx, left-child(idx)].
+      for (std::size_t i = idx + 1; i <= left_child_of(idx); ++i) {
+        if (is_leaf_node(i)) {
+          if (label_of_node(i) == true) {
+            first_node_idx_with_1label_ = i;
+            break;
+          }
+          else {
+            leading_0label_cnt_ += 1;
+            if (i > last_node_idx_with_1label_) {
+              trailing_0label_cnt_ -= 1;
+            }
+          }
+        }
+      }
+      // The node idx with the last 1-label is now the
+      // max(last_node_idx_with_1label_, right-child(idx)).
+      if (right_child_of(idx) > last_node_idx_with_1label_) {
+        // Update the number of trailing 0-labels.
+//        for (std::size_t i = first_node_idx_with_1label_ + 1;
+//             i < left_child_of(idx); ++i) {
+//          if (is_leaf_node(i) && label_of_node(i) == false) {
+//            trailing_0label_cnt_ -= 1;
+////            std::cout << "t0lc=" << trailing_0label_cnt_ << std::endl;
+//          }
+//        }
+        init_counters();
+      }
+      last_node_idx_with_1label_ =
+          std::max(last_node_idx_with_1label_, right_child_of(idx));
+    }
+//    init_counters();
+  }
+
+  /// Collapse an inner node.
+  void
+  set_leaf(u64 idx) {
+    if (label_of_node(idx) == true) {
+      // Set the labels to 1 in the entire sub-tree.
+      std::function<void(u64)> set_labels_to_1 = [&](u64 node_idx) { // FIXME highly inefficient
+        if (node_idx >= max_node_cnt_) return;
+        labels_[node_idx] = true;
+        set_labels_to_1(left_child_of(node_idx));
+        set_labels_to_1(right_child_of(node_idx));
+      };
+      set_labels_to_1(idx);
+    }
+    binary_tree_structure::set_leaf(idx);
+    init_counters(); // FIXME highly inefficient
+  }
+  void
+  set_leaf_fast(u64 idx) {
+    if (label_of_node(idx) == true) {
+      // Set the labels to 1 in the entire sub-tree.
+      std::function<void(u64)> set_labels_to_1 = [&](u64 node_idx) { // FIXME highly inefficient
+        if (node_idx >= max_node_cnt_) return;
+        labels_[node_idx] = true;
+        set_labels_to_1(left_child_of(node_idx));
+        set_labels_to_1(right_child_of(node_idx));
+      };
+      set_labels_to_1(idx);
+    }
+    binary_tree_structure::set_leaf(idx);
+  }
+
   void __attribute__ ((noinline))
   run_optimize() {
     // Optimization level 2.
     if (optimization_level_ > 1) {
       // Estimates the size of a TEB.
       auto size = [&]() {
+        // TODO revert changes
         return estimate_encoded_size_in_bytes();
+//        f64 explicit_tree_node_cnt =  optimization_level_ > 0
+//            ? inner_node_cnt_ + leaf_node_cnt_
+//              - leading_inner_node_cnt_ - trailing_leaf_node_cnt_
+//            : inner_node_cnt_;
+//        f64 explicit_label_cnt = optimization_level_ > 2
+//            ? leaf_node_cnt_ - leading_0label_cnt_ - trailing_0label_cnt_
+//            : leaf_node_cnt_;
+//        return explicit_tree_node_cnt * 1.0625 + explicit_label_cnt;
       };
 
       // Gradual decompression.
       auto min = *this;
       auto min_size = size();
-      for (auto it = breadth_first_begin(); it != breadth_first_end(); ++it) {
+      const auto it_end = breadth_first_end();
+      for (auto it = breadth_first_begin(); it != it_end; ++it) {
         u64 idx = (*it).idx;
         if (is_inner_node(idx)) continue;
         if (right_child_of(idx) >= max_node_cnt_) break;
 
         // Expand the leaf node to an inner node.
         set_inner(idx);
-        // Update the counters.
-        ++inner_node_cnt_;
-        ++leaf_node_cnt_;
-
-        // The number of leading inner nodes increases at least by one.
-        ++leading_inner_node_cnt_;
-        // Check if the newly created inner node is followed by more inner nodes.
-        for (auto i = idx + 1; i < max_node_cnt_ && is_inner_node(i); ++i) {
-          ++leading_inner_node_cnt_;
-        }
-        // Update the index of the first explicit node.
-        explicit_node_idxs_.begin = leading_inner_node_cnt_;
-        // Update the number of trailing leaf nodes.
-        if (explicit_node_idxs_.begin >= explicit_node_idxs_.end) {
-          // The entire tree became implicit.
-          leading_inner_node_cnt_ = inner_node_cnt_;
-          trailing_leaf_node_cnt_ = leaf_node_cnt_;
-        }
-        else {
-          const auto left_child_idx = left_child_of(idx);
-          if (left_child_idx >= explicit_node_idxs_.end) {
-            // The newly created leaf is implicit.
-            trailing_leaf_node_cnt_ += 1;
-          }
-          const auto right_child_idx = right_child_of(idx);
-          if (right_child_idx >= explicit_node_idxs_.end) {
-            // The newly created leaf is implicit.
-            trailing_leaf_node_cnt_ += 1;
-          }
-        }
-
-        // Update the number of implicit 0-labels.
-        if (idx < first_node_idx_with_1label_) {
-          // The current node, that has been expanded had a 0-label that was
-          // implicit.
-          leading_0label_cnt_ -= 1;
-
-          const auto left_child_idx = left_child_of(idx);
-          if (left_child_idx < first_node_idx_with_1label_) {
-            // The label of the newly created leaf is implicit.
-            leading_0label_cnt_ += 1;
-          }
-          if (left_child_idx > last_node_idx_with_1label_) {
-            // The label of the newly created leaf is implicit.
-            trailing_0label_cnt_ += 1;
-          }
-          const auto right_child_idx = right_child_of(idx);
-          if (left_child_idx < first_node_idx_with_1label_) {
-            // The label of the newly created leaf is implicit.
-            leading_0label_cnt_ += 1;
-          }
-          if (right_child_idx > last_node_idx_with_1label_) {
-            // The label of the newly created leaf is implicit.
-            trailing_0label_cnt_ += 1;
-          }
-        }
-
-        if (idx == first_node_idx_with_1label_) {
-          // The current node is the first node with a 1-label.
-          // Now that this node has been expanded, the node idx with the first
-          // 1-label is somewhere in (idx, left-child(idx)].
-          for (std::size_t i = idx + 1; i <= left_child_of(idx); ++i) {
-            if (is_leaf_node(i)) {
-              if (label_of_node(i) == true) {
-                first_node_idx_with_1label_ = i;
-                break;
-              }
-              else {
-                leading_0label_cnt_ += 1;
-                if (i > last_node_idx_with_1label_) {
-                  trailing_0label_cnt_ -= 1;
-                }
-              }
-            }
-          }
-          // The node idx with the last 1-label is now the
-          // max(last_node_idx_with_1label_, right-child(idx)).
-          if (right_child_of(idx) > last_node_idx_with_1label_) {
-            // Update the number of trailing 0-labels.
-            for (std::size_t i = first_node_idx_with_1label_ + 1;
-                 i < left_child_of(idx); ++i) {
-              if (is_leaf_node(i) && label_of_node(i) == false) {
-                trailing_0label_cnt_ -= 1;
-              }
-            }
-
-          }
-          last_node_idx_with_1label_ =
-              std::max(last_node_idx_with_1label_, right_child_of(idx));
-        }
 
         const auto compressed_size = size();
-        if (compressed_size < min_size) {
+//        std::cout << compressed_size << " / " << min_size << std::endl;
+//        if (compressed_size < min_size) {
+        if (compressed_size <= min_size) {
           min = *this;
           min_size = compressed_size;
         }
+        if (min_size <= 64) break;
+        if (explicit_node_idxs_.begin > explicit_node_idxs_.end) break;
       }
       *this = min;
     }
+//    std::cout << "---------------------------" << std::endl;
   }
 
   // Lossy compression.  The size of the tree structure is further reduced,
   // which causes false positive bits. The number of false positive bits is
   // limited by the given false positive rate (FPR).
   void __attribute__ ((noinline))
-  compress_lossy(f64 fpr) {
+  compress_lossy_v2(f64 fpr) {
     // Determine maximum number of false positives.
     u64 max_fp_cnt = static_cast<u64>(n_ * fpr);
     if (max_fp_cnt == 0) return;
@@ -505,25 +740,169 @@ private:
       }
     }
 
-//    // Pre-compute the sub-tree sizes and the number of leaf node in each
-//    // sub-tree.
-//    std::vector<uint32_t> subtree_sizes(max_node_cnt_, 0);
-//    std::vector<uint32_t> leaf_node_cnts(max_node_cnt_, 0);
-//    for ($u64 i = 0; i < length; ++i) {
-//      u64 node_idx = length - i - 1;
-//      if (is_leaf_node(node_idx)) {
-//        subtree_sizes[node_idx] = 1;
-//        leaf_node_cnts[node_idx] = 1;
-//      }
-//      else {
-//        const auto left_child_idx = left_child_of(node_idx);
-//        const auto right_child_idx = right_child_of(node_idx);
-//        subtree_sizes[node_idx] = subtree_sizes[left_child_idx]
-//            + subtree_sizes[right_child_idx] + 1;
-//        leaf_node_cnts[node_idx] = leaf_node_cnts[left_child_idx]
-//            + leaf_node_cnts[right_child_idx];
-//      }
-//    }
+    // Pre-compute the sub-tree sizes and the number of leaf node in each
+    // sub-tree.
+    std::vector<uint32_t> subtree_sizes(max_node_cnt_, 0);
+    std::vector<uint32_t> leaf_node_cnts(max_node_cnt_, 0);
+    for ($u64 i = 0; i < length; ++i) {
+      u64 node_idx = length - i - 1;
+      if (is_leaf_node(node_idx)) {
+        subtree_sizes[node_idx] = 1;
+        leaf_node_cnts[node_idx] = 1;
+      }
+      else {
+        const auto left_child_idx = left_child_of(node_idx);
+        const auto right_child_idx = right_child_of(node_idx);
+        subtree_sizes[node_idx] = subtree_sizes[left_child_idx]
+            + subtree_sizes[right_child_idx] + 1;
+        leaf_node_cnts[node_idx] = leaf_node_cnts[left_child_idx]
+            + leaf_node_cnts[right_child_idx];
+      }
+    }
+
+
+    {
+      // Top-down pruning loop (starts at level 0).
+      const auto perfect_levels = dtl::log_2(leading_inner_node_cnt_ + 1) + 1;
+      std::size_t level = 0; //perfect_levels;
+      auto min = *this;
+      auto min_size = estimate_encoded_size_in_bytes();
+
+      while (level <= height) {
+        if (estimate_encoded_size_in_bytes() < 64) break;
+        // Look for largest sub-tree to prune, so that the FPR is not exceeded.
+        $u64 candidate_node_idx = 0;
+        $u64 candidate_saved_byte_cnt = 0;
+        auto candidate = *this;
+
+        u64 node_idx_from = (1ull << level) - 1;
+        u64 node_idx_to = (1ull << (level + 1)) - 1;
+
+        for ($u64 node_idx = node_idx_from; node_idx < node_idx_to; ++node_idx) {
+          if (is_leaf_node(node_idx)) {
+            continue;
+          }
+          // Check whether pruning would not exceed the specified FPR.
+          if (fp_cntrs[node_idx] + total_fp_cntr > max_fp_cnt) {
+            continue;
+          }
+
+//          std::cout << "." << std::flush;
+//          // Count the number of nodes that would be eliminated from the tree
+//          // if the current node is turned into a leaf node.
+////          assert(this->subtree_size(node_idx) == subtree_sizes[node_idx]);
+////          const auto subtree_size = subtree_sizes[node_idx];
+//          const auto subtree_size = this->subtree_size(node_idx);
+//          const auto pruned_node_cnt = subtree_size - 1;
+//          // Count the number of leaf nodes that would be eliminated from the
+//          // tree.
+////          assert(count_leaf_nodes(node_idx) == leaf_node_cnts[node_idx]);
+////          const auto leaf_node_cnt = leaf_node_cnts[node_idx];
+//          const auto leaf_node_cnt = count_leaf_nodes(node_idx);
+//          const auto pruned_leaf_node_cnt = leaf_node_cnt - 1;
+          // Estimate the amount of bits saved.
+          // FIXME highly inefficient, replace by an heuristic
+          auto cpy = *this;
+          cpy.set_leaf(node_idx);
+          cpy.run_optimize();
+          const auto this_size = estimate_encoded_size_in_bytes();
+          const auto cpy_size = cpy.estimate_encoded_size_in_bytes();
+          const auto saved_byte_cnt = (cpy_size < this_size)
+              ? this_size - cpy_size
+              : std::size_t(0);
+
+          if (saved_byte_cnt > candidate_saved_byte_cnt) {
+            candidate_node_idx = node_idx;
+            candidate_saved_byte_cnt = saved_byte_cnt;
+            candidate = cpy;
+          }
+        }
+
+        // Check if we have found a candidate to prune.
+        if (candidate_saved_byte_cnt > 0) {
+          *this = candidate;
+//          // The actual pruning.
+//          // Make the current node a leaf node. Note that we need to update
+//          // the labels in the entire subtree otherwise we get side effects
+//          // during gradual decompression.
+//          set_leaf(candidate_node_idx);
+////          run_optimize();
+          total_fp_cntr += fp_cntrs[candidate_node_idx];
+          std::cout << "lossy pruning. saving = " << candidate_saved_byte_cnt
+              << ", remaining budget = "
+              << (max_fp_cnt - total_fp_cntr)
+              << "/" << max_fp_cnt
+              << std::endl;
+        }
+        else {
+          // No pruning candidate found at the current level.  Continue with the
+          // next level.
+          level++;
+//          std::cout << "next_level" <<std::endl;
+        }
+
+      }
+    }
+  }
+
+  // Lossy compression.  The size of the tree structure is further reduced,
+  // which causes false positive bits. The number of false positive bits is
+  // limited by the given false positive rate (FPR).
+  void __attribute__ ((noinline))
+  compress_lossy_pre_optimization(f64 fpr) {
+    // Determine maximum number of false positives.
+    u64 max_fp_cnt = static_cast<u64>(n_ * fpr);
+    if (max_fp_cnt == 0) return;
+
+    // The total number of false positives introduced so far.
+    $u64 total_fp_cntr = 0;
+
+    // Pre-compute the number of associated false positives for each tree node.
+    // The value fp_cntrs[i] refers to the number of false positives when
+    // node i is turned into a leaf node (i.e., its sub-tree is pruned).
+    std::vector<uint32_t> fp_cntrs(max_node_cnt_, 0);
+    u64 length = max_node_cnt_;
+    u64 height = height_;
+    for ($u64 i = 0; i < length - 1; i += 2) {
+      u64 left_node_idx = length - i - 2;
+      u64 right_node_idx = left_node_idx + 1;
+
+      u1 left_bit = labels_[left_node_idx];
+      u1 right_bit = labels_[right_node_idx];
+
+      u64 parent_node_idx = tree_t::parent_of(left_node_idx);
+
+      const auto left_fp_cnt = fp_cntrs[left_node_idx];
+      const auto right_fp_cnt = fp_cntrs[right_node_idx];
+      fp_cntrs[parent_node_idx] = left_fp_cnt + right_fp_cnt;
+
+      if (left_bit ^ right_bit) {
+        // Introduce new false positives. - Note, that no new false positives
+        // are introduced if the labels of the two child nodes are identical.
+        u32 f = (1u << (height - tree_t::level_of(left_node_idx)));
+        fp_cntrs[parent_node_idx] += f;
+      }
+    }
+
+    // Pre-compute the sub-tree sizes and the number of leaf node in each
+    // sub-tree.
+    std::vector<uint32_t> subtree_sizes(max_node_cnt_, 0);
+    std::vector<uint32_t> leaf_node_cnts(max_node_cnt_, 0);
+    for ($u64 i = 0; i < length; ++i) {
+      u64 node_idx = length - i - 1;
+      if (is_leaf_node(node_idx)) {
+        subtree_sizes[node_idx] = 1;
+        leaf_node_cnts[node_idx] = 1;
+      }
+      else {
+        const auto left_child_idx = left_child_of(node_idx);
+        const auto right_child_idx = right_child_of(node_idx);
+        subtree_sizes[node_idx] = subtree_sizes[left_child_idx]
+            + subtree_sizes[right_child_idx] + 1;
+        leaf_node_cnts[node_idx] = leaf_node_cnts[left_child_idx]
+            + leaf_node_cnts[right_child_idx];
+      }
+    }
 
 
     {
@@ -548,19 +927,20 @@ private:
 
           // Count the number of nodes that would be eliminated from the tree
           // if the current node is turned into a leaf node.
-          assert(this->subtree_size(node_idx) == subtree_sizes[node_idx]);
+//          assert(this->subtree_size(node_idx) == subtree_sizes[node_idx]);
 //          const auto subtree_size = subtree_sizes[node_idx];
           const auto subtree_size = this->subtree_size(node_idx);
           const auto pruned_node_cnt = subtree_size - 1;
           // Count the number of leaf nodes that would be eliminated from the
           // tree.
-          assert(count_leaf_nodes(node_idx) == leaf_node_cnts[node_idx]);
+//          assert(count_leaf_nodes(node_idx) == leaf_node_cnts[node_idx]);
 //          const auto leaf_node_cnt = leaf_node_cnts[node_idx];
           const auto leaf_node_cnt = count_leaf_nodes(node_idx);
           const auto pruned_leaf_node_cnt = leaf_node_cnt - 1;
           // Compute the amount of bits saved.  One bit per node and one per
           // label.
-          const auto saved_bit_cnt = pruned_node_cnt * 1.0625 + pruned_leaf_node_cnt;
+          const auto saved_bit_cnt = pruned_node_cnt * 1.0625
+              + pruned_leaf_node_cnt;
 
           if (saved_bit_cnt > candidate_saved_bit_cnt) {
             candidate_node_idx = node_idx;
@@ -639,6 +1019,82 @@ private:
 //    }
   }
 
+  // Lossy compression.  The size of the tree structure is further reduced,
+  // which causes false positive bits. The number of false positive bits is
+  // limited by the given false positive rate (FPR).
+  void __attribute__ ((noinline))
+  compress_lossy_pre_optimization_v2(f64 fpr, f64 threshold = 1.0/8.0) {
+    // Determine maximum number of false positives.
+    u64 max_fp_cnt = static_cast<u64>(n_ * fpr);
+    if (max_fp_cnt == 0) return;
+
+    // The total number of false positives introduced so far.
+    $u64 total_fp_cntr = 0;
+
+    std::vector<uint32_t> fp_cntrs(max_node_cnt_, 0);
+    std::vector<uint32_t> intr_fp_cntrs(max_node_cnt_, 0);
+    u64 length = max_node_cnt_;
+    u64 height = height_;
+    for ($u64 i = 0; i < length - 1; i += 2) {
+      u64 left_node_idx = length - i - 2;
+      u64 right_node_idx = left_node_idx + 1;
+
+      u1 left_bit = labels_[left_node_idx];
+      u1 right_bit = labels_[right_node_idx];
+
+      u64 parent_node_idx = tree_t::parent_of(left_node_idx);
+      binary_tree_structure::set_inner(parent_node_idx);
+
+      const auto left_fp_cnt = fp_cntrs[left_node_idx];
+      const auto right_fp_cnt = fp_cntrs[right_node_idx];
+      fp_cntrs[parent_node_idx] = left_fp_cnt + right_fp_cnt;
+      intr_fp_cntrs[parent_node_idx] =
+          intr_fp_cntrs[left_node_idx] + intr_fp_cntrs[right_node_idx];
+
+      u1 prune_introduces_false_positives = left_bit ^ right_bit;
+
+      if (prune_introduces_false_positives) {
+        // Introduce new false positives. - Note, that no new false positives
+        // are introduced if the labels of the two child nodes are identical.
+        u32 f = (1u << (height - tree_t::level_of(left_node_idx)));
+        fp_cntrs[parent_node_idx] += f;
+      }
+
+      u1 both_nodes_are_leaves =
+          is_leaf_node(left_node_idx) & is_leaf_node(right_node_idx);
+
+      if (both_nodes_are_leaves && !prune_introduces_false_positives) {
+        // Simple pruning step (loss less).
+        binary_tree_structure::set_leaf(parent_node_idx);
+      }
+      else {
+        // Possibly do a lossy pruning step.
+        const auto span = n_ >> level_of(parent_node_idx);
+        const auto fp_cnt = fp_cntrs[parent_node_idx];
+        const auto intr_fp_cnt = intr_fp_cntrs[parent_node_idx];
+        assert(fp_cnt >= intr_fp_cnt);
+
+        const auto fp_weight = (fp_cnt * 1.0) / span;
+        if ((fp_cnt - intr_fp_cnt + total_fp_cntr) <= max_fp_cnt
+            && (fp_weight <= (threshold+0.00001))) {
+//          binary_tree_structure::set_leaf(parent_node_idx);
+//          labels_[parent_node_idx] = true;
+          set_leaf_fast(parent_node_idx);
+          const auto fp_cntr_old = total_fp_cntr;
+          total_fp_cntr -= intr_fp_cntrs[parent_node_idx];
+          intr_fp_cntrs[parent_node_idx] = fp_cntrs[parent_node_idx];
+          total_fp_cntr += intr_fp_cntrs[parent_node_idx];
+
+//          std::cout << "collapsing node " << parent_node_idx
+//              << " with weight " << fp_weight << "."
+//              << " introducing " << (total_fp_cntr - fp_cntr_old)
+//              << " false positives. total = " << total_fp_cntr << " (max = "
+//              << max_fp_cnt << ")"
+//              << std::endl;
+        }
+      }
+    }
+  }
 };
 //===----------------------------------------------------------------------===//
 

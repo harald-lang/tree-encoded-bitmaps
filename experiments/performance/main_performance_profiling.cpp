@@ -1,6 +1,6 @@
 #include <iostream>
 #include <dtl/dtl.hpp>
-#include <experiments/util/database.hpp>
+#include <experiments/util/bitmap_db.hpp>
 #include <experiments/util/gen.hpp>
 #include "common.hpp"
 
@@ -167,6 +167,8 @@ $i32 main() {
 //  for ($f64 f = 1; f <= n_max; f *= 2) {
 //    clustering_factors.push_back(f);
 //  }
+//  clustering_factors.push_back(1);
+//  clustering_factors.push_back(2);
   clustering_factors.push_back(4);
 //  clustering_factors.push_back(16);
 //  clustering_factors.push_back(32);
@@ -178,8 +180,8 @@ $i32 main() {
 //  for ($f64 d = 1; d <= 1000; d *= 1.25) {
 //    bit_densities.push_back(d/10000);
 //  }
-  bit_densities.push_back(0.01);
-//  bit_densities.push_back(0.10);
+//  bit_densities.push_back(0.01);
+  bit_densities.push_back(0.10);
 //  bit_densities.push_back(0.25);
 
   std::vector<$u64> n_values;
@@ -209,7 +211,7 @@ $i32 main() {
   bitmap_types.push_back(bitmap_t::roaring);
   bitmap_types.push_back(bitmap_t::teb);
   bitmap_types.push_back(bitmap_t::teb_scan);
-  bitmap_types.push_back(bitmap_t::wah);
+//  bitmap_types.push_back(bitmap_t::wah);
 
 
   std::vector<config> configs;

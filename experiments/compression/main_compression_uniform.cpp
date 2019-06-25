@@ -80,7 +80,8 @@ void gen_data_uniform(const std::vector<$u64>& n_values,
 $i32 main() {
 
   // Prepare benchmark settings.
-  u64 n_min = 1ull << 10;
+//  u64 n_min = 1ull << 10;
+  u64 n_min = 1ull << 20;
   u64 n_max = 1ull << 20;
 
   std::cerr << "run_id=" << RUN_ID << std::endl;
@@ -88,12 +89,12 @@ $i32 main() {
   std::vector<$f64> bit_densities;
   // log scale
   for ($f64 d = 1; d <= 10000; d *= 1.25) {
-    bit_densities.push_back(d/10000);
+    bit_densities.push_back(1.0 - d/10000);
   }
   // linear scale
   bit_densities.push_back(0.01);
   for ($f64 d = 5; d <= 100; d += 5) {
-    bit_densities.push_back(d/100);
+//    bit_densities.push_back(d/100);
   }
 
   std::vector<$u64> n_values;

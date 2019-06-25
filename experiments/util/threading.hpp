@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <functional>
 #include <iostream>
 #include <vector>
@@ -17,7 +18,7 @@ void dispatch(const std::vector<T>& tasks,
     i64 thread_cnt = dtl::env<$u64>::get("THREAD_CNT", cpu_mask.count())) {
   i64 config_cnt = tasks.size();
   i64 min_batch_size = 1;
-  i64 max_batch_size = 8;
+  i64 max_batch_size = 1;
 
   const auto time_start = std::chrono::system_clock::now();
   std::atomic<$i64> cntr { 0 };
@@ -62,5 +63,14 @@ void dispatch(const std::vector<T>& tasks,
     std::cerr << s.str();
   };
   dtl::run_in_parallel(thread_fn, cpu_mask, thread_cnt);
+}
+//===----------------------------------------------------------------------===//
+void dispatch(const std::size_t idx_begin, const std::size_t idx_end,
+    std::function<void(const std::size_t&, std::ostream&)> fn,
+    i64 thread_cnt = dtl::env<$u64>::get("THREAD_CNT", cpu_mask.count())) {
+  // FIXME hack
+  std::vector<std::size_t> v(idx_end - idx_begin);
+  std::generate(v.begin(), v.end(), [n = idx_begin] () mutable { return n++; });
+  dispatch(v, fn, thread_cnt);
 }
 //===----------------------------------------------------------------------===//
