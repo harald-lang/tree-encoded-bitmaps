@@ -1561,9 +1561,36 @@ public:
       result_cnt_ = 0;
       // Get the next batch of results.
       get_next_batch();
+      //compact_results(); // disabled, because is costs performance
     }
   }
 
+  /// Merge contiguous 1-runs.
+  void __forceinline__
+  compact_results() {
+    if (result_cnt_ == 0) return;
+    u1 is_last_batch = results_[result_cnt_ - 1].length == 0;
+    if (is_last_batch) --result_cnt_;
+    if (result_cnt_ > 0) {
+      std::size_t write_pos = 0;
+      for (std::size_t i = 1; i < result_cnt_; ++i) {
+        const auto e = results_[write_pos].pos + results_[write_pos].length;
+        if (results_[i].pos == e) {
+          results_[write_pos].length += results_[i].length;
+        }
+        else {
+          ++write_pos;
+          results_[write_pos] = results_[i];
+        }
+      }
+      result_cnt_ = write_pos + 1;
+    }
+    if (is_last_batch) {
+      results_[result_cnt_].pos = teb_.size();
+      results_[result_cnt_].length = 0;
+      ++result_cnt_;
+    }
+  }
 
   $u1 first_ = true;
   void
