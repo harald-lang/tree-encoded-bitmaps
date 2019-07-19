@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bitset>
+#include <functional>
 #include <queue>
 
 #include <dtl/dtl.hpp>
