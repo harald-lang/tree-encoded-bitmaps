@@ -42,6 +42,7 @@
 #include <dtl/bitmap/util/rank1_super_fast.hpp>
 #include <dtl/bitmap/util/bitmap_view.hpp>
 #include <dtl/math.hpp>
+#include <navin/bitpack.hpp>
 
 #include "teb_scan_util.hpp"
 
@@ -580,6 +581,68 @@ public:
   auto _get_label_trailing_0bit_cnt() { return implicit_trailing_label_cnt_; }
   //===--------------------------------------------------------------------===//
 
+  std::size_t
+  serialized_size_in_bytes() {
+    std::size_t s = 0;
+    // Header
+    s += 6 * 4;
+    // Tree structure
+    if (structure_.size() > 0) {
+      s += ((structure_.size() + word_bitlength - 1) / word_bitlength) *
+          sizeof(word_type);
+    }
+    // Labels
+    if (labels_.size() > 0) {
+      s += ((labels_.size() + word_bitlength - 1) / word_bitlength) *
+          sizeof(word_type);
+    }
+    // Rank
+    if (structure_.size() > 1024) {
+      s += rank_.size_in_bytes();
+    }
+    // Padding
+    if (s % sizeof(word_type) != 0) {
+      s += sizeof(word_type) - (s % sizeof(word_type));
+    }
+    return s;
+  }
+
+  void
+  serialize(word_type* ptr) {
+    // Write the header.
+    $u32* out = reinterpret_cast<$u32*>(ptr);
+    out[0] = n_;
+    out[1] = implicit_inner_node_cnt_;
+    out[2] = implicit_leading_label_cnt_;
+    out[3] = structure_.size();
+    out[4] = labels_.size();
+
+    u32 u = determine_perfect_tree_levels(implicit_inner_node_cnt_);
+    u32 h = encoded_tree_height_;
+    out[5] =  (h << 5) | u;
+
+    // Write the tree structure.
+    word_type* t = reinterpret_cast<word_type*>(&out[6]);
+    for (std::size_t i = 0; i < T_.data_.size(); ++i) {
+      t[i] = T_.data_.begin()[i];
+    }
+
+    // Write the labels.
+    word_type* l = reinterpret_cast<word_type*>(&t[T_.data_.size()]);
+    for (std::size_t i = 0; i < L_.data_.size(); ++i) {
+      l[i] = L_.data_.begin()[i];
+    }
+
+    // Write the rank dictionary.
+    if (structure_.size() > 1024) {
+      rank_support::size_type* r = reinterpret_cast<rank_support::size_type*>(
+          &l[L_.data_.size()]);
+      for (std::size_t i = 0; i < rank_.lut.size(); ++i) {
+        r[i] = rank_.lut[i];
+      }
+    }
+    // TODO write variable sized metadata.
+  }
 
 private:
 
@@ -1009,7 +1072,7 @@ produce_output:
     length_ = 0;
   }
 
-  void //__teb_inline__ // TODO ------------------------------------------------------inline
+  void __teb_inline__
   next() noexcept __attribute__ ((noinline, flatten, hot)) {
     while (top_node_idx_current_ < top_node_idx_end_) {
       while (!stack_.empty()) {

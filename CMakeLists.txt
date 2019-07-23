@@ -194,6 +194,8 @@ set(TEB_SOURCE_FILES
         src/dtl/bitmap/util/two_state_markov_process.hpp
         src/dtl/bitmap/bitwise_operations.hpp
         src/dtl/bitmap/teb.hpp
+        src/dtl/bitmap/teb_flat.hpp
+        src/dtl/bitmap/teb_wrapper.hpp
         src/dtl/bitmap/teb_scan.hpp
         src/dtl/bitmap/teb_scan_util.hpp
         src/dtl/bitmap/tree_mask_util.hpp

@@ -6,6 +6,7 @@
 #include <dtl/bitmap.hpp>
 #include <dtl/iterator.hpp>
 #include <dtl/bitmap/teb.hpp>
+#include <dtl/bitmap/teb_flat.hpp>
 #include <navin/experiments/util/gen.hpp>
 #include <dtl/env.hpp>
 #include <navin/experiments/util/bitmap_db.hpp>
@@ -551,63 +552,232 @@ TEST(single,
 
 //  const auto bitmap_id = 12;
 //  const auto bitmap_id = 3901;
-  const auto bitmap_id = 271;
-  const std::string DB_FILE = "./random_bitmaps.sqlite3";
-  bitmap_db db(DB_FILE);
+//  const auto bitmap_id = 271;
+//  const std::string DB_FILE = "./random_bitmaps.sqlite3";
+//  bitmap_db db(DB_FILE);
 //  dtl::bitmap bs = db.load_bitmap(bitmap_id);
 
+//  {
+//    const auto d = 0.0001;
+//    const auto f = 16.0;
+//
+//    two_state_markov_process mp(f, d);
+//
+//    auto state_dist = std::make_tuple(1-d, d);
+//    std::cout << "i=0, "
+//        << ",(" << std::get<0>(state_dist)
+//        << ", " << std::get<1>(state_dist)
+//        << ")" << std::endl;
+//    for (std::size_t i = 1; i < 100; ++i) {
+//      state_dist = mp.state_distribution(state_dist);
+//      std::cout << "i=" << (i)
+//          << ", (" << std::get<0>(state_dist)
+//          << ", " << std::get<1>(state_dist)
+//          << ")" << std::endl;
+//    }
+////    return;
+//  }
 
-
-  const auto fpr = 0.0;
-
-  std::cout << "basic TEB:" << std::endl;
-  std::cout << dtl::teb<0>(bs).info() << std::endl;
-  std::cout << dtl::bitmap_tree<0>(bs) << std::endl;
-
-  std::cout << "optimized TEB:" << std::endl;
-  std::cout << dtl::teb<>(bs).info() << std::endl;
-  std::cout << dtl::bitmap_tree<>(bs) << std::endl;
-
-  std::exit(0);
-
-  dtl::teb<2> enc_bs(bs, fpr);
-  std::cout << enc_bs.info() << std::endl;
-  dtl::bitmap_tree<2> tree(bs);
-  std::cout << dtl::bitmap_tree<0>(bs) << std::endl;
-  std::cout << dtl::bitmap_tree<2>(bs) << std::endl;
-
-
-  auto it = enc_bs.scan_it();
-//  auto it = enc_bs.it();
-  dtl::bitmap val = bs;
-  val.reset();
-
-  for (std::size_t i = 0; i < std::min(std::size_t(64), bs.size()); ++i) {
-    std::cout << (bs[i] ? "1" : "0");
-  }
-  std::cout << std::endl;
-
-  while (!it.end()) {
-//    std::cout << "[" << it.pos() << "," << it.length() << ")" << std::endl;
-    for (std::size_t i = it.pos(); i < it.pos() + it.length(); ++i) {
-      assert(fpr > 0.0 || bs[i] == true);
-      assert(val[i] == false);
-      val[i] = true;
+  auto number_of_tree_nodes_uniform = [](const std::size_t n, const double d) {
+    const auto rep = 10;
+    std::size_t node_cnt = 0;
+    for (std::size_t i = 0; i < rep; ++i) {
+      const auto bm = dtl::gen_random_bitmap_uniform(n, d);
+      dtl::teb<0> teb(bm);
+      node_cnt += teb._get_tree_bit_cnt();
     }
-    it.next();
-  }
-  for (std::size_t i = 0; i < std::min(std::size_t(64), bs.size()); ++i) {
-    std::cout << (val[i] ? "1" : "0");
-  }
-  std::cout << std::endl;
+    return node_cnt / rep;
+  };
 
-  u64 max_fp_cnt = static_cast<u64>(bs.size() * fpr);
-  const auto fp_cnt = (bs ^ val).count();
-  std::cout << fp_cnt << " / " << max_fp_cnt << std::endl;
-  ASSERT_TRUE((bs & val) == bs);
-  ASSERT_TRUE(fp_cnt <= max_fp_cnt);
-  std::cout << bs << std::endl;
-  std::cout << val << std::endl;
-//  ASSERT_TRUE(val.count() == 0);
+  auto number_of_tree_nodes_markov = [](const std::size_t n, const double d,
+      const double f) {
+    const auto rep = 50;
+    std::size_t node_cnt = 0;
+    for (std::size_t i = 0; i < rep; ++i) {
+      const auto bm = dtl::gen_random_bitmap_markov(n, f, d);
+      dtl::teb<0> teb(bm);
+      node_cnt += teb._get_tree_bit_cnt();
+    }
+    return node_cnt / rep;
+  };
+
+  // Uniform
+  auto estimate_number_of_tree_nodes_uniform = [](const std::size_t n,
+      const double d) {
+    assert(dtl::is_power_of_two(n));
+    double e = 1; // the root node, which always exists
+    const auto n_log2 = dtl::log_2(n);
+    for (std::size_t level = 1; level <= n_log2; ++level) {
+      const auto span = 1ull << (n_log2 - (level - 1));
+      e += (1ull << level) * (1 - (std::pow(1 - d,span) + std::pow(d, span)));
+    }
+    return e;
+  };
+
+  // Markov
+  auto estimate_number_of_tree_nodes_markov = [](const std::size_t n,
+      const double d, const double f) {
+
+    const auto p = d / ((1-d) * f);
+    const auto q = 1 / f;
+
+    // Assuming the Markov chain is stationary (i.e., the state distribution has
+    // converged and doesn't change any more over time).
+    auto pr_all_0s = [&](const std::size_t span) {
+      return (1 - d) * std::pow(1 - p, span)
+          + d * q * std::pow(1 - p, span - 1);
+    };
+    auto pr_all_1s = [&](const std::size_t span) {
+      return d * std::pow(1 - q, span)
+          + (1-d) * p * std::pow(1 - q, span - 1);
+    };
+
+    assert(dtl::is_power_of_two(n));
+    double e = 1; // the root node, which always exists
+    const auto n_log2 = dtl::log_2(n);
+    for (std::size_t level = 1; level <= n_log2; ++level) {
+      const auto span = 1ull << (n_log2 - (level - 1));
+      const auto p0 = pr_all_0s(span);
+      const auto p1 = pr_all_1s(span);
+//      if ((p0 + p1) > 1.0) {
+//        std::cout << "p0=" << p0
+//            << ", p1=" << p1
+//            << ", p0+p1=" << (p0+p1)
+//            << std::endl;
+//        assert((p0 + p1) <= 1.0);
+//      }
+      e += (1ull << level)
+          * (1 - (p0 + p1));
+    }
+    return e;
+  };
+
+  auto print_uniform = [&](const std::size_t n, const double d) {
+    std::cout << n
+        << "," << d
+        << "," << estimate_number_of_tree_nodes_uniform(n, d)
+        << "," << number_of_tree_nodes_uniform(n, d)
+        << std::endl;
+  };
+
+  auto print_markov = [&](const std::size_t n, const double d, const double f) {
+    two_state_markov_process mp(f, d);
+    const auto t_e = estimate_number_of_tree_nodes_markov(n, d, f);
+    const auto t_a = number_of_tree_nodes_markov(n, d, f);
+    std::cout << n
+        << "," << f
+        << "," << d
+        << "," << t_e
+        << "," << t_a
+        << "," << (t_e + t_e * 0.0625 + (t_e + 1) / 2)
+        << "," << (t_a + t_a * 0.0625 + (t_a + 1) / 2)
+        << "," << (mp.entropy_rate() * n)
+        << std::endl;
+  };
+
+
+
+//  print_uniform(4, 0.5);
+//  return;
+
+  const auto n = 1ull << 16;
+  const auto f = 32;
+  {
+    std::vector<double> ds = {0.00001};
+    for (std::size_t i = 10; i <= 100; i += 10) {
+      ds.push_back(i/100.0);
+    }
+
+    for (auto d : ds) {
+//      print_uniform(n, d);
+      print_markov(n, d, f);
+    }
+    std::cout << "---" << std::endl;
+  }
+
+//  return;
+  {
+    std::vector<double> ds = {0.00001};
+    while (true) {
+      const auto d = ds.back() * 1.5; //* 1.25;
+      if (d > 1) break;
+      ds.push_back(d);
+    }
+
+    for (auto d : ds) {
+//      print_uniform(n, d);
+      print_markov(n, d, f);
+    }
+    std::cout << "---" << std::endl;
+  }
+  return;
+//
+//  const auto fpr = 0.0;
+//
+//  std::cout << "TEB:" << std::endl;
+//  auto enc = dtl::teb<3>(bs);
+//  using word_type = dtl::teb<3>::word_type;
+//  std::vector<word_type> data;
+//  std::cout << enc.info() << std::endl;
+//  std::cout << "serialized size: " << enc.serialized_size_in_bytes()
+//      << std::endl;
+//  const auto word_cnt = (enc.serialized_size_in_bytes()
+//      + (sizeof(word_type) - 1)) / sizeof(word_type);
+//  data.resize(word_cnt);
+//  enc.serialize(data.data());
+//  dtl::teb_flat flat(data.data());
+//  for (std::size_t i = 0; i < bs.size(); ++i) {
+//    const auto expected = bs.test(i);
+//    const auto actual = flat.test(i);
+//    ASSERT_EQ(expected, actual);
+//  }
+//
+////  std::cout << dtl::bitmap_tree<0>(bs) << std::endl;
+////
+////  std::cout << "optimized TEB:" << std::endl;
+////  std::cout << dtl::teb<>(bs).info() << std::endl;
+////  std::cout << dtl::bitmap_tree<>(bs) << std::endl;
+//
+//  return;
+//
+//  dtl::teb<2> enc_bs(bs, fpr);
+//  std::cout << enc_bs.info() << std::endl;
+//  dtl::bitmap_tree<2> tree(bs);
+//  std::cout << dtl::bitmap_tree<0>(bs) << std::endl;
+//  std::cout << dtl::bitmap_tree<2>(bs) << std::endl;
+//
+//
+//  auto it = enc_bs.scan_it();
+////  auto it = enc_bs.it();
+//  dtl::bitmap val = bs;
+//  val.reset();
+//
+//  for (std::size_t i = 0; i < std::min(std::size_t(64), bs.size()); ++i) {
+//    std::cout << (bs[i] ? "1" : "0");
+//  }
+//  std::cout << std::endl;
+//
+//  while (!it.end()) {
+////    std::cout << "[" << it.pos() << "," << it.length() << ")" << std::endl;
+//    for (std::size_t i = it.pos(); i < it.pos() + it.length(); ++i) {
+//      assert(fpr > 0.0 || bs[i] == true);
+//      assert(val[i] == false);
+//      val[i] = true;
+//    }
+//    it.next();
+//  }
+//  for (std::size_t i = 0; i < std::min(std::size_t(64), bs.size()); ++i) {
+//    std::cout << (val[i] ? "1" : "0");
+//  }
+//  std::cout << std::endl;
+//
+//  u64 max_fp_cnt = static_cast<u64>(bs.size() * fpr);
+//  const auto fp_cnt = (bs ^ val).count();
+//  std::cout << fp_cnt << " / " << max_fp_cnt << std::endl;
+//  ASSERT_TRUE((bs & val) == bs);
+//  ASSERT_TRUE(fp_cnt <= max_fp_cnt);
+//  std::cout << bs << std::endl;
+//  std::cout << val << std::endl;
+////  ASSERT_TRUE(val.count() == 0);
 }
 //===----------------------------------------------------------------------===//
