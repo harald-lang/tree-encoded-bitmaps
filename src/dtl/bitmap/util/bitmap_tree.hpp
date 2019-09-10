@@ -331,11 +331,12 @@ public:
     last_node_idx_with_1label_ = 0;
 
 
-    const auto it_end = breadth_first_end();
-    for (auto it = breadth_first_begin(); it != it_end; ++it) {
+    const auto it_end = const_breadth_first_end();
+    for (auto it = const_breadth_first_begin(); it != it_end; ++it) {
       u64 idx = (*it).idx;
       u64 level = (*it).level;
-      u1 is_inner = is_inner_node(idx);
+      u1 is_inner = (*it).is_inner;
+//      u1 is_inner = is_inner_node(idx);
 
       ++node_cnt;
       inner_node_cnt_ += is_inner;
@@ -802,6 +803,7 @@ private:
         if (right_child_of(idx) >= max_node_cnt_) break;
 
         // Expand the leaf node to an inner node.
+        // DANGER: The tree structure is modified during iterating.
         set_inner(idx);
 
         const auto compressed_size = size();
