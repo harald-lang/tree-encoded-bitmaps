@@ -100,8 +100,8 @@ struct bitmap_fun {
     }
   }
 
-  /// Fetch up to 64 consecutive bits.
-  static u64 __teb_inline__
+  /// Fetch up to size(word_type)*8 consecutive bits.
+  static word_type __teb_inline__
   fetch_bits(const word_type* bitmap,
       u64 bit_idx_begin,
       u64 bit_idx_end /* non-inclusive */) {
