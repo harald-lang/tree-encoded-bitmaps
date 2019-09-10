@@ -1,5 +1,5 @@
 #pragma once
-
+//===----------------------------------------------------------------------===//
 #include <bitset>
 #include <functional>
 #include <queue>
@@ -7,8 +7,9 @@
 #include <dtl/dtl.hpp>
 #include <dtl/math.hpp>
 
+#include "plain_bitmap.hpp"
+//===----------------------------------------------------------------------===//
 namespace dtl {
-
 //===----------------------------------------------------------------------===//
 /// Represents a binary tree structure with a limited number of nodes. The Tree
 /// is stored as an implicit data structure in breadth-first order. Each node
@@ -17,37 +18,38 @@ namespace dtl {
 /// the identifier of the right child node; the parent node ID is (i-1)/2.
 class binary_tree_structure {
 
-  using bitmap_t = boost::dynamic_bitset<$u32>;
+  using bitmap_t = plain_bitmap<$u64>;
 
 public:
 
   /// The number of leaf nodes.
   $u64 n_;
-
   /// The max number of nodes.
   $u64 max_node_cnt_;
-
   /// The tree height.
   $u64 height_;
-
-  /// Indicates whether a node is an internal or a leaf node.
+  /// Indicates whether a node is an inner or a leaf node.
   bitmap_t is_inner_node_;
 
+  static constexpr std::size_t offset = 1;
 public:
 
   /// Constructs a perfect binary tree (structure) with n leaf nodes and n-1
-  /// inner nodes.
+  /// inner nodes.  Note, n must be a power of two.
   explicit
   binary_tree_structure(u64 n)
       : n_(n),
         max_node_cnt_(2 * n_ - 1),
         height_(dtl::log_2(n_)),
-        is_inner_node_(max_node_cnt_) {
+        is_inner_node_(max_node_cnt_ + offset) {
+
+    if (!dtl::is_power_of_two(n_)) {
+      throw std::invalid_argument(
+          "The number of leaf nodes must be a power of two.");
+    }
 
     // Initialize a perfect binary tree.
-    for ($u64 i = 0; i < max_node_cnt_ / 2; i++) {
-      is_inner_node_[i] = true;
-    }
+    is_inner_node_.set(0, (max_node_cnt_ / 2) + offset);
   }
 
   binary_tree_structure(const binary_tree_structure& other) = default;
@@ -116,13 +118,13 @@ public:
   /// Returns true, if the given node is an inner node; false otherwise.
   inline u1
   is_inner_node(u64 node_idx) const {
-    return is_inner_node_[node_idx];
+    return is_inner_node_[node_idx + offset];
   }
 
   /// Returns true, if the given node is a leaf node; false otherwise.
   inline u1
   is_leaf_node(u64 node_idx) const {
-    return ! is_inner_node_[node_idx];
+    return ! is_inner_node_[node_idx + offset];
   }
 
   /// Turns the given node into a leaf node.
@@ -131,35 +133,40 @@ public:
     set_leaf_rec(node_idx);
   }
 
+  /// Traverses the tree starting at the given node index. For each visited
+  /// node, the function 'fn' is called whereas the first argument is the
+  /// current node id.
   inline void
-  visit(u64 node_idx, std::function<void(u64)> fn) {
+  visit(u64 node_idx, const std::function<void(u64)>& fn) {
     visit_rec(node_idx, fn);
   }
 
   /// Turns the given node into an inner node.
   inline void
   set_inner(u64 node_idx) {
-    is_inner_node_[node_idx] = true;
+//    is_inner_node_[node_idx] = true;
+    is_inner_node_.set(node_idx + offset);
   }
 
   /// Returns true if given node is expanded, false otherwise. A tree node is
   /// expanded iff the parent is an inner node.
-  inline u1
-  is_expanded(u64 node_idx) const {
-    if (node_idx == root()) return true;
-    return is_inner_node(parent_of(node_idx));
-  }
+//  inline u1
+//  is_expanded(u64 node_idx) const {
+//    // TODO: why do we not allow to collapse the root?
+//    if (node_idx == root()) return true;
+//    return is_inner_node(parent_of(node_idx));
+//  }
 
   /// Returns true if the given node is not expanded, false otherwise.
-  inline u1
-  is_collapsed(u64 node_idx) const {
-    return !is_expanded(node_idx);
-  }
+//  inline u1
+//  is_collapsed(u64 node_idx) const {
+//    return !is_expanded(node_idx);
+//  }
 
   /// Alias for 'is_expanded'.
-  inline u1 contains(u64 node_idx) const {
-    return is_expanded(node_idx);
-  }
+//  inline u1 contains(u64 node_idx) const {
+//    return is_expanded(node_idx);
+//  }
 
   //===--------------------------------------------------------------------===//
   struct node_t {
@@ -190,7 +197,6 @@ public:
         u64 start_node_idx)
         : tree_(tree), fifo_() {
       fifo_.push(start_node_idx);
-//      fifo_.push(node_t {start_node_idx, 0} );
     }
 
     inline breadth_first_iterator&
@@ -228,7 +234,7 @@ public:
     inline reference
     operator*() const {
       if (fifo_.empty()) {
-        return node_t { tree_.max_node_cnt_, tree_.height_};
+        return node_t { tree_.max_node_cnt_, tree_.height_ };
       }
       const auto node_idx = fifo_.front();
       return node_t { node_idx, level_of(node_idx) };
@@ -249,11 +255,13 @@ public:
 
 private:
 
-  /// Mark the given node as a leaf node.
+  /// Mark the given node as a leaf node. The function propagates the call
+  /// to the child nodes when those are inner nodes.
   inline void
   set_leaf_rec(u64 node_idx) {
-    u1 recurse = is_inner_node_[node_idx];
-    is_inner_node_[node_idx] = false;
+    u1 recurse = is_inner_node_[node_idx + offset];
+//    is_inner_node_[node_idx] = false;
+    is_inner_node_.clear(node_idx + offset);
     if (recurse) {
       set_leaf_rec(left_child_of(node_idx));
       set_leaf_rec(right_child_of(node_idx));
@@ -261,8 +269,8 @@ private:
   }
 
   inline void
-  visit_rec(u64 node_idx, std::function<void(u64)> fn) const {
-    u1 recurse = is_inner_node_[node_idx];
+  visit_rec(u64 node_idx, const std::function<void(u64)>& fn) const {
+    u1 recurse = is_inner_node_[node_idx + offset];
     fn(node_idx);
     if (recurse) {
       visit_rec(left_child_of(node_idx), fn);
@@ -272,5 +280,4 @@ private:
 
 };
 //===----------------------------------------------------------------------===//
-
 } // namespace dtl
