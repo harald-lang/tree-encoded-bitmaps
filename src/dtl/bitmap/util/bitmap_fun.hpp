@@ -17,7 +17,7 @@ struct bitmap_fun {
   static constexpr std::size_t word_bitlength = sizeof(word_type) * 8;
 
   /// Test the bit at position i.
-  static u1 __teb_inline__
+  static u1 __forceinline__
   test(const word_type* bitmap, std::size_t i) noexcept {
     const auto block_idx = i / word_bitlength;
     const auto word = bitmap[block_idx];
@@ -26,7 +26,7 @@ struct bitmap_fun {
   }
 
   /// Set the bit at position i.
-  static void __teb_inline__
+  static void __forceinline__
   set(word_type* bitmap, std::size_t i, u1 val) noexcept {
     if (val) {
       set(bitmap, i);
@@ -37,7 +37,7 @@ struct bitmap_fun {
   }
 
   /// Set the bit at position i.
-  static void __teb_inline__
+  static void __forceinline__
   set(word_type* bitmap, std::size_t i) noexcept {
     const auto block_idx = i / word_bitlength;
     const auto bit_idx = i % word_bitlength;
@@ -45,7 +45,7 @@ struct bitmap_fun {
   }
 
   /// Set the bits in [b,e).
-  static void __teb_inline__
+  static void __forceinline__
   set(word_type* bitmap, std::size_t b, std::size_t e) noexcept {
     assert(b < e);
     // The algorithm below has been adapted from the paper "Consistently faster
@@ -69,7 +69,7 @@ struct bitmap_fun {
   }
 
   /// Clear the bit at position i.
-  static void __teb_inline__
+  static void __forceinline__
   clear(word_type* bitmap, std::size_t i) noexcept {
     const auto block_idx = i / word_bitlength;
     const auto bit_idx = i % word_bitlength;
@@ -77,7 +77,7 @@ struct bitmap_fun {
   }
 
   /// Clear the bits in [b,e).
-  static void __teb_inline__
+  static void __forceinline__
   clear(word_type* bitmap, std::size_t b, std::size_t e) noexcept {
     assert(b < e);
     // The algorithm below has been adapted from the paper "Consistently faster
@@ -101,7 +101,7 @@ struct bitmap_fun {
   }
 
   /// Fetch up to size(word_type)*8 consecutive bits.
-  static word_type __teb_inline__
+  static word_type __forceinline__
   fetch_bits(const word_type* bitmap,
       u64 bit_idx_begin,
       u64 bit_idx_end /* non-inclusive */) {

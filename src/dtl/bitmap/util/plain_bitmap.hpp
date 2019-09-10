@@ -40,7 +40,7 @@ public:
       : n_(n), bitmap_(word_cnt(n)), allocator_(alloc) {}
 
   /// Test the i-th bit.
-  u1 __teb_inline__
+  u1 __forceinline__
   operator[](std::size_t i) const {
     assert((i / word_bitlength) < bitmap_.size());
     assert(i <= n_);
@@ -48,7 +48,7 @@ public:
   }
 
   /// Set the i-th bit.
-  void __teb_inline__
+  void __forceinline__
   set(std::size_t i, u1 val) {
     assert((i / word_bitlength) < bitmap_.size());
     assert(i <= n_);
@@ -56,7 +56,7 @@ public:
   }
 
   /// Set the i-th bit to 1.
-  void __teb_inline__
+  void __forceinline__
   set(std::size_t i) {
     assert((i / word_bitlength) < bitmap_.size());
     assert(i <= n_);
@@ -64,7 +64,7 @@ public:
   }
 
   /// Set the bits in [b,e) to 1.
-  void __teb_inline__
+  void __forceinline__
   set(std::size_t b, std::size_t e) {
     assert((b / word_bitlength) < bitmap_.size());
     assert(b <= n_);
@@ -74,7 +74,7 @@ public:
   }
 
   /// Set the i-th bit to 0.
-  void __teb_inline__
+  void __forceinline__
   clear(std::size_t i) {
     assert((i / word_bitlength) < bitmap_.size());
     assert(i <= n_);
@@ -82,7 +82,7 @@ public:
   }
 
   /// Set the bits in [b,e) to 0.
-  void __teb_inline__
+  void __forceinline__
   clear(std::size_t b, std::size_t e) {
     assert((b / word_bitlength) < bitmap_.size());
     assert(b <= n_);
@@ -91,7 +91,7 @@ public:
     bitmap_fun<word_type>::clear(bitmap_.data(), b, e);
   }
 
-  __teb_inline__ word_type*
+  __forceinline__ word_type*
   data() {
     return bitmap_.data();
   }
@@ -99,7 +99,7 @@ public:
   /// Fetch up to size(word_type)*8 consecutive bits from the range [b,e).
   /// Note: The behavior is undefined when the range spans more bits than fit in
   /// a single word.
-  word_type __teb_inline__
+  word_type __forceinline__
   fetch_bits(std::size_t b, std::size_t e) const {
     assert((b / word_bitlength) < bitmap_.size());
     assert(b <= n_);
