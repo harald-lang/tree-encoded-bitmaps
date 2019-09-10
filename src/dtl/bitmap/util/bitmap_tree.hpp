@@ -1,15 +1,17 @@
 #pragma once
-
+//===----------------------------------------------------------------------===//
 #include <iomanip>
+#include <immintrin.h>
 
 #include <boost/dynamic_bitset.hpp>
-
 #include <dtl/dtl.hpp>
 #include <dtl/bitmap/util/binary_tree_structure.hpp>
+
 #include <dtl/bitmap/util/rank1.hpp>
-
+#include "plain_bitmap.hpp"
+#include "config.hpp"
+//===----------------------------------------------------------------------===//
 namespace dtl {
-
 //===----------------------------------------------------------------------===//
 /// Represents a bitmap as a binary tree. During construction, the bitmap tree
 /// is compressed, either loss-less or lossy.
@@ -21,7 +23,8 @@ class bitmap_tree : public binary_tree_structure {
   using bitmap_t = boost::dynamic_bitset<$u32>;
 
   /// The labels of the tree nodes.
-  bitmap_t labels_;
+  plain_bitmap<$u64> labels_;
+//  bitmap_t labels_;
 
   struct range_t {
     std::size_t begin = 0;
@@ -46,7 +49,7 @@ public:
   explicit
   bitmap_tree(const bitmap_t& bitmap, f64 fpr = 0.0)
       : binary_tree_structure(bitmap.size()),
-        labels_(max_node_cnt_),
+        labels_(max_node_cnt_ + offset),
         inner_node_cnt_(0),
         leaf_node_cnt_(0),
         leading_inner_node_cnt_(0),
@@ -113,7 +116,7 @@ public:
   explicit
   bitmap_tree(const bitmap_t& bitmap, f64 fpr, f64 threshold)
       : binary_tree_structure(bitmap.size()),
-        labels_(max_node_cnt_),
+        labels_(max_node_cnt_+ offset),
         inner_node_cnt_(0),
         leaf_node_cnt_(0),
         leading_inner_node_cnt_(0),
@@ -141,7 +144,7 @@ public:
 
   // TODO make private
   void
-  init_tree(const bitmap_t& bitmap) {
+  init_tree(const boost::dynamic_bitset<$u32>& bitmap) {
     // TODO: Support arbitrarily sized bitmaps.
     if (!dtl::is_power_of_two(n_)) {
       throw std::invalid_argument(
@@ -154,17 +157,74 @@ public:
     // ... the leaf nodes are labelled with the given bitmap
     u64 length = max_node_cnt_;
     u64 height = height_;
-    for ($u64 i = length / 2; i < length; i++) {
-      labels_[i] = bitmap[i - length / 2];
+//    for ($u64 i = length / 2; i < length; i++) {
+//      labels_[i + offset] = bitmap[i - length / 2];
+//    }
+    // Copy the input bitmap to the last level of the tree.
+    {
+      auto i = bitmap.find_first();
+      while (i != boost::dynamic_bitset<$u32>::npos) {
+        labels_.set(length / 2 + i + offset);
+        i = bitmap.find_next(i);
+      }
     }
 
     // Propagate the bits along the tree (bottom-up).  The labels of an internal
     // node is the bitwise OR of the labels of both child nodes.
-    for ($u64 i = 0; i < length - 1; i++) {
-      u64 node_idx = length - i - 1;
-      labels_[tree_t::parent_of(node_idx)] =
-          labels_[tree_t::parent_of(node_idx)] | labels_[node_idx];
+//    for ($u64 i = 0; i < length - 1; i++) {
+//      u64 node_idx = length - i - 1;
+//      u64 parent_node_idx = tree_t::parent_of(node_idx);
+//      u1 parent_label = labels_[tree_t::parent_of(node_idx) + offset]
+//          | labels_[node_idx + offset];
+//      labels_.set(tree_t::parent_of(node_idx) + offset, parent_label); // FIXME inefficient, as parent label is written twice
+//    }
+    {
+      for (auto level = last_level(); level > 0; --level) {
+        const auto src_node_idx_begin = first_node_idx_at_level(level);
+        const auto src_node_idx_end = first_node_idx_at_level(level + 1);
+        const auto dst_node_idx_begin = first_node_idx_at_level(level - 1);
+        const auto dst_node_idx_end = first_node_idx_at_level(level);
+        auto src_node_idx = src_node_idx_begin;
+        auto dst_node_idx = dst_node_idx_begin;
+        while (src_node_idx < src_node_idx_end) {
+          const auto remaining = src_node_idx_end - src_node_idx;
+          assert(remaining >= 2);
+          if (remaining >= 64) {
+            // Process 64 nodes at a time.  For each loaded 64-bit word we write
+            // a 32-bit word. For this to be efficient, we want proper alignment
+            // which is why we have the +1 offset in the label and tree bitmaps.
+            const auto src_label_idx = label_idx_of_node(src_node_idx);
+            const auto dst_label_idx = label_idx_of_node(dst_node_idx);
+            assert(src_label_idx % 64 == 0);
+            assert(src_label_idx % 32 == 0);
+
+            auto* raw_ptr = labels_.data();
+            $u64* src_ptr = &raw_ptr[src_label_idx / 64];
+            $u32* dst_ptr = &reinterpret_cast<$u32*>(raw_ptr)[dst_label_idx / 32];
+
+            auto src = *src_ptr;
+            src |= src >> 1;
+            auto dst = _pext_u64(src, 0x5555555555555555);
+            *dst_ptr = static_cast<$u32>(dst);
+
+            src_node_idx += 64;
+            dst_node_idx += 32;
+          }
+          else {
+            // Process two nodes (siblings) at a time.
+            u1 label_0 = label_of_node(src_node_idx);
+            u1 label_1 = label_of_node(src_node_idx + 1);
+            u1 parent_label = label_0 | label_1;
+            const auto parent_label_idx = label_idx_of_node(dst_node_idx);
+            labels_.set(parent_label_idx, parent_label);
+            src_node_idx += 2;
+            dst_node_idx += 1;
+          }
+        }
+      }
     }
+
+
 
     // Bottom-up pruning (loss-less).  Eliminate all sibling leaf nodes which
     // have the same label.
@@ -172,8 +232,8 @@ public:
       u64 left_node_idx = length - i - 2;
       u64 right_node_idx = left_node_idx + 1;
 
-      u1 left_bit = labels_[left_node_idx];
-      u1 right_bit = labels_[right_node_idx];
+      u1 left_bit = labels_[left_node_idx + offset];
+      u1 right_bit = labels_[right_node_idx + offset];
 
       u64 parent_node_idx = tree_t::parent_of(left_node_idx);
 
@@ -437,10 +497,16 @@ public:
     return max_node_cnt_;
   }
 
+  /// Returns the label index of the given node.
+  inline auto
+  label_idx_of_node(u64 node_idx) const {
+    return node_idx + offset;
+  }
+
   /// Returns the label of the given node.
   inline u1
   label_of_node(u64 node_idx) const {
-    return labels_[node_idx];
+    return labels_[node_idx + offset];
   }
 
   /// Returns the number of nodes in the tree.
@@ -632,7 +698,7 @@ private:
       // Set the labels to 1 in the entire sub-tree.
       std::function<void(u64)> set_labels_to_1 = [&](u64 node_idx) { // FIXME highly inefficient
         if (node_idx >= max_node_cnt_) return;
-        labels_[node_idx] = true;
+        labels_[node_idx + offset] = true;
         set_labels_to_1(left_child_of(node_idx));
         set_labels_to_1(right_child_of(node_idx));
       };
@@ -647,7 +713,7 @@ private:
       // Set the labels to 1 in the entire sub-tree.
       std::function<void(u64)> set_labels_to_1 = [&](u64 node_idx) { // FIXME highly inefficient
         if (node_idx >= max_node_cnt_) return;
-        labels_[node_idx] = true;
+        labels_.set(node_idx + offset);
         set_labels_to_1(left_child_of(node_idx));
         set_labels_to_1(right_child_of(node_idx));
       };
@@ -723,8 +789,8 @@ private:
       u64 left_node_idx = length - i - 2;
       u64 right_node_idx = left_node_idx + 1;
 
-      u1 left_bit = labels_[left_node_idx];
-      u1 right_bit = labels_[right_node_idx];
+      u1 left_bit = labels_[left_node_idx + offset];
+      u1 right_bit = labels_[right_node_idx + offset];
 
       u64 parent_node_idx = tree_t::parent_of(left_node_idx);
 
@@ -867,8 +933,8 @@ private:
       u64 left_node_idx = length - i - 2;
       u64 right_node_idx = left_node_idx + 1;
 
-      u1 left_bit = labels_[left_node_idx];
-      u1 right_bit = labels_[right_node_idx];
+      u1 left_bit = labels_[left_node_idx + offset];
+      u1 right_bit = labels_[right_node_idx + offset];
 
       u64 parent_node_idx = tree_t::parent_of(left_node_idx);
 
@@ -953,7 +1019,7 @@ private:
           // The actual pruning.
           // Set the labels to 1 in the entire sub-tree.
           visit(candidate_node_idx, [&](u64 i) {
-            labels_[i] = true;
+            labels_[i + offset] = true;
           });
           // Make the current node a leaf node. Note that we need to update
           // the labels in the entire subtree otherwise we get side effects
@@ -1039,8 +1105,8 @@ private:
       u64 left_node_idx = length - i - 2;
       u64 right_node_idx = left_node_idx + 1;
 
-      u1 left_bit = labels_[left_node_idx];
-      u1 right_bit = labels_[right_node_idx];
+      u1 left_bit = labels_[left_node_idx + offset];
+      u1 right_bit = labels_[right_node_idx + offset];
 
       u64 parent_node_idx = tree_t::parent_of(left_node_idx);
       binary_tree_structure::set_inner(parent_node_idx);

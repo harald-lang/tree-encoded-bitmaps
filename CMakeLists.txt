@@ -178,6 +178,7 @@ set(TEB_SOURCE_FILES
         src/dtl/bitmap/util/bit_buffer.hpp
         src/dtl/bitmap/util/bit_buffer_avx2.hpp
         src/dtl/bitmap/util/bit_buffer_avx512.hpp
+        src/dtl/bitmap/util/plain_bitmap.hpp
         src/dtl/bitmap/util/bitmap_fun.hpp
         src/dtl/bitmap/util/bitmap_tree.hpp
         src/dtl/bitmap/util/bitmap_view.hpp
@@ -329,6 +330,16 @@ set(EXPERIMENT_PERFORMANCE_VARYING_F_SOURCE_FILES
         )
 add_executable(ex_performance_varying_f ${EXPERIMENT_PERFORMANCE_VARYING_F_SOURCE_FILES})
 target_link_libraries(ex_performance_varying_f fastbit pthread dl)
+
+# Performance, construction
+set(EXPERIMENT_PERFORMANCE_CONSTRUCTION_SOURCE_FILES
+        ${SOURCE_FILES}
+        ${BENCHMARK_SOURCE_FILES}
+        experiments/performance/common.hpp
+        experiments/performance/main_performance_construction.cpp
+        )
+add_executable(ex_performance_construction ${EXPERIMENT_PERFORMANCE_CONSTRUCTION_SOURCE_FILES})
+target_link_libraries(ex_performance_construction fastbit pthread dl)
 
 # Performance, intersect
 set(EXPERIMENT_PERFORMANCE_INTERSECT_SOURCE_FILES
