@@ -1,47 +1,110 @@
 #pragma once
-
-#if !defined(__teb_inline__)
-#if defined(NDEBUG)
-// Release build.
-#define __teb_inline__ inline __attribute__((always_inline))
-//#define __teb_inline__ __attribute__((noinline))
-#else
-#define __teb_inline__
-#endif
-#endif
-
+//===----------------------------------------------------------------------===//
+#include <cassert>
 
 #include <dtl/dtl.hpp>
 #include <dtl/bits.hpp>
 
+#include "config.hpp"
+//===----------------------------------------------------------------------===//
 namespace dtl {
-
+//===----------------------------------------------------------------------===//
+/// Static functions to work with plain bitmaps.
 template<typename _word_type>
 struct bitmap_fun {
 
   using word_type = _word_type;
   static constexpr std::size_t word_bitlength = sizeof(word_type) * 8;
 
+  /// Test the bit at position i.
   static u1 __teb_inline__
-  test(const word_type* b, std::size_t i) noexcept {
+  test(const word_type* bitmap, std::size_t i) noexcept {
     const auto block_idx = i / word_bitlength;
-    const auto word = b[block_idx];
+    const auto word = bitmap[block_idx];
     const auto bit_idx = i % word_bitlength;
     return (word & (word_type(1) << i)) != 0;
   }
 
+  /// Set the bit at position i.
   static void __teb_inline__
-  set(const word_type* b, std::size_t i) noexcept {
-    const auto block_idx = i / word_bitlength;
-    const auto bit_idx = i % word_bitlength;
-    b[block_idx] ^= word_type(1) << bit_idx;
+  set(word_type* bitmap, std::size_t i, u1 val) noexcept {
+    if (val) {
+      set(bitmap, i);
+    }
+    else {
+      clear(bitmap, i);
+    }
   }
 
-  /// Fetch consecutive bits.
+  /// Set the bit at position i.
+  static void __teb_inline__
+  set(word_type* bitmap, std::size_t i) noexcept {
+    const auto block_idx = i / word_bitlength;
+    const auto bit_idx = i % word_bitlength;
+    bitmap[block_idx] |= word_type(1) << bit_idx;
+  }
+
+  /// Set the bits in [b,e).
+  static void __teb_inline__
+  set(word_type* bitmap, std::size_t b, std::size_t e) noexcept {
+    assert(b < e);
+    // The algorithm below has been adapted from the paper "Consistently faster
+    // and smaller compressed bitmaps with Roaring" by Lemire et al.
+    const auto x = b / word_bitlength;
+    const auto y = (e - 1) / word_bitlength;
+    const word_type Z = ~word_type(0);
+
+    const word_type X = Z << (b % word_bitlength);
+    const word_type Y = Z >> ((64 - (e % word_bitlength)) % word_bitlength);
+    if (x == y) {
+      bitmap[x] |= (X & Y);
+    }
+    else {
+      bitmap[x] |= X;
+      for (std::size_t k = x + 1; k < y; ++k) {
+        bitmap[k] |= Z;
+      }
+      bitmap[y] |= Y;
+    }
+  }
+
+  /// Clear the bit at position i.
+  static void __teb_inline__
+  clear(word_type* bitmap, std::size_t i) noexcept {
+    const auto block_idx = i / word_bitlength;
+    const auto bit_idx = i % word_bitlength;
+    bitmap[block_idx] &= ~(word_type(1) << bit_idx);
+  }
+
+  /// Clear the bits in [b,e).
+  static void __teb_inline__
+  clear(word_type* bitmap, std::size_t b, std::size_t e) noexcept {
+    assert(b < e);
+    // The algorithm below has been adapted from the paper "Consistently faster
+    // and smaller compressed bitmaps with Roaring" by Lemire et al.
+    const auto x = b / word_bitlength;
+    const auto y = (e - 1) / word_bitlength;
+    const word_type Z = ~word_type(0);
+
+    const word_type X = Z << (b % word_bitlength);
+    const word_type Y = Z >> ((64 - (e % word_bitlength)) % word_bitlength);
+    if (x == y) {
+      bitmap[x] &= ~(X & Y);
+    }
+    else {
+      bitmap[x] &= ~X;
+      for (std::size_t k = x + 1; k < y; ++k) {
+        bitmap[k] &= ~Z;
+      }
+      bitmap[y] &= ~Y;
+    }
+  }
+
+  /// Fetch up to 64 consecutive bits.
   static u64 __teb_inline__
   fetch_bits(const word_type* bitmap,
-                 u64 bit_idx_begin,
-                 u64 bit_idx_end /* non-inclusive */) {
+      u64 bit_idx_begin,
+      u64 bit_idx_end /* non-inclusive */) {
     assert(bit_idx_end > bit_idx_begin);
     static constexpr u64 word_bitlength = sizeof(word_type) * 8;
     const auto word_idx_begin = bit_idx_begin / word_bitlength;
@@ -66,9 +129,8 @@ struct bitmap_fun {
     }
   }
 
-  /// Find the first set bit.
-  /// Returns the index of the first set bit. If no bits are set, the length
-  /// of the bitmap is returned.
+  /// Find the first set bit.  Returns the index of the first set bit. If no
+  /// bits are set, the length of the bitmap is returned.
   static std::size_t
   find_first(const word_type* bitmap_begin, const word_type* bitmap_end) {
     const std::size_t word_cnt = bitmap_end - bitmap_begin;
@@ -84,9 +146,8 @@ struct bitmap_fun {
     return word_idx * sizeof(word_type) * 8;
   }
 
-  /// Find the last set bit.
-  /// Returns the index of the last set bit. If no bits are set, the length
-  /// of the bitmap is returned.
+  /// Find the last set bit.  Returns the index of the last set bit. If no bits
+  /// are set, the length of the bitmap is returned.
   static std::size_t
   find_last(const word_type* bitmap_begin, const word_type* bitmap_end) {
     const std::size_t word_cnt = bitmap_end - bitmap_begin;
@@ -102,6 +163,9 @@ struct bitmap_fun {
     return word_cnt * sizeof(word_type) * 8;
   }
 
-};
+  // Construction not allowed.
+  bitmap_fun() = delete;
 
+};
+//===----------------------------------------------------------------------===//
 } // namespace dtl
