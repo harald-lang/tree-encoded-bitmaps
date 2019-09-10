@@ -42,7 +42,6 @@ class bitmap_tree : public binary_tree_structure {
   std::size_t first_node_idx_with_1label_;
   std::size_t last_node_idx_with_1label_;
 
-
 public:
 
   /// C'tor
@@ -301,7 +300,7 @@ public:
   }
 
   /// TODO
-  void
+  void __attribute__((noinline))
   init_counters() {
     inner_node_cnt_ = 0;
     leaf_node_cnt_ = 0;
@@ -646,9 +645,8 @@ public:
 private:
 
   /// Expands the first explicit node.
-  void __forceinline__
+  void __teb_inline__
   set_inner(u64 idx) {
-//    std::cout << "set inner: " << idx << std::endl;
     assert(is_leaf_node(idx));
     binary_tree_structure::set_inner(idx);
     // Update the counters.
@@ -736,7 +734,7 @@ private:
 ////            std::cout << "t0lc=" << trailing_0label_cnt_ << std::endl;
 //          }
 //        }
-        init_counters();
+        init_counters(); // FIXME performance issue
       }
       last_node_idx_with_1label_ =
           std::max(last_node_idx_with_1label_, right_child_of(idx));
@@ -781,25 +779,18 @@ private:
     if (optimization_level_ > 1) {
       // Estimates the size of a TEB.
       auto size = [&]() {
-        // TODO revert changes
         return estimate_encoded_size_in_bytes();
-//        f64 explicit_tree_node_cnt =  optimization_level_ > 0
-//            ? inner_node_cnt_ + leaf_node_cnt_
-//              - leading_inner_node_cnt_ - trailing_leaf_node_cnt_
-//            : inner_node_cnt_;
-//        f64 explicit_label_cnt = optimization_level_ > 2
-//            ? leaf_node_cnt_ - leading_0label_cnt_ - trailing_0label_cnt_
-//            : leaf_node_cnt_;
-//        return explicit_tree_node_cnt * 1.0625 + explicit_label_cnt;
       };
 
       // Gradual decompression.
-      auto min = *this;
+      auto org_state = *this; // Memorize the fully pruned tree instance.
+      // Find the tree instance with the minimum size.
+      auto min_idx = root(); // Pruned all the way up to the root node.
       auto min_size = size();
       const auto it_end = breadth_first_end();
       for (auto it = breadth_first_begin(); it != it_end; ++it) {
         u64 idx = (*it).idx;
-        if (is_inner_node(idx)) continue;
+        if ((*it).is_inner) continue;
         if (right_child_of(idx) >= max_node_cnt_) break;
 
         // Expand the leaf node to an inner node.
@@ -807,18 +798,32 @@ private:
         set_inner(idx);
 
         const auto compressed_size = size();
-//        std::cout << compressed_size << " / " << min_size << std::endl;
-//        if (compressed_size < min_size) {
         if (compressed_size <= min_size) {
-          min = *this;
+          min_idx = idx;
           min_size = compressed_size;
         }
         if (min_size <= 64) break;
         if (explicit_node_idxs_.begin > explicit_node_idxs_.end) break;
+        // FIXME when to stop decompression??? -------------------------------------------------------------
       }
-      *this = min;
+      // Restore the tree instance with the minimum size.
+      *this = org_state;
+      // Expand the tree down to the node 'min_idx' which identifies the
+      // smallest tree instance found in the previous step.
+      for (auto it = breadth_first_begin(); it != it_end; ++it) {
+        u64 idx = (*it).idx;
+        if ((*it).is_inner) continue;
+        if (right_child_of(idx) >= max_node_cnt_) break;
+
+        // Expand the leaf node to an inner node.
+        // DANGER: The tree structure is modified during iterating.
+        set_inner(idx);
+
+        if (idx >= min_idx) break;
+        if (min_size <= 64) break;
+        if (explicit_node_idxs_.begin > explicit_node_idxs_.end) break;
+      }
     }
-//    std::cout << "---------------------------" << std::endl;
   }
 
   // Lossy compression.  The size of the tree structure is further reduced,
@@ -1217,5 +1222,4 @@ private:
   }
 };
 //===----------------------------------------------------------------------===//
-
 } // namespace dtl
