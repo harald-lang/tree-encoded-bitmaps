@@ -204,7 +204,7 @@ public:
 
             auto src = *src_ptr;
             src |= src >> 1;
-            auto dst = _pext_u64(src, 0x5555555555555555);
+            auto dst = _pext_u64(src, 0x5555555555555555); // FIXME non-portable code
             *dst_ptr = static_cast<$u32>(dst);
 
             src_node_idx += 64;
@@ -224,28 +224,80 @@ public:
       }
     }
 
-
-
     // Bottom-up pruning (loss-less).  Eliminate all sibling leaf nodes which
     // have the same label.
-    for ($u64 i = 0; i < length - 1; i += 2) {
-      u64 left_node_idx = length - i - 2;
-      u64 right_node_idx = left_node_idx + 1;
+//    for ($u64 i = 0; i < length - 1; i += 2) {
+//      u64 left_node_idx = length - i - 2;
+//      u64 right_node_idx = left_node_idx + 1;
+//
+//      u1 left_bit = labels_[left_node_idx + offset];
+//      u1 right_bit = labels_[right_node_idx + offset];
+//
+//      u64 parent_node_idx = tree_t::parent_of(left_node_idx);
+//
+//      u1 prune_causes_false_positives = left_bit ^ right_bit;
+//      u1 both_nodes_are_leaves =
+//          !is_inner_node(left_node_idx)
+//              & !is_inner_node(right_node_idx);
+//      u1 prune = both_nodes_are_leaves & !prune_causes_false_positives;
+//      if (prune) {
+//        binary_tree_structure::set_leaf(parent_node_idx);
+//      }
+//    }
+    {
+      for (auto level = last_level(); level > 0; --level) {
+        const auto src_node_idx_begin = first_node_idx_at_level(level);
+        const auto src_node_idx_end = first_node_idx_at_level(level + 1);
+        const auto dst_node_idx_begin = first_node_idx_at_level(level - 1);
+        const auto dst_node_idx_end = first_node_idx_at_level(level);
+        auto src_node_idx = src_node_idx_begin;
+        auto dst_node_idx = dst_node_idx_begin;
+        while (src_node_idx < src_node_idx_end) {
+          const auto remaining = src_node_idx_end - src_node_idx;
+          assert(remaining >= 2);
+          if (remaining < 64) {
+            u1 left_bit = labels_[src_node_idx + offset];
+            u1 right_bit = labels_[src_node_idx + 1 + offset];
+            u1 prune_causes_false_positives = left_bit ^ right_bit;
+            u1 both_nodes_are_leaves =
+                !is_inner_node(src_node_idx)
+                    & !is_inner_node(src_node_idx + 1);
+            u1 prune = both_nodes_are_leaves & !prune_causes_false_positives;
+            if (prune) {
+              binary_tree_structure::set_leaf(dst_node_idx);
+            }
+            src_node_idx += 2;
+            dst_node_idx += 1;
+          }
+          else {
+            // Process 64 nodes at a time.
+            const auto src_idx = label_idx_of_node(src_node_idx);
+            const auto dst_idx = label_idx_of_node(dst_node_idx);
+            assert(src_idx % 64 == 0);
+            assert(src_idx % 32 == 0);
 
-      u1 left_bit = labels_[left_node_idx + offset];
-      u1 right_bit = labels_[right_node_idx + offset];
+            $u64* raw_label_ptr = labels_.data();
+            auto src_labels = raw_label_ptr[src_idx / 64];
+            auto prune_causes_false_positives = static_cast<$u32>(
+                _pext_u64(src_labels ^ (src_labels >> 1), 0x5555555555555555)); // FIXME non-portable code
 
-      u64 parent_node_idx = tree_t::parent_of(left_node_idx);
+            $u64* raw_node_ptr = is_inner_node_.data();
+            auto src_nodes = raw_node_ptr[src_idx / 64];
+            auto both_nodes_are_leaves = static_cast<$u32>(
+                _pext_u64(~src_nodes & (~src_nodes >> 1), 0x5555555555555555)); // FIXME non-portable code
 
-      u1 prune_causes_false_positives = left_bit ^ right_bit;
-      u1 both_nodes_are_leaves =
-          !is_inner_node(left_node_idx)
-              & !is_inner_node(right_node_idx);
-      u1 prune = both_nodes_are_leaves & !prune_causes_false_positives;
-      if (prune) {
-        binary_tree_structure::set_leaf(parent_node_idx);
+            auto prune = both_nodes_are_leaves & ~prune_causes_false_positives;
+
+            $u32* dst_nodes_ptr = &reinterpret_cast<$u32*>(raw_node_ptr)[dst_idx / 32];
+            *dst_nodes_ptr = (*dst_nodes_ptr) ^ prune;
+
+            src_node_idx += 64;
+            dst_node_idx += 32;
+          }
+        }
       }
     }
+
   }
 
   /// TODO
