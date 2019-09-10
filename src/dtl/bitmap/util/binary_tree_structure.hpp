@@ -282,7 +282,7 @@ public:
         const auto parent_level = this_level - 1;
         const auto parent_idx = tree_.parent_of(idx_);
 
-        if (this_level < 5) {
+        if (this_level < 6) {
           u1 is_inner = tree_.is_inner_node(idx_);
           u1 parent_is_inner = tree_.is_inner_node(parent_idx);
           if (is_inner || parent_is_inner) {
@@ -375,16 +375,20 @@ public:
     return breadth_first_iterator(*this, root());
   }
 
+  /// Returns a breadth-first iterator that point one past the last node.
   inline breadth_first_iterator
   breadth_first_end() const {
     return breadth_first_iterator(*this, max_node_cnt_);
   }
 
+  /// Returns a (const) breadth-first iterator. The iterator internally uses a
+  /// buffer to improve performance.
   inline const_breadth_first_iterator
   const_breadth_first_begin() const {
     return const_breadth_first_iterator(*this, root());
   }
 
+  /// Returns a (const) breadth-first iterator that point one past the last node.
   inline const_breadth_first_iterator
   const_breadth_first_end() const {
     return const_breadth_first_iterator(*this, max_node_cnt_);
