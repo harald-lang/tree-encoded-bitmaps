@@ -31,7 +31,11 @@ public:
   /// Indicates whether a node is an inner or a leaf node.
   bitmap_t is_inner_node_;
 
+  /// The node with index i is stored in the bitmap at position i+offset. The +1
+  /// offset results in better word alignment, which helps to speed up several
+  /// tree algorithms.
   static constexpr std::size_t offset = 1;
+
 public:
 
   /// Constructs a perfect binary tree (structure) with n leaf nodes and n-1
@@ -144,7 +148,6 @@ public:
   /// Turns the given node into an inner node.
   inline void
   set_inner(u64 node_idx) {
-//    is_inner_node_[node_idx] = true;
     is_inner_node_.set(node_idx + offset);
   }
 
@@ -201,7 +204,6 @@ public:
       assert(start_node_idx == 0 || start_node_idx == tree_.max_node_cnt_);
     }
 
-//    breadth_first_iterator& __attribute__((noinline))
     inline breadth_first_iterator&
     operator++() {
       ++idx_;
@@ -375,7 +377,7 @@ public:
     return breadth_first_iterator(*this, root());
   }
 
-  /// Returns a breadth-first iterator that point one past the last node.
+  /// Returns a breadth-first iterator that points one past the last node.
   inline breadth_first_iterator
   breadth_first_end() const {
     return breadth_first_iterator(*this, max_node_cnt_);
@@ -388,7 +390,7 @@ public:
     return const_breadth_first_iterator(*this, root());
   }
 
-  /// Returns a (const) breadth-first iterator that point one past the last node.
+  /// Returns a (const) breadth-first iterator that points one past the last node.
   inline const_breadth_first_iterator
   const_breadth_first_end() const {
     return const_breadth_first_iterator(*this, max_node_cnt_);
@@ -401,7 +403,6 @@ private:
   inline void
   set_leaf_rec(u64 node_idx) {
     u1 recurse = is_inner_node_[node_idx + offset];
-//    is_inner_node_[node_idx] = false;
     is_inner_node_.clear(node_idx + offset);
     if (recurse) {
       set_leaf_rec(left_child_of(node_idx));
