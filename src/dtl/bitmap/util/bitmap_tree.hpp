@@ -56,6 +56,8 @@ class bitmap_tree : public binary_tree_structure {
   std::size_t leading_0label_cnt_;
   /// The number of 0-labels after the last 1-label.
   std::size_t trailing_0label_cnt_;
+//  /// The indexes of nodes with explicit labels.
+//  range_t node_idxs_with_1label_;
   /// The first leaf node index that carries a 1-label.
   std::size_t first_node_idx_with_1label_;
   /// The last leaf node index that carries a 1-label.
@@ -236,20 +238,9 @@ public:
     }
   }
 
-  /// TODO
+  // TODO make private
   void __attribute__((noinline))
   init_counters() {
-    inner_node_cnt_ = 0;
-    leaf_node_cnt_ = 0;
-    leading_inner_node_cnt_ = 0;
-    trailing_leaf_node_cnt_ = 0;
-    leading_0label_cnt_ = 0;
-    trailing_0label_cnt_ = 0;
-    first_node_idx_with_1label_ = 0;
-    last_node_idx_with_1label_ = 0;
-    explicit_node_idxs_.begin = 0;
-    explicit_node_idxs_.end = 0;
-
     // Determine the total number of tree nodes and which of these nodes need
     // to be stored explicitly.
     $u1 found_leaf_node = false;
@@ -258,13 +249,14 @@ public:
     leaf_node_cnt_ = 0;
     leading_inner_node_cnt_ = 0;
     trailing_leaf_node_cnt_ = 0;
+    explicit_node_idxs_.begin = 0;
     explicit_node_idxs_.end = 0;
 
     $u1 found_leaf_node_with_1label = false;
     leading_0label_cnt_ = 0;
     trailing_0label_cnt_ = 0;
-    first_node_idx_with_1label_ = 0;
-    last_node_idx_with_1label_ = 0;
+    first_node_idx_with_1label_ = max_node_cnt_;
+    last_node_idx_with_1label_ = max_node_cnt_;
 
 
     const auto it_end = const_breadth_first_end();
@@ -318,100 +310,6 @@ public:
 
     }
     explicit_node_idxs_.begin = leading_inner_node_cnt_;
-  }
-
-  void
-  init_counters_old() {
-    inner_node_cnt_ = 0;
-    leaf_node_cnt_ = 0;
-    leading_inner_node_cnt_ = 0;
-    trailing_leaf_node_cnt_ = 0;
-    leading_0label_cnt_ = 0;
-    trailing_0label_cnt_ = 0;
-    first_node_idx_with_1label_ = 0;
-    last_node_idx_with_1label_ = 0;
-    explicit_node_idxs_.begin = 0;
-    explicit_node_idxs_.end = 0;
-
-    // Determine the total number of tree nodes and which of these nodes need
-    // to be stored explicitly.
-    {
-      $u1 found_leaf_node = false;
-      std::size_t node_cnt = 0;
-      inner_node_cnt_ = 0;
-      leaf_node_cnt_ = 0;
-      leading_inner_node_cnt_ = 0;
-      trailing_leaf_node_cnt_ = 0;
-      explicit_node_idxs_.end = 0;
-
-      const auto it_end = breadth_first_end();
-      for (auto it = breadth_first_begin(); it != it_end; ++it) {
-        u64 idx = (*it).idx;
-        u64 level = (*it).level;
-        u1 is_inner = is_inner_node(idx);
-
-        ++node_cnt;
-        inner_node_cnt_ += is_inner;
-        leaf_node_cnt_ += !is_inner;
-
-        // Count the leading inner nodes.
-        if (!found_leaf_node && is_inner) {
-          ++leading_inner_node_cnt_;
-        }
-        if (!found_leaf_node && !is_inner) {
-          found_leaf_node = true;
-        }
-
-        // Count the trailing leaf nodes.
-        if (!is_inner) {
-          ++trailing_leaf_node_cnt_;
-        }
-        else {
-          trailing_leaf_node_cnt_ = 0;
-          explicit_node_idxs_.end = idx;
-        }
-      }
-
-      explicit_node_idxs_.begin = leading_inner_node_cnt_;
-    }
-
-    // Determine the number of labels that need to be stored explicitly.
-    {
-      $u1 found_leaf_node_with_1label = false;
-      leading_0label_cnt_ = 0;
-      trailing_0label_cnt_ = 0;
-      first_node_idx_with_1label_ = 0;
-      last_node_idx_with_1label_ = 0;
-
-      const auto it_end = breadth_first_end();
-      for (auto it = breadth_first_begin(); it != it_end; ++it) {
-        u64 idx = (*it).idx;
-        u64 level = (*it).level;
-        u1 is_leaf = is_leaf_node(idx);
-
-        if (!found_leaf_node_with_1label && is_leaf) {
-          if (label_of_node(idx) == false) {
-            ++leading_0label_cnt_;
-          }
-          else {
-            found_leaf_node_with_1label = true;
-            first_node_idx_with_1label_ = idx;
-          }
-        }
-
-        // Count the trailing 0-labels nodes.
-        if (is_leaf) {
-          if (label_of_node(idx) == false) {
-            ++trailing_0label_cnt_;
-          }
-          else {
-            trailing_0label_cnt_ = 0;
-            last_node_idx_with_1label_ = idx;
-          }
-        }
-      }
-
-    }
   }
 
   /// Estimates the size in bytes, when the bitmap tree is succinctly encoded.
@@ -582,7 +480,7 @@ public:
 
 private:
 
-  /// Expands the first explicit node.
+  /// Expands the VERY FIRST explicit node. // TODO generalize to expand arbitrary nodes
   void __teb_inline__
   set_inner(u64 idx) {
     assert(is_leaf_node(idx));
@@ -644,6 +542,7 @@ private:
     }
 
     if (idx == first_node_idx_with_1label_) {
+      assert(label_of_node(idx) == true);
       // The current node is the first node with a 1-label.
       // Now that this node has been expanded, the node idx with the first
       // 1-label is somewhere in (idx, left-child(idx)].
@@ -661,22 +560,22 @@ private:
           }
         }
       }
+      assert(first_node_idx_with_1label_ != idx);
+
       // The node idx with the last 1-label is now the
       // max(last_node_idx_with_1label_, right-child(idx)).
-      if (right_child_of(idx) > last_node_idx_with_1label_) {
-        // Update the number of trailing 0-labels.
-//        for (std::size_t i = first_node_idx_with_1label_ + 1;
-//             i < left_child_of(idx); ++i) {
-//          if (is_leaf_node(i) && label_of_node(i) == false) {
-//            trailing_0label_cnt_ -= 1;
-////            std::cout << "t0lc=" << trailing_0label_cnt_ << std::endl;
-//          }
-//        }
-        init_counters(); // FIXME performance issue
-      }
       last_node_idx_with_1label_ =
           std::max(last_node_idx_with_1label_, right_child_of(idx));
     }
+
+    if (idx > last_node_idx_with_1label_) {
+      // The current node, that has been expanded had an implicit 0-label.
+      // The node idx is greater than the last node idx with a 1-label,
+      // therefore, the child also have larger indexes. Thus, only the trailing
+      // 0-label cnt needs to be incremented.
+      trailing_0label_cnt_ += 1;
+    }
+
 //    init_counters();
   }
 
