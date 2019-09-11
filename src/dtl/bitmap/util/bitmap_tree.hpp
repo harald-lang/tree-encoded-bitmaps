@@ -16,6 +16,8 @@ namespace dtl {
 /// Represents a bitmap as a binary tree. During construction, the bitmap tree
 /// is compressed, either loss-less or lossy.
 /// The template parameter controls the space optimizations.
+/// An instance can be seen as an intermediate representation of a bitmap from
+/// which a TEB is constructed.
 template<i32 optimization_level_ = 3>
 class bitmap_tree : public binary_tree_structure {
 
@@ -24,23 +26,41 @@ class bitmap_tree : public binary_tree_structure {
 
   /// The labels of the tree nodes.
   plain_bitmap<$u64> labels_;
-//  bitmap_t labels_;
 
   struct range_t {
     std::size_t begin = 0;
     std::size_t end = 0;
   };
 
+  //===--------------------------------------------------------------------===//
+  // The following counters are required to compute the size of the resulting
+  // tree-encoded bitmap. These counters are updated when the tree is modified.
+  //
+  // During the construction phase, the size is required to find the tree
+  // instance with the smallest memory consumption. Recall that the number of
+  // tree nodes does not directly correspond to the TEB size. A fully pruned
+  // tree instance may result in a larger TEB than a partially pruned tree
+  // instance.
+  //===--------------------------------------------------------------------===//
+  /// The number of inner nodes.
   std::size_t inner_node_cnt_;
+  /// The number of leaf nodes.
   std::size_t leaf_node_cnt_;
+  /// The number inner nodes until the first leaf occurs (in level order).
   std::size_t leading_inner_node_cnt_;
+  /// The number leaf nodes after the last inner node (in level order).
   std::size_t trailing_leaf_node_cnt_;
+  /// The node indexes that need to be stored explicitly.
   range_t explicit_node_idxs_;
-
+  /// The number of 0-labels until the first 1-label occurs.
   std::size_t leading_0label_cnt_;
+  /// The number of 0-labels after the last 1-label.
   std::size_t trailing_0label_cnt_;
+  /// The first leaf node index that carries a 1-label.
   std::size_t first_node_idx_with_1label_;
+  /// The last leaf node index that carries a 1-label.
   std::size_t last_node_idx_with_1label_;
+  //===--------------------------------------------------------------------===//
 
 public:
 
@@ -60,6 +80,7 @@ public:
 
     // Init the binary tree and perform bottom-up pruning.
     init_tree(bitmap);
+    prune_tree();
 
     // Run space optimizations.
     {
@@ -69,69 +90,10 @@ public:
         run_optimize();
       }
     }
-    const auto lossless_size = estimate_encoded_size_in_bytes();
 
+    // Run lossy compression algorithm.
     if (fpr > 0.0) {
-      auto min_size = lossless_size;
-      auto min = *this;
-      auto min_threshold = 0.0;
-
-//      $u1 monotonic = true;
-//      $u1 first_lossy_pass = true;
-//      std::size_t prev_lossy_size = std::numeric_limits<std::size_t>::max();
-//      std::vector<std::size_t> lossy_sizes;
-
-      for (auto threshold : {1.0/8.0, 1.0/4.0, 1.0/2.0, 1.0}) {
-        bitmap_tree lossy_bt(bitmap, fpr, threshold);
-        const auto size = lossy_bt.estimate_encoded_size_in_bytes();
-        if (size < min_size) {
-          min = lossy_bt;
-          min_size = size;
-          min_threshold = threshold;
-        }
-//        if (size <= prev_lossy_size) {
-//          prev_lossy_size = size;
-//        }
-//        else {
-//          break;
-//        }
-      }
-      *this = min;
-
-//      if (lossless_size > min_size) {
-//
-//        std::cout << ">>> saved bytes through lossy compression: "
-//            << (lossless_size - min_size)
-//            << " threshold = " << min_threshold
-//            << std::endl;
-//      }
-//      else {
-//        std::cout << ">>> lossless" << std::endl;
-//      }
-    }
-  }
-
-  // TODO make private
-  explicit
-  bitmap_tree(const bitmap_t& bitmap, f64 fpr, f64 threshold)
-      : binary_tree_structure(bitmap.size()),
-        labels_(max_node_cnt_+ offset),
-        inner_node_cnt_(0),
-        leaf_node_cnt_(0),
-        leading_inner_node_cnt_(0),
-        trailing_leaf_node_cnt_(0),
-        leading_0label_cnt_(0),
-        trailing_0label_cnt_(0),
-        first_node_idx_with_1label_(0),
-        last_node_idx_with_1label_(0) {
-
-    // Init the binary tree and perform bottom-up pruning.
-    init_tree(bitmap);
-
-    compress_lossy_pre_optimization_v2(fpr, threshold);
-    init_counters();
-    if (optimization_level_ > 1) {
-      run_optimize();
+      compress_lossy(bitmap, fpr); // FIXME experimental
     }
   }
 
@@ -141,7 +103,13 @@ public:
   bitmap_tree& operator=(bitmap_tree&& other) noexcept = default;
   ~bitmap_tree() override = default;
 
-  // TODO make private
+  /// Initialize a perfect binary tree on top of the given bitmap, where
+  ///  - all the inner nodes have two children
+  ///  - all the leaf nodes are on the same level
+  ///  - the leaf nodes are labelled with the given bitmap
+  /// Further, the labels for ALL inner nodes are computed, to avoid ad hoc
+  /// computations of the labels during collapsing (or expanding) the tree
+  /// structure.
   void
   init_tree(const boost::dynamic_bitset<$u32>& bitmap) {
     // TODO: Support arbitrarily sized bitmaps.
@@ -150,15 +118,8 @@ public:
           "The length of the bitmap must be a power of two.");
     }
 
-    // Initialize a perfect binary tree on top of the given bitmap.
-    // ... all the inner nodes have two children
-    // ... all the leaf nodes are on the same level
-    // ... the leaf nodes are labelled with the given bitmap
     u64 length = max_node_cnt_;
     u64 height = height_;
-//    for ($u64 i = length / 2; i < length; i++) {
-//      labels_[i + offset] = bitmap[i - length / 2];
-//    }
     // Copy the input bitmap to the last level of the tree.
     {
       auto i = bitmap.find_first();
@@ -168,15 +129,8 @@ public:
       }
     }
 
-    // Propagate the bits along the tree (bottom-up).  The labels of an internal
-    // node is the bitwise OR of the labels of both child nodes.
-//    for ($u64 i = 0; i < length - 1; i++) {
-//      u64 node_idx = length - i - 1;
-//      u64 parent_node_idx = tree_t::parent_of(node_idx);
-//      u1 parent_label = labels_[tree_t::parent_of(node_idx) + offset]
-//          | labels_[node_idx + offset];
-//      labels_.set(tree_t::parent_of(node_idx) + offset, parent_label); // FIXME inefficient, as parent label is written twice
-//    }
+    // Propagate the label bits along the tree (bottom-up).  The labels of an
+    // internal node is the bitwise OR of the labels of both child nodes.
     {
       for (auto level = last_level(); level > 0; --level) {
         const auto src_node_idx_begin = first_node_idx_at_level(level);
@@ -222,81 +176,64 @@ public:
         }
       }
     }
+  }
 
-    // Bottom-up pruning (loss-less).  Eliminate all sibling leaf nodes which
-    // have the same label.
-//    for ($u64 i = 0; i < length - 1; i += 2) {
-//      u64 left_node_idx = length - i - 2;
-//      u64 right_node_idx = left_node_idx + 1;
-//
-//      u1 left_bit = labels_[left_node_idx + offset];
-//      u1 right_bit = labels_[right_node_idx + offset];
-//
-//      u64 parent_node_idx = tree_t::parent_of(left_node_idx);
-//
-//      u1 prune_causes_false_positives = left_bit ^ right_bit;
-//      u1 both_nodes_are_leaves =
-//          !is_inner_node(left_node_idx)
-//              & !is_inner_node(right_node_idx);
-//      u1 prune = both_nodes_are_leaves & !prune_causes_false_positives;
-//      if (prune) {
-//        binary_tree_structure::set_leaf(parent_node_idx);
-//      }
-//    }
-    {
-      for (auto level = last_level(); level > 0; --level) {
-        const auto src_node_idx_begin = first_node_idx_at_level(level);
-        const auto src_node_idx_end = first_node_idx_at_level(level + 1);
-        const auto dst_node_idx_begin = first_node_idx_at_level(level - 1);
-        const auto dst_node_idx_end = first_node_idx_at_level(level);
-        auto src_node_idx = src_node_idx_begin;
-        auto dst_node_idx = dst_node_idx_begin;
-        while (src_node_idx < src_node_idx_end) {
-          const auto remaining = src_node_idx_end - src_node_idx;
-          assert(remaining >= 2);
-          if (remaining < 64) {
-            u1 left_bit = labels_[src_node_idx + offset];
-            u1 right_bit = labels_[src_node_idx + 1 + offset];
-            u1 prune_causes_false_positives = left_bit ^ right_bit;
-            u1 both_nodes_are_leaves =
-                !is_inner_node(src_node_idx)
-                    & !is_inner_node(src_node_idx + 1);
-            u1 prune = both_nodes_are_leaves & !prune_causes_false_positives;
-            if (prune) {
-              binary_tree_structure::set_leaf(dst_node_idx);
-            }
-            src_node_idx += 2;
-            dst_node_idx += 1;
+  /// Bottom-up pruning (loss-less).  Eliminate all sibling leaf nodes which
+  /// have the same label. The algorithm terminates when all pairs of sibling
+  /// leaf nodes have different labels.
+  void __teb_inline__
+  prune_tree() {
+    for (auto level = last_level(); level > 0; --level) {
+      const auto src_node_idx_begin = first_node_idx_at_level(level);
+      const auto src_node_idx_end = first_node_idx_at_level(level + 1);
+      const auto dst_node_idx_begin = first_node_idx_at_level(level - 1);
+      const auto dst_node_idx_end = first_node_idx_at_level(level);
+      auto src_node_idx = src_node_idx_begin;
+      auto dst_node_idx = dst_node_idx_begin;
+      while (src_node_idx < src_node_idx_end) {
+        const auto remaining = src_node_idx_end - src_node_idx;
+        assert(remaining >= 2);
+        if (remaining < 64) {
+          u1 left_bit = labels_[src_node_idx + offset];
+          u1 right_bit = labels_[src_node_idx + 1 + offset];
+          u1 prune_causes_false_positives = left_bit ^ right_bit;
+          u1 both_nodes_are_leaves =
+              !is_inner_node(src_node_idx)
+                  & !is_inner_node(src_node_idx + 1);
+          u1 prune = both_nodes_are_leaves & !prune_causes_false_positives;
+          if (prune) {
+            binary_tree_structure::set_leaf(dst_node_idx);
           }
-          else {
-            // Process 64 nodes at a time.
-            const auto src_idx = label_idx_of_node(src_node_idx);
-            const auto dst_idx = label_idx_of_node(dst_node_idx);
-            assert(src_idx % 64 == 0);
-            assert(src_idx % 32 == 0);
+          src_node_idx += 2;
+          dst_node_idx += 1;
+        }
+        else {
+          // Process 64 nodes at a time.
+          const auto src_idx = label_idx_of_node(src_node_idx);
+          const auto dst_idx = label_idx_of_node(dst_node_idx);
+          assert(src_idx % 64 == 0);
+          assert(src_idx % 32 == 0);
 
-            $u64* raw_label_ptr = labels_.data();
-            auto src_labels = raw_label_ptr[src_idx / 64];
-            auto prune_causes_false_positives = static_cast<$u32>(
-                _pext_u64(src_labels ^ (src_labels >> 1), 0x5555555555555555)); // FIXME non-portable code
+          $u64* raw_label_ptr = labels_.data();
+          auto src_labels = raw_label_ptr[src_idx / 64];
+          auto prune_causes_false_positives = static_cast<$u32>(
+              _pext_u64(src_labels ^ (src_labels >> 1), 0x5555555555555555)); // FIXME non-portable code
 
-            $u64* raw_node_ptr = is_inner_node_.data();
-            auto src_nodes = raw_node_ptr[src_idx / 64];
-            auto both_nodes_are_leaves = static_cast<$u32>(
-                _pext_u64(~src_nodes & (~src_nodes >> 1), 0x5555555555555555)); // FIXME non-portable code
+          $u64* raw_node_ptr = is_inner_node_.data();
+          auto src_nodes = raw_node_ptr[src_idx / 64];
+          auto both_nodes_are_leaves = static_cast<$u32>(
+              _pext_u64(~src_nodes & (~src_nodes >> 1), 0x5555555555555555)); // FIXME non-portable code
 
-            auto prune = both_nodes_are_leaves & ~prune_causes_false_positives;
+          auto prune = both_nodes_are_leaves & ~prune_causes_false_positives;
 
-            $u32* dst_nodes_ptr = &reinterpret_cast<$u32*>(raw_node_ptr)[dst_idx / 32];
-            *dst_nodes_ptr = (*dst_nodes_ptr) ^ prune;
+          $u32* dst_nodes_ptr = &reinterpret_cast<$u32*>(raw_node_ptr)[dst_idx / 32];
+          *dst_nodes_ptr = (*dst_nodes_ptr) ^ prune;
 
-            src_node_idx += 64;
-            dst_node_idx += 32;
-          }
+          src_node_idx += 64;
+          dst_node_idx += 32;
         }
       }
     }
-
   }
 
   /// TODO
@@ -335,7 +272,6 @@ public:
       u64 idx = (*it).idx;
       u64 level = (*it).level;
       u1 is_inner = (*it).is_inner;
-//      u1 is_inner = is_inner_node(idx);
 
       ++node_cnt;
       inner_node_cnt_ += is_inner;
@@ -605,11 +541,13 @@ public:
     return trailing_0label_cnt_;
   }
 
+  /// Returns the index of the first leaf node that carries a 1-label.
   inline u32
   get_first_node_idx_with_1label() const noexcept {
     return first_node_idx_with_1label_;
   }
 
+  /// Returns the index of the last leaf node that carries a 1-label.
   inline u32
   get_last_node_idx_with_1label() const noexcept {
     return last_node_idx_with_1label_;
@@ -824,6 +762,78 @@ private:
         if (explicit_node_idxs_.begin > explicit_node_idxs_.end) break;
       }
     }
+  }
+
+  //===--------------------------------------------------------------------===//
+  // Lossy compression.
+  // EXPERIMENTAL CODE
+  //===--------------------------------------------------------------------===//
+  explicit
+  bitmap_tree(const bitmap_t& bitmap, f64 fpr, f64 threshold)
+      : binary_tree_structure(bitmap.size()),
+        labels_(max_node_cnt_+ offset),
+        inner_node_cnt_(0),
+        leaf_node_cnt_(0),
+        leading_inner_node_cnt_(0),
+        trailing_leaf_node_cnt_(0),
+        leading_0label_cnt_(0),
+        trailing_0label_cnt_(0),
+        first_node_idx_with_1label_(0),
+        last_node_idx_with_1label_(0) {
+
+    // Init the binary tree and perform bottom-up pruning.
+    init_tree(bitmap);
+    prune_tree();
+
+    compress_lossy_pre_optimization_v2(fpr, threshold);
+    init_counters();
+    if (optimization_level_ > 1) {
+      run_optimize();
+    }
+  }
+
+  void
+  compress_lossy(const bitmap_t& bitmap, f64 fpr) {
+    if (fpr <= 0.0) return;
+
+    const auto lossless_size = estimate_encoded_size_in_bytes();
+
+    auto min_size = lossless_size;
+    auto min = *this;
+    auto min_threshold = 0.0;
+
+//      $u1 monotonic = true;
+//      $u1 first_lossy_pass = true;
+//      std::size_t prev_lossy_size = std::numeric_limits<std::size_t>::max();
+//      std::vector<std::size_t> lossy_sizes;
+
+    for (auto threshold : {1.0/8.0, 1.0/4.0, 1.0/2.0, 1.0}) {
+      bitmap_tree lossy_bt(bitmap, fpr, threshold);
+      const auto size = lossy_bt.estimate_encoded_size_in_bytes();
+      if (size < min_size) {
+        min = lossy_bt;
+        min_size = size;
+        min_threshold = threshold;
+      }
+//        if (size <= prev_lossy_size) {
+//          prev_lossy_size = size;
+//        }
+//        else {
+//          break;
+//        }
+    }
+    *this = min;
+
+//      if (lossless_size > min_size) {
+//
+//        std::cout << ">>> saved bytes through lossy compression: "
+//            << (lossless_size - min_size)
+//            << " threshold = " << min_threshold
+//            << std::endl;
+//      }
+//      else {
+//        std::cout << ">>> lossless" << std::endl;
+//      }
   }
 
   // Lossy compression.  The size of the tree structure is further reduced,
@@ -1144,9 +1154,9 @@ private:
 //    }
   }
 
-  // Lossy compression.  The size of the tree structure is further reduced,
-  // which causes false positive bits. The number of false positive bits is
-  // limited by the given false positive rate (FPR).
+  /// Lossy compression.  The size of the tree structure is further reduced,
+  /// which causes false positive bits. The number of false positive bits is
+  /// limited by the given false positive rate (FPR).
   void __attribute__ ((noinline))
   compress_lossy_pre_optimization_v2(f64 fpr, f64 threshold = 1.0/8.0) {
     // Determine maximum number of false positives.
@@ -1220,6 +1230,8 @@ private:
       }
     }
   }
+  //===--------------------------------------------------------------------===//
+
 };
 //===----------------------------------------------------------------------===//
 } // namespace dtl
