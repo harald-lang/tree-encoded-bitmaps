@@ -76,6 +76,13 @@ class bitmap_tree : public binary_tree_structure {
   std::size_t last_node_idx_with_1label_;
   //===--------------------------------------------------------------------===//
 
+  /// The index of the first set bit in the original bitmap. The value is set
+  /// to 'n' when the bits in the original bitmap are all 0.
+  std::size_t first_bit_idx;
+  /// The index of the last set bit in the original bitmap. The value is set
+  /// to 'n' when the bits in the original bitmap are all 0.
+  std::size_t last_bit_idx;
+
 public:
 
   /// C'tor
@@ -132,7 +139,7 @@ public:
   /// Further, the labels for ALL inner nodes are computed, to avoid ad hoc
   /// computations of the labels during collapsing (or expanding) the tree
   /// structure.
-  void
+  void __attribute__((noinline))
   init_tree(const boost::dynamic_bitset<$u32>& bitmap) {
     // TODO: Support arbitrarily sized bitmaps.
     if (!dtl::is_power_of_two(n_)) {
@@ -145,7 +152,10 @@ public:
     // Copy the input bitmap to the last level of the tree.
     {
       auto i = bitmap.find_first();
+      first_bit_idx = (i != boost::dynamic_bitset<$u32>::npos) ? i : n_;
+      last_bit_idx = first_bit_idx;
       while (i != boost::dynamic_bitset<$u32>::npos) {
+        last_bit_idx = i;
         labels_.set(length / 2 + i + offset);
         i = bitmap.find_next(i);
       }
@@ -224,7 +234,7 @@ public:
                   & !is_inner_node(src_node_idx + 1);
           u1 prune = both_nodes_are_leaves & !prune_causes_false_positives;
           if (prune) {
-            binary_tree_structure::set_leaf(dst_node_idx);
+            binary_tree_structure::set_leaf(dst_node_idx); // FIXME inefficient
           }
           src_node_idx += 2;
           dst_node_idx += 1;
@@ -346,40 +356,11 @@ public:
     explicit_node_idxs_.end = inner_node_cnt_;
 
 
-    leading_0label_cnt_ = 0;
-    trailing_0label_cnt_ = 0;
-    first_node_idx_with_1label_ = max_node_cnt_;
-    last_node_idx_with_1label_ = max_node_cnt_;
-    $u1 found_1label = false;
-    {
-      const auto idx_begin = first_node_idx_at_level(last_level());
-      const auto idx_end = first_node_idx_at_level(last_level() + 1);
-      for (std::size_t idx = idx_begin; idx < idx_end; ++idx) {
-        assert(is_leaf_node(idx));
-        u1 label = label_of_node(idx);
-        if (label == true) {
-          if (!found_1label) {
-            first_node_idx_with_1label_ = idx;
-            last_node_idx_with_1label_ = idx;
-            trailing_0label_cnt_ = 0;
-            found_1label = true;
-          }
-          else {
-            last_node_idx_with_1label_ = idx;
-            trailing_0label_cnt_ = 0;
-          }
-        }
-        else {
-          // label == false
-          if (!found_1label) {
-            ++leading_0label_cnt_;
-          }
-          else {
-            ++trailing_0label_cnt_;
-          }
-        }
-      }
-    }
+    first_node_idx_with_1label_ = first_bit_idx + n_ - 1;
+    last_node_idx_with_1label_ = last_bit_idx + n_ - 1;
+    leading_0label_cnt_ = first_bit_idx;
+    trailing_0label_cnt_ = (first_bit_idx != n_)
+        ? n_ - last_bit_idx - 1 : 0;
   }
 
   // to be called after init_tree().
@@ -435,10 +416,11 @@ public:
             --inner_node_cnt_;
             --leaf_node_cnt_;
 
-            if (idx < explicit_node_idxs_.begin) { // TODO always true?
+            assert(idx < explicit_node_idxs_.begin);
+//            if (idx < explicit_node_idxs_.begin) { // TODO always true?
               explicit_node_idxs_.begin = idx;
               leading_inner_node_cnt_ = idx;
-            }
+//            }
             if (idx + 1 == explicit_node_idxs_.end) {
               // The current node was the last explicit inner node.  Due to the
               // fact that pruning happens in reverse level-order, all
@@ -470,7 +452,7 @@ public:
               first_node_idx_with_1label_ = idx;
               if (right_child == last_node_idx_with_1label_) {
                 // The last node with a 1-label has been pruned. Thus, the new
-                // last node with a 1-label is in [idx, left_child).
+                // last node with a 1-label is in the range [idx, left_child).
                 for ($u64 j = 0; j < (left_child - idx); ++j) {
                   u64 i = left_child - 1 - j;
                   if (is_leaf_node(i)) {
@@ -509,6 +491,11 @@ public:
     if (optimization_level_ <= 1) return;
 
     // Restore the tree instance with the minimum size.
+    expand_until(min_size_tree_idx);
+  }
+
+  void __attribute__((noinline))
+  expand_until(u64 min_size_tree_idx) {
     // Expand the tree nodes which have an index less than min_size_tree_idx.
     const auto it_end = breadth_first_end();
     for (auto it = breadth_first_begin(); it != it_end; ++it) {
