@@ -23,8 +23,10 @@ struct dynamic_roaring_bitmap {
   explicit
   dynamic_roaring_bitmap(const boost::dynamic_bitset<$u32>& in)
       : size_(in.size()) {
-    for (std::size_t i = 0; i < size_; i++) {
-      if (in[i]) { bitmap_.add(i); };
+    auto i = in.find_first();
+    while (i != boost::dynamic_bitset<$u32>::npos) {
+      bitmap_.add(i);
+      i = in.find_next(i);
     }
     bitmap_.runOptimize();
   }

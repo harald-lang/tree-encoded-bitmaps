@@ -29,8 +29,10 @@ struct dynamic_wah {
   explicit
   dynamic_wah(const boost::dynamic_bitset<$u32>& in)
       : size_(in.size()) {
-    for (std::size_t i = 0; i < size_; i++) {
+    auto i = in.find_first();
+    while (i != boost::dynamic_bitset<$u32>::npos) {
       bv.setBit(i, in[i]);
+      i = in.find_next(i);
     }
     bv.compress();
   }
