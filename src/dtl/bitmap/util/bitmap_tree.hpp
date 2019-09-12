@@ -83,10 +83,10 @@ class bitmap_tree : public binary_tree_structure {
   //===--------------------------------------------------------------------===//
   /// The index of the first set bit in the original bitmap. The value is set
   /// to 'n' when the bits in the original bitmap are all 0.
-  std::size_t first_bit_idx;
+  std::size_t first_bit_idx_;
   /// The index of the last set bit in the original bitmap. The value is set
   /// to 'n' when the bits in the original bitmap are all 0.
-  std::size_t last_bit_idx;
+  std::size_t last_bit_idx_;
 
 public:
 
@@ -154,14 +154,17 @@ public:
     // Copy the input bitmap to the last level of the tree.
     {
       auto i = bitmap.find_first();
-      first_bit_idx = (i != boost::dynamic_bitset<$u32>::npos) ? i : n_;
-      last_bit_idx = first_bit_idx;
+      first_bit_idx_ = (i != boost::dynamic_bitset<$u32>::npos) ? i : n_;
+      last_bit_idx_ = first_bit_idx_;
       while (i != boost::dynamic_bitset<$u32>::npos) {
-        last_bit_idx = i;
+        last_bit_idx_ = i;
         labels_.set(length / 2 + i + offset);
         i = bitmap.find_next(i);
       }
     }
+
+    // Init the counters that are required to estimate the TEB size.
+    init_counters_perfect_binary_tree();
   }
 
   /// Propagate the label bits along the tree (bottom-up).  The labels of an
@@ -293,7 +296,6 @@ public:
     first_node_idx_with_1label_ = max_node_cnt_;
     last_node_idx_with_1label_ = max_node_cnt_;
 
-
     const auto it_end = const_breadth_first_end();
     for (auto it = const_breadth_first_begin(); it != it_end; ++it) {
       u64 idx = (*it).idx;
@@ -358,18 +360,17 @@ public:
     explicit_node_idxs_.begin = inner_node_cnt_;
     explicit_node_idxs_.end = inner_node_cnt_;
 
-    first_node_idx_with_1label_ = first_bit_idx + n_ - 1;
-    last_node_idx_with_1label_ = last_bit_idx + n_ - 1;
-    leading_0label_cnt_ = first_bit_idx;
-    trailing_0label_cnt_ = (first_bit_idx != n_)
-        ? n_ - last_bit_idx - 1 : 0;
+    first_node_idx_with_1label_ = first_bit_idx_ + n_ - 1;
+    last_node_idx_with_1label_ = last_bit_idx_ + n_ - 1;
+    leading_0label_cnt_ = first_bit_idx_;
+    trailing_0label_cnt_ = (first_bit_idx_ != n_)
+        ? n_ - last_bit_idx_ - 1 : 0;
   }
 
   // to be called after init_tree().
   // the tree must not be pruned in any way.
   void __attribute__((noinline))
   compress() {
-    init_counters_perfect_binary_tree();
     assert(explicit_node_idxs_.begin == n_ - 1);
     assert(explicit_node_idxs_.end == n_ - 1);
 
@@ -418,10 +419,8 @@ public:
             --inner_node_cnt_;
 
             assert(idx < explicit_node_idxs_.begin);
-//            if (idx < explicit_node_idxs_.begin) { // TODO always true?
-              explicit_node_idxs_.begin = idx;
-              leading_inner_node_cnt_ = idx;
-//            }
+            explicit_node_idxs_.begin = idx;
+            leading_inner_node_cnt_ = idx;
             if (idx + 1 == explicit_node_idxs_.end) {
               // The current node was the last explicit inner node.  Due to the
               // fact that pruning happens in reverse level-order, all
@@ -495,16 +494,16 @@ public:
     expand_until(min_size_tree_idx);
   }
 
+  /// Expands the tree nodes which have an index less than the given node index.
   void __attribute__((noinline))
-  expand_until(u64 min_size_tree_idx) {
-    // Expand the tree nodes which have an index less than min_size_tree_idx.
+  expand_until(u64 node_idx) {
     const auto it_end = breadth_first_end();
     for (auto it = breadth_first_begin(); it != it_end; ++it) {
       u64 idx = (*it).idx;
       if ((*it).is_inner) continue;
       if (right_child_of(idx) >= max_node_cnt_) break;
 
-      if (idx >= min_size_tree_idx) break;
+      if (idx >= node_idx) break;
 
       // Expand the leaf node to an inner node.
       // DANGER: The tree structure is modified during iterating.
@@ -512,6 +511,7 @@ public:
     }
   }
 
+  // For debugging purposes.
   void __forceinline__
   validate_counters() {
     #ifndef NDEBUG
