@@ -44,15 +44,14 @@ class bitmap_tree : public binary_tree_structure {
   // tree-encoded bitmap. These counters are updated when the tree is modified.
   //
   // During the construction phase, the size is required to find the tree
-  // instance with the smallest memory consumption. Recall that the number of
+  // instance with the lowest memory consumption. Recall that the number of
   // tree nodes does not directly correspond to the TEB size. A fully pruned
   // tree instance may result in a larger TEB than a partially pruned tree
   // instance.
   //===--------------------------------------------------------------------===//
-  /// The number of inner nodes.
+  /// The number of inner nodes. As the tree is a full binary, the number of
+  /// leaf nodes is the number of inner nodes + 1.
   std::size_t inner_node_cnt_;
-  /// The number of leaf nodes.
-  std::size_t leaf_node_cnt_; // TODO remove, as it is always inner + 1
   /// The number inner nodes until the first leaf occurs (in level order).
   std::size_t leading_inner_node_cnt_;
   /// The number leaf nodes after the last inner node (in level order).
@@ -61,21 +60,27 @@ class bitmap_tree : public binary_tree_structure {
   std::size_t leading_0label_cnt_;
   /// The number of 0-labels after the last 1-label.
   std::size_t trailing_0label_cnt_;
+
   //===--------------------------------------------------------------------===//
   // The ranges below are used to cache the node indexes of the first and last
   // explicit node and label. This is required to incrementally update the
   // counters from above. Unlike to the counters from above, these ranges are
   // not required to estimate the size of a tree-encoded bitmap.
+  //===--------------------------------------------------------------------===//
   /// The node indexes that need to be stored explicitly.
   range_t explicit_node_idxs_;
   /// The indexes of nodes with explicit labels.
-//  range_t explicit_label_idxs_;
+//  range_t explicit_label_idxs_; // TODO use range rather than the two variables below
   /// The first leaf node index that carries a 1-label.
   std::size_t first_node_idx_with_1label_;
   /// The last leaf node index that carries a 1-label.
   std::size_t last_node_idx_with_1label_;
-  //===--------------------------------------------------------------------===//
 
+  //===--------------------------------------------------------------------===//
+  // The following two members cache the positions of the first and the last
+  // 1-bit within the original bitmap. This allows for faster initialization
+  // of the leading/trailing 0-label counters.
+  //===--------------------------------------------------------------------===//
   /// The index of the first set bit in the original bitmap. The value is set
   /// to 'n' when the bits in the original bitmap are all 0.
   std::size_t first_bit_idx;
@@ -91,7 +96,6 @@ public:
       : binary_tree_structure(bitmap.size()),
         labels_(max_node_cnt_ + offset),
         inner_node_cnt_(0),
-        leaf_node_cnt_(0),
         leading_inner_node_cnt_(0),
         trailing_leaf_node_cnt_(0),
         leading_0label_cnt_(0),
@@ -108,6 +112,7 @@ public:
     }
     else {
       // Classic code path.
+      init_labels();
       prune_tree();
 
       // Run space optimizations.
@@ -136,9 +141,6 @@ public:
   ///  - all the inner nodes have two children
   ///  - all the leaf nodes are on the same level
   ///  - the leaf nodes are labelled with the given bitmap
-  /// Further, the labels for ALL inner nodes are computed, to avoid ad hoc
-  /// computations of the labels during collapsing (or expanding) the tree
-  /// structure.
   void __attribute__((noinline))
   init_tree(const boost::dynamic_bitset<$u32>& bitmap) {
     // TODO: Support arbitrarily sized bitmaps.
@@ -160,51 +162,55 @@ public:
         i = bitmap.find_next(i);
       }
     }
+  }
 
-    // Propagate the label bits along the tree (bottom-up).  The labels of an
-    // internal node is the bitwise OR of the labels of both child nodes.
-    if (false) {
-      for (auto level = last_level(); level > 0; --level) {
-        const auto src_node_idx_begin = first_node_idx_at_level(level);
-        const auto src_node_idx_end = first_node_idx_at_level(level + 1);
-        const auto dst_node_idx_begin = first_node_idx_at_level(level - 1);
-        const auto dst_node_idx_end = first_node_idx_at_level(level);
-        auto src_node_idx = src_node_idx_begin;
-        auto dst_node_idx = dst_node_idx_begin;
-        while (src_node_idx < src_node_idx_end) {
-          const auto remaining = src_node_idx_end - src_node_idx;
-          assert(remaining >= 2);
-          if (remaining >= 64) {
-            // Process 64 nodes at a time.  For each loaded 64-bit word we write
-            // a 32-bit word. For this to be efficient, we want proper alignment
-            // which is why we have the +1 offset in the label and tree bitmaps.
-            const auto src_label_idx = label_idx_of_node(src_node_idx);
-            const auto dst_label_idx = label_idx_of_node(dst_node_idx);
-            assert(src_label_idx % 64 == 0);
-            assert(src_label_idx % 32 == 0);
+  /// Propagate the label bits along the tree (bottom-up).  The labels of an
+  /// internal node is the bitwise OR of the labels of both child nodes.
+  /// Pre-computing the labels of ALL tree nodes helps to avoid ad hoc
+  /// computations of the labels during collapsing (or expanding) the tree
+  /// structure.
+  void __attribute__((noinline))
+  init_labels() {
+    for (auto level = last_level(); level > 0; --level) {
+      const auto src_node_idx_begin = first_node_idx_at_level(level);
+      const auto src_node_idx_end = first_node_idx_at_level(level + 1);
+      const auto dst_node_idx_begin = first_node_idx_at_level(level - 1);
+      const auto dst_node_idx_end = first_node_idx_at_level(level);
+      auto src_node_idx = src_node_idx_begin;
+      auto dst_node_idx = dst_node_idx_begin;
+      while (src_node_idx < src_node_idx_end) {
+        const auto remaining = src_node_idx_end - src_node_idx;
+        assert(remaining >= 2);
+        if (remaining >= 64) {
+          // Process 64 nodes at a time.  For each loaded 64-bit word we write
+          // a 32-bit word. For this to be efficient, we want proper alignment
+          // which is why we have the +1 offset in the label and tree bitmaps.
+          const auto src_label_idx = label_idx_of_node(src_node_idx);
+          const auto dst_label_idx = label_idx_of_node(dst_node_idx);
+          assert(src_label_idx % 64 == 0);
+          assert(src_label_idx % 32 == 0);
 
-            auto* raw_ptr = labels_.data();
-            $u64* src_ptr = &raw_ptr[src_label_idx / 64];
-            $u32* dst_ptr = &reinterpret_cast<$u32*>(raw_ptr)[dst_label_idx / 32];
+          auto* raw_ptr = labels_.data();
+          $u64* src_ptr = &raw_ptr[src_label_idx / 64];
+          $u32* dst_ptr = &reinterpret_cast<$u32*>(raw_ptr)[dst_label_idx / 32];
 
-            auto src = *src_ptr;
-            src |= src >> 1;
-            auto dst = _pext_u64(src, 0x5555555555555555); // FIXME non-portable code
-            *dst_ptr = static_cast<$u32>(dst);
+          auto src = *src_ptr;
+          src |= src >> 1;
+          auto dst = _pext_u64(src, 0x5555555555555555); // FIXME non-portable code
+          *dst_ptr = static_cast<$u32>(dst);
 
-            src_node_idx += 64;
-            dst_node_idx += 32;
-          }
-          else {
-            // Process two nodes (siblings) at a time.
-            u1 label_0 = label_of_node(src_node_idx);
-            u1 label_1 = label_of_node(src_node_idx + 1);
-            u1 parent_label = label_0 | label_1;
-            const auto parent_label_idx = label_idx_of_node(dst_node_idx);
-            labels_.set(parent_label_idx, parent_label);
-            src_node_idx += 2;
-            dst_node_idx += 1;
-          }
+          src_node_idx += 64;
+          dst_node_idx += 32;
+        }
+        else {
+          // Process two nodes (siblings) at a time.
+          u1 label_0 = label_of_node(src_node_idx);
+          u1 label_1 = label_of_node(src_node_idx + 1);
+          u1 parent_label = label_0 | label_1;
+          const auto parent_label_idx = label_idx_of_node(dst_node_idx);
+          labels_.set(parent_label_idx, parent_label);
+          src_node_idx += 2;
+          dst_node_idx += 1;
         }
       }
     }
@@ -213,7 +219,8 @@ public:
   /// Bottom-up pruning (loss-less).  Eliminate all sibling leaf nodes which
   /// have the same label. The algorithm terminates when all pairs of sibling
   /// leaf nodes have different labels.
-  void __teb_inline__
+  /// Note: The counters are thereby invalidated.
+  void __attribute__((noinline))
   prune_tree() {
     for (auto level = last_level(); level > 0; --level) {
       const auto src_node_idx_begin = first_node_idx_at_level(level);
@@ -268,15 +275,13 @@ public:
     }
   }
 
-  // TODO make private
+  /// Determine the total number of tree nodes and which of these nodes need
+  /// to be stored explicitly.
   void __attribute__((noinline))
   init_counters() {
-    // Determine the total number of tree nodes and which of these nodes need
-    // to be stored explicitly.
     $u1 found_leaf_node = false;
     std::size_t node_cnt = 0;
     inner_node_cnt_ = 0;
-    leaf_node_cnt_ = 0;
     leading_inner_node_cnt_ = 0;
     trailing_leaf_node_cnt_ = 0;
     explicit_node_idxs_.begin = 0;
@@ -297,7 +302,6 @@ public:
 
       ++node_cnt;
       inner_node_cnt_ += is_inner;
-      leaf_node_cnt_ += !is_inner;
 
       // Count the leading inner nodes.
       if (!found_leaf_node && is_inner) {
@@ -349,12 +353,10 @@ public:
   void __attribute__((noinline))
   init_counters_perfect_binary_tree() {
     inner_node_cnt_ = n_ - 1;
-    leaf_node_cnt_ = n_;
     leading_inner_node_cnt_ = inner_node_cnt_;
-    trailing_leaf_node_cnt_ = leaf_node_cnt_;
+    trailing_leaf_node_cnt_ = inner_node_cnt_ + 1;
     explicit_node_idxs_.begin = inner_node_cnt_;
     explicit_node_idxs_.end = inner_node_cnt_;
-
 
     first_node_idx_with_1label_ = first_bit_idx + n_ - 1;
     last_node_idx_with_1label_ = last_bit_idx + n_ - 1;
@@ -377,8 +379,8 @@ public:
     }
 
     // TODO remove special case
-    if (leading_0label_cnt_ == leaf_node_cnt_
-        && trailing_0label_cnt_ == leaf_node_cnt_) {
+    if (leading_0label_cnt_ == inner_node_cnt_ + 1
+        && trailing_0label_cnt_ == inner_node_cnt_ + 1) {
       trailing_0label_cnt_ = 0;
     }
 
@@ -414,7 +416,6 @@ public:
             //===----------------------------------------------------------===//
             // Update counters.
             --inner_node_cnt_;
-            --leaf_node_cnt_;
 
             assert(idx < explicit_node_idxs_.begin);
 //            if (idx < explicit_node_idxs_.begin) { // TODO always true?
@@ -520,7 +521,6 @@ public:
     //===------------------------------------------------------------------===//
     // Back up the counters.
     const std::size_t _inner_node_cnt = inner_node_cnt_;
-    const std::size_t _leaf_node_cnt = leaf_node_cnt_;
     const std::size_t _leading_inner_node_cnt = leading_inner_node_cnt_;
     const std::size_t _trailing_leaf_node_cnt = trailing_leaf_node_cnt_;
     const std::size_t _leading_0label_cnt = leading_0label_cnt_;
@@ -533,12 +533,11 @@ public:
 
     init_counters();
     // TODO remove special case
-    if (leading_0label_cnt_ == leaf_node_cnt_
-        && trailing_0label_cnt_ == leaf_node_cnt_) {
+    if (leading_0label_cnt_ == inner_node_cnt_ + 1
+        && trailing_0label_cnt_ == inner_node_cnt_ + 1) {
       trailing_0label_cnt_ = 0;
     }
     assert(_inner_node_cnt == inner_node_cnt_);
-    assert(_leaf_node_cnt == leaf_node_cnt_);
     assert(_leading_inner_node_cnt == leading_inner_node_cnt_);
     assert(_trailing_leaf_node_cnt == trailing_leaf_node_cnt_);
     assert(_leading_0label_cnt == leading_0label_cnt_);
@@ -578,7 +577,7 @@ public:
     // The offset to the beginning of L can also be computed based on the
     // size of the header, T and R.
 
-    u64 explicit_tree_node_cnt = inner_node_cnt_ + leaf_node_cnt_
+    u64 explicit_tree_node_cnt = inner_node_cnt_ + inner_node_cnt_ + 1
         - leading_inner_node_cnt_ - trailing_leaf_node_cnt_;
 
     // Level offsets for T and L, which are required by the tree scan algorithm.
@@ -606,8 +605,8 @@ public:
 //    assert(leading_0label_cnt_ <= leaf_node_cnt_);
 //    assert(trailing_0label_cnt_ <= leaf_node_cnt_);
     u64 explicit_label_cnt = optimization_level_ > 2
-        ? leaf_node_cnt_ - leading_0label_cnt_ - trailing_0label_cnt_
-        : leaf_node_cnt_;
+        ? inner_node_cnt_ + 1 - leading_0label_cnt_ - trailing_0label_cnt_
+        : inner_node_cnt_ + 1;
     bytes += ((explicit_label_cnt + block_bitlength - 1) / block_bitlength)
         * block_size;
 
@@ -636,7 +635,7 @@ public:
   /// Returns the number of nodes in the tree.
   inline u32
   get_node_cnt() const noexcept {
-    return inner_node_cnt_ + leaf_node_cnt_;
+    return inner_node_cnt_ + inner_node_cnt_ + 1;
   }
 
   /// Returns the number of leading inner nodes (in level order).
@@ -719,38 +718,6 @@ public:
 
 private:
 
-  // For debugging purposes.
-  inline std::size_t
-  compute_leading_inner_node_cnt() const noexcept {
-    std::size_t cnt = 0;
-    for (std::size_t i = 0; i < max_node_cnt_; ++i) {
-      if (is_inner_node(i)) {
-        ++cnt;
-      }
-      else {
-        break;
-      }
-    }
-    return cnt;
-  }
-
-  // For debugging purposes.
-  inline std::size_t
-  compute_trailing_leaf_node_cnt() const noexcept {
-    std::size_t cnt = 0;
-    const auto it_end = const_breadth_first_end();
-    for (auto it = const_breadth_first_begin(); it != it_end; ++it) {
-      u1 is_inner = (*it).is_inner;
-      // Count the trailing leaf nodes.
-      if (!is_inner) {
-        ++cnt;
-      } else {
-        cnt = 0;
-      }
-    }
-    return cnt;
-  }
-
   /// Expands the VERY FIRST explicit node. // TODO generalize to expand arbitrary nodes
   void __teb_inline__
   set_inner(u64 idx) {
@@ -758,7 +725,6 @@ private:
     binary_tree_structure::set_inner(idx);
     // Update the counters.
     ++inner_node_cnt_;
-    ++leaf_node_cnt_;
 
     // The number of leading inner nodes increases at least by one.
     ++leading_inner_node_cnt_;
@@ -772,7 +738,7 @@ private:
     if (explicit_node_idxs_.begin >= explicit_node_idxs_.end) {
       // The entire tree became implicit.
       leading_inner_node_cnt_ = inner_node_cnt_;
-      trailing_leaf_node_cnt_ = leaf_node_cnt_;
+      trailing_leaf_node_cnt_ = inner_node_cnt_ + 1;
       explicit_node_idxs_.end = explicit_node_idxs_.begin;
     }
     else {
@@ -847,8 +813,6 @@ private:
       // 0-label cnt needs to be incremented.
       trailing_0label_cnt_ += 1;
     }
-
-//    init_counters();
   }
 
   /// Collapse an inner node.
@@ -944,7 +908,6 @@ private:
       : binary_tree_structure(bitmap.size()),
         labels_(max_node_cnt_+ offset),
         inner_node_cnt_(0),
-        leaf_node_cnt_(0),
         leading_inner_node_cnt_(0),
         trailing_leaf_node_cnt_(0),
         leading_0label_cnt_(0),
@@ -1402,7 +1365,6 @@ private:
     }
   }
   //===--------------------------------------------------------------------===//
-
 };
 //===----------------------------------------------------------------------===//
 } // namespace dtl
