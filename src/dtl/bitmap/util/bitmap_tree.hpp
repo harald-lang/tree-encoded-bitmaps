@@ -635,7 +635,31 @@ public:
   /// Returns the number of nodes in the tree.
   inline u32
   get_node_cnt() const noexcept {
-    return inner_node_cnt_ + inner_node_cnt_ + 1;
+    return get_inner_node_cnt() + get_leaf_node_cnt();
+  }
+
+  /// Returns the number of inner nodes in the tree.
+  inline u32
+  get_inner_node_cnt() const noexcept {
+    return inner_node_cnt_;
+  }
+
+  /// Returns the number of leaf nodes in the tree.
+  inline u32
+  get_leaf_node_cnt() const noexcept {
+    return inner_node_cnt_ + 1;
+  }
+
+  /// Returns the number of perfect levels in the tree.
+  inline u32
+  get_perfect_level_cnt() {
+    return dtl::log_2(leading_inner_node_cnt_ + 1) + 1;
+  }
+
+  /// Returns the height of the encoded tree.
+  inline u32
+  get_encoded_tree_height() {
+    return dtl::log_2(n_) + 1; // FIXME could be lower, but its unlikely
   }
 
   /// Returns the number of leading inner nodes (in level order).

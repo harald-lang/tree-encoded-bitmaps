@@ -1,19 +1,17 @@
 #pragma once
-
+//===----------------------------------------------------------------------===//
 #include <type_traits>
 #include <string>
 #include <vector>
 
 #include <dtl/dtl.hpp>
 #include <dtl/math.hpp>
-
+//===----------------------------------------------------------------------===//
 namespace dtl {
-
 //===----------------------------------------------------------------------===//
 // Taken and adapted from
 //  https://github.com/efficient/SuRF/blob/master/include/popcount.h
 //===----------------------------------------------------------------------===//
-
 template<typename _word_type = $u64, u1 _inclusive = false>
 struct rank1_surf {
 
@@ -34,7 +32,7 @@ struct rank1_surf {
 #define popcountmask (popcountsize - 1)
 
   static size_type __forceinline__
-  popcountLinear(const uint64_t* bits, uint64_t x, uint64_t nbits) {
+  popcountLinear(const uint64_t* bits, uint64_t x, uint64_t nbits) noexcept {
     if (nbits == 0) { return 0; }
     assert(bits);
     uint64_t lastword = (nbits - 1) / popcountsize;
@@ -100,6 +98,30 @@ struct rank1_surf {
     lut[lut_entry_cnt - 1] = bit_cntr;
   }
 
+  static void
+  init_inplace(
+      const word_type* const bitmap_begin,
+      const word_type* const bitmap_end,
+      size_type* lut) {
+    u64 bitmap_word_cnt = bitmap_end - bitmap_begin;
+    u64 bitmap_bitlength = bitmap_word_cnt * word_bitlength;
+    u64 block_cnt = (bitmap_bitlength + block_bitlength - 1) / block_bitlength;
+    u64 lut_entry_cnt = block_cnt + 1;
+
+    size_type bit_cntr = 0;
+    for ($u64 i = 0; i < block_cnt; ++i) {
+      lut[i] = bit_cntr;
+      const auto word_cnt_in_current_block =
+          (i + 1) * words_per_block <= bitmap_word_cnt
+          ? words_per_block
+          : bitmap_word_cnt % words_per_block;
+      const auto nbits = word_cnt_in_current_block * word_bitlength;
+      bit_cntr += popcountLinear(
+          bitmap_begin, i * words_per_block, nbits);
+    }
+    lut[lut_entry_cnt - 1] = bit_cntr;
+  }
+
   // TODO make static
   size_type __forceinline__
   operator()(u64 idx, const word_type* bitmap_ptr) const {
@@ -110,9 +132,8 @@ struct rank1_surf {
                          offset + is_inclusive));
   }
 
-  // TODO make static
   static size_type __forceinline__
-  get(const size_type* lut, u64 idx, const word_type* bitmap_ptr) {
+  get(const size_type* lut, u64 idx, const word_type* bitmap_ptr) noexcept {
     const auto block_id = idx / block_bitlength;
     const auto offset = idx & (block_bitlength - 1);
     return (lut[block_id]
@@ -125,7 +146,7 @@ struct rank1_surf {
     return lut.size() * sizeof(size_type); // lut size
   }
 
-  static u64
+  static constexpr u64
   estimate_size_in_bytes(u64 bitmap_size) {
     u64 bitmap_bitlength = bitmap_size;
     u64 block_cnt = (bitmap_bitlength + block_bitlength - 1) / block_bitlength;
