@@ -9,6 +9,7 @@
 //===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//
+/// Converts a plain bitmap into a serialized TEB.
 class teb_builder {
 
   using size_type = teb_size_type;
@@ -23,14 +24,23 @@ public:
 
   /// C'tor
   explicit
-  teb_builder(const boost::dynamic_bitset<$u32>& bitmap, f64 fpr = 0.0);
+  teb_builder(const boost::dynamic_bitset<$u32>& bitmap, f64 fpr = 0.0)
+      : bitmap_tree_(bitmap, fpr) {}
 
   /// Returns the serialized size in number of words.
-  std::size_t
-  serialized_size_in_words();
+  inline std::size_t
+  serialized_size_in_words()  {
+    std::size_t word_cnt = 0;
+    word_cnt += sizeof(teb_header) / word_size;
+    word_cnt += tree_word_cnt();
+    word_cnt += rank_word_cnt();
+    word_cnt += label_word_cnt();
+    word_cnt += metadata_word_cnt();
+    return word_cnt;
+  }
 
   /// Serializes the TEB to the given destination address.
-  void
+  inline void
   serialize(word_type* ptr);
 
 private:
@@ -84,22 +94,7 @@ private:
 
 };
 //===----------------------------------------------------------------------===//
-teb_builder::teb_builder(const boost::dynamic_bitset<$u32>& bitmap, f64 fpr)
-    : bitmap_tree_(bitmap, fpr) {
-}
-//===----------------------------------------------------------------------===//
-std::size_t
-teb_builder::serialized_size_in_words() {
-  std::size_t word_cnt = 0;
-  word_cnt += sizeof(teb_header) / word_size;
-  word_cnt += tree_word_cnt();
-  word_cnt += rank_word_cnt();
-  word_cnt += label_word_cnt();
-  word_cnt += metadata_word_cnt();
-  return word_cnt;
-}
-//===----------------------------------------------------------------------===//
-void
+inline void
 teb_builder::serialize(word_type* dst) {
   // Prepare the header.
   teb_header hdr;

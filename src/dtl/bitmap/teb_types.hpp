@@ -26,7 +26,7 @@ struct teb_header {
   /// The number of implicit leading 0-labels.
   teb_size_type implicit_leading_label_cnt;
   /// The number of perfect levels.
-  $u8 perfect_level_cnt;
+  $u8 perfect_level_cnt; // FIXME redundant, as is can be computed from the number of implicit inner nodes
   /// The height of the encoded (pruned) tree.
   $u8 encoded_tree_height;
   /// True if the TEB contains level offsets at the very end.
@@ -35,9 +35,13 @@ struct teb_header {
   $u8 padding = 0;
 };
 #pragma pack(pop)
+//===----------------------------------------------------------------------===//
 static_assert(sizeof(teb_header) == 24,
     "A TEB header is supposed to be 24 bytes in size.");
 static_assert(sizeof(teb_header) % sizeof(teb_word_type) == 0,
     "A TEB header is supposed to be a multiple of the word size.");
+//===----------------------------------------------------------------------===//
+/// Used to represent empty trees and labels.
+static const teb_word_type teb_null_word = 0;
 //===----------------------------------------------------------------------===//
 }; // namespace dtl

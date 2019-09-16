@@ -179,12 +179,12 @@ public:
     // Init rank1 support data structure.
     rank_.init(structure_);
 
-    T_.init(data_view<const word_type> {
+    T_.init(data_view<word_type> {
         structure_.m_bits.data(),
         structure_.m_bits.data() + structure_.m_bits.size(),
     });
     structure_bit_cnt_ = structure_.size();
-    L_.init(data_view<const word_type> {
+    L_.init(data_view<word_type> {
         labels_.m_bits.data(),
         labels_.m_bits.data() + labels_.m_bits.size(),
     });
