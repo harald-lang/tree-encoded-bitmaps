@@ -27,7 +27,6 @@ struct bitmap_view {
   explicit
   bitmap_view(word_type* begin, word_type* end)
       : data_(dtl::data_view<word_type>{begin, end}) {
-    assert(data_.size() > 0);
   }
 
   bitmap_view()
@@ -41,6 +40,7 @@ struct bitmap_view {
 
   u1 __forceinline__
   operator[](std::size_t pos) const {
+    assert(pos < (data_.size() * word_bitlength));
     return fn::test(data_.begin(), pos);
   }
 
