@@ -1,17 +1,19 @@
 #pragma once
+//===----------------------------------------------------------------------===//
+#include "util/config.hpp"
 
 // TODO remove
 //#define __teb_inline__ __attribute__((noinline))
 
-#if !defined(__teb_inline__)
-#if defined(NDEBUG)
-// Release build.
-#define __teb_inline__ inline __attribute__((always_inline))
-//#define __teb_inline__ __attribute__((noinline))
-#else
-#define __teb_inline__
-#endif
-#endif
+//#if !defined(__teb_inline__)
+//#if defined(NDEBUG)
+//// Release build.
+//#define __teb_inline__ inline __attribute__((always_inline))
+////#define __teb_inline__ __attribute__((noinline))
+//#else
+//#define __teb_inline__
+//#endif
+//#endif
 
 #include <bitset>
 #include <list>
@@ -45,7 +47,7 @@
 #include <navin/bitpack.hpp>
 
 #include "teb_scan_util.hpp"
-
+//===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//
 /// Encodes a bitmap of length n as a binary tree.
@@ -203,12 +205,12 @@ public:
     // Init rank1 support data structure.
     rank_.init(structure_);
 
-    T_.init(data_view<const word_type> {
+    T_.init(data_view<word_type> {
         structure_.m_bits.data(),
         structure_.m_bits.data() + structure_.m_bits.size(),
     });
     structure_bit_cnt_ = structure_.size();
-    L_.init(data_view<const word_type> {
+    L_.init(data_view<word_type> {
         labels_.m_bits.data(),
         labels_.m_bits.data() + labels_.m_bits.size(),
     });
@@ -281,16 +283,6 @@ public:
     return bytes;
   }
 
-  u1 __teb_inline__
-  operator!=(teb& other) const noexcept {
-    return !(*this == other);
-  }
-
-  u1 __teb_inline__
-  operator==(teb& other) const noexcept {
-    return false; // TODO implement
-  }
-
   void
   print(std::ostream& os) const noexcept {
     os << "implicit nodes (internal/external) = "
@@ -336,28 +328,6 @@ public:
       return "teb_o" + std::to_string(optimization_level_);
     }
   }
-
-//  /// Returns the value of the bit at the position pos.
-//  u1 __teb_inline__
-//  test(const std::size_t pos) const noexcept {
-//    auto n_log2 = dtl::log_2(n_);
-//    $u64 node_idx = 0;
-//    if (is_leaf_node(node_idx)) { // FIXME: eliminate special case!!!
-//      return get_label(node_idx);
-//    }
-//    for ($u64 i = n_log2 - 1; i < n_log2; i--) {
-//      u1 bit = dtl::bits::bit_test(pos, i);
-//      auto r = rank(node_idx + 1);
-//      node_idx = 2 * r - 1 + bit; // right child if bit is set, left child otherwise
-//      if (is_leaf_node(node_idx)) {
-//        u64 label_idx = node_idx - rank(node_idx); // FIXME: do not call rank() twice!!!
-//        auto label = labels_[label_idx];
-//        return label;
-//      }
-//    }
-//    std::cout << "BÄM" << std::endl;
-//    std::exit(42);
-//  }
 
   /// Returns the value of the bit at the position pos.
   u1 __teb_inline__
@@ -417,21 +387,21 @@ public:
 //    std::exit(42);
 //  }
 //
-  /// Returns true if all bits are set, false otherwise.
-  u1 __teb_inline__
-  all() noexcept {
-    // FIXME: this works only if the tree mask is in a compressed state
-    return is_leaf_node(0) // root is the only node (a leaf)
-        && get_label(0) == true; // and the label is 1
-  }
-
-  /// Returns true if all bits are zero, false otherwise.
-  u1 __teb_inline__
-  none() noexcept {
-    // FIXME: this works only if the tree mask is in a compressed state
-    return is_leaf_node(0) // root is the only node (a leaf)
-        && get_label(0) == false; // and the label is 0
-  }
+//  /// Returns true if all bits are set, false otherwise.
+//  u1 __teb_inline__
+//  all() noexcept {
+//    // FIXME: this works only if the tree mask is in a compressed state
+//    return is_leaf_node(0) // root is the only node (a leaf)
+//        && get_label(0) == true; // and the label is 1
+//  }
+//
+//  /// Returns true if all bits are zero, false otherwise.
+//  u1 __teb_inline__
+//  none() noexcept {
+//    // FIXME: this works only if the tree mask is in a compressed state
+//    return is_leaf_node(0) // root is the only node (a leaf)
+//        && get_label(0) == false; // and the label is 0
+//  }
 
   /// Returns the length of the original bitmap.
   std::size_t
@@ -580,69 +550,6 @@ public:
   auto _get_label_leading_0bit_cnt() { return implicit_leading_label_cnt_; }
   auto _get_label_trailing_0bit_cnt() { return implicit_trailing_label_cnt_; }
   //===--------------------------------------------------------------------===//
-
-  std::size_t
-  serialized_size_in_bytes() {
-    std::size_t s = 0;
-    // Header
-    s += 6 * 4;
-    // Tree structure
-    if (structure_.size() > 0) {
-      s += ((structure_.size() + word_bitlength - 1) / word_bitlength) *
-          sizeof(word_type);
-    }
-    // Labels
-    if (labels_.size() > 0) {
-      s += ((labels_.size() + word_bitlength - 1) / word_bitlength) *
-          sizeof(word_type);
-    }
-    // Rank
-    if (structure_.size() > 1024) {
-      s += rank_.size_in_bytes();
-    }
-    // Padding
-    if (s % sizeof(word_type) != 0) {
-      s += sizeof(word_type) - (s % sizeof(word_type));
-    }
-    return s;
-  }
-
-  void
-  serialize(word_type* ptr) {
-    // Write the header.
-    $u32* out = reinterpret_cast<$u32*>(ptr);
-    out[0] = n_;
-    out[1] = implicit_inner_node_cnt_;
-    out[2] = implicit_leading_label_cnt_;
-    out[3] = structure_.size();
-    out[4] = labels_.size();
-
-    u32 u = determine_perfect_tree_levels(implicit_inner_node_cnt_);
-    u32 h = encoded_tree_height_;
-    out[5] =  (h << 5) | u;
-
-    // Write the tree structure.
-    word_type* t = reinterpret_cast<word_type*>(&out[6]);
-    for (std::size_t i = 0; i < T_.data_.size(); ++i) {
-      t[i] = T_.data_.begin()[i];
-    }
-
-    // Write the labels.
-    word_type* l = reinterpret_cast<word_type*>(&t[T_.data_.size()]);
-    for (std::size_t i = 0; i < L_.data_.size(); ++i) {
-      l[i] = L_.data_.begin()[i];
-    }
-
-    // Write the rank dictionary.
-    if (structure_.size() > 1024) {
-      rank_support::size_type* r = reinterpret_cast<rank_support::size_type*>(
-          &l[L_.data_.size()]);
-      for (std::size_t i = 0; i < rank_.lut.size(); ++i) {
-        r[i] = rank_.lut[i];
-      }
-    }
-    // TODO write variable sized metadata.
-  }
 
 private:
 
@@ -1661,20 +1568,16 @@ public:
     const auto tree_levels = tree_height_ + 1;
     // Check, if a special implementation can be used to produce the next batch.
     if (perfect_levels_ == tree_levels) {
-//      if (first_) {first_ = false; std::cout << "U" << std::endl;}
       // The bitmap is not compressed.
       next_batch_uncompressed();
     }
     else if (perfect_levels_ == tree_levels - 1) {
-//      if (first_) {first_ = false; std::cout << "2" << std::endl;}
       next_batch_2levels();
     }
     else if (perfect_levels_ == tree_levels - 2) {
-//      if (first_) {first_ = false; std::cout << "3" << std::endl;}
       next_batch_3levels();
     }
     else {
-//      if (first_) {first_ = false; std::cout << "D" << std::endl;}
       // Use the common tree-scan algorithm.  The actual implementation is
       // chosen at compile time based on the target architecture.
       #ifdef __AVX512BW__
@@ -1855,7 +1758,6 @@ done:
 
   void
   next_batch_3levels() noexcept __attribute__((flatten, hot, noinline)) {
-//    std::cout << ".";
     const auto h = tree_height_ + 1;
     const auto n = teb_.size();
     const auto u = perfect_levels_ - 1;
@@ -1863,7 +1765,6 @@ done:
     //       keep track of the paths' level using a separate variable.
     register auto path = scan_path_;
     register auto path_level = u;
-//    auto pos = path << (h - 1 - path_level);
     auto pos = scan_path_;
     auto length = n >> path_level;
     auto result_cnt = result_cnt_;
@@ -2561,7 +2462,6 @@ done:
       u1 is_inner = teb_.is_inner_node(scanner_states_[level].node_idx_);
       alpha |= u32(is_inner) << level;
     }
-//    std::cout << "alpha: " << std::bitset<32>(alpha) << std::endl;
 
     while (result_cnt < batch_size_ && pos < n) {
       assert(pos <= n);
@@ -2574,7 +2474,6 @@ done:
       // The length of the 1-fill.
       length = n >> path_level;
 
-//      $u1 label = false;
       const auto label_idx = scanner_states_[path_level].label_idx_;
       if (label_idx >= first_1label_idx_) {
         const auto label =
@@ -2585,7 +2484,6 @@ done:
         results_[result_cnt].length = length;
         result_cnt += label;
       }
-
 
       // Increment the current position.
       pos += length;
@@ -2619,7 +2517,6 @@ done:
     scan_path_ = path;
     scan_path_level_ = path_level;
     result_cnt_ = result_cnt;
-//    alpha_ = alpha;
   }
 
   /// A simple scalar implementation of the tree scan (without bit buffers).
@@ -2632,7 +2529,8 @@ done:
       for (std::size_t level = 0; level < scan_path_level_; ++level) {
         scanner_states_[level].node_idx_++;
       }
-    }    const auto h = tree_height_;
+    }
+    const auto h = tree_height_;
     const auto n = teb_.size();
     register auto path = scan_path_;
     register auto path_level = scan_path_level_;
