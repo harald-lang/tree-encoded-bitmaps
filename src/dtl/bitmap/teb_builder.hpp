@@ -144,7 +144,6 @@ teb_builder::serialize(word_type* dst) {
     u1 is_inner = (*it).is_inner;
 
     ++node_cntr;
-    leaf_node_cntr += !is_inner;
 
     // Memorize the level offsets.
     if (current_level != level) {
@@ -157,6 +156,8 @@ teb_builder::serialize(word_type* dst) {
     if (node_cntr <= hdr.implicit_inner_node_cnt) {
       continue;
     }
+
+    leaf_node_cntr += !is_inner;
 
     // Emit a 1-bit if the current node is an inner node, a 0-bit otherwise.
     if (idx < bitmap_tree_.get_last_explicit_node_idx()) {
