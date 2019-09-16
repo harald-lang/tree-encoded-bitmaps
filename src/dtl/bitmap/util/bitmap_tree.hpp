@@ -492,6 +492,10 @@ public:
 
     // Restore the tree instance with the minimum size.
     expand_until(min_size_tree_idx);
+
+    #ifndef NDEBUG
+    validate_counters();
+    #endif
   }
 
   /// Expands the tree nodes which have an index less than the given node index.
@@ -504,10 +508,13 @@ public:
       if (right_child_of(idx) >= max_node_cnt_) break;
 
       if (idx >= node_idx) break;
-
       // Expand the leaf node to an inner node.
       // DANGER: The tree structure is modified during iterating.
       set_inner(idx);
+
+      #ifndef NDEBUG
+      validate_counters();
+      #endif
     }
   }
 
@@ -540,10 +547,10 @@ public:
     assert(_inner_node_cnt == inner_node_cnt_);
     assert(_leading_inner_node_cnt == leading_inner_node_cnt_);
     assert(_trailing_leaf_node_cnt == trailing_leaf_node_cnt_);
-    assert(_leading_0label_cnt == leading_0label_cnt_);
-    assert(_trailing_0label_cnt == trailing_0label_cnt_);
     assert(_explicit_node_idxs_begin == explicit_node_idxs_.begin);
     assert(_explicit_node_idxs_end == explicit_node_idxs_.end);
+    assert(_leading_0label_cnt == leading_0label_cnt_);
+    assert(_trailing_0label_cnt == trailing_0label_cnt_);
     assert(_first_node_idx_with_1label == first_node_idx_with_1label_);
     assert(_last_node_idx_with_1label == last_node_idx_with_1label_);
     #endif
@@ -602,8 +609,8 @@ public:
     }
 
     // Labels
-//    assert(leading_0label_cnt_ <= leaf_node_cnt_);
-//    assert(trailing_0label_cnt_ <= leaf_node_cnt_);
+    assert(leading_0label_cnt_ <= inner_node_cnt_ + 1);
+    assert(trailing_0label_cnt_ <= inner_node_cnt_ + 1);
     u64 explicit_label_cnt = optimization_level_ > 2
         ? inner_node_cnt_ + 1 - leading_0label_cnt_ - trailing_0label_cnt_
         : inner_node_cnt_ + 1;
@@ -828,6 +835,9 @@ private:
       // max(last_node_idx_with_1label_, right-child(idx)).
       last_node_idx_with_1label_ =
           std::max(last_node_idx_with_1label_, right_child_of(idx));
+      if (last_node_idx_with_1label_ == right_child_of(idx)) {
+        trailing_0label_cnt_ = 0;
+      }
     }
 
     if (idx > last_node_idx_with_1label_) {
