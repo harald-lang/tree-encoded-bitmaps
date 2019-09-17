@@ -67,14 +67,15 @@ public:
   teb_iter(const teb_flat& teb) noexcept :
       teb_(teb),
       tree_height_(dtl::teb<optimization_level_>::determine_tree_height(teb.n_)),
-      perfect_levels_(
-          dtl::teb<optimization_level_>::determine_perfect_tree_levels(teb_.implicit_inner_node_cnt_)),
-      partition_shift_(tree_height_ - (perfect_levels_ - 1)),
-      top_node_idx_begin_((1ull << (perfect_levels_ - 1)) - 1),
-      top_node_idx_end_((1ull << perfect_levels_) - 1),
-      top_node_idx_current_(top_node_idx_begin_),
-      node_idx_(top_node_idx_current_),
-      path_(path_t(1) << (perfect_levels_ - 1)) {
+      perfect_levels_(teb.perfect_level_cnt_),
+      partition_shift_(tree_height_ - (teb.perfect_level_cnt_ - 1)),
+      top_node_idx_begin_((1ull << (teb.perfect_level_cnt_ - 1)) - 1),
+      top_node_idx_end_((1ull << teb.perfect_level_cnt_) - 1),
+      top_node_idx_current_((1ull << (teb.perfect_level_cnt_ - 1)) - 1),
+      pos_(0),
+      length_(0),
+      node_idx_((1ull << (teb.perfect_level_cnt_ - 1)) - 1),
+      path_(path_t(1) << (teb.perfect_level_cnt_ - 1)) {
     // Initialize the stack.
     --top_node_idx_current_;
     next_top_node();
