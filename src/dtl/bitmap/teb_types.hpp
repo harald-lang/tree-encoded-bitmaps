@@ -16,21 +16,21 @@ using teb_rank_type = dtl::rank1_surf<teb_word_type, true>;
 /// The header of a TEB.
 struct teb_header {
   /// The number of bits in the bitmap.
-  teb_size_type n;
+  teb_size_type n = 0;
   /// The length of the encoded tree.
-  teb_size_type tree_bit_cnt;
+  teb_size_type tree_bit_cnt = 0;
   /// The number of implicit inner nodes in the tree structure.
-  teb_size_type implicit_inner_node_cnt;
+  teb_size_type implicit_inner_node_cnt = 0;
   /// The number of label bits.
-  teb_size_type label_bit_cnt;
+  teb_size_type label_bit_cnt = 0;
   /// The number of implicit leading 0-labels.
-  teb_size_type implicit_leading_label_cnt;
+  teb_size_type implicit_leading_label_cnt = 0;
   /// The number of perfect levels.
-  $u8 perfect_level_cnt; // FIXME redundant, as is can be computed from the number of implicit inner nodes
+  $u8 perfect_level_cnt = 0; // FIXME redundant, as is can be computed from the number of implicit inner nodes
   /// The height of the encoded (pruned) tree.
-  $u8 encoded_tree_height;
+  $u8 encoded_tree_height = 0;
   /// True if the TEB contains level offsets at the very end.
-  $u1 has_level_offsets;
+  $u1 has_level_offsets = false;
   /// Padding.
   $u8 padding = 0;
 };
