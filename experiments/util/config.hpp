@@ -1,8 +1,10 @@
 #pragma once
+//===----------------------------------------------------------------------===//
+#include <ostream>
 
 #include <dtl/dtl.hpp>
-#include "bitmap_types.hpp"
 
+#include "bitmap_types.hpp"
 //===----------------------------------------------------------------------===//
 struct config {
   bitmap_t bitmap_type;
@@ -13,8 +15,8 @@ struct config {
 
   bool
   operator<(const config& o) const {
-    const auto t = static_cast<uint32_t>(bitmap_type);
-    const auto ot = static_cast<uint32_t>(o.bitmap_type);
+    const auto t = static_cast<$u32>(bitmap_type);
+    const auto ot = static_cast<$u32>(o.bitmap_type);
     return t < ot
         || (t == ot && n  < o.n)
         || (t == ot && n == o.n && density  < o.density)

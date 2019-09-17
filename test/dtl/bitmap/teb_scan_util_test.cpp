@@ -2,7 +2,6 @@
 
 #include <dtl/dtl.hpp>
 #include <dtl/bitmap/teb_scan_util.hpp>
-
 //===----------------------------------------------------------------------===//
 TEST(teb_scan_util,
      fetch_bits) {

@@ -1,7 +1,15 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include <types/Types.hpp>
+#include <dtl/dtl.hpp>
 //===----------------------------------------------------------------------===//
-template<unsigned precision>
-using numeric = types::Numeric<18, precision>;
+struct params_uniform {
+  $u64 n = 0;
+  $f64 density = 0;
+};
+//===----------------------------------------------------------------------===//
+struct params_markov {
+  $u64 n = 0;
+  $f64 clustering_factor = 0;
+  $f64 density = 0;
+};
 //===----------------------------------------------------------------------===//

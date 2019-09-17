@@ -5,7 +5,6 @@
 #include <dtl/bitmap/util/random.hpp>
 #include <dtl/bitmap/util/base64.hpp>
 #include "bitmap_db.hpp"
-
 //===----------------------------------------------------------------------===//
 bitmap_db::bitmap_db(const std::string& file)
     : file_(file),

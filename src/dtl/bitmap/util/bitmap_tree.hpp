@@ -9,7 +9,6 @@
 #include "binary_tree_structure.hpp"
 #include "rank1_surf.hpp"
 #include "plain_bitmap.hpp"
-#include "config.hpp"
 //===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//
@@ -750,7 +749,7 @@ public:
 private:
 
   /// Expands the VERY FIRST explicit node. // TODO generalize to expand arbitrary nodes
-  void __teb_inline__
+  void __forceinline__
   set_inner(u64 idx) {
     assert(is_leaf_node(idx));
     binary_tree_structure::set_inner(idx);

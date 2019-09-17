@@ -7,7 +7,6 @@
 #include <dtl/bitmap/util/base64.hpp>
 #include <dtl/math.hpp>
 #include "seq_db.hpp"
-
 //===----------------------------------------------------------------------===//
 seq_db::seq_db(const std::string& file)
     : file_(file),

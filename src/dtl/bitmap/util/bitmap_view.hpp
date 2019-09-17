@@ -1,13 +1,12 @@
 #pragma once
-
+//===----------------------------------------------------------------------===//
 #include <vector>
 
 #include <dtl/dtl.hpp>
 #include <dtl/iterator.hpp>
-#include <dtl/bitmap/util/bitmap_fun.hpp>
-
+#include "bitmap_fun.hpp"
+//===----------------------------------------------------------------------===//
 namespace dtl {
-
 //===----------------------------------------------------------------------===//
 template<typename _word_type>
 struct bitmap_view {

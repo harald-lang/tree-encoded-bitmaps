@@ -1,5 +1,5 @@
 #pragma once
-
+//===----------------------------------------------------------------------===//
 #include <bitset>
 #include <chrono>
 #include <cmath>
@@ -12,42 +12,42 @@
 #include <dtl/dtl.hpp>
 #include <dtl/env.hpp>
 #include <dtl/thread.hpp>
-
-#include <dtl/bitmap/dynamic_bitmap.hpp>
-#include <dtl/bitmap/dynamic_roaring_bitmap.hpp>
-#include <dtl/bitmap/teb.hpp>
-#include <dtl/bitmap/teb_scan.hpp>
-#include <dtl/bitmap/dynamic_wah.hpp>
 #include <dtl/bitmap/util/two_state_markov_process.hpp>
 #include <dtl/bitmap/util/random.hpp>
 #include <dtl/bitmap/util/convert.hpp>
+#include <dtl/bitmap/dynamic_bitmap.hpp>
+#include <dtl/bitmap/dynamic_roaring_bitmap.hpp>
+#include <dtl/bitmap/dynamic_wah.hpp>
+#include <dtl/bitmap/teb.hpp>
+#include <dtl/bitmap/teb_wrapper.hpp>
 #include <dtl/bitmap/position_list.hpp>
 #include <dtl/bitmap/partitioned_position_list.hpp>
 #include <dtl/bitmap/partitioned_range_list.hpp>
-
 #include <dtl/bitmap/range_list.hpp>
+
 #include <experiments/util/config.hpp>
 #include <experiments/util/threading.hpp>
 #include <experiments/util/bitmap_types.hpp>
 
 #include "version.h"
-
 //===----------------------------------------------------------------------===//
-// The number of independent runs.
+/// The number of independent runs.
 static $u64 RUNS = 10;
+/// The (default) size of a randomly generated bitmap.
 static constexpr u64 N = 1u << 20;
-
+/// A timestamp that identifies the current experiment.
 static const i64 RUN_ID = std::chrono::duration_cast<std::chrono::seconds>(
     std::chrono::system_clock::now().time_since_epoch()).count();
-
+/// The database file where the bitmaps are stored.
 static const std::string DB_FILE =
     dtl::env<std::string>::get("DB_FILE", "./random_bitmaps.sqlite3");
+/// 0 = run experiment, 1 = generate data for the experiment
 static u64 GEN_DATA = dtl::env<$u64>::get("GEN_DATA", 0);
-
+/// The database instance where the bitmaps are stored.
 static bitmap_db db(DB_FILE);
-
+/// Each measurement is repeated until the time below is elapsed.
 //static $u64 RUN_DURATION_NANOS = 250e6; // run for at least 250ms
-static $u64 RUN_DURATION_NANOS = 1250e6; // run for at least 250ms
+static $u64 RUN_DURATION_NANOS = 1250e6; // run for at least 1250ms
 //===----------------------------------------------------------------------===//
 u64
 now_nanos() {
@@ -213,13 +213,16 @@ void run(config c, std::ostream& os) {
     case bitmap_t::teb:
       run<dtl::teb<>>(c, os);
       break;
-//    case bitmap_t::teb_scan:
+//    case bitmap_t::teb_scan: /* deprecated*/
 //      run<dtl::teb_scan<>>(c, os);
 //      break;
+    case bitmap_t::teb_wrapper:
+      run<dtl::teb_wrapper>(c, os);
+      break;
     case bitmap_t::wah:
       run<dtl::dynamic_wah32>(c, os);
       break;
-
+    // EXPERIMENTAL
 //    case bitmap_t::position_list:
 //      run<dtl::position_list<$u32>>(c, os);
 //      break;

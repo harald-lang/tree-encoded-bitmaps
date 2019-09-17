@@ -1,10 +1,11 @@
 #pragma once
-
+//===----------------------------------------------------------------------===//
 #include <bitset>
 #include <chrono>
 #include <cmath>
 #include <limits>
 #include <iostream>
+#include <string>
 
 #include <boost/algorithm/string.hpp>
 
@@ -26,27 +27,30 @@
 #include <experiments/util/threading.hpp>
 #include <experiments/util/bitmap_db.hpp>
 #include <dtl/bitmap/util/convert.hpp>
-#include <dtl/bitmap/teb_scan.hpp>
-
-// The number of independent runs.
+#include <dtl/bitmap/teb_wrapper.hpp>
+//===----------------------------------------------------------------------===//
+/// The number of independent runs.
 static constexpr u64 RUNS = 10;
+/// The (default) size of a randomly generated bitmap.
 static constexpr u64 N = 1u << 20;
-
+/// A timestamp that identifies the current experiment.
 static const i64 RUN_ID = std::chrono::duration_cast<std::chrono::seconds>(
     std::chrono::system_clock::now().time_since_epoch()).count();
-
+/// The database file where the bitmaps are stored.
 static const std::string DB_FILE =
     dtl::env<std::string>::get("DB_FILE", "./random_bitmaps.sqlite3");
+/// 0 = run experiment, 1 = generate data for the experiment
 static u64 GEN_DATA = dtl::env<$u64>::get("GEN_DATA", 0);
-
+/// The database instance where the bitmaps are stored.
 static bitmap_db db(DB_FILE);
-
 //===----------------------------------------------------------------------===//
+/// All implementations that should be considered in the experiment.
 enum class bitmap_t {
   bitmap,
   roaring,
   teb,
   teb_scan,
+  teb_wrapper,
   wah,
   position_list,
   partitioned_position_list_u8,
@@ -58,6 +62,7 @@ enum class bitmap_t {
   _last = partitioned_range_list_u16
 };
 //===----------------------------------------------------------------------===//
+/// Refers to a single independent task that is executed during the experiment.
 struct config {
   bitmap_t bitmap_type;
   $u64 n;
@@ -67,7 +72,8 @@ struct config {
 };
 //===----------------------------------------------------------------------===//
 template<typename T>
-void run(const config& c, std::ostream& os) {
+static void
+run(const config& c, std::ostream& os) {
   // Load the bitmap from DB.
   auto bs = db.load_bitmap(c.bitmap_id);
   // Encode the bitmap.
@@ -76,8 +82,7 @@ void run(const config& c, std::ostream& os) {
   const auto size_in_bytes = enc_bs.size_in_byte();
   std::string type_info = enc_bs.info();
 
-  // Validation.
-  // Reconstruct the original bitmap.
+  // Validation. - Reconstruct the original bitmap.
   auto dec_bs = dtl::to_bitmap_using_iterator(enc_bs);
   if (bs != dec_bs) {
     std::cerr << "Validation failed for "
@@ -105,7 +110,8 @@ void run(const config& c, std::ostream& os) {
      << std::endl;
 }
 //===----------------------------------------------------------------------===//
-void run(config c, std::ostream& os) {
+static void
+run(config c, std::ostream& os) {
   switch (c.bitmap_type) {
     case bitmap_t::bitmap:
       run<dtl::dynamic_bitmap<$u32>>(c, os);
@@ -119,9 +125,13 @@ void run(config c, std::ostream& os) {
 //    case bitmap_t::teb_scan: /* deprecated*/
 //      run<dtl::teb_scan<>>(c, os);
 //      break;
+    case bitmap_t::teb_wrapper:
+      run<dtl::teb_wrapper>(c, os);
+      break;
     case bitmap_t::wah:
       run<dtl::dynamic_wah32>(c, os);
       break;
+    // EXPERIMENTAL
 //    case bitmap_t::position_list:
 //      run<dtl::position_list<$u32>>(c, os);
 //      break;
@@ -143,7 +153,8 @@ void run(config c, std::ostream& os) {
   }
 }
 //===----------------------------------------------------------------------===//
-void run(const std::vector<config>& configs) {
+static void
+run(const std::vector<config>& configs) {
   std::function<void(const config&, std::ostream&)> fn =
       [](const config c, std::ostream& os) -> void {
         run(c, os);

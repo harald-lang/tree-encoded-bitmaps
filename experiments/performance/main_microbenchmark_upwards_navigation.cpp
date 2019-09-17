@@ -1,58 +1,79 @@
+#include <string>
+#include <chrono>
+#include <cstddef>
+#include <iostream>
+#include <vector>
+
 #include <dtl/dtl.hpp>
 #include <dtl/env.hpp>
 #include <dtl/bitmap/util/convert.hpp>
 #include <dtl/bitmap/teb.hpp>
+
 #include <boost/algorithm/string.hpp>
 
-#include "../util/bitmap_db.hpp"
-#include "../util/gen.hpp"
-#include "../util/threading.hpp"
+#include "experiments/util/bitmap_db.hpp"
+#include "experiments/util/gen.hpp"
+#include "experiments/util/threading.hpp"
 
 #include "thirdparty/perfevent/PerfEvent.hpp"
 //===----------------------------------------------------------------------===//
-const std::string DB_FILE =
+// Micro-Experiment: Determine the costs of upward navigational steps.
+//===----------------------------------------------------------------------===//
+/// The database file where the bitmaps are stored.
+static const std::string DB_FILE =
     dtl::env<std::string>::get("DB_FILE", "./random_bitmaps.sqlite3");
-bitmap_db db(DB_FILE);
-
-constexpr auto opt_level = 2;
-
+/// The database instance where the bitmaps are stored.
+static bitmap_db db(DB_FILE);
+/// The clustering factor.
+f64 F = 1.0;
+/// The bit densities we test. Note that with higher density, the number of
+/// perfect levels increases and therefore the number of navigational steps
+/// decreases. If the number of steps is less than 5, the results are
+/// (significantly) distorted due to other overheads.
+std::vector<$f64> bit_densities = {0.0001, 0.001, 0.01, 0.1};
+/// The bitmap length.
+u64 N = 1ull << 20;
+//===----------------------------------------------------------------------===//
+// Helper
 auto now_nanos = []() {
   return std::chrono::duration_cast<std::chrono::nanoseconds>(
       std::chrono::steady_clock::now().time_since_epoch()).count();
-};
-
-std::vector<$f64> clustering_factors = {8,4,2,1};
-std::vector<$f64> bit_densities = {0.001, 0.01, 0.1, 0.2};
-std::vector<$u64> n_values {
-//      1ull << 16,
-//      1ull << 17,
-//      1ull << 18,
-//      1ull << 19,
-    1ull << 20
 };
 //===----------------------------------------------------------------------===//
 void run(u64 n, f64 f, f64 d, i64 bitmap_id) {
   const auto bid = bitmap_id;
   const auto plain_bitmap = db.load_bitmap(bid);
 
+  // We need to use an unoptimized TEB, otherwise the stack would be too small
+  // to get reliable results.
   using T = dtl::teb<0>;
 
   T enc_bitmap(plain_bitmap);
 
   std::vector<std::size_t> probe_positions;
-  std::vector<std::size_t> probe_up_steps;
   std::size_t up_step_sum = 0;
   {
     auto it = enc_bitmap.it();
     while (!it.end()) {
-      probe_positions.push_back(it.pos());
+      if (probe_positions.size() > 1024) break;
+
       auto up_steps = it.bench_nav_upwards_get_stack_size();
-      up_step_sum += up_steps;
-      probe_up_steps.push_back(up_steps);
+      if (up_steps >= 5) {
+        probe_positions.push_back(it.pos());
+        up_step_sum += up_steps;
+      }
+
       it.next();
     }
   }
-  if (up_step_sum == 0) return;
+  if (up_step_sum < 1024) {
+    std::cerr << "The given bitmap is not suitable for this experiment." << std::endl;
+    std::cerr << enc_bitmap.info() << std::endl;
+    std::cerr << " # of upward steps = " << up_step_sum
+        << ", # of probe positions = " << probe_positions.size()
+        << std::endl;
+    return;
+  }
 
   auto it = enc_bitmap.it();
   auto tsc_cntr = 0ull;
@@ -73,30 +94,20 @@ void run(u64 n, f64 f, f64 d, i64 bitmap_id) {
 $i32 main() {
   std::vector<$i64> bitmap_ids;
 
-  for (auto n : n_values) {
-    for (auto d : bit_densities) {
-      for (auto f : clustering_factors) {
-        const auto ids = db.find_bitmaps(n, f, d);
-        if (ids.empty()) {
-          const auto bitmap = gen_random_bitmap_markov(n, f, d);
-          const auto id = db.store_bitmap(n,f,d,bitmap);
-          bitmap_ids.push_back(id);
-        }
-      }
+  for (auto d : bit_densities) {
+    const auto ids = db.find_bitmaps(N, F, d);
+    if (ids.empty()) {
+      const auto bitmap = gen_random_bitmap_markov(N, F, d);
+      const auto id = db.store_bitmap(N, F, d, bitmap);
+      bitmap_ids.push_back(id);
     }
   }
 
   std::cerr << "n,f,d,cycles,info" << std::endl;
-  for (auto n : n_values) {
-    for (auto d : bit_densities) {
-      for (auto f : clustering_factors) {
-        const auto ids = db.find_bitmaps(n, f, d);
-        if (!ids.empty()) {
-          run(n, f, d, ids[0]);
-          run(n, f, d, ids[0]);
-          run(n, f, d, ids[0]);
-        }
-      }
+  for (auto d : bit_densities) {
+    const auto ids = db.find_bitmaps(N, F, d);
+    if (!ids.empty()) {
+      run(N, F, d, ids[0]);
     }
   }
 }

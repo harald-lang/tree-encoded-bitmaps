@@ -1,12 +1,14 @@
 #pragma once
-
+//===----------------------------------------------------------------------===//
 #include <iostream>
 #include <sstream>
+#include <vector>
 #include <dtl/dtl.hpp>
 #include <dtl/bitmap/util/random.hpp>
 #include <dtl/bitmap/util/two_state_markov_process.hpp>
 #include <dtl/bitmap/util/markov_process.hpp>
-
+#include "bitmap_db.hpp"
+#include "params.hpp"
 //===----------------------------------------------------------------------===//
 static u1
 markov_parameters_are_valid(u64 n, $f64 f, $f64 d) {
@@ -15,7 +17,7 @@ markov_parameters_are_valid(u64 n, $f64 f, $f64 d) {
       && f >= d/(1-d)
       && f <= d*n;
 }
-
+//===----------------------------------------------------------------------===//
 /// Generate a random bitmap with the given parameters.
 /// The actual f and d are at most 2% off.
 ///
@@ -67,6 +69,7 @@ gen_random_bitmap_markov(u64 n, $f64 f, $f64 d) {
 }
 //===----------------------------------------------------------------------===//
 /// Generate a uniformly populated random bitmap with the given density.
+// TODO max error
 static dtl::bitmap
 gen_random_bitmap_uniform(u64 n, $f64 d) {
   if (d < 0 || d > 1.0) {
@@ -128,4 +131,19 @@ gen_random_integer_sequence_markov(u64 n, u32 c, $f64 f) {
       "Failed to construct a random integer sequence with the given parameters "
           "after several retries.");
 }
+//===----------------------------------------------------------------------===//
+/// Generates multiple (Markov) random bitmaps in parallel and stores them in
+/// the database. When the return values is > 0, then some of the bitmap
+/// couldn't be generated.
+std::size_t
+gen(
+    std::vector<params_markov>& params,
+    bitmap_db& db // the database, where the generated bitmaps are stored
+);
+//===----------------------------------------------------------------------===//
+std::size_t
+gen(
+    std::vector<params_uniform>& params,
+    bitmap_db& db // the database, where the generated bitmaps are stored
+);
 //===----------------------------------------------------------------------===//

@@ -7,12 +7,10 @@
 #include <dtl/bitmap/partitioned_range_list.hpp>
 #include <dtl/bitmap/util/random.hpp>
 #include "common.hpp"
-
 //===----------------------------------------------------------------------===//
-// Experiment: Comparison of compression ratios for the different TEB
-//             optimization levels.
+// Experiment: Comparison of "basic TEBs" and "space optimized TEBs".
+//             The results are required to plot the Figures 6 and 7.
 //===----------------------------------------------------------------------===//
-
 struct config_t {
   $u64 n;
   $f64 bit_density;
@@ -26,14 +24,12 @@ struct config_t {
        << "]";
   }
 };
-
+//===----------------------------------------------------------------------===//
 void
 run(const config_t& config, std::ostream& os) {
   const auto num_runs = 10; // RUNS;
-  $f64 size_wah = 0;
-  $f64 size_roaring = 0;
   $f64 size_teb_o0 = 0;
-//  $f64 size_teb_o1 = 0;
+//  $f64 size_teb_o1 = 0; // deprecated. in the paper we only distinguish between -o0 and -o3
 //  $f64 size_teb_o2 = 0;
   $f64 size_teb_o3 = 0;
 
@@ -45,13 +41,6 @@ run(const config_t& config, std::ostream& os) {
   $u64 label_bit_cnt_o3 = 0;
   $u64 label_leading_0bit_cnt = 0;
   $u64 label_trailing_0bit_cnt = 0;
-
-//  $f64 size_pl = 0;
-//  $f64 size_ppl_u8 = 0;
-//  $f64 size_ppl_u16 = 0;
-//  $f64 size_rl = 0;
-//  $f64 size_prl_u8 = 0;
-//  $f64 size_prl_u16 = 0;
 
   // # of runs
   for ($u64 r = 0; r < num_runs; r++) {
@@ -93,18 +82,14 @@ run(const config_t& config, std::ostream& os) {
       << std::endl;
   os << out.str();
 }
-
+//===----------------------------------------------------------------------===//
 $i32 main() {
 
   std::vector<$u64> n_s {
       1ull << 20 };
   std::vector<$f64> clustering_factors { 8 };
-//  std::vector<$u64> n_s {
-//      1ull << 10, 1ull << 12, 1ull << 14, 1ull << 16, 1ull << 18, 1ull << 20 };
-//  std::vector<$f64> clustering_factors { 1, 2, 4, 8, 16, 32, 64, 128 };
 
   std::vector<$f64> bit_densities { 0.0000001, 0.000001, 0.00001, 0.0001, 0.001, 0.01 };
-//  for ($f64 d = 5; d <= 85; d += 5) {
   for ($f64 d = 10; d <= 80; d += 10) {
     bit_densities.push_back(d/100);
   }
@@ -143,5 +128,5 @@ $i32 main() {
         }
       };
   dispatch<config_t>(configs, fn);
-
 }
+//===----------------------------------------------------------------------===//

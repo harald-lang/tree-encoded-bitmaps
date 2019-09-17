@@ -1,11 +1,11 @@
 #pragma once
-
+//===----------------------------------------------------------------------===//
 #include <mutex>
 #include <string>
 #include <dtl/dtl.hpp>
 #include <dtl/bitmap.hpp>
 #include <sqlite/sqlite3.h>
-
+//===----------------------------------------------------------------------===//
 class seq_db {
 
   const std::string file_;
@@ -52,3 +52,4 @@ private:
   void close();
 
 };
+//===----------------------------------------------------------------------===//

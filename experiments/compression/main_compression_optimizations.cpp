@@ -6,13 +6,14 @@
 #include <dtl/bitmap/range_list.hpp>
 #include <dtl/bitmap/partitioned_range_list.hpp>
 #include <dtl/bitmap/util/random.hpp>
-#include "common.hpp"
 
+#include <experiments/util/gen.hpp>
+#include "common.hpp"
 //===----------------------------------------------------------------------===//
 // Experiment: Comparison of compression ratios for the different TEB
 //             optimization levels.
+//             The results are required to plot the Figures 2 and 5.
 //===----------------------------------------------------------------------===//
-
 struct config_t {
   $u64 n;
   $f64 bit_density;
@@ -26,7 +27,7 @@ struct config_t {
        << "]";
   }
 };
-
+//===----------------------------------------------------------------------===//
 void
 run(const config_t& config, std::ostream& os) {
   $f64 size_wah = 0;
@@ -35,19 +36,13 @@ run(const config_t& config, std::ostream& os) {
   $f64 size_teb_o1 = 0;
   $f64 size_teb_o2 = 0;
   $f64 size_teb_o3 = 0;
-//  $f64 size_pl = 0;
-//  $f64 size_ppl_u8 = 0;
-//  $f64 size_ppl_u16 = 0;
-//  $f64 size_rl = 0;
-//  $f64 size_prl_u8 = 0;
-//  $f64 size_prl_u16 = 0;
 
   // # of runs
   for ($u64 r = 0; r < RUNS; r++) {
 
-    auto bm = dtl::gen_random_bitmap_markov(config.n,
-                                            config.clustering_factor,
-                                            config.bit_density);
+    auto bm = gen_random_bitmap_markov(config.n,
+        config.clustering_factor,
+        config.bit_density);
 
     dtl::dynamic_wah32 wah(bm);
     size_wah += wah.size_in_byte();
@@ -55,24 +50,12 @@ run(const config_t& config, std::ostream& os) {
     size_roaring += roaring.size_in_byte();
     dtl::teb<0> teb_o0(bm);
     size_teb_o0 += teb_o0.size_in_byte();
-//    dtl::teb<1> teb_o1(bm);
+//    dtl::teb<1> teb_o1(bm); // deprecated. in the paper we only distinguish between -o0 and -o3
 //    size_teb_o1 += teb_o1.size_in_byte();
 //    dtl::teb<2> teb_o2(bm);
 //    size_teb_o2 += teb_o2.size_in_byte();
     dtl::teb<3> teb_o3(bm);
     size_teb_o3 += teb_o3.size_in_byte();
-//    dtl::position_list<$u32> pl(bm);
-//    size_pl += pl.size_in_byte();
-//    dtl::partitioned_position_list<$u32, $u8> ppl_u8(bm);
-//    size_ppl_u8 += ppl_u8.size_in_byte();
-//    dtl::partitioned_position_list<$u32, $u16> ppl_u16(bm);
-//    size_ppl_u16 += ppl_u16.size_in_byte();
-//    dtl::range_list<$u32> rl(bm);
-//    size_rl += rl.size_in_byte();
-//    dtl::partitioned_range_list<$u32, $u8> prl_u8(bm);
-//    size_prl_u8 += prl_u8.size_in_byte();
-//    dtl::partitioned_range_list<$u32, $u16> prl_u16(bm);
-//    size_prl_u16 += prl_u16.size_in_byte();
 
     // Validation
     {
@@ -100,30 +83,6 @@ run(const config_t& config, std::ostream& os) {
         std::cerr << "Validation failed. (TEBo3)" << std::endl;
         std::exit(1);
       }
-//      if (bm != pl.to_bitset()) {
-//        std::cerr << "Validation failed. (PL)" << std::endl;
-//        std::exit(1);
-//      }
-//      if (bm != ppl_u8.to_bitset()) {
-//        std::cerr << "Validation failed. (PPLu8)" << std::endl;
-//        std::exit(1);
-//      }
-//      if (bm != ppl_u16.to_bitset()) {
-//        std::cerr << "Validation failed. (PPLu16)" << std::endl;
-//        std::exit(1);
-//      }
-//      if (bm != rl.to_bitset()) {
-//        std::cerr << "Validation failed. (RL)" << std::endl;
-//        std::exit(1);
-//      }
-//      if (bm != prl_u8.to_bitset()) {
-//        std::cerr << "Validation failed. (PRLu8)" << std::endl;
-//        std::exit(1);
-//      }
-//      if (bm != prl_u16.to_bitset()) {
-//        std::cerr << "Validation failed. (PRLu16)" << std::endl;
-//        std::exit(1);
-//      }
     }
   }
 
@@ -137,24 +96,14 @@ run(const config_t& config, std::ostream& os) {
       << "," << (size_teb_o3 / RUNS) / 1024.0
       << "," << (size_roaring / RUNS) / 1024.0
       << "," << (size_wah / RUNS) / 1024.0
-//      << "," << (size_pl / RUNS) / 1024.0
-//      << "," << (size_ppl_u8 / RUNS) / 1024.0
-//      << "," << (size_ppl_u16 / RUNS) / 1024.0
-//      << "," << (size_rl / RUNS) / 1024.0
-//      << "," << (size_prl_u8 / RUNS) / 1024.0
-//      << "," << (size_prl_u16 / RUNS) / 1024.0
       << std::endl;
   os << out.str();
 }
-
+//===----------------------------------------------------------------------===//
 $i32 main() {
 
-  std::vector<$u64> n_s {
-      1ull << 20 };
+  std::vector<$u64> n_s { 1ull << 20 };
   std::vector<$f64> clustering_factors { 8 };
-//  std::vector<$u64> n_s {
-//      1ull << 10, 1ull << 12, 1ull << 14, 1ull << 16, 1ull << 18, 1ull << 20 };
-//  std::vector<$f64> clustering_factors { 1, 2, 4, 8, 16, 32, 64, 128 };
 
   std::vector<$f64> bit_densities { 0.01 };
   for ($f64 d = 5; d <= 85; d += 5) {
@@ -181,8 +130,6 @@ $i32 main() {
     }
   }
 
-  std::random_shuffle(configs.begin(), configs.end());
-
   std::function<void(const config_t&, std::ostream&)> fn =
       [](const config_t c, std::ostream& os) -> void {
         try {
@@ -195,5 +142,5 @@ $i32 main() {
         }
       };
   dispatch<config_t>(configs, fn);
-
 }
+//===----------------------------------------------------------------------===//

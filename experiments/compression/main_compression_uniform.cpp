@@ -2,12 +2,10 @@
 #include <dtl/dtl.hpp>
 #include <experiments/util/bitmap_db.hpp>
 #include <experiments/util/gen.hpp>
+#include <experiments/util/prep_data.hpp>
 #include "common.hpp"
-
 //===----------------------------------------------------------------------===//
 // Experiment: Comparison of compression ratios of (uniform) random bitmaps.
-//===----------------------------------------------------------------------===//
-
 //===----------------------------------------------------------------------===//
 /// Data generation.
 void gen_data_uniform(const std::vector<$u64>& n_values,
@@ -80,7 +78,6 @@ void gen_data_uniform(const std::vector<$u64>& n_values,
 $i32 main() {
 
   // Prepare benchmark settings.
-//  u64 n_min = 1ull << 10;
   u64 n_min = 1ull << 20;
   u64 n_max = 1ull << 20;
 
@@ -103,7 +100,17 @@ $i32 main() {
   }
 
   if (GEN_DATA) {
-    gen_data_uniform(n_values, bit_densities);
+    std::vector<params_uniform> params;
+    for (auto d: bit_densities) {
+      for (auto n: n_values) {
+        if (n == 0 || d < 0 || d > 1.0) continue;
+        params_uniform p;
+        p.n = n;
+        p.density = d;
+        params.push_back(p);
+      }
+    }
+    prep_data(params, RUNS, db);
     std::exit(0);
   }
   else {
@@ -117,8 +124,7 @@ $i32 main() {
   std::vector<config> configs;
   for (auto d: bit_densities) {
     for (auto n: n_values) {
-
-      if (d < 0 || d > 1.0) continue;
+      if (n == 0 || d < 0 || d > 1.0) continue;
 
       config c;
       c.n = n;

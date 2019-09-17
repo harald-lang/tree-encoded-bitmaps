@@ -101,7 +101,7 @@ public:
         + std::to_string(determine_compressed_tree_depth())
         + ",\"perfect_levels\":"
         + std::to_string(dtl::teb<>::determine_perfect_tree_levels(teb_->implicit_inner_node_cnt_))
-        + ",\"opt_level\":" + "n/a"
+        + ",\"opt_level\":" + std::to_string(3) // default
         + ",\"rank\":" + teb_->rank_.info()
         + ",\"leading_zero_labels\":" + std::to_string(teb_->implicit_leading_label_cnt_)
         + "}";

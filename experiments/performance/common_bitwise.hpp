@@ -1,8 +1,7 @@
 #pragma once
-
+//===----------------------------------------------------------------------===//
 #include <dtl/bitmap/bitwise_operations.hpp>
 #include "common.hpp"
-
 //===----------------------------------------------------------------------===//
 template<typename T>
 void __attribute__ ((noinline))
@@ -12,26 +11,32 @@ run_intersect(const config_pair& c, std::ostream& os) {
   // Load the bitmap from DB.
   const auto bs1 = db.load_bitmap(c.bitmap_id1);
   const auto bs2 = db.load_bitmap(c.bitmap_id2);
-  const auto bs_count1 = bs1.count();
-  const auto bs_count2 = bs2.count();
   // Encode the bitmap.
   const T enc_bs1(bs1);
   const T enc_bs2(bs2);
 
   // Validation code.
   {
-    auto it1 = enc_bs1.scan_it();
-//    auto it2 = enc_bs2.it();
-    auto it2 = enc_bs2.scan_it();
-    auto result_it = dtl::bitwise_and_it(it1, it2);
-//    auto result_it = dtl::bitwise_or_it(it1, it2);
-//    auto result_it = dtl::bitwise_xor_it(it1, it2);
-    const auto result_bs = dtl::to_bitmap_from_iterator(result_it, bs1.size());
-    if (result_bs != (bs1 & bs2)) {
-//    if (result_bs != (bs1 | bs2)) {
-//    if (result_bs != (bs1 ^ bs2)) {
-      std::cerr << "Validation failed: " << c << std::endl;
-      std::exit(1);
+    const auto expected_bs = bs1 & bs2;
+    {
+      auto it1 = enc_bs1.scan_it();
+      auto it2 = enc_bs2.it();
+      auto result_it = dtl::bitwise_and_it(it1, it2);
+      const auto result_bs = dtl::to_bitmap_from_iterator(result_it, bs1.size());
+      if (result_bs != expected_bs) {
+        std::cerr << "Validation failed: " << c << std::endl;
+        std::exit(1);
+      }
+    }
+    {
+      auto it1 = enc_bs1.it();
+      auto it2 = enc_bs2.it();
+      auto result_it = dtl::bitwise_and_it(it1, it2);
+      const auto result_bs = dtl::to_bitmap_from_iterator(result_it, bs1.size());
+      if (result_bs != expected_bs) {
+        std::cerr << "Validation failed: " << c << std::endl;
+        std::exit(1);
+      }
     }
   }
 
@@ -41,11 +46,8 @@ run_intersect(const config_pair& c, std::ostream& os) {
     std::size_t pos_sink = 0;
     std::size_t length_sink = 0;
     auto it1 = enc_bs1.scan_it();
-    auto it2 = enc_bs2.scan_it();
-//    auto it2 = enc_bs2.it();
+    auto it2 = enc_bs2.it();
     auto result_it = dtl::bitwise_and_it(it1, it2);
-//    auto result_it = dtl::bitwise_or_it(it1, it2);
-//    auto result_it = dtl::bitwise_xor_it(it1, it2);
     while (!result_it.end()) {
       pos_sink += result_it.pos();
       length_sink += result_it.length();
@@ -54,7 +56,6 @@ run_intersect(const config_pair& c, std::ostream& os) {
 
     checksum += pos_sink + length_sink;
   }
-
 
   // The actual measurement.
   $u64 runtime_nanos_scan_it = 0;
@@ -73,10 +74,7 @@ run_intersect(const config_pair& c, std::ostream& os) {
       ++rep_cntr;
       auto it1 = enc_bs1.scan_it();
       auto it2 = enc_bs2.it();
-//      auto it2 = enc_bs2.scan_it();
       auto result_it = dtl::bitwise_and_it(it1, it2);
-//      auto result_it = dtl::bitwise_or_it(it1, it2);
-//      auto result_it = dtl::bitwise_xor_it(it1, it2);
       while (!result_it.end()) {
         pos_sink += result_it.pos();
         length_sink += result_it.length();
@@ -111,11 +109,7 @@ run_intersect(const config_pair& c, std::ostream& os) {
       ++rep_cntr;
       auto it1 = enc_bs1.it();
       auto it2 = enc_bs2.it();
-//      auto it1 = enc_bs1.scan_it();
-//      auto it2 = enc_bs2.scan_it();
       auto result_it = dtl::bitwise_and_it(it1, it2);
-//      auto result_it = dtl::bitwise_or_it(it1, it2);
-//      auto result_it = dtl::bitwise_xor_it(it1, it2);
       while (!result_it.end()) {
         pos_sink += result_it.pos();
         length_sink += result_it.length();
@@ -178,7 +172,10 @@ void run_intersect(config_pair c, std::ostream& os) {
     case bitmap_t::wah:
       run_intersect<dtl::dynamic_wah32>(c, os);
       break;
-
+    case bitmap_t::teb_wrapper:
+      run_intersect<dtl::teb_wrapper>(c, os);
+      break;
+    // EXPERIMENTAL
 //    case bitmap_t::position_list:
 //      run_intersect<dtl::position_list<$u32>>(c, os);
 //      break;

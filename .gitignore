@@ -12,3 +12,4 @@
 .idea
 cmake-build-*
 **/perf.data
+CMakeListsLocal.cmake

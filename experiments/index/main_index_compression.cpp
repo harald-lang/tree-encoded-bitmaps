@@ -14,7 +14,8 @@
 //===----------------------------------------------------------------------===//
 // Experiment: This experiment constructs and compresses bitmap indexes from
 //             randomly generated integer sequences. Thereby varying the
-//             parameters n, c, and f.
+//             parameters n, c, and f, where c refers to the number of distinct
+//             values.
 //===----------------------------------------------------------------------===//
 
 //===----------------------------------------------------------------------===//
@@ -326,7 +327,7 @@ run(const config& conf, std::ostream& os) {
     *bmi[i] = *bmi[i] | *bmi[i-1];
   }
   if (bmi.back()->count() != conf.n) {
-    std::cout << "Validation failed. All bits in th last bitmap of a "
+    std::cout << "Validation failed. All bits in the last bitmap of a "
         "range-encoded bitmap index are supposed to be set." << std::endl;
     std::exit(1);
   }

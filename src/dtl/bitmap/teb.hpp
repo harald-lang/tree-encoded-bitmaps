@@ -1,19 +1,17 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include "util/config.hpp"
-
 // TODO remove
-//#define __teb_inline__ __attribute__((noinline))
+#define __teb_inline__ __attribute__((noinline))
 
-//#if !defined(__teb_inline__)
-//#if defined(NDEBUG)
-//// Release build.
-//#define __teb_inline__ inline __attribute__((always_inline))
-////#define __teb_inline__ __attribute__((noinline))
-//#else
-//#define __teb_inline__
-//#endif
-//#endif
+#if !defined(__teb_inline__)
+#if defined(NDEBUG)
+// Release build.
+#define __teb_inline__ inline __attribute__((always_inline))
+//#define __teb_inline__ __attribute__((noinline))
+#else
+#define __teb_inline__
+#endif
+#endif
 
 #include <bitset>
 #include <list>
