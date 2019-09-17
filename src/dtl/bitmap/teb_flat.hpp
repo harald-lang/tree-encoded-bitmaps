@@ -207,7 +207,7 @@ public:
       // The TEB instance does not contain a rank LuT. This typically happens
       // when the tree structure is very small. In that case the LuT is
       // initialized on the fly.
-      rank_.init(tree_ptr_, tree_ptr_ + get_rank_word_cnt(ptr));
+      rank_.init(tree_ptr_, tree_ptr_ + get_tree_word_cnt(ptr));
       rank_lut_ptr_ = rank_.lut.data();
     }
   }
