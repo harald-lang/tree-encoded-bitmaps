@@ -1,8 +1,8 @@
 #pragma once
-
+//===----------------------------------------------------------------------===//
 #include <dtl/dtl.hpp>
 #include <boost/dynamic_bitset.hpp>
-
+//===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//
 template<typename bitset_t>
@@ -15,7 +15,7 @@ to_dynamic_bitset(const bitset_t& b) {
   return ret;
 }
 //===----------------------------------------------------------------------===//
-/// Reconstruct a plain bitmap using the range iterator of the type under test.
+/// Reconstruct a plain bitmap using the run iterator of the type under test.
 template<typename T>
 boost::dynamic_bitset<$u32>
 to_bitmap_using_iterator(const T& encoded_bitmap) {

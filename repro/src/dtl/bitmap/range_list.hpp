@@ -1,15 +1,15 @@
 #pragma once
-
+//===----------------------------------------------------------------------===//
 #include <cstddef>
+#include <string>
 #include <vector>
 
 #include <dtl/dtl.hpp>
 #include <dtl/math.hpp>
 
 #include <boost/dynamic_bitset.hpp>
-
+//===----------------------------------------------------------------------===//
 namespace dtl {
-
 //===----------------------------------------------------------------------===//
 /// Position list.
 template<typename _block_type = $u32>
@@ -207,9 +207,10 @@ struct range_list {
   u1
   test(const std::size_t pos) const {
     auto it = std::lower_bound(ranges_.begin(), ranges_.end(), pos);
-    return *it == pos;
+    const auto rb = (*it).begin;
+    const auto re = rb + (*it).length;
+    return pos >= rb && pos < re;
   }
-
 
   //===--------------------------------------------------------------------===//
   /// Iterator, with skip support.
@@ -331,6 +332,4 @@ struct range_list {
 
 };
 //===----------------------------------------------------------------------===//
-
-
 } // namespace dtl

@@ -9,16 +9,16 @@
 //===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//
-// Taken and adapted from
-//  https://github.com/efficient/SuRF/blob/master/include/popcount.h
-//===----------------------------------------------------------------------===//
 template<typename _word_type = $u64, u1 _inclusive = false>
+/// Rank implementation that uses a precomputed lookup table (aka a dictionary).
+/// Adapted from https://github.com/efficient/SuRF/blob/master/include/popcount.h
 struct rank1_surf {
 
   using word_type = typename std::remove_cv<_word_type>::type;
 
-  // Lookup table for the pre-computed rank values on block level.
   using size_type = $u32;
+
+  /// Lookup table for the pre-computed rank values on block level.
   std::vector<size_type> lut;
 
   static constexpr u64 block_bitlength = 512;
@@ -31,6 +31,7 @@ struct rank1_surf {
 #define popcountsize 64ULL
 #define popcountmask (popcountsize - 1)
 
+  /// Computes the popcount within the range [x, x+nbits).
   static size_type __forceinline__
   popcountLinear(const uint64_t* bits, uint64_t x, uint64_t nbits) noexcept {
     if (nbits == 0) { return 0; }
@@ -38,10 +39,8 @@ struct rank1_surf {
     uint64_t lastword = (nbits - 1) / popcountsize;
     uint64_t p = 0;
 
-//    __builtin_prefetch(bits + x + 7, 0); //huanchen
-    for (uint64_t i = 0; i < lastword; i++) { /* tested;  manually unrolling doesn't help, at least in C */
-      //__builtin_prefetch(bits + x + i + 3, 0);
-      p += dtl::bits::pop_count(bits[x+i]); // note that use binds us to 64 bit popcount impls
+    for (uint64_t i = 0; i < lastword; i++) {
+      p += dtl::bits::pop_count(bits[x+i]);
     }
 
     // 'nbits' may or may not fall on a multiple of 64 boundary,
@@ -52,7 +51,7 @@ struct rank1_surf {
     return p;
   }
 
-  // TODO remove
+  /// Initializes the rank LuT based on the given bitmap.
   void
   init(const boost::dynamic_bitset<word_type>& bitmap) {
     u64 bitmap_bitlength = bitmap.m_bits.size() * word_bitlength;
@@ -75,6 +74,7 @@ struct rank1_surf {
     lut[lut_entry_cnt - 1] = bit_cntr;
   }
 
+  /// Initializes the rank LuT based on the given bitmap.
   void
   init(const word_type* const bitmap_begin,
       const word_type* const bitmap_end) {
@@ -98,6 +98,19 @@ struct rank1_surf {
     lut[lut_entry_cnt - 1] = bit_cntr;
   }
 
+  /// Computes the rank1 of the bit at position 'idx'.
+  size_type __forceinline__
+  operator()(u64 idx, const word_type* bitmap_ptr) const {
+    const auto block_id = idx / block_bitlength;
+    const auto offset = idx & (block_bitlength - 1);
+    return (lut[block_id]
+        + popcountLinear(bitmap_ptr, block_id * words_per_block,
+                         offset + is_inclusive));
+  }
+
+
+  /// Initializes the rank LuT in place. The function estimate_size_in_bytes()
+  /// allows to predetermine the number of required memory.
   static void
   init_inplace(
       const word_type* const bitmap_begin,
@@ -113,8 +126,8 @@ struct rank1_surf {
       lut[i] = bit_cntr;
       const auto word_cnt_in_current_block =
           (i + 1) * words_per_block <= bitmap_word_cnt
-          ? words_per_block
-          : bitmap_word_cnt % words_per_block;
+              ? words_per_block
+              : bitmap_word_cnt % words_per_block;
       const auto nbits = word_cnt_in_current_block * word_bitlength;
       bit_cntr += popcountLinear(
           bitmap_begin, i * words_per_block, nbits);
@@ -122,36 +135,29 @@ struct rank1_surf {
     lut[lut_entry_cnt - 1] = bit_cntr;
   }
 
-  // TODO make static
-  size_type __forceinline__
-  operator()(u64 idx, const word_type* bitmap_ptr) const {
-    const auto block_id = idx / block_bitlength;
-    const auto offset = idx & (block_bitlength - 1);
-    return (lut[block_id]
-        + popcountLinear(bitmap_ptr, block_id * words_per_block,
-                         offset + is_inclusive));
-  }
-
-  static size_type __forceinline__
-  get(const size_type* lut, u64 idx, const word_type* bitmap_ptr) noexcept {
-    const auto block_id = idx / block_bitlength;
-    const auto offset = idx & (block_bitlength - 1);
-    return (lut[block_id]
-        + popcountLinear(bitmap_ptr, block_id * words_per_block,
-                         offset + is_inclusive));
-  }
-
-  u64
-  size_in_bytes() const {
-    return lut.size() * sizeof(size_type); // lut size
-  }
-
+  /// Returns the size of the rank LuT in bytes for a bitmap of the given size.
   static constexpr u64
   estimate_size_in_bytes(u64 bitmap_size) {
     u64 bitmap_bitlength = bitmap_size;
     u64 block_cnt = (bitmap_bitlength + block_bitlength - 1) / block_bitlength;
     u64 lut_entry_cnt = block_cnt + 1;
     return lut_entry_cnt * sizeof(size_type);
+  }
+
+  /// Computes the rank1 of the bit at position 'idx'.
+  static size_type __forceinline__
+  get(const size_type* lut, u64 idx, const word_type* bitmap_ptr) noexcept {
+    const auto block_id = idx / block_bitlength;
+    const auto offset = idx & (block_bitlength - 1);
+    return (lut[block_id]
+        + popcountLinear(bitmap_ptr, block_id * words_per_block,
+            offset + is_inclusive));
+  }
+
+  /// Returns the size in bytes.
+  u64
+  size_in_bytes() const {
+    return lut.size() * sizeof(size_type); // lut size
   }
 
   /// Returns the important properties in JSON.

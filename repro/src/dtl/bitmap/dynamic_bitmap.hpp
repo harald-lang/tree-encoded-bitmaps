@@ -1,14 +1,13 @@
 #pragma once
-
+//===----------------------------------------------------------------------===//
 #include <cstddef>
 
 #include <dtl/dtl.hpp>
 #include <dtl/math.hpp>
 
 #include <boost/dynamic_bitset.hpp>
-
+//===----------------------------------------------------------------------===//
 namespace dtl {
-
 //===----------------------------------------------------------------------===//
 /// -UN-compressed representation of a bitmap of variable length.
 /// Wraps a boost dynamic_bitset. (used for comparisons)
@@ -238,6 +237,4 @@ struct dynamic_bitmap {
 
 };
 //===----------------------------------------------------------------------===//
-
-
 } // namespace dtl

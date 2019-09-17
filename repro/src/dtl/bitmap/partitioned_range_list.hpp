@@ -1,15 +1,15 @@
 #pragma once
-
+//===----------------------------------------------------------------------===//
 #include <cstddef>
+#include <string>
 #include <vector>
 
 #include <dtl/dtl.hpp>
 #include <dtl/math.hpp>
 
 #include <boost/dynamic_bitset.hpp>
-
+//===----------------------------------------------------------------------===//
 namespace dtl {
-
 //===----------------------------------------------------------------------===//
 /// Partitioned range list.
 template<typename _block_type = $u32, typename _local_position_t = $u8>
@@ -87,9 +87,7 @@ struct partitioned_range_list {
   }
 
   ~partitioned_range_list() = default;
-
   partitioned_range_list(const partitioned_range_list& other) = default;
-
   partitioned_range_list(partitioned_range_list&& other) noexcept = default;
 
   __forceinline__ partitioned_range_list&
@@ -254,10 +252,11 @@ struct partitioned_range_list {
   /// Returns the value of the bit at the position pos.
   u1
   test(const std::size_t pos) const {
-    auto it = std::lower_bound(ranges_.begin(), ranges_.end(), pos);
-    return *it == pos;
+    // TODO implement
+//    auto it = std::lower_bound(ranges_.begin(), ranges_.end(), pos);
+//    return *it == pos;
+    return false;
   }
-
 
   //===--------------------------------------------------------------------===//
   /// Iterator, with skip support.
@@ -476,6 +475,4 @@ private:
 
 };
 //===----------------------------------------------------------------------===//
-
-
 } // namespace dtl

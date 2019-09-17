@@ -1,8 +1,7 @@
 #pragma once
-
+//===----------------------------------------------------------------------===//
 #include <random>
 #include <dtl/dtl.hpp>
-
 //===----------------------------------------------------------------------===//
 /// Implementation of a k-state Markov process to generate (clustered)
 /// attribute values as defined in the TODS paper "Optimizing Bitmap Indices
@@ -22,7 +21,7 @@ class markov_process {
  public:
 
   /// C'tor
-  __forceinline__ explicit
+  explicit
   markov_process(u32 k, f64 f)
       : q(1 / f), k(k), rd(), gen(rd()), dis(0.0, 1.0), state_dis(1, k - 1) {
     state = static_cast<u32>(dis(gen) * k);
@@ -30,23 +29,13 @@ class markov_process {
     assert(k >= 2);
   }
 
-  __forceinline__
   ~markov_process() = default;
-
-  __forceinline__
-  markov_process(const markov_process& other) = default;
-
-  __forceinline__
-  markov_process(markov_process&& other) = default;
-
-  __forceinline__ markov_process&
-  operator=(const markov_process& other) = default;
-
-  __forceinline__ markov_process&
-  operator=(markov_process&& other) = default;
+  markov_process(const markov_process& other) = delete;
+  markov_process(markov_process&& other) = delete;
+  markov_process& operator=(const markov_process& other) = delete;
+  markov_process& operator=(markov_process&& other) = delete;
 
   /// Generate and return the next value.
-  __forceinline__
   $u32
   next() {
     const double r = dis(gen);

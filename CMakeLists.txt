@@ -17,12 +17,13 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_DYNAMIC_BITSET_DONT_USE_FRIENDS"
 #set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fno-omit-frame-pointer -fsanitize=address")
 
 include_directories(src)
+include_directories(repro/src)
 
 
 add_subdirectory(../fastbit Fastbit) # Fastbit includes the WAH bitmap compression
 include_directories(../fastbit/src)
 
-# Roaring Bitmaps
+# Roaring Bitmaps (deprecated since we switched to the unity build)
 #add_subdirectory(../CRoaring CRoaring)
 #include_directories(../CRoaring/include)
 
@@ -127,6 +128,7 @@ set(BENCHMARK_SOURCE_FILES
 set(TEST_FILES
         ${BENCHMARK_SOURCE_FILES}
 #        test/dtl/bitmap/api_encode_decode_test.cpp /* DEPRECATED */
+        test/dtl/bitmap/api_types.hpp
         test/dtl/bitmap/api_encode_decode_using_iterator_test.cpp
         test/dtl/bitmap/api_random_access_test.cpp
         test/dtl/bitmap/bit_buffer_test.cpp
@@ -160,46 +162,38 @@ set(TEST_FILES
 add_executable(sandbox_test ${TEST_FILES})
 target_link_libraries(sandbox_test gtest gtest_main fastbit dl)
 
-# TODO removed
-#set(TEST_ITER_FILES
-#        test/dtl/bitmap/iter_tester.cpp)
-#add_executable(tester_iter ${TEST_ITER_FILES})
-#target_link_libraries(tester_iter gtest gtest_main)
-##===----------------------------------------------------------------------===##
-
 ##===----------------------------------------------------------------------===##
 # Sources
 ##===----------------------------------------------------------------------===##
+set(UTIL_SOURCE_FILES
+        src/dtl/bitmap/util/base64.hpp
+        src/dtl/bitmap/util/convert.hpp
+        src/dtl/bitmap/util/markov_process.hpp
+        src/dtl/bitmap/util/two_state_markov_process.hpp
+        )
+
 set(TEB_SOURCE_FILES
         src/dtl/bitmap.hpp
-        src/dtl/bitmap/dynamic_partitioned_tree_mask.hpp
-#        src/dtl/bitmap/dynamic_tree_mask_lo.hpp
-        src/dtl/bitmap/util/base64.hpp
+        src/dtl/bitmap/util/binary_tree_structure.hpp
         src/dtl/bitmap/util/bit_buffer.hpp
         src/dtl/bitmap/util/bit_buffer_avx2.hpp
         src/dtl/bitmap/util/bit_buffer_avx512.hpp
-        src/dtl/bitmap/util/plain_bitmap.hpp
         src/dtl/bitmap/util/bitmap_fun.hpp
         src/dtl/bitmap/util/bitmap_tree.hpp
         src/dtl/bitmap/util/bitmap_view.hpp
-        src/dtl/bitmap/util/binary_tree_structure.hpp
-        src/dtl/bitmap/util/convert.hpp
-        src/dtl/bitmap/util/rank1.hpp
-        src/dtl/bitmap/util/rank1_interceptor.hpp
+        src/dtl/bitmap/util/plain_bitmap.hpp
+        src/dtl/bitmap/util/random.hpp
         src/dtl/bitmap/util/rank1_naive.hpp
         src/dtl/bitmap/util/rank1_surf.hpp
-        src/dtl/bitmap/util/rank1_surf_cached.hpp
-        src/dtl/bitmap/util/rank1_super_fast.hpp
-        src/dtl/bitmap/util/random.hpp
-        src/dtl/bitmap/util/markov_process.hpp
-        src/dtl/bitmap/util/two_state_markov_process.hpp
         src/dtl/bitmap/bitwise_operations.hpp
         src/dtl/bitmap/teb.hpp
+        src/dtl/bitmap/teb_builder.hpp
         src/dtl/bitmap/teb_flat.hpp
+        src/dtl/bitmap/teb_iter.hpp
         src/dtl/bitmap/teb_wrapper.hpp
-        src/dtl/bitmap/teb_scan.hpp
+        src/dtl/bitmap/teb_scan_iter.hpp
         src/dtl/bitmap/teb_scan_util.hpp
-        src/dtl/bitmap/tree_mask_util.hpp
+        src/dtl/bitmap/teb_types.hpp
         src/dtl/iterator.hpp
         src/dtl/static_stack.hpp
         src/dtl/static_stack2.hpp
@@ -207,16 +201,26 @@ set(TEB_SOURCE_FILES
 
 # Our competitors
 set(COMPETITORS_SOURCE_FILES
-        src/dtl/bitmap/dynamic_bitmap.hpp
-        src/dtl/bitmap/dynamic_roaring_bitmap.hpp
-        src/dtl/bitmap/dynamic_wah.hpp
-        src/dtl/bitmap/partitioned_range_list.hpp
-        src/dtl/bitmap/partitioned_position_list.hpp
-        src/dtl/bitmap/position_list.hpp
-        src/dtl/bitmap/range_list.hpp
+        # Boost dynamic bitset
+        repro/src/dtl/bitmap/dynamic_bitmap.hpp
+
+        # Roaring
+        repro/src/dtl/bitmap/dynamic_roaring_bitmap.hpp
+
+        # WAH (FastBit)
+        repro/src/dtl/bitmap/dynamic_wah.hpp
+
+        # Position list
+        repro/src/dtl/bitmap/position_list.hpp
+        repro/src/dtl/bitmap/partitioned_position_list.hpp
+
+        # Range list
+        repro/src/dtl/bitmap/range_list.hpp
+        repro/src/dtl/bitmap/partitioned_range_list.hpp
         )
 
 set(SOURCE_FILES
+        ${UTIL_SOURCE_FILES}
         ${TEB_SOURCE_FILES}
         ${COMPETITORS_SOURCE_FILES}
         #bitmap_view.hpp

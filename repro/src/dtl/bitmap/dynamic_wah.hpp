@@ -1,5 +1,5 @@
 #pragma once
-
+//===----------------------------------------------------------------------===//
 #include <cstddef>
 
 #include <dtl/dtl.hpp>
@@ -8,13 +8,13 @@
 #include <fastbit/bitvector64.h>
 #include <fastbit/fileManager.h>
 #include <boost/dynamic_bitset.hpp>
-
+//===----------------------------------------------------------------------===//
 namespace dtl {
-
+//===----------------------------------------------------------------------===//
 namespace internal {
-
-static const auto& filemanager_instance = ibis::fileManager::instance(); // initialize file manager, which is responsible for memory management in IBIS.
-
+//===----------------------------------------------------------------------===//
+// Initialize file manager, which is responsible for memory management in IBIS.
+static const auto& filemanager_instance = ibis::fileManager::instance();
 //===----------------------------------------------------------------------===//
 /// WAH compressed representation of a bitmap of length N using either
 /// 32- or 64-bit words.
@@ -269,17 +269,11 @@ struct dynamic_wah {
 
 };
 //===----------------------------------------------------------------------===//
-
 } // namespace internal
-
 //===----------------------------------------------------------------------===//
 /// WAH compressed representation of a bitmap of length N using 32-bit words.
 using dynamic_wah32 = internal::dynamic_wah<ibis::bitvector>;
-//===----------------------------------------------------------------------===//
-
-//===----------------------------------------------------------------------===//
 /// WAH compressed representation of a bitmap of length N using 64-bit words.
 using dynamic_wah64 = internal::dynamic_wah<ibis::bitvector64>;
 //===----------------------------------------------------------------------===//
-
 } // namespace dtl

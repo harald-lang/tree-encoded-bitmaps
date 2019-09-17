@@ -11,7 +11,10 @@
 namespace dtl {
 //===----------------------------------------------------------------------===//
 /// A plain uncompressed fixed size bitmap.
-template<typename _word_type, typename _alloc = std::allocator<_word_type>>
+template<
+    typename _word_type,
+    typename _alloc = std::allocator<_word_type>
+>
 class plain_bitmap {
 
   using word_type = typename std::remove_cv<_word_type>::type;
@@ -21,6 +24,8 @@ class plain_bitmap {
       "The word type must not be a boolean.");
 
   static constexpr auto word_bitlength = sizeof(_word_type) * 8;
+
+  /// Returns the number of words required to store a bitmap of length n.
   static constexpr auto word_cnt(std::size_t n) {
     return (n + word_bitlength - 1) / word_bitlength;
   }

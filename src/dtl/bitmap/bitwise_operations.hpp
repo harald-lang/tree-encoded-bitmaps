@@ -1,9 +1,9 @@
 #pragma once
-
+//===----------------------------------------------------------------------===//
 #include <type_traits>
 
 #include <dtl/dtl.hpp>
-
+//===----------------------------------------------------------------------===//
 namespace dtl {
 namespace internal {
 //===----------------------------------------------------------------------===//
@@ -305,7 +305,7 @@ public:
 //===----------------------------------------------------------------------===//
 } // namespace internal
 //===----------------------------------------------------------------------===//
-/// Constructs a range iterator that represents the logical conjunction of the
+/// Constructs a run iterator that represents the logical conjunction of the
 /// given input iterators.
 template<typename iter_ta, typename iter_tb>
 auto __forceinline__
@@ -314,7 +314,7 @@ bitwise_and_it(iter_ta& it_a, iter_tb& it_b) {
       it_a, it_b);
 };
 //===----------------------------------------------------------------------===//
-/// Constructs a range iterator that represents the logical disjunction of the
+/// Constructs a run iterator that represents the logical disjunction of the
 /// given input iterators.
 template<typename iter_ta, typename iter_tb>
 auto __forceinline__
@@ -323,7 +323,7 @@ bitwise_or_it(iter_ta& it_a, iter_tb& it_b) {
       it_a, it_b);
 };
 //===----------------------------------------------------------------------===//
-/// Constructs a range iterator that represents the logical exclusive
+/// Constructs a run iterator that represents the logical exclusive
 /// disjunction of the given input iterators.
 template<typename iter_ta, typename iter_tb>
 auto __forceinline__
@@ -332,7 +332,7 @@ bitwise_xor_it(iter_ta& it_a, iter_tb& it_b) {
       it_a, it_b);
 };
 //===----------------------------------------------------------------------===//
-/// Constructs a range iterator that represents the logical exclusive
+/// Constructs a run iterator that represents the logical exclusive
 /// disjunction of the given input iterators. Applicable only in case of
 /// range encoding.
 template<typename iter_ta, typename iter_tb>

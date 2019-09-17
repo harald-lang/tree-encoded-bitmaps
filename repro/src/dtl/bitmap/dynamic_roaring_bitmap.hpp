@@ -1,14 +1,12 @@
 #pragma once
-
+//===----------------------------------------------------------------------===//
 #include <cstddef>
 
 #include <dtl/dtl.hpp>
 
-//#include <CRoaring/cpp/roaring.hh>
-//#include <roaring/roaring.h>
 #include <roaring/roaring.hh>
 #include <boost/dynamic_bitset.hpp>
-
+//===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//
 /// Compressed representation of a bitmap of length N.

@@ -1,15 +1,15 @@
 #pragma once
-
+//===----------------------------------------------------------------------===//
 #include <cstddef>
+#include <string>
 #include <vector>
 
 #include <dtl/dtl.hpp>
 #include <dtl/math.hpp>
 
 #include <boost/dynamic_bitset.hpp>
-
+//===----------------------------------------------------------------------===//
 namespace dtl {
-
 //===----------------------------------------------------------------------===//
 /// Position list.
 template<typename _block_type = $u32>
@@ -185,7 +185,6 @@ struct position_list {
     return *it == pos;
   }
 
-
   //===--------------------------------------------------------------------===//
   /// Iterator, with skip support.
   class iter {
@@ -308,6 +307,4 @@ struct position_list {
 
 };
 //===----------------------------------------------------------------------===//
-
-
 } // namespace dtl

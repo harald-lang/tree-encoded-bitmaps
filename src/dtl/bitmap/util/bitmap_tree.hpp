@@ -5,9 +5,9 @@
 
 #include <boost/dynamic_bitset.hpp>
 #include <dtl/dtl.hpp>
-#include <dtl/bitmap/util/binary_tree_structure.hpp>
 
-#include <dtl/bitmap/util/rank1.hpp>
+#include "binary_tree_structure.hpp"
+#include "rank1_surf.hpp"
 #include "plain_bitmap.hpp"
 #include "config.hpp"
 //===----------------------------------------------------------------------===//
@@ -605,7 +605,7 @@ public:
     }
     // Rank helper structure
     if (explicit_tree_node_cnt > 1024) {
-      bytes += dtl::rank1<u64>::estimate_size_in_bytes(explicit_tree_node_cnt);
+      bytes += dtl::rank1_surf<u64>::estimate_size_in_bytes(explicit_tree_node_cnt);
     }
 
     // Labels

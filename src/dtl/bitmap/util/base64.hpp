@@ -1,5 +1,5 @@
 #pragma once
-
+//===----------------------------------------------------------------------===//
 #include <dtl/dtl.hpp>
 #include <dtl/bitmap.hpp>
 #include <dtl/iterator.hpp>
@@ -8,17 +8,16 @@
 #include <boost/archive/iterators/base64_from_binary.hpp>
 #include <boost/archive/iterators/transform_width.hpp>
 #include <boost/algorithm/string.hpp>
-
 //===----------------------------------------------------------------------===//
 namespace dtl {
-
+//===----------------------------------------------------------------------===//
 //static std::vector<$u8>
 //decode64(const std::string& val) {
 //  using namespace boost::archive::iterators;
 //  using It = transform_width<binary_from_base64<std::string::const_iterator>, 8, 6>;
 //  return std::vector<$u8>(It(std::begin(val)), It(std::end(val)));
 //}
-
+//===----------------------------------------------------------------------===//
 static std::vector<$u8>
 decode64(const dtl::data_view<u8>& val) {
   using namespace boost::archive::iterators;
@@ -26,7 +25,7 @@ decode64(const dtl::data_view<u8>& val) {
       binary_from_base64<typename std::vector<$u8>::const_iterator>, 8, 6>;
   return std::vector<$u8>(It(std::begin(val)), It(std::end(val)));
 }
-
+//===----------------------------------------------------------------------===//
 static std::string
 encode64(const dtl::data_view<u8>& val) {
   using namespace boost::archive::iterators;
@@ -36,7 +35,7 @@ encode64(const dtl::data_view<u8>& val) {
   const auto e = std::end(val);
   return std::string(It(b), It(e));
 }
-
+//===----------------------------------------------------------------------===//
 static std::string
 base64_encode_bitmap(const dtl::bitmap& b) {
   u32 bitmap_length = b.size();
@@ -49,7 +48,7 @@ base64_encode_bitmap(const dtl::bitmap& b) {
   };
   return encode64(bitmap_view);
 }
-
+//===----------------------------------------------------------------------===//
 //static dtl::bitmap
 //base64_decode_bitmap(const std::string& s) {
 //  const auto decoded_bytes = decode64(s);
@@ -65,7 +64,7 @@ base64_encode_bitmap(const dtl::bitmap& b) {
 //  bm.resize(bitmap_length);
 //  return bm;
 //}
-
+//===----------------------------------------------------------------------===//
 static dtl::bitmap
 base64_decode_bitmap(const dtl::data_view<u8>& d) {
   const auto decoded_bytes = decode64(d);
@@ -80,6 +79,6 @@ base64_decode_bitmap(const dtl::data_view<u8>& d) {
   bm.resize(bitmap_length);
   return bm;
 }
-
-}
+//===----------------------------------------------------------------------===//
+} // namespace dtl
 //===----------------------------------------------------------------------===//

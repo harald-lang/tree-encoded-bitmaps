@@ -25,9 +25,7 @@
 
 #include <dtl/dtl.hpp>
 #include <dtl/bits.hpp>
-#include <dtl/bitmap/util/rank1.hpp>
 #include <dtl/bitmap/util/rank1_surf.hpp>
-#include <dtl/bitmap/util/rank1_surf_cached.hpp>
 #include <dtl/bitmap/util/bit_buffer.hpp>
 #ifdef __AVX2__
 #include <dtl/bitmap/util/bit_buffer_avx2.hpp>
@@ -39,9 +37,6 @@
 #include <dtl/bitmap/util/binary_tree_structure.hpp>
 #include <dtl/static_stack.hpp>
 #include <dtl/static_stack2.hpp>
-#include <dtl/bitmap/util/rank1_naive.hpp>
-#include <dtl/bitmap/util/rank1_interceptor.hpp>
-#include <dtl/bitmap/util/rank1_super_fast.hpp>
 #include <dtl/bitmap/util/bitmap_view.hpp>
 #include <dtl/math.hpp>
 #include <navin/bitpack.hpp>

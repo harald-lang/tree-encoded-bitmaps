@@ -1,5 +1,5 @@
 #pragma once
-
+//===----------------------------------------------------------------------===//
 #include <algorithm>
 #include <cstddef>
 #include <vector>
@@ -8,9 +8,8 @@
 #include <dtl/math.hpp>
 
 #include <boost/dynamic_bitset.hpp>
-
+//===----------------------------------------------------------------------===//
 namespace dtl {
-
 //===----------------------------------------------------------------------===//
 /// Partitioned position list.
 template<typename _block_type = $u32, typename _local_position_t = $u8>
@@ -462,6 +461,4 @@ private:
 
 };
 //===----------------------------------------------------------------------===//
-
-
 } // namespace dtl

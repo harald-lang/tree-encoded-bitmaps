@@ -1,8 +1,7 @@
 #pragma once
-
-#include <boost/dynamic_bitset.hpp>
+//===----------------------------------------------------------------------===//
 #include <dtl/dtl.hpp>
-
+#include <boost/dynamic_bitset.hpp>
 //===----------------------------------------------------------------------===//
 namespace dtl {
 using bitmap = boost::dynamic_bitset<$u32>;
