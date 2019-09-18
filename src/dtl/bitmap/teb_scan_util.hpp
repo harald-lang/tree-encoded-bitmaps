@@ -1,9 +1,12 @@
 #pragma once
+//===----------------------------------------------------------------------===//
+#include "util/bitmap_fun.hpp"
 
 #include <dtl/dtl.hpp>
 #include <dtl/iterator.hpp>
-#include <dtl/bitmap/util/bitmap_fun.hpp>
 
+#include <cassert>
+//===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//
 static u64 __forceinline__

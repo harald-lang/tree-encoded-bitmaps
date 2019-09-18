@@ -1,14 +1,16 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include <random>
-#include <dtl/bitmap.hpp>
 #include "two_state_markov_process.hpp"
+
+#include <dtl/bitmap.hpp>
+
+#include <algorithm>
+#include <random>
 //===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//
 static inline dtl::bitmap
 gen_random_bitmap_markov(u64 n, $f64 f, $f64 d) {
-
   // init bitset
   f64 f_min = d >= 1.0 ? n : d/(1-d);
   f64 f_actual = std::max(f, f_min);

@@ -1,9 +1,9 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include <dtl/dtl.hpp>
 #include <dtl/bitmap.hpp>
 #include <dtl/bitmap/bitwise_operations.hpp>
 #include <dtl/bitmap/teb.hpp>
+#include <dtl/dtl.hpp>
 //===----------------------------------------------------------------------===//
 template<typename T>
 dtl::bitmap

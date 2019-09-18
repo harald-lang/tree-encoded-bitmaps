@@ -1,14 +1,20 @@
-#include <iostream>
-
-#include <dtl/dtl.hpp>
-#include <dtl/bitmap/position_list.hpp>
-#include <dtl/bitmap/partitioned_position_list.hpp>
-#include <dtl/bitmap/range_list.hpp>
-#include <dtl/bitmap/partitioned_range_list.hpp>
-#include <dtl/bitmap/util/random.hpp>
-
-#include <experiments/util/gen.hpp>
 #include "common.hpp"
+#include "experiments/util/gen.hpp"
+
+#include <dtl/bitmap/partitioned_position_list.hpp>
+#include <dtl/bitmap/partitioned_range_list.hpp>
+#include <dtl/bitmap/position_list.hpp>
+#include <dtl/bitmap/range_list.hpp>
+#include <dtl/bitmap/teb.hpp>
+#include <dtl/bitmap/teb_wrapper.hpp>
+#include <dtl/bitmap/util/convert.hpp>
+#include <dtl/bitmap/util/random.hpp>
+#include <dtl/dtl.hpp>
+
+#include <functional>
+#include <iostream>
+#include <sstream>
+#include <vector>
 //===----------------------------------------------------------------------===//
 // Experiment: Comparison of compression ratios for the different TEB
 //             optimization levels.

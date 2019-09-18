@@ -1,16 +1,20 @@
-#include <atomic>
-#include <iostream>
-
-#include <dtl/dtl.hpp>
-#include <dtl/env.hpp>
-#include <dtl/bitmap.hpp>
-#include <experiments/util/bitmap_types.hpp>
-#include <experiments/util/gen.hpp>
-#include <experiments/util/seq_db.hpp>
-#include <experiments/util/threading.hpp>
-
+#include "experiments/util/bitmap_types.hpp"
+#include "experiments/util/gen.hpp"
+#include "experiments/util/seq_db.hpp"
+#include "experiments/util/threading.hpp"
 #include "version.h"
 
+#include <dtl/bitmap.hpp>
+#include <dtl/dtl.hpp>
+#include <dtl/env.hpp>
+
+#include <atomic>
+#include <chrono>
+#include <functional>
+#include <iostream>
+#include <ostream>
+#include <stdexcept>
+#include <string>
 //===----------------------------------------------------------------------===//
 // Experiment: This experiment constructs and compresses bitmap indexes from
 //             randomly generated integer sequences. Thereby varying the
@@ -132,7 +136,7 @@ void gen_data(const std::vector<$u64>& n_values,
           if (c * f >= n / 4) continue;
 
           auto ids = db.find(n, c, f);
-          if (ids.size() > 0 && ids.size() < RUNS) {
+          if (!ids.empty() && ids.size() < RUNS) {
             config conf;
             conf.n = n;
             conf.c = c;

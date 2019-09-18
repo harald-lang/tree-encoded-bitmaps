@@ -1,8 +1,8 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include <type_traits>
-
 #include <dtl/dtl.hpp>
+
+#include <type_traits>
 //===----------------------------------------------------------------------===//
 namespace dtl {
 namespace internal {
@@ -258,9 +258,9 @@ class bitwise_iter {
   /// The second input iterator.
   iter_tb& it_b_;
   /// Points to the beginning of the current 1-fill.
-  $u64 pos_;
+  $u64 pos_ = 0;
   /// The length of the current 1-fill.
-  $u64 length_;
+  $u64 length_ = 0;
 
 public:
 

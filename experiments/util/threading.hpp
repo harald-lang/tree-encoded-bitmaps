@@ -1,16 +1,17 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include <algorithm>
-#include <functional>
-#include <iostream>
-#include <vector>
-
 #include <dtl/dtl.hpp>
 #include <dtl/env.hpp>
 #include <dtl/thread.hpp>
+
+#include <algorithm>
+#include <chrono>
+#include <functional>
+#include <iostream>
+#include <vector>
 //===----------------------------------------------------------------------===//
 /// Read the CPU affinity for the process.
-static const auto cpu_mask = dtl::this_thread::get_cpu_affinity();
+static const auto cpu_mask = dtl::this_thread::get_cpu_affinity(); // NOLINT
 //===----------------------------------------------------------------------===//
 template<typename T>
 static void

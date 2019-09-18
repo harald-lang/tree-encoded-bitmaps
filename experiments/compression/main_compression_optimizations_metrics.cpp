@@ -1,12 +1,20 @@
-#include <iostream>
-
-#include <dtl/dtl.hpp>
-#include <dtl/bitmap/position_list.hpp>
-#include <dtl/bitmap/partitioned_position_list.hpp>
-#include <dtl/bitmap/range_list.hpp>
-#include <dtl/bitmap/partitioned_range_list.hpp>
-#include <dtl/bitmap/util/random.hpp>
 #include "common.hpp"
+#include "experiments/util/gen.hpp"
+
+#include <dtl/bitmap/partitioned_position_list.hpp>
+#include <dtl/bitmap/partitioned_range_list.hpp>
+#include <dtl/bitmap/position_list.hpp>
+#include <dtl/bitmap/range_list.hpp>
+#include <dtl/bitmap/teb.hpp>
+#include <dtl/bitmap/teb_wrapper.hpp>
+#include <dtl/bitmap/util/convert.hpp>
+#include <dtl/bitmap/util/random.hpp>
+#include <dtl/dtl.hpp>
+
+#include <functional>
+#include <iostream>
+#include <sstream>
+#include <vector>
 //===----------------------------------------------------------------------===//
 // Experiment: Comparison of "basic TEBs" and "space optimized TEBs".
 //             The results are required to plot the Figures 6 and 7.
@@ -64,7 +72,6 @@ run(const config_t& config, std::ostream& os) {
     label_trailing_0bit_cnt += teb_o3._get_label_trailing_0bit_cnt();
   }
 
-
   std::stringstream out;
   out << config.n / 8 / 1024.0
       << "," << config.bit_density
@@ -113,8 +120,6 @@ $i32 main() {
       }
     }
   }
-
-  std::random_shuffle(configs.begin(), configs.end());
 
   std::function<void(const config_t&, std::ostream&)> fn =
       [](const config_t c, std::ostream& os) -> void {

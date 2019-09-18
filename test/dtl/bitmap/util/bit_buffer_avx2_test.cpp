@@ -2,9 +2,9 @@
 //===----------------------------------------------------------------------===//
 #include "gtest/gtest.h"
 
+#include <dtl/bitmap/util/bit_buffer_avx2.hpp>
 #include <dtl/dtl.hpp>
 #include <dtl/simd.hpp>
-#include <dtl/bitmap/util/bit_buffer_avx2.hpp>
 //===----------------------------------------------------------------------===//
 // Helper functions
 u1 _mm256_equals(__m256i a, __m256i b) {

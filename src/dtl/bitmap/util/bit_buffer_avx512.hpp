@@ -1,9 +1,12 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include <dtl/dtl.hpp>
 #include <dtl/bits.hpp>
+#include <dtl/dtl.hpp>
 #include <dtl/simd.hpp>
+
+#ifdef __AVX512BW__
 #include <immintrin.h>
+#endif
 //===----------------------------------------------------------------------===//
 #ifdef __AVX512BW__
 namespace dtl {

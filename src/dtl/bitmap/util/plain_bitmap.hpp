@@ -1,11 +1,13 @@
 #pragma once
 //===----------------------------------------------------------------------===//
+#include "bitmap_fun.hpp"
+
+#include <dtl/dtl.hpp>
+
 #include <cassert>
 #include <cstddef>
 #include <type_traits>
 #include <vector>
-
-#include "bitmap_fun.hpp"
 //===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//

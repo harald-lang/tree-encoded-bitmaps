@@ -1,11 +1,13 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include <dtl/dtl.hpp>
-#include <dtl/bitmap/util/bitmap_tree.hpp>
-#include "boost/dynamic_bitset.hpp"
-#include "util/bitmap_view.hpp"
 #include "teb_flat.hpp"
 #include "teb_types.hpp"
+#include "util/bitmap_tree.hpp"
+#include "util/bitmap_view.hpp"
+
+#include <boost/dynamic_bitset.hpp>
+
+#include <dtl/dtl.hpp>
 //===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//
@@ -41,7 +43,7 @@ public:
 
   /// Serializes the TEB to the given destination address.
   inline void
-  serialize(word_type* ptr);
+  serialize(word_type* dst);
 
 private:
 
@@ -124,8 +126,8 @@ teb_builder::serialize(word_type* dst) {
   dtl::bitmap_view<word_type> label_data(label_ptr, label_ptr + label_word_cnt);
   std::size_t label_data_write_pos = 0;
 
-  std::array<std::size_t, 32> level_offsets_tree;
-  std::array<std::size_t, 32> level_offsets_labels;
+  std::array<std::size_t, 32> level_offsets_tree; // NOLINT
+  std::array<std::size_t, 32> level_offsets_labels; // NOLINT
 
   // Encode the tree into level-order.
   std::size_t node_cntr = 0;

@@ -1,11 +1,11 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include <type_traits>
-#include <string>
-#include <vector>
-
 #include <dtl/dtl.hpp>
 #include <dtl/math.hpp>
+
+#include <string>
+#include <type_traits>
+#include <vector>
 //===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//

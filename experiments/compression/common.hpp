@@ -1,33 +1,32 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include <bitset>
-#include <chrono>
-#include <cmath>
-#include <limits>
-#include <iostream>
-#include <string>
+#include "experiments/util/bitmap_db.hpp"
+#include "experiments/util/threading.hpp"
 
-#include <boost/algorithm/string.hpp>
-
+#include <dtl/bitmap/dynamic_bitmap.hpp>
+#include <dtl/bitmap/dynamic_roaring_bitmap.hpp>
+#include <dtl/bitmap/dynamic_wah.hpp>
+#include <dtl/bitmap/partitioned_position_list.hpp>
+#include <dtl/bitmap/partitioned_range_list.hpp>
+#include <dtl/bitmap/position_list.hpp>
+#include <dtl/bitmap/range_list.hpp>
+#include <dtl/bitmap/teb.hpp>
+#include <dtl/bitmap/teb_wrapper.hpp>
+#include <dtl/bitmap/util/convert.hpp>
+#include <dtl/bitmap/util/random.hpp>
+#include <dtl/bitmap/util/two_state_markov_process.hpp>
 #include <dtl/dtl.hpp>
 #include <dtl/env.hpp>
 #include <dtl/thread.hpp>
 
-#include <dtl/bitmap/dynamic_bitmap.hpp>
-#include <dtl/bitmap/dynamic_roaring_bitmap.hpp>
-#include <dtl/bitmap/teb.hpp>
-#include <dtl/bitmap/dynamic_wah.hpp>
-#include <dtl/bitmap/util/two_state_markov_process.hpp>
-#include <dtl/bitmap/util/random.hpp>
-#include <dtl/bitmap/position_list.hpp>
-#include <dtl/bitmap/partitioned_position_list.hpp>
-#include <dtl/bitmap/partitioned_range_list.hpp>
-#include <dtl/bitmap/range_list.hpp>
+#include <boost/algorithm/string.hpp>
 
-#include <experiments/util/threading.hpp>
-#include <experiments/util/bitmap_db.hpp>
-#include <dtl/bitmap/util/convert.hpp>
-#include <dtl/bitmap/teb_wrapper.hpp>
+#include <bitset>
+#include <chrono>
+#include <cmath>
+#include <iostream>
+#include <limits>
+#include <string>
 //===----------------------------------------------------------------------===//
 /// The number of independent runs.
 static constexpr u64 RUNS = 10;

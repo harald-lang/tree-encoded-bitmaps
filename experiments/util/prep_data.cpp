@@ -1,9 +1,9 @@
 #include "prep_data.hpp"
 
-#include <dtl/dtl.hpp>
-
 #include "gen.hpp"
 #include "params.hpp"
+
+#include <dtl/dtl.hpp>
 //===----------------------------------------------------------------------===//
 void
 prep_data(
@@ -61,7 +61,7 @@ prep_data(
       if (!markov_parameters_are_valid(n, f, d)) continue;
 
       auto ids = db.find_bitmaps(n, f, d);
-      if (ids.size() > 0 && ids.size() < cnt) {
+      if (!ids.empty() && ids.size() < cnt) {
         params_markov c;
         c.n = n;
         c.clustering_factor = f;
@@ -144,7 +144,7 @@ prep_data(
       if (n == 0 || d < 0 || d > 1.0) continue;
 
       auto ids = db.find_bitmaps(n, d);
-      if (ids.size() > 0 && ids.size() < cnt) {
+      if (!ids.empty() && ids.size() < cnt) {
         params_uniform c;
         c.n = n;
         c.density = d;

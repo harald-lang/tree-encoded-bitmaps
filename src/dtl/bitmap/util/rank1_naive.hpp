@@ -1,11 +1,14 @@
 #pragma once
+//===----------------------------------------------------------------------===//
+#include "bitmap_fun.hpp"
 
-#include <vector>
-#include <boost/dynamic_bitset.hpp>
 #include <dtl/dtl.hpp>
-#include <dtl/bitmap/util/bitmap_fun.hpp>
 #include <dtl/math.hpp>
 
+#include <boost/dynamic_bitset.hpp>
+
+#include <vector>
+//===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//
 template<typename _word_type = $u32>

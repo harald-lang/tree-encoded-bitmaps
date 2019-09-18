@@ -1,7 +1,8 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include <random>
 #include <dtl/dtl.hpp>
+
+#include <random>
 //===----------------------------------------------------------------------===//
 /// Implementation of a k-state Markov process to generate (clustered)
 /// attribute values as defined in the TODS paper "Optimizing Bitmap Indices

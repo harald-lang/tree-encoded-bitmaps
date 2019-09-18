@@ -1,13 +1,17 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include <dtl/dtl.hpp>
 #include <dtl/bitmap.hpp>
+#include <dtl/dtl.hpp>
 #include <dtl/iterator.hpp>
 
-#include <boost/archive/iterators/binary_from_base64.hpp>
-#include <boost/archive/iterators/base64_from_binary.hpp>
-#include <boost/archive/iterators/transform_width.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/archive/iterators/base64_from_binary.hpp>
+#include <boost/archive/iterators/binary_from_base64.hpp>
+#include <boost/archive/iterators/transform_width.hpp>
+
+#include <iterator>
+#include <string>
+#include <vector>
 //===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//

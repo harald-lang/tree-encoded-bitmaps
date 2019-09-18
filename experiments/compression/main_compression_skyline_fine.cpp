@@ -1,9 +1,15 @@
-#include <iostream>
-#include <dtl/dtl.hpp>
-#include <experiments/util/bitmap_db.hpp>
-#include <experiments/util/gen.hpp>
-#include <experiments/util/prep_data.hpp>
 #include "common.hpp"
+#include "experiments/util/bitmap_db.hpp"
+#include "experiments/util/gen.hpp"
+#include "experiments/util/prep_data.hpp"
+
+#include <dtl/dtl.hpp>
+
+#include <functional>
+#include <iostream>
+#include <random>
+#include <sstream>
+#include <vector>
 //===----------------------------------------------------------------------===//
 // Experiment: Comparison of compression ratios of random bitmaps generated
 //             using a two-state Markov process.

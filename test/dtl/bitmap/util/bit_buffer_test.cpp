@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
-#include <dtl/dtl.hpp>
 #include <dtl/bitmap/util/bit_buffer.hpp>
+#include <dtl/dtl.hpp>
 //===----------------------------------------------------------------------===//
 TEST(bit_buffer,
      null_increment) {

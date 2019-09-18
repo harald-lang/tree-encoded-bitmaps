@@ -1,13 +1,14 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include <cstddef>
-
-#include <dtl/dtl.hpp>
-
 #include <fastbit/bitvector.h>
 #include <fastbit/bitvector64.h>
 #include <fastbit/fileManager.h>
+
+#include <dtl/dtl.hpp>
+
 #include <boost/dynamic_bitset.hpp>
+
+#include <cstddef>
 //===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//

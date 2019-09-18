@@ -1,12 +1,16 @@
+#include "seq_db.hpp"
+
+#include <dtl/bitmap.hpp>
+#include <dtl/bitmap/util/base64.hpp>
+#include <dtl/bitmap/util/random.hpp>
+#include <dtl/dtl.hpp>
+#include <dtl/math.hpp>
+
 #include <algorithm>
 #include <sstream>
+#include <stdexcept>
+#include <string>
 #include <thread>
-#include <dtl/dtl.hpp>
-#include <dtl/bitmap.hpp>
-#include <dtl/bitmap/util/random.hpp>
-#include <dtl/bitmap/util/base64.hpp>
-#include <dtl/math.hpp>
-#include "seq_db.hpp"
 //===----------------------------------------------------------------------===//
 seq_db::seq_db(const std::string& file)
     : file_(file),
@@ -67,7 +71,7 @@ seq_db::init() {
       "  foreign key (id) references seq_def(id)\n"
       ");";
 
-  char* err_msg = 0;
+  char* err_msg = nullptr;
   rc = sqlite3_exec(db_, sql_create_table.c_str(),
                     nullptr, nullptr, &err_msg);
   if (rc) {
@@ -226,7 +230,7 @@ seq_db::put(u64 n, u32 c, f64 f, const seq_t& s) {
   const auto f_actual = dtl::determine_clustering_factor(s);
 
   std::lock_guard<std::mutex> lock(mutex_);
-  sqlite3_exec(db_, "BEGIN", 0, 0, 0);
+  sqlite3_exec(db_, "BEGIN", nullptr, nullptr, nullptr);
 
   // Critical section.
   sqlite3_reset(insert_def_stmt_);
@@ -251,7 +255,7 @@ seq_db::put(u64 n, u32 c, f64 f, const seq_t& s) {
     err << "Can't insert data. Error: " << rc << " - "
         << sqlite3_errmsg(db_)
         << std::endl;
-    sqlite3_exec(db_, "ROLLBACK", 0, 0, 0);
+    sqlite3_exec(db_, "ROLLBACK", nullptr, nullptr, nullptr);
     throw std::runtime_error(err.str());
   }
   i64 seq_id = sqlite3_last_insert_rowid(db_);
@@ -279,10 +283,10 @@ seq_db::put(u64 n, u32 c, f64 f, const seq_t& s) {
     err << "Can't insert data. Error: " << rc << " - "
         << sqlite3_errmsg(db_)
         << std::endl;
-    sqlite3_exec(db_, "ROLLBACK", 0, 0, 0);
+    sqlite3_exec(db_, "ROLLBACK", nullptr, nullptr, nullptr);
     throw std::runtime_error(err.str());
   }
-  sqlite3_exec(db_, "COMMIT", 0, 0, 0);
+  sqlite3_exec(db_, "COMMIT", nullptr, nullptr, nullptr);
   return seq_id;
 }
 //===----------------------------------------------------------------------===//
@@ -297,7 +301,7 @@ seq_db::get(i64 id) {
   $i32 rc;
   seq_t ret;
   while((rc = sqlite3_step(select_by_id_stmt_)) == SQLITE_ROW) {
-    u8* blob = reinterpret_cast<u8*>(
+    auto* blob = reinterpret_cast<u8*>(
         sqlite3_column_blob(select_by_id_stmt_, 1));
     const auto bytes = sqlite3_column_bytes(select_by_id_stmt_, 1);
     dtl::data_view<u32> ints {

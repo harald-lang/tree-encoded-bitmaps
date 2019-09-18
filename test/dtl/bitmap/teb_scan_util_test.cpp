@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
-#include <dtl/dtl.hpp>
 #include <dtl/bitmap/teb_scan_util.hpp>
+#include <dtl/dtl.hpp>
 //===----------------------------------------------------------------------===//
 TEST(teb_scan_util,
      fetch_bits) {

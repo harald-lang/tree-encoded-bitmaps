@@ -1,10 +1,13 @@
 #pragma once
-
-#include <dtl/dtl.hpp>
+//===----------------------------------------------------------------------===//
 #include <dtl/bits.hpp>
+#include <dtl/dtl.hpp>
 #include <dtl/simd.hpp>
-#include <immintrin.h>
 
+#ifdef __AVX2__
+#include <immintrin.h>
+#endif
+//===----------------------------------------------------------------------===//
 #ifdef __AVX2__
 namespace dtl {
 //===----------------------------------------------------------------------===//
@@ -67,7 +70,7 @@ public:
   bit_buffer_avx2(const bit_buffer_avx2& other) = default;
   bit_buffer_avx2(bit_buffer_avx2&& other) noexcept = default;
   bit_buffer_avx2& operator=(const bit_buffer_avx2& other) = default;
-  bit_buffer_avx2& operator=(bit_buffer_avx2&& other) = default;
+  bit_buffer_avx2& operator=(bit_buffer_avx2&& other) noexcept = default;
   ~bit_buffer_avx2() = default;
 
   inline __m256i
@@ -89,13 +92,13 @@ public:
   inline void
   set(u64 slot_idx, u64 value) noexcept {
     r256 copy {.i = buf_};
-    copy.u8[slot_idx] = value;
+    copy.u8[slot_idx] = static_cast<u8>(value);
     buf_ = copy.i;
   }
 
   inline void
   broadcast(u64 value) noexcept {
-    buf_ = _mm256_set1_epi8(value);
+    buf_ = _mm256_set1_epi8(static_cast<u8>(value));
   }
 
   inline void
@@ -116,10 +119,10 @@ public:
 
   inline void
   increment(u32 mask) noexcept {
-    D(r256 m {.i = read_mask_};)
-    D(for (std::size_t i = 0; i < 32; ++i) {)
-    D(  assert(dtl::bits::tz_count(m.u8[i]) <= 8 - dtl::bits::bit_test(mask, i));)
-    D(})
+    D(r256 m {.i = read_mask_};) // NOLINT
+    D(for (std::size_t i = 0; i < 32; ++i) {) // NOLINT
+    D(  assert(dtl::bits::tz_count(m.u8[i]) <= 8 - dtl::bits::bit_test(mask, i));) // NOLINT
+    D(}) // NOLINT
     const auto avx2_mask = get_mask3(mask);
     const auto inc = _mm256_slli_epi64(read_mask_, 1);
     read_mask_ = _mm256_blendv_epi8(read_mask_, inc, avx2_mask);
@@ -127,10 +130,10 @@ public:
 
   inline u32
   read(u32 mask) const noexcept {
-    D(r256 m {.i = read_mask_};)
-    D(for (std::size_t i = 0; i < 32; ++i) {)
-    D(  assert(dtl::bits::tz_count(m.u8[i]) <= 8);)
-    D(})
+    D(r256 m {.i = read_mask_};) // NOLINT
+    D(for (std::size_t i = 0; i < 32; ++i) {) // NOLINT
+    D(  assert(dtl::bits::tz_count(m.u8[i]) <= 8);) // NOLINT
+    D(}) // NOLINT
     return _mm256_movemask_epi8(
         _mm256_cmpgt_epi8(_mm256_and_si256(buf_, read_mask_),
             _mm256_setzero_si256())) & mask;
@@ -138,25 +141,26 @@ public:
 
   inline u32
   read() const noexcept {
-    D(r256 m {.i = read_mask_};)
-    D(for (std::size_t i = 0; i < 32; ++i) {)
-    D(  assert(dtl::bits::tz_count(m.u8[i]) <= 8);)
-    D(})
-    return _mm256_movemask_epi8(
-        _mm256_cmpgt_epi8(_mm256_and_si256(buf_, read_mask_),
-            _mm256_setzero_si256()));
+    D(r256 m {.i = read_mask_};) // NOLINT
+    D(for (std::size_t i = 0; i < 32; ++i) {) // NOLINT
+    D(  assert(dtl::bits::tz_count(m.u8[i]) <= 8);) // NOLINT
+    D(}) // NOLINT
+    return static_cast<u32>(
+        _mm256_movemask_epi8(
+          _mm256_cmpgt_epi8(_mm256_and_si256(buf_, read_mask_),
+            _mm256_setzero_si256())));
   }
 
   inline u32
   read_ahead() const noexcept {
-    D(r256 m {.i = read_mask_};)
-    D(for (std::size_t i = 0; i < 32; ++i) {)
-    D(  assert(dtl::bits::tz_count(m.u8[i]) < 8);)
-    D(})
-    return _mm256_movemask_epi8(
+    D(r256 m {.i = read_mask_};) // NOLINT
+    D(for (std::size_t i = 0; i < 32; ++i) {) // NOLINT
+    D(  assert(dtl::bits::tz_count(m.u8[i]) < 8);) // NOLINT
+    D(}) // NOLINT
+    return static_cast<u32>(_mm256_movemask_epi8(
         _mm256_cmpgt_epi8(_mm256_and_si256(buf_,
             _mm256_slli_epi64(read_mask_, 1u)),
-        _mm256_setzero_si256()));
+        _mm256_setzero_si256())));
   }
 
 };

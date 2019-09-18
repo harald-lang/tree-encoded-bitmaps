@@ -1,12 +1,15 @@
-#include <iostream>
-#include <set>
-
-#include <dtl/dtl.hpp>
-#include <experiments/util/bitmap_db.hpp>
-#include <experiments/util/gen.hpp>
-#include <experiments/util/prep_data.hpp>
+#include "experiments/util/bitmap_db.hpp"
+#include "experiments/util/gen.hpp"
+#include "experiments/util/prep_data.hpp"
 #include "common.hpp"
 #include "common_bitwise.hpp"
+
+#include <dtl/dtl.hpp>
+
+#include <iostream>
+#include <random>
+#include <set>
+#include <vector>
 //===----------------------------------------------------------------------===//
 // Experiment: Measure the intersection time of two bitmaps.
 //             Setting 1: d1=0.01, f1=8, d2=VARYING, f2=4

@@ -1,14 +1,15 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include <iomanip>
-#include <immintrin.h>
+#include "binary_tree_structure.hpp"
+#include "plain_bitmap.hpp"
+#include "rank1_surf.hpp"
 
-#include <boost/dynamic_bitset.hpp>
 #include <dtl/dtl.hpp>
 
-#include "binary_tree_structure.hpp"
-#include "rank1_surf.hpp"
-#include "plain_bitmap.hpp"
+#include <boost/dynamic_bitset.hpp>
+
+#include <immintrin.h>
+#include <iomanip>
 //===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//
@@ -50,15 +51,15 @@ class bitmap_tree : public binary_tree_structure {
   //===--------------------------------------------------------------------===//
   /// The number of inner nodes. As the tree is a full binary, the number of
   /// leaf nodes is the number of inner nodes + 1.
-  std::size_t inner_node_cnt_;
+  std::size_t inner_node_cnt_ = 0;
   /// The number inner nodes until the first leaf occurs (in level order).
-  std::size_t leading_inner_node_cnt_;
+  std::size_t leading_inner_node_cnt_ = 0;
   /// The number leaf nodes after the last inner node (in level order).
-  std::size_t trailing_leaf_node_cnt_;
+  std::size_t trailing_leaf_node_cnt_ = 0;
   /// The number of 0-labels until the first 1-label occurs.
-  std::size_t leading_0label_cnt_;
+  std::size_t leading_0label_cnt_ = 0;
   /// The number of 0-labels after the last 1-label.
-  std::size_t trailing_0label_cnt_;
+  std::size_t trailing_0label_cnt_ = 0;
 
   //===--------------------------------------------------------------------===//
   // The ranges below are used to cache the node indexes of the first and last
@@ -71,9 +72,9 @@ class bitmap_tree : public binary_tree_structure {
   /// The indexes of nodes with explicit labels.
 //  range_t explicit_label_idxs_; // TODO use range rather than the two variables below
   /// The first leaf node index that carries a 1-label.
-  std::size_t first_node_idx_with_1label_;
+  std::size_t first_node_idx_with_1label_ = 0;
   /// The last leaf node index that carries a 1-label.
-  std::size_t last_node_idx_with_1label_;
+  std::size_t last_node_idx_with_1label_ = 0;
 
   //===--------------------------------------------------------------------===//
   // The following two members cache the positions of the first and the last
@@ -82,10 +83,10 @@ class bitmap_tree : public binary_tree_structure {
   //===--------------------------------------------------------------------===//
   /// The index of the first set bit in the original bitmap. The value is set
   /// to 'n' when the bits in the original bitmap are all 0.
-  std::size_t first_bit_idx_;
+  std::size_t first_bit_idx_ = 0;
   /// The index of the last set bit in the original bitmap. The value is set
   /// to 'n' when the bits in the original bitmap are all 0.
-  std::size_t last_bit_idx_;
+  std::size_t last_bit_idx_ = 0;
 
 public:
 
@@ -100,7 +101,9 @@ public:
         leading_0label_cnt_(0),
         trailing_0label_cnt_(0),
         first_node_idx_with_1label_(0),
-        last_node_idx_with_1label_(0) {
+        last_node_idx_with_1label_(0),
+        first_bit_idx_(0), // first and last bit idx will be initialized in init_tree()
+        last_bit_idx_(0) {
 
     // Init the binary tree and perform bottom-up pruning.
     init_tree(bitmap);
@@ -946,7 +949,9 @@ private:
         leading_0label_cnt_(0),
         trailing_0label_cnt_(0),
         first_node_idx_with_1label_(0),
-        last_node_idx_with_1label_(0) {
+        last_node_idx_with_1label_(0),
+        first_bit_idx_(0), // first and last bit idx will be initialized in init_tree()
+        last_bit_idx_(0) {
 
     // Init the binary tree and perform bottom-up pruning.
     init_tree(bitmap);

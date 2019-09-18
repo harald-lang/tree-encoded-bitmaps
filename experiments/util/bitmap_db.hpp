@@ -1,10 +1,13 @@
 #pragma once
 //===----------------------------------------------------------------------===//
+#include "sqlite/sqlite3.h"
+
+#include <dtl/bitmap.hpp>
+#include <dtl/dtl.hpp>
+
 #include <mutex>
 #include <string>
-#include <dtl/dtl.hpp>
-#include <dtl/bitmap.hpp>
-#include <sqlite/sqlite3.h>
+#include <vector>
 //===----------------------------------------------------------------------===//
 class bitmap_db {
 

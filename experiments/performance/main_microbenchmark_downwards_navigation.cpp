@@ -1,21 +1,21 @@
-#include <string>
-#include <chrono>
-#include <cstddef>
-#include <iostream>
-#include <vector>
-
-#include <dtl/dtl.hpp>
-#include <dtl/env.hpp>
-#include <dtl/bitmap/util/convert.hpp>
-#include <dtl/bitmap/teb.hpp>
-#include <boost/algorithm/string.hpp>
-#include <dtl/bitmap/teb_wrapper.hpp>
-
 #include "experiments/util/bitmap_db.hpp"
 #include "experiments/util/gen.hpp"
 #include "experiments/util/threading.hpp"
-
 #include "thirdparty/perfevent/PerfEvent.hpp"
+
+#include <dtl/bitmap/teb.hpp>
+#include <dtl/bitmap/teb_wrapper.hpp>
+#include <dtl/bitmap/util/convert.hpp>
+#include <dtl/dtl.hpp>
+#include <dtl/env.hpp>
+
+#include <boost/algorithm/string.hpp>
+
+#include <chrono>
+#include <cstddef>
+#include <iostream>
+#include <string>
+#include <vector>
 //===----------------------------------------------------------------------===//
 // Micro-Experiment: Determine the costs of downward navigational steps.
 //===----------------------------------------------------------------------===//

@@ -1,18 +1,18 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include <memory>
-#include <string>
-#include <vector>
-
-#include <dtl/dtl.hpp>
-
-#include <boost/dynamic_bitset.hpp>
-
 #include "teb_builder.hpp"
 #include "teb_flat.hpp"
 #include "teb_iter.hpp"
 #include "teb_scan_iter.hpp"
 #include "teb_types.hpp"
+
+#include <dtl/dtl.hpp>
+
+#include <boost/dynamic_bitset.hpp>
+
+#include <memory>
+#include <string>
+#include <vector>
 //===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//
@@ -27,7 +27,8 @@ public:
 
   /// C'tor
   explicit
-  teb_wrapper(const boost::dynamic_bitset<$u32>& bitmap, f64 fpr = 0.0) {
+  teb_wrapper(const boost::dynamic_bitset<$u32>& bitmap, f64 fpr = 0.0)
+      : data_(0), teb_(nullptr) {
     dtl::teb_builder builder(bitmap, fpr);
     const auto word_cnt = builder.serialized_size_in_words();
     data_.resize(word_cnt);

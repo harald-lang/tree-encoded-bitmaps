@@ -1,10 +1,14 @@
-#include <sstream>
-#include <thread>
-#include <dtl/dtl.hpp>
-#include <dtl/bitmap.hpp>
-#include <dtl/bitmap/util/random.hpp>
-#include <dtl/bitmap/util/base64.hpp>
 #include "bitmap_db.hpp"
+
+#include <dtl/bitmap.hpp>
+#include <dtl/bitmap/util/base64.hpp>
+#include <dtl/bitmap/util/random.hpp>
+#include <dtl/dtl.hpp>
+
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <thread>
 //===----------------------------------------------------------------------===//
 bitmap_db::bitmap_db(const std::string& file)
     : file_(file),
@@ -60,7 +64,7 @@ bitmap_db::init() {
           "  bitmap   blob\n"
           ");";
 
-  char* err_msg = 0;
+  char* err_msg = nullptr;
   rc = sqlite3_exec(db_, sql_create_table.c_str(),
                     nullptr, nullptr, &err_msg);
   if (rc) {
@@ -235,7 +239,7 @@ bitmap_db::load_bitmap(i64 id) {
 
   $i32 rc;
   while((rc = sqlite3_step(select_by_id_stmt_)) == SQLITE_ROW) {
-    u8* blob = reinterpret_cast<u8*>(
+    auto* blob = reinterpret_cast<u8*>(
         sqlite3_column_blob(select_by_id_stmt_, 6));
     const auto bytes = sqlite3_column_bytes(select_by_id_stmt_, 6);
     return dtl::base64_decode_bitmap(dtl::data_view<u8>{blob, blob + bytes});

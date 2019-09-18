@@ -1,13 +1,13 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include <algorithm>
-#include <cstddef>
-#include <vector>
-
 #include <dtl/dtl.hpp>
 #include <dtl/math.hpp>
 
 #include <boost/dynamic_bitset.hpp>
+
+#include <algorithm>
+#include <cstddef>
+#include <vector>
 //===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//

@@ -1,9 +1,10 @@
 #pragma once
+//===----------------------------------------------------------------------===//
+#include <dtl/dtl.hpp>
 
 #include <cmath>
 #include <random>
-#include <dtl/dtl.hpp>
-
+#include <tuple>
 //===----------------------------------------------------------------------===//
 /// Implementation of a two-state Markov process to generate (clustered) bit
 /// sequences as defined in the TODS paper "Optimizing Bitmap Indices With
@@ -26,7 +27,7 @@ class two_state_markov_process {
   /// C'tor
   /// f: Clustering factor, the average number of bits in a 1-fill.
   /// d: Bit density, the fraction of bits that are 1.
-  __forceinline__ explicit
+  explicit
   two_state_markov_process(const double f, const double d)
       : p(d / ((1 - d) * f)), q(1 / f), d(d), f(f), rd(), gen(rd()), dis(0.0, 1.0) {
     // In the paper of Wu et al., the authors decided to always start in state '1'.
@@ -38,20 +39,15 @@ class two_state_markov_process {
     assert(d >= 0.0 && d <= 1.0);
   }
 
-  __forceinline__
   ~two_state_markov_process() = default;
 
-  __forceinline__
-  two_state_markov_process(const two_state_markov_process& other) = default;
-
-  __forceinline__
-  two_state_markov_process(two_state_markov_process&& other) = default;
-
-  __forceinline__ two_state_markov_process&
-  operator=(const two_state_markov_process& other) = default;
+  two_state_markov_process(const two_state_markov_process& other) = delete;
+  two_state_markov_process(two_state_markov_process&& other) = delete;
+  two_state_markov_process&
+  operator=(const two_state_markov_process& other) = delete;
 
   __forceinline__ two_state_markov_process&
-  operator=(two_state_markov_process&& other) = default;
+  operator=(two_state_markov_process&& other) = delete;
 
   /// Generate and return the next bit.
   __forceinline__
@@ -100,7 +96,7 @@ class two_state_markov_process {
 
     double r = 0.0;
     // i = 0, j = 0
-//    r += mu0 * P00 * std::log(P00);
+//    r += mu0 * P00 * std::log(P00); // TODO verify
     r += mu0 * P00 * (std::log(P00) / std::log(2));
     // i = 0, j = 1
 //    r += mu0 * P01 * std::log(P01);

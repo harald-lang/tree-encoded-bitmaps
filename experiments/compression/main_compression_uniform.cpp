@@ -1,9 +1,15 @@
-#include <iostream>
-#include <dtl/dtl.hpp>
-#include <experiments/util/bitmap_db.hpp>
-#include <experiments/util/gen.hpp>
-#include <experiments/util/prep_data.hpp>
 #include "common.hpp"
+#include "experiments/util/bitmap_db.hpp"
+#include "experiments/util/gen.hpp"
+#include "experiments/util/prep_data.hpp"
+
+#include <dtl/dtl.hpp>
+
+#include <functional>
+#include <iostream>
+#include <random>
+#include <sstream>
+#include <vector>
 //===----------------------------------------------------------------------===//
 // Experiment: Comparison of compression ratios of (uniform) random bitmaps.
 //===----------------------------------------------------------------------===//
@@ -48,10 +54,8 @@ void gen_data_uniform(const std::vector<$u64>& n_values,
     std::function<void(const config&, std::ostream&)> fn =
         [&](const config c, std::ostream& os) -> void {
           try {
-            const auto b = gen_random_bitmap_uniform(
-                c.n, c.density);
-            const auto id =
-                db.store_bitmap(c.n, c.density, b);
+            const auto b = gen_random_bitmap_uniform(c.n, c.density);
+            const auto id = db.store_bitmap(c.n, c.density, b);
             // Validation.
             const auto loaded = db.load_bitmap(id);
             if (b != loaded) {

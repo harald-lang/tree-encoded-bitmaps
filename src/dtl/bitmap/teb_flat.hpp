@@ -1,9 +1,14 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include <string>
-
 #include "teb.hpp"
 #include "teb_types.hpp"
+#include "util/binary_tree_structure.hpp"
+#include "util/bitmap_fun.hpp"
+#include "util/bitmap_view.hpp"
+
+#include <cassert>
+#include <ostream>
+#include <string>
 //===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//
@@ -213,7 +218,7 @@ public:
   }
 
   teb_flat(const teb_flat& other) = default;
-  teb_flat(teb_flat&& other) noexcept = default;
+  teb_flat(teb_flat&& other) = default;
   teb_flat& operator=(const teb_flat& other) = default;
   teb_flat& operator=(teb_flat&& other) = default;
   ~teb_flat() = default;

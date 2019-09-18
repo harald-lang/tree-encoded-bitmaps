@@ -1,8 +1,6 @@
 #pragma once
 //===----------------------------------------------------------------------===//
 // TODO remove
-#define __teb_inline__ __attribute__((noinline))
-
 #if !defined(__teb_inline__)
 #if defined(NDEBUG)
 // Release build.
@@ -14,6 +12,7 @@
 #endif
 
 #include <bitset>
+#include <cassert>
 #include <list>
 #include <queue>
 #include <stack>

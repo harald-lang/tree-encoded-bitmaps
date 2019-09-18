@@ -1,12 +1,13 @@
 #include "gtest/gtest.h"
 
-#include <chrono>
-
-#include <dtl/dtl.hpp>
 #include <dtl/bitmap/util/bitmap_fun.hpp>
-#include <boost/dynamic_bitset.hpp>
-#include <dtl/iterator.hpp>
 #include <dtl/bitmap/util/bitmap_view.hpp>
+#include <dtl/dtl.hpp>
+#include <dtl/iterator.hpp>
+
+#include <boost/dynamic_bitset.hpp>
+
+#include <chrono>
 //===----------------------------------------------------------------------===//
 TEST(bitmap_fun,
      fetch_words) {

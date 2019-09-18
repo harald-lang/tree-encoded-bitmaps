@@ -1,9 +1,10 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include <cstddef>
-
-#include "params.hpp"
 #include "bitmap_db.hpp"
+#include "params.hpp"
+
+#include <cstddef>
+#include <vector>
 //===----------------------------------------------------------------------===//
 /// Ensures that 'cnt' random bitmaps for each configuration are stored in the
 /// database. The function first consults the database, and generates new

@@ -1,13 +1,12 @@
 #pragma once
+//===----------------------------------------------------------------------===//
+#include <dtl/dtl.hpp>
 
 #include <array>
 #include <cassert>
 #include <cstddef>
-
-#include <dtl/dtl.hpp>
-
+//===----------------------------------------------------------------------===//
 namespace dtl {
-
 //===----------------------------------------------------------------------===//
 /// A statically sized stack.
 template<typename T, std::size_t N>

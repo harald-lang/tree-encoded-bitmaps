@@ -1,13 +1,13 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include <bitset>
-#include <functional>
-#include <queue>
+#include "plain_bitmap.hpp"
 
 #include <dtl/dtl.hpp>
 #include <dtl/math.hpp>
 
-#include "plain_bitmap.hpp"
+#include <bitset>
+#include <functional>
+#include <queue>
 //===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//
@@ -20,7 +20,7 @@ class binary_tree_structure {
 
   using bitmap_t = plain_bitmap<$u64>;
 
-public:
+public: // TODO make private
 
   /// The number of leaf nodes.
   $u64 n_;
@@ -45,7 +45,7 @@ public:
       : n_(n),
         max_node_cnt_(2 * n_ - 1),
         height_(dtl::log_2(n_)),
-        is_inner_node_(max_node_cnt_ + offset) {
+        is_inner_node_(max_node_cnt_ + offset) { // NOLINT
 
     if (!dtl::is_power_of_two(n_)) {
       throw std::invalid_argument(
@@ -255,8 +255,8 @@ public:
     $u64 idx_;
 
     std::array<node_t, 128> buf_;
-    std::size_t buf_read_idx_;
-    std::size_t buf_end_;
+    std::size_t buf_read_idx_ = 0;
+    std::size_t buf_end_ = 0;
 
   public:
 

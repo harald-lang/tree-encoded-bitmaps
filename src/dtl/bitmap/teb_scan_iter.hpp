@@ -1,12 +1,22 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include <string>
-
-#include <dtl/dtl.hpp>
-
 #include "teb.hpp"
 #include "teb_flat.hpp"
 #include "teb_iter.hpp"
+#include "teb_scan_util.hpp"
+#include "util/bit_buffer.hpp"
+#include "util/bit_buffer_avx2.hpp"
+#include "util/bit_buffer_avx512.hpp"
+
+#include <dtl/dtl.hpp>
+#include <dtl/iterator.hpp>
+
+#include <array>
+#include <cassert>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <ostream>
 //===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//

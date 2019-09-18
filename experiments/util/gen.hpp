@@ -1,14 +1,16 @@
 #pragma once
 //===----------------------------------------------------------------------===//
+#include "bitmap_db.hpp"
+#include "params.hpp"
+
+#include <dtl/bitmap/util/markov_process.hpp>
+#include <dtl/bitmap/util/random.hpp>
+#include <dtl/bitmap/util/two_state_markov_process.hpp>
+#include <dtl/dtl.hpp>
+
 #include <iostream>
 #include <sstream>
 #include <vector>
-#include <dtl/dtl.hpp>
-#include <dtl/bitmap/util/random.hpp>
-#include <dtl/bitmap/util/two_state_markov_process.hpp>
-#include <dtl/bitmap/util/markov_process.hpp>
-#include "bitmap_db.hpp"
-#include "params.hpp"
 //===----------------------------------------------------------------------===//
 static u1
 markov_parameters_are_valid(u64 n, $f64 f, $f64 d) {

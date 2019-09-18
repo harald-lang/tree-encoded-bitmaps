@@ -1,10 +1,10 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include <ostream>
+#include "bitmap_types.hpp"
 
 #include <dtl/dtl.hpp>
 
-#include "bitmap_types.hpp"
+#include <ostream>
 //===----------------------------------------------------------------------===//
 struct config {
   bitmap_t bitmap_type;

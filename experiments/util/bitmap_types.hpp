@@ -1,18 +1,18 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include <vector>
-
-#include <dtl/dtl.hpp>
 #include <dtl/bitmap/dynamic_bitmap.hpp>
 #include <dtl/bitmap/dynamic_roaring_bitmap.hpp>
-#include <dtl/bitmap/teb.hpp>
-//#include <dtl/bitmap/teb_scan.hpp> /* deprecated */
-#include <dtl/bitmap/teb_wrapper.hpp>
 #include <dtl/bitmap/dynamic_wah.hpp>
-#include <dtl/bitmap/position_list.hpp>
 #include <dtl/bitmap/partitioned_position_list.hpp>
 #include <dtl/bitmap/partitioned_range_list.hpp>
+#include <dtl/bitmap/position_list.hpp>
 #include <dtl/bitmap/range_list.hpp>
+#include <dtl/bitmap/teb.hpp>
+#include <dtl/bitmap/teb_wrapper.hpp>
+#include <dtl/dtl.hpp>
+
+#include <iostream>
+#include <vector>
 //===----------------------------------------------------------------------===//
 enum class bitmap_t {
   bitmap,

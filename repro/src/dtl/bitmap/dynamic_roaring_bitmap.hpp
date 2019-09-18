@@ -1,11 +1,12 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include <cstddef>
+#include <roaring/roaring.hh>
 
 #include <dtl/dtl.hpp>
 
-#include <roaring/roaring.hh>
 #include <boost/dynamic_bitset.hpp>
+
+#include <cstddef>
 //===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//
@@ -16,7 +17,7 @@ struct dynamic_roaring_bitmap {
   Roaring bitmap_;
   std::size_t size_;
 
-  dynamic_roaring_bitmap() = default;
+  dynamic_roaring_bitmap() = default; // NOLINT
 
   explicit
   dynamic_roaring_bitmap(const boost::dynamic_bitset<$u32>& in)
@@ -30,9 +31,7 @@ struct dynamic_roaring_bitmap {
   }
 
   ~dynamic_roaring_bitmap() = default;
-
   dynamic_roaring_bitmap(const dynamic_roaring_bitmap& other) = default;
-
   dynamic_roaring_bitmap(dynamic_roaring_bitmap&& other) noexcept = default;
 
   __forceinline__ dynamic_roaring_bitmap&
@@ -218,12 +217,12 @@ struct dynamic_roaring_bitmap {
 
   iter __forceinline__
   it() const {
-    return std::move(iter(*this));
+    return iter(*this);
   }
 
   iter __forceinline__
   scan_it() const {
-    return std::move(iter(*this));
+    return iter(*this);
   }
   //===--------------------------------------------------------------------===//
 

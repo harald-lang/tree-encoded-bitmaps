@@ -1,5 +1,11 @@
 #include "gen.hpp"
 
+#include "bitmap_db.hpp"
+#include "params.hpp"
+#include "threading.hpp"
+
+#include <dtl/dtl.hpp>
+
 #include <algorithm>
 #include <atomic>
 #include <cstddef>
@@ -8,12 +14,6 @@
 #include <random>
 #include <string>
 #include <vector>
-
-#include <dtl/dtl.hpp>
-
-#include "bitmap_db.hpp"
-#include "params.hpp"
-#include "threading.hpp"
 //===----------------------------------------------------------------------===//
 std::size_t
 gen(

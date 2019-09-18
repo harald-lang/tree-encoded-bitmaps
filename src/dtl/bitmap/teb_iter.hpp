@@ -1,11 +1,14 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include <string>
-
-#include <dtl/dtl.hpp>
-
 #include "teb.hpp"
 #include "teb_flat.hpp"
+
+#include <dtl/dtl.hpp>
+#include <dtl/static_stack.hpp>
+
+#include <cassert>
+#include <ostream>
+#include <string>
 //===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//

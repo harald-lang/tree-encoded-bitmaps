@@ -1,8 +1,7 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include <dtl/dtl.hpp>
 #include <dtl/bits.hpp>
-#include <immintrin.h>
+#include <dtl/dtl.hpp>
 //===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//
@@ -43,7 +42,7 @@ public:
   bit_buffer(const bit_buffer& other) = default;
   bit_buffer(bit_buffer&& other) noexcept = default;
   bit_buffer& operator=(const bit_buffer& other) = default;
-  bit_buffer& operator=(bit_buffer&& other) = default;
+  bit_buffer& operator=(bit_buffer&& other) noexcept = default;
   ~bit_buffer() = default;
 
   inline u64

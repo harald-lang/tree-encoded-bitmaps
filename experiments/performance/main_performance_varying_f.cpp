@@ -1,9 +1,15 @@
-#include <iostream>
-#include <dtl/dtl.hpp>
-#include <experiments/util/bitmap_db.hpp>
-#include <experiments/util/gen.hpp>
-#include <experiments/util/prep_data.hpp>
 #include "common.hpp"
+#include "experiments/util/bitmap_db.hpp"
+#include "experiments/util/bitmap_types.hpp"
+#include "experiments/util/gen.hpp"
+#include "experiments/util/params.hpp"
+#include "experiments/util/prep_data.hpp"
+
+#include <dtl/dtl.hpp>
+
+#include <iostream>
+#include <random>
+#include <vector>
 //===----------------------------------------------------------------------===//
 // Experiment: Varying f, fixed d.
 //===----------------------------------------------------------------------===//

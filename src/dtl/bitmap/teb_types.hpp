@@ -1,7 +1,8 @@
 #pragma once
 //===----------------------------------------------------------------------===//
+#include "util/rank1_surf.hpp"
+
 #include <dtl/dtl.hpp>
-#include <dtl/bitmap/util/rank1_surf.hpp>
 //===----------------------------------------------------------------------===//
 #if !defined(__teb_inline__)
 #if defined(NDEBUG)

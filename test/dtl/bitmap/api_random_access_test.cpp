@@ -1,9 +1,10 @@
 #include "gtest/gtest.h"
-#include <dtl/dtl.hpp>
+#include "api_types.hpp"
+
 #include <dtl/bitmap.hpp>
 #include <dtl/bitmap/util/convert.hpp>
 #include <dtl/bitmap/util/random.hpp>
-#include "api_types.hpp"
+#include <dtl/dtl.hpp>
 //===----------------------------------------------------------------------===//
 // API tests for range indices and bitmap indices.
 // Random access / point lookup

@@ -1,11 +1,11 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include <cstddef>
-
 #include <dtl/dtl.hpp>
 #include <dtl/math.hpp>
 
 #include <boost/dynamic_bitset.hpp>
+
+#include <cstddef>
 //===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//
@@ -29,20 +29,13 @@ struct dynamic_bitmap {
       throw std::invalid_argument(
           "The length of the bitmap must be a power of two.");
     }
-
   }
 
   ~dynamic_bitmap() = default;
-
   dynamic_bitmap(const dynamic_bitmap& other) = default;
-
   dynamic_bitmap(dynamic_bitmap&& other) noexcept = default;
-
-  dynamic_bitmap&
-  operator=(const dynamic_bitmap& other) = default;
-
-  dynamic_bitmap&
-  operator=(dynamic_bitmap&& other) noexcept = default;
+  dynamic_bitmap& operator=(const dynamic_bitmap& other) = default;
+  dynamic_bitmap& operator=(dynamic_bitmap&& other) noexcept = default;
 
   /// Return the size in bytes.
   std::size_t
@@ -118,7 +111,6 @@ struct dynamic_bitmap {
   test(const std::size_t pos) const {
     return bitmap_.test(pos);
   }
-
 
   //===--------------------------------------------------------------------===//
   /// 1-fill iterator, with skip support.
