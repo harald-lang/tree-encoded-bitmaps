@@ -33,12 +33,11 @@ struct config_t {
   }
 };
 //===----------------------------------------------------------------------===//
-void
-run(const config_t& config, std::ostream& os) {
+void run(const config_t& config, std::ostream& os) {
   const auto num_runs = 10; // RUNS;
   $f64 size_teb_o0 = 0;
-//  $f64 size_teb_o1 = 0; // deprecated. in the paper we only distinguish between -o0 and -o3
-//  $f64 size_teb_o2 = 0;
+  //  $f64 size_teb_o1 = 0; // deprecated. in the paper we only distinguish between -o0 and -o3
+  //  $f64 size_teb_o2 = 0;
   $f64 size_teb_o3 = 0;
 
   $u64 tree_bit_cnt_o0 = 0;
@@ -52,10 +51,9 @@ run(const config_t& config, std::ostream& os) {
 
   // # of runs
   for ($u64 r = 0; r < num_runs; r++) {
-
     auto bm = dtl::gen_random_bitmap_markov(config.n,
-                                            config.clustering_factor,
-                                            config.bit_density);
+        config.clustering_factor,
+        config.bit_density);
 
     dtl::teb<0> teb_o0(bm);
     size_teb_o0 += teb_o0.size_in_byte();
@@ -91,20 +89,20 @@ run(const config_t& config, std::ostream& os) {
 }
 //===----------------------------------------------------------------------===//
 $i32 main() {
-
   std::vector<$u64> n_s {
-      1ull << 20 };
+    1ull << 20
+  };
   std::vector<$f64> clustering_factors { 8 };
 
   std::vector<$f64> bit_densities { 0.0000001, 0.000001, 0.00001, 0.0001, 0.001, 0.01 };
   for ($f64 d = 10; d <= 80; d += 10) {
-    bit_densities.push_back(d/100);
+    bit_densities.push_back(d / 100);
   }
 
   std::vector<config_t> configs;
-  for (auto n: n_s) {
-    for (auto d: bit_densities) {
-      for (auto f: clustering_factors) {
+  for (auto n : n_s) {
+    for (auto d : bit_densities) {
+      for (auto f : clustering_factors) {
         if (f > n * d) {
           std::stringstream err;
           err << "Skipping n=" << n << ", d=" << d << ", f=" << f << "."
@@ -123,15 +121,15 @@ $i32 main() {
 
   std::function<void(const config_t&, std::ostream&)> fn =
       [](const config_t c, std::ostream& os) -> void {
-        try {
-          run(c, os);
-        }
-        catch (...) {
-          std::stringstream err;
-          err << "Failed to run " << c << "." << std::endl;
-          std::cerr << err.str();
-        }
-      };
+    try {
+      run(c, os);
+    }
+    catch (...) {
+      std::stringstream err;
+      err << "Failed to run " << c << "." << std::endl;
+      std::cerr << err.str();
+    }
+  };
   dispatch<config_t>(configs, fn);
 }
 //===----------------------------------------------------------------------===//

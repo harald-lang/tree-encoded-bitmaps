@@ -14,7 +14,6 @@ namespace dtl {
 //===----------------------------------------------------------------------===//
 /// A 1-run iterator for TEBs with efficient skip support.
 class teb_iter {
-
   static constexpr u32 optimization_level_ = 3; // TODO remove
 
   /// The fundamental type to encode paths within the tree.
@@ -29,10 +28,10 @@ class teb_iter {
     void
     print(std::ostream& os) const noexcept {
       os << "node[idx=" << node_idx
-          << ",rank=" << rank
-          << ",level=" << level
-          << ",path=" << std::bitset<32>(path)
-          << "]";
+         << ",rank=" << rank
+         << ",level=" << level
+         << ",path=" << std::bitset<32>(path)
+         << "]";
     }
   };
 
@@ -63,29 +62,27 @@ class teb_iter {
   path_t path_;
 
 public:
-
   /// Constructs an iterator for the given TEB instance. After construction,
   /// the iterator points to the first 1-fill.
   explicit __teb_inline__
-  teb_iter(const teb_flat& teb) noexcept :
-      teb_(teb),
-      tree_height_(dtl::teb<optimization_level_>::determine_tree_height(teb.n_)),
-      perfect_levels_(teb.perfect_level_cnt_),
-      partition_shift_(tree_height_ - (teb.perfect_level_cnt_ - 1)),
-      top_node_idx_begin_((1ull << (teb.perfect_level_cnt_ - 1)) - 1),
-      top_node_idx_end_((1ull << teb.perfect_level_cnt_) - 1),
-      top_node_idx_current_((1ull << (teb.perfect_level_cnt_ - 1)) - 1),
-      pos_(0),
-      length_(0),
-      node_idx_((1ull << (teb.perfect_level_cnt_ - 1)) - 1),
-      path_(path_t(1) << (teb.perfect_level_cnt_ - 1)) {
+  teb_iter(const teb_flat& teb) noexcept
+      : teb_(teb),
+        tree_height_(dtl::teb<optimization_level_>::determine_tree_height(teb.n_)),
+        perfect_levels_(teb.perfect_level_cnt_),
+        partition_shift_(tree_height_ - (teb.perfect_level_cnt_ - 1)),
+        top_node_idx_begin_((1ull << (teb.perfect_level_cnt_ - 1)) - 1),
+        top_node_idx_end_((1ull << teb.perfect_level_cnt_) - 1),
+        top_node_idx_current_((1ull << (teb.perfect_level_cnt_ - 1)) - 1),
+        pos_(0),
+        length_(0),
+        node_idx_((1ull << (teb.perfect_level_cnt_ - 1)) - 1),
+        path_(path_t(1) << (teb.perfect_level_cnt_ - 1)) {
     // Initialize the stack.
     --top_node_idx_current_;
     next_top_node();
     next();
   }
 
-  __teb_inline__
   teb_iter(teb_iter&&) noexcept = default;
 
   /// Forwards the iterator to the next top node that is either an inner node
@@ -129,9 +126,9 @@ public:
   /// Use the functions pos() and length() to get the 1-fill the iterator
   /// is currently pointing to.
   void __teb_inline__
-  next_off() noexcept __attribute__ ((flatten, hot)) {
+  next_off() noexcept __attribute__((flatten, hot)) {
     while (top_node_idx_current_ < top_node_idx_end_) {
-      outer_loop_begin:
+    outer_loop_begin:
       while (!stack_.empty()) {
         // The current node.
         stack_entry node_info = stack_.top();
@@ -139,7 +136,7 @@ public:
 
         $u1 label;
         while (teb_.is_inner_node(node_info.node_idx)) {
-          loop_begin:
+        loop_begin:
           label = false;
           // Determine left and right child. - Both exist, because the tree
           // is full binary.
@@ -153,8 +150,7 @@ public:
               + teb_.is_inner_node(right_child_idx);
           const auto left_child_is_inner = 0
               + teb_.is_inner_node(left_child_idx);
-          const auto children_are_inner =
-              (left_child_is_inner << 1) | right_child_is_inner; // TODO fetch both bits in one go
+          const auto children_are_inner = (left_child_is_inner << 1) | right_child_is_inner; // TODO fetch both bits in one go
 
           // Compute the rank for one child, and derive the rank of the
           // other one.
@@ -165,11 +161,9 @@ public:
           u64 right_child_label_idx = left_child_label_idx + 1
               - left_child_is_inner; // adjust index if necessary
 
-//          // TODO Eagerly fetch the labels.
-//          u1 left_child_label = teb_.get_label_by_idx(left_child_label_idx);
-//          u1 right_child_label = teb_.get_label_by_idx(right_child_label_idx);
-
-
+          //          // TODO Eagerly fetch the labels.
+          //          u1 left_child_label = teb_.get_label_by_idx(left_child_label_idx);
+          //          u1 right_child_label = teb_.get_label_by_idx(right_child_label_idx);
 
           // Switch over the different cases.
           switch (children_are_inner) {
@@ -194,8 +188,7 @@ public:
 
               if (optimization_level_ < 2) {
                 // Go to the node which has the 1-label.
-                node_info.node_idx =
-                    left_child_label ? left_child_idx : right_child_idx;
+                node_info.node_idx = left_child_label ? left_child_idx : right_child_idx;
                 node_info.path = (node_info.path << 1) | !left_child_label;
                 node_info.level++;
                 node_info.rank = left_child_rank;
@@ -244,7 +237,7 @@ public:
                 // Produce the output for the left child iff it has a 1-label,
                 // otherwise it can be ignored.
                 node_info.node_idx = left_child_idx;
-//                label = true; // TODO remove
+                //                label = true; // TODO remove
                 node_info.path <<= 1;
                 node_info.rank = left_child_rank;
                 node_info.level++;
@@ -316,10 +309,10 @@ public:
         // Reached a leaf node.
         label = teb_.get_label_by_idx(node_info.node_idx - node_info.rank);
         if (label) {
-          produce_output:
+        produce_output:
           // Produce output (a 1-fill).
-//          const auto lz_cnt_path = dtl::bits::lz_count(node_info.path);
-//          const auto level = sizeof(path_t) * 8 - 1 - lz_cnt_path;
+          //          const auto lz_cnt_path = dtl::bits::lz_count(node_info.path);
+          //          const auto level = sizeof(path_t) * 8 - 1 - lz_cnt_path;
           const auto level = node_info.level;
           // Toggle sentinel bit (= highest bit set) and add offset.
           pos_ = (node_info.path ^ (1ull << level)) << (tree_height_ - level);
@@ -338,7 +331,6 @@ public:
       next_node.path = path_t(top_node_idx_current_ - top_node_idx_begin_);
       // Set the sentinel bit.
       next_node.path |= path_t(1) << (perfect_levels_ - 1);
-//      next_node.level = determine_level_of(next_node.path);
       next_node.level = perfect_levels_ - 1;
       next_node.rank = teb_.rank_inclusive(top_node_idx_current_);
     }
@@ -347,7 +339,7 @@ public:
   }
 
   void __teb_inline__
-  next() noexcept __attribute__ ((flatten, hot)) {
+  next() noexcept __attribute__((flatten, hot)) {
     assert(!end());
     while (top_node_idx_current_ < top_node_idx_end_) {
       while (!stack_.empty()) {
@@ -555,8 +547,7 @@ public:
     assert(!stack_.empty());
 
     // Determine the right child of the common ancestor node.
-    const auto right_child_of_common_ancestor_path =
-        (common_ancestor_path << 1) | 1ull;
+    const auto right_child_of_common_ancestor_path = (common_ancestor_path << 1) | 1ull;
     const auto right_child_of_common_ancestor_level = common_ancestor_level + 1;
 
     $u64 node_idx = node_idx_;
@@ -598,6 +589,7 @@ public:
   bench_nav_upwards(
       const path_t right_child_of_common_ancestor_path,
       u64 right_child_of_common_ancestor_level) {
+    // clang-format off
 // --- slower ---
 //    // Walk up the tree to the right child of the common ancestor.
 //    path_t path = 1;
@@ -629,6 +621,7 @@ public:
 //    path_ = 1;
 //    return;
 // --- ------ ---
+    // clang-format on
 
     // Walk up the tree to the right child of the common ancestor.
     $u64 node_idx = node_idx_;
@@ -711,7 +704,6 @@ public:
   perfect_levels() const noexcept {
     return perfect_levels_;
   }
-
 };
 //===----------------------------------------------------------------------===//
 } // namespace dtl

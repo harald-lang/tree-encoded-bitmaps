@@ -9,7 +9,6 @@
 /// With Efficient Compression" of Wu et al.
 /// (http://www.yajun.info/LBNL-49626-tods.pdf).
 class markov_process {
-
   $f64 q;
   $u32 k;
   $u32 state = 0;
@@ -19,12 +18,11 @@ class markov_process {
   std::uniform_real_distribution<> dis;
   std::uniform_int_distribution<> state_dis;
 
- public:
-
+public:
   /// C'tor
-  explicit
-  markov_process(u32 k, f64 f)
-      : q(1 / f), k(k), rd(), gen(rd()), dis(0.0, 1.0), state_dis(1, k - 1) {
+  explicit markov_process(u32 k, f64 f)
+      : q(1 / f), k(k), rd(), gen(rd()), dis(0.0, 1.0),
+        state_dis(1, k - 1) {
     state = static_cast<u32>(dis(gen) * k);
     assert(f >= 1.0);
     assert(k >= 2);
@@ -45,6 +43,5 @@ class markov_process {
     state = (state + j) % k;
     return state;
   }
-
 };
 //===----------------------------------------------------------------------===//

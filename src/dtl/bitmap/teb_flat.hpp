@@ -18,7 +18,6 @@ class teb_wrapper;
 //===----------------------------------------------------------------------===//
 /// The TEB logic that is used to access a serialized TEB.
 class teb_flat {
-
   friend class teb_iter;
   friend class teb_scan_iter;
   friend class teb_wrapper;
@@ -26,7 +25,7 @@ class teb_flat {
   using word_type = teb_word_type;
   static constexpr auto word_size = sizeof(word_type);
   static constexpr auto word_bitlength = word_size * 8;
-  
+
   using rank_type = teb_rank_type;
   using size_type = teb_size_type;
   using bitmap_fn = dtl::bitmap_fun<word_type>;
@@ -56,7 +55,6 @@ class teb_flat {
   const size_type* level_offsets_labels_lut_ptr_;
 
 public:
-
   /// Returns the pointer to the header.
   static constexpr const teb_header* const
   get_header_ptr(const word_type* const ptr) {
@@ -175,8 +173,7 @@ public:
 
   /// Construct a TEB instance that provides all the logic to work with a
   /// serialized TEB.
-  explicit
-  teb_flat(const word_type* const ptr)
+  explicit teb_flat(const word_type* const ptr)
       : ptr_(ptr),
         hdr_(get_header_ptr(ptr)),
         n_(get_header_ptr(ptr)->n),
@@ -189,7 +186,7 @@ public:
         T_((get_tree_ptr(ptr) != nullptr)
                 ? get_tree_ptr(ptr)
                 : &teb_null_word,
-           (get_tree_ptr(ptr) != nullptr)
+            (get_tree_ptr(ptr) != nullptr)
                 ? get_tree_ptr(ptr) + teb_flat::get_tree_word_cnt(ptr)
                 : &teb_null_word + 1),
         tree_bit_cnt_((get_tree_ptr(ptr) != nullptr)
@@ -203,9 +200,9 @@ public:
             reinterpret_cast<const size_type*>(get_metadata_ptr(ptr))),
         level_offsets_labels_lut_ptr_(
             reinterpret_cast<const size_type*>(get_metadata_ptr(ptr))
-                + get_header_ptr(ptr)->encoded_tree_height
-                - get_header_ptr(ptr)->perfect_level_cnt) {
-        // TODO maybe it is not necessary to copy the header data
+            + get_header_ptr(ptr)->encoded_tree_height
+            - get_header_ptr(ptr)->perfect_level_cnt) {
+    // TODO maybe it is not necessary to copy the header data
 
     // Initialize rank helper structure.
     if (rank_lut_ptr_ == nullptr) {
@@ -271,18 +268,18 @@ public:
   void __forceinline__
   print(std::ostream& os) const noexcept {
     os << "implicit inner nodes = "
-        << implicit_inner_node_cnt_
-        << ", implicit leading labels = "
-        << implicit_leading_label_cnt_
-        << ", perfect levels = "
-        << perfect_level_cnt_
-        << ", tree bits = " << tree_bit_cnt_
-        << ", label bits = " << label_bit_cnt_
-        << ", n = " << n_
-        << ", encoded tree height = " << encoded_tree_height_
-        << ", rank size = " << (get_rank_word_cnt(ptr_) * word_size)
-        << ", size = " << size_in_byte()
-        << "\n | ";
+       << implicit_inner_node_cnt_
+       << ", implicit leading labels = "
+       << implicit_leading_label_cnt_
+       << ", perfect levels = "
+       << perfect_level_cnt_
+       << ", tree bits = " << tree_bit_cnt_
+       << ", label bits = " << label_bit_cnt_
+       << ", n = " << n_
+       << ", encoded tree height = " << encoded_tree_height_
+       << ", rank size = " << (get_rank_word_cnt(ptr_) * word_size)
+       << ", size = " << size_in_byte()
+       << "\n | ";
 
     if (implicit_inner_node_cnt_ > 0) {
       os << "'";
@@ -312,7 +309,6 @@ public:
   }
 
 private:
-
   /// Computes the (inclusive) rank of the given tree node.
   size_type __teb_inline__
   rank_inclusive(size_type node_idx) const noexcept {
@@ -331,8 +327,7 @@ private:
   u1 __teb_inline__
   is_inner_node(size_type node_idx) const noexcept {
     const auto implicit_1bit_cnt = implicit_inner_node_cnt_;
-    const auto implicit_leaf_begin =
-        tree_bit_cnt_ + implicit_inner_node_cnt_;
+    const auto implicit_leaf_begin = tree_bit_cnt_ + implicit_inner_node_cnt_;
     if (node_idx < implicit_1bit_cnt) {
       // Implicit inner node.
       return true;
@@ -360,8 +355,7 @@ private:
   u1 __teb_inline__
   get_label_by_idx(size_type label_idx) const noexcept {
     const auto implicit_leading_label_cnt = implicit_leading_label_cnt_;
-    const auto implicit_trailing_labels_begin =
-        label_bit_cnt_ + implicit_leading_label_cnt;
+    const auto implicit_trailing_labels_begin = label_bit_cnt_ + implicit_leading_label_cnt;
     if (label_idx < implicit_leading_label_cnt) {
       // An implicit leading 0-label.
       return false;
@@ -413,7 +407,6 @@ private:
       return level_offsets_labels_lut_ptr_[level - perfect_level_cnt_];
     }
   }
-
 };
 //===----------------------------------------------------------------------===//
 } // namespace dtl

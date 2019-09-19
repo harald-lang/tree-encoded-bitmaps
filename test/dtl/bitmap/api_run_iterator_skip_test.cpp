@@ -18,9 +18,8 @@ TYPED_TEST_CASE(api_run_iterator_skip_test, types_under_test);
 // TODO test skip iterator and scan iterator explicitly
 //===----------------------------------------------------------------------===//
 template<typename T>
-void
-skip_test(u64 n, u64 bitmap, u64 skip_to_pos,
-          u64 expected_pos, u64 expected_len) {
+void skip_test(u64 n, u64 bitmap, u64 skip_to_pos,
+    u64 expected_pos, u64 expected_len) {
   assert(n <= 64);
   std::stringstream info;
   info << "skip test: n=" << n
@@ -29,7 +28,7 @@ skip_test(u64 n, u64 bitmap, u64 skip_to_pos,
        << ", skip_to=" << skip_to_pos
        << ", expected_pos=" << expected_pos
        << ", expected_len=" << expected_len
-                            << std::endl;
+       << std::endl;
   std::cout << info.str();
   dtl::bitmap b(n, bitmap);
   T t(b);
@@ -43,7 +42,7 @@ skip_test(u64 n, u64 bitmap, u64 skip_to_pos,
   }
   ASSERT_EQ(it.pos(), expected_pos) << info.str();
   if (expected_pos != n) {
-//    ASSERT_EQ(it.length(), expected_len);
+    //    ASSERT_EQ(it.length(), expected_len);
   }
 }
 
@@ -89,10 +88,10 @@ TYPED_TEST(api_run_iterator_skip_test, skip_multiple_times) {
   auto it = tm.it();
   it.skip_to(2);
   ASSERT_EQ(it.pos(), 2);
-//  ASSERT_EQ(it.length(), 2);
+  //  ASSERT_EQ(it.length(), 2);
   it.skip_to(6);
   ASSERT_EQ(it.pos(), 6);
-//  ASSERT_EQ(it.length(), 2);
+  //  ASSERT_EQ(it.length(), 2);
 }
 //===----------------------------------------------------------------------===//
 TYPED_TEST(api_run_iterator_skip_test, skip_into_a_1fill_length_one) {
@@ -101,9 +100,8 @@ TYPED_TEST(api_run_iterator_skip_test, skip_into_a_1fill_length_one) {
 }
 //===----------------------------------------------------------------------===//
 template<typename T>
-void
-skip_next_test(u64 n, u64 bitmap, u64 skip_to_pos,
-               u64 expected_pos, u64 expected_len) {
+void skip_next_test(u64 n, u64 bitmap, u64 skip_to_pos,
+    u64 expected_pos, u64 expected_len) {
   assert(n <= 64);
   std::stringstream info;
   info << "skip/next test: n=" << n
@@ -128,7 +126,7 @@ skip_next_test(u64 n, u64 bitmap, u64 skip_to_pos,
   }
   ASSERT_EQ(it.pos(), expected_pos) << info.str();
   if (expected_pos != n) {
-//    ASSERT_EQ(it.length(), expected_len);
+    //    ASSERT_EQ(it.length(), expected_len);
   }
 }
 //===----------------------------------------------------------------------===//

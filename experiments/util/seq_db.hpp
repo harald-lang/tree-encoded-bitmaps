@@ -10,7 +10,6 @@
 #include <vector>
 //===----------------------------------------------------------------------===//
 class seq_db {
-
   const std::string file_;
   std::mutex mutex_;
   sqlite3* db_;
@@ -24,7 +23,6 @@ class seq_db {
   sqlite3_stmt* select_all_ids_stmt_;
 
 public:
-
   using seq_t = std::vector<$u32>;
 
   explicit seq_db(const std::string& file);
@@ -46,13 +44,11 @@ public:
   std::vector<$i64> ids();
 
 private:
-
   /// Opens the database.
   void open();
   /// Initialize the database schema and prepare the SQL statements.
   void init();
   /// Close the database. Called by the destructor.
   void close();
-
 };
 //===----------------------------------------------------------------------===//

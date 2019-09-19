@@ -17,11 +17,9 @@ namespace dtl {
 /// I.e., for a given node i, the left childs identifier is 2i+1, and 2i+2 is
 /// the identifier of the right child node; the parent node ID is (i-1)/2.
 class binary_tree_structure {
-
   using bitmap_t = plain_bitmap<$u64>;
 
 public: // TODO make private
-
   /// The number of leaf nodes.
   $u64 n_;
   /// The max number of nodes.
@@ -37,11 +35,9 @@ public: // TODO make private
   static constexpr std::size_t offset = 1;
 
 public:
-
   /// Constructs a perfect binary tree (structure) with n leaf nodes and n-1
   /// inner nodes.  Note, n must be a power of two.
-  explicit
-  binary_tree_structure(u64 n)
+  explicit binary_tree_structure(u64 n)
       : n_(n),
         max_node_cnt_(2 * n_ - 1),
         height_(dtl::log_2(n_)),
@@ -63,20 +59,18 @@ public:
   virtual ~binary_tree_structure() = default;
 
   /// Counts the number of nodes in the given subtree.
-  u64
-  subtree_size(u64 node_idx) const {
+  u64 subtree_size(u64 node_idx) const {
     if (!is_inner_node(node_idx)) return 1;
     return 1
-         + subtree_size(left_child_of(node_idx))
-         + subtree_size(right_child_of(node_idx));
+        + subtree_size(left_child_of(node_idx))
+        + subtree_size(right_child_of(node_idx));
   };
 
   /// Counts the number of leaf nodes in the given subtree.
-  u64
-  count_leaf_nodes(u64 node_idx) const {
+  u64 count_leaf_nodes(u64 node_idx) const {
     if (!is_inner_node(node_idx)) return 1;
     return count_leaf_nodes(left_child_of(node_idx))
-         + count_leaf_nodes(right_child_of(node_idx));
+        + count_leaf_nodes(right_child_of(node_idx));
   };
 
   /// Returns the ID of the root node.
@@ -128,7 +122,7 @@ public:
   /// Returns true, if the given node is a leaf node; false otherwise.
   inline u1
   is_leaf_node(u64 node_idx) const {
-    return ! is_inner_node_[node_idx + offset];
+    return !is_inner_node_[node_idx + offset];
   }
 
   /// Turns the given node into a leaf node.
@@ -153,23 +147,23 @@ public:
 
   /// Returns true if given node is expanded, false otherwise. A tree node is
   /// expanded iff the parent is an inner node.
-//  inline u1
-//  is_expanded(u64 node_idx) const {
-//    // TODO: why do we not allow to collapse the root?
-//    if (node_idx == root()) return true;
-//    return is_inner_node(parent_of(node_idx));
-//  }
+  //  inline u1
+  //  is_expanded(u64 node_idx) const {
+  //    // TODO: why do we not allow to collapse the root?
+  //    if (node_idx == root()) return true;
+  //    return is_inner_node(parent_of(node_idx));
+  //  }
 
   /// Returns true if the given node is not expanded, false otherwise.
-//  inline u1
-//  is_collapsed(u64 node_idx) const {
-//    return !is_expanded(node_idx);
-//  }
+  //  inline u1
+  //  is_collapsed(u64 node_idx) const {
+  //    return !is_expanded(node_idx);
+  //  }
 
   /// Alias for 'is_expanded'.
-//  inline u1 contains(u64 node_idx) const {
-//    return is_expanded(node_idx);
-//  }
+  //  inline u1 contains(u64 node_idx) const {
+  //    return is_expanded(node_idx);
+  //  }
 
   //===--------------------------------------------------------------------===//
   struct node_t {
@@ -179,26 +173,25 @@ public:
 
     inline u1
     operator==(const node_t& other) const {
-      return idx == other.idx;// && level == other.level;
+      return idx == other.idx; // && level == other.level;
     }
   };
   //===--------------------------------------------------------------------===//
-  class breadth_first_iterator : public std::iterator<
-      std::input_iterator_tag,  // iterator_category
-      node_t,                   // value_type
-      u64,                      // difference_type
-      const node_t*,            // pointer
-      node_t                    // reference
-  > {
+  class breadth_first_iterator
+      : public std::iterator<
+            std::input_iterator_tag, // iterator_category
+            node_t, // value_type
+            u64, // difference_type
+            const node_t*, // pointer
+            node_t // reference
+            > {
     const binary_tree_structure& tree_;
 
     $u64 idx_;
     $u1 is_inner_;
 
   public:
-
-    explicit inline
-    breadth_first_iterator(const binary_tree_structure& tree,
+    explicit inline breadth_first_iterator(const binary_tree_structure& tree,
         u64 start_node_idx)
         : tree_(tree), idx_(start_node_idx), is_inner_(tree_.is_inner_node(0)) {
       assert(start_node_idx == 0 || start_node_idx == tree_.max_node_cnt_);
@@ -243,13 +236,14 @@ public:
     }
   };
   //===--------------------------------------------------------------------===//
-  class const_breadth_first_iterator : public std::iterator<
-      std::input_iterator_tag,  // iterator_category
-      node_t,                   // value_type
-      u64,                      // difference_type
-      const node_t*,            // pointer
-      node_t                    // reference
-  > {
+  class const_breadth_first_iterator
+      : public std::iterator<
+            std::input_iterator_tag, // iterator_category
+            node_t, // value_type
+            u64, // difference_type
+            const node_t*, // pointer
+            node_t // reference
+            > {
     const binary_tree_structure& tree_;
 
     $u64 idx_;
@@ -259,15 +253,13 @@ public:
     std::size_t buf_end_ = 0;
 
   public:
-
-    explicit inline
-    const_breadth_first_iterator(const binary_tree_structure& tree,
+    explicit inline const_breadth_first_iterator(const binary_tree_structure& tree,
         u64 start_node_idx)
         : tree_(tree), idx_(start_node_idx),
           buf_read_idx_(0), buf_end_(0) {
       assert(start_node_idx == 0 || start_node_idx == tree_.max_node_cnt_);
       if (start_node_idx == 0) {
-        buf_[0] = node_t{ 0, 0, tree_.is_inner_node(0) };
+        buf_[0] = node_t { 0, 0, tree_.is_inner_node(0) };
         buf_end_ = 1;
         ++idx_;
       }
@@ -288,7 +280,7 @@ public:
           u1 is_inner = tree_.is_inner_node(idx_);
           u1 parent_is_inner = tree_.is_inner_node(parent_idx);
           if (is_inner || parent_is_inner) {
-            buf_[buf_end_] = node_t{ idx_, this_level, is_inner };
+            buf_[buf_end_] = node_t { idx_, this_level, is_inner };
             ++buf_end_;
           }
           ++idx_;
@@ -320,12 +312,12 @@ public:
 
               if (left_child_is_inner || parent_is_inner) {
                 buf_[buf_end_] =
-                    node_t{ idx_ + (i * 2), this_level, left_child_is_inner };
+                    node_t { idx_ + (i * 2), this_level, left_child_is_inner };
                 ++buf_end_;
               }
               if (right_child_is_inner || parent_is_inner) {
                 buf_[buf_end_] =
-                    node_t{ idx_ + (i * 2 + 1), this_level, right_child_is_inner };
+                    node_t { idx_ + (i * 2 + 1), this_level, right_child_is_inner };
                 ++buf_end_;
               }
             }
@@ -397,7 +389,6 @@ public:
   }
 
 private:
-
   /// Mark the given node as a leaf node. The function propagates the call
   /// to the child nodes when those are inner nodes.
   inline void
@@ -419,7 +410,6 @@ private:
       visit_rec(right_child_of(node_idx), fn);
     }
   }
-
 };
 //===----------------------------------------------------------------------===//
 } // namespace dtl

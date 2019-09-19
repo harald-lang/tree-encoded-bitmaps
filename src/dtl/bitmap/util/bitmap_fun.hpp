@@ -10,7 +10,6 @@ namespace dtl {
 /// Static functions to work with plain bitmaps.
 template<typename _word_type>
 struct bitmap_fun {
-
   using word_type = _word_type;
   static constexpr std::size_t word_bitlength = sizeof(word_type) * 8;
 
@@ -120,10 +119,8 @@ struct bitmap_fun {
       word_type bitmap_word_0 = bitmap[word_idx_begin];
       word_type bitmap_word_1 = bitmap[word_idx_end];
       bitmap_word_0 >>= (bit_idx_begin % word_bitlength);
-      bitmap_word_1 &= (~word_type(0)) >> (word_bitlength -
-          ((bit_idx_end % word_bitlength)));
-      return bitmap_word_0 | (bitmap_word_1 << (word_bitlength -
-          (bit_idx_begin % word_bitlength)));
+      bitmap_word_1 &= (~word_type(0)) >> (word_bitlength - ((bit_idx_end % word_bitlength)));
+      return bitmap_word_0 | (bitmap_word_1 << (word_bitlength - (bit_idx_begin % word_bitlength)));
     }
   }
 
@@ -134,7 +131,7 @@ struct bitmap_fun {
     const std::size_t word_cnt = bitmap_end - bitmap_begin;
     std::size_t word_idx = 0;
     while (word_idx < word_cnt
-      && dtl::bits::pop_count(bitmap_begin[word_idx]) == 0) {
+        && dtl::bits::pop_count(bitmap_begin[word_idx]) == 0) {
       ++word_idx;
     }
     if (word_idx < word_cnt) {
@@ -151,7 +148,7 @@ struct bitmap_fun {
     const std::size_t word_cnt = bitmap_end - bitmap_begin;
     std::size_t word_idx = word_cnt;
     while (word_idx > 0
-      && dtl::bits::pop_count(bitmap_begin[word_idx - 1]) == 0) {
+        && dtl::bits::pop_count(bitmap_begin[word_idx - 1]) == 0) {
       --word_idx;
     }
     if (word_idx > 0) {
@@ -163,7 +160,6 @@ struct bitmap_fun {
 
   // Construction not allowed.
   bitmap_fun() = delete;
-
 };
 //===----------------------------------------------------------------------===//
 } // namespace dtl

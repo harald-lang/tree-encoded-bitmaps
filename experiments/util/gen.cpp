@@ -26,26 +26,26 @@ gen(
   std::mt19937 gen(rd());
   std::shuffle(params.begin(), params.end(), gen);
 
-  std::atomic<std::size_t> failure_cntr {0};
+  std::atomic<std::size_t> failure_cntr { 0 };
   std::function<void(const params_markov&, std::ostream&)> fn =
       [&](const params_markov c, std::ostream& os) -> void {
-        try {
-          const auto b = gen_random_bitmap_markov(
-              c.n, c.clustering_factor, c.density);
-          const auto id =
-              db.store_bitmap(c.n, c.clustering_factor, c.density, b);
-          // Validation.
-          const auto loaded = db.load_bitmap(id);
-          if (b != loaded) {
-            // Fatal!
-            std::cerr << "Validation failed" << std::endl;
-            std::exit(1);
-          }
-        }
-        catch (std::exception& ex) {
-          ++failure_cntr;
-        }
-      };
+    try {
+      const auto b = gen_random_bitmap_markov(
+          c.n, c.clustering_factor, c.density);
+      const auto id =
+          db.store_bitmap(c.n, c.clustering_factor, c.density, b);
+      // Validation.
+      const auto loaded = db.load_bitmap(id);
+      if (b != loaded) {
+        // Fatal!
+        std::cerr << "Validation failed" << std::endl;
+        std::exit(1);
+      }
+    }
+    catch (std::exception& ex) {
+      ++failure_cntr;
+    }
+  };
   dispatch(params, fn);
   return failure_cntr;
 }
@@ -61,24 +61,24 @@ gen(
   std::mt19937 gen(rd());
   std::shuffle(params.begin(), params.end(), gen);
 
-  std::atomic<std::size_t> failure_cntr {0};
+  std::atomic<std::size_t> failure_cntr { 0 };
   std::function<void(const params_uniform&, std::ostream&)> fn =
       [&](const params_uniform c, std::ostream& os) -> void {
-        try {
-          const auto b = gen_random_bitmap_uniform(c.n, c.density);
-          const auto id = db.store_bitmap(c.n, c.density, b);
-          // Validation.
-          const auto loaded = db.load_bitmap(id);
-          if (b != loaded) {
-            // Fatal!
-            std::cerr << "Validation failed" << std::endl;
-            std::exit(1);
-          }
-        }
-        catch (std::exception& ex) {
-          ++failure_cntr;
-        }
-      };
+    try {
+      const auto b = gen_random_bitmap_uniform(c.n, c.density);
+      const auto id = db.store_bitmap(c.n, c.density, b);
+      // Validation.
+      const auto loaded = db.load_bitmap(id);
+      if (b != loaded) {
+        // Fatal!
+        std::cerr << "Validation failed" << std::endl;
+        std::exit(1);
+      }
+    }
+    catch (std::exception& ex) {
+      ++failure_cntr;
+    }
+  };
   dispatch(params, fn);
   return failure_cntr;
 }

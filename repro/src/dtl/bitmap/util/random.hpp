@@ -12,7 +12,7 @@ namespace dtl {
 static inline dtl::bitmap
 gen_random_bitmap_markov(u64 n, $f64 f, $f64 d) {
   // init bitset
-  f64 f_min = d >= 1.0 ? n : d/(1-d);
+  f64 f_min = d >= 1.0 ? n : d / (1 - d);
   f64 f_actual = std::max(f, f_min);
   two_state_markov_process mp(f_actual, d);
   dtl::bitmap bs(n);
@@ -32,18 +32,18 @@ gen_random_bitmap_uniform(u64 n, $f64 d) {
   //              random-integer-number-from-within-a-range
   auto random_at_most = [&](long max) {
     unsigned long
-    // max <= RAND_MAX < ULONG_MAX, so this is okay.
+        // max <= RAND_MAX < ULONG_MAX, so this is okay.
         num_bins = (unsigned long) max + 1,
         num_rand = (unsigned long) RAND_MAX + 1,
         bin_size = num_rand / num_bins,
-        defect   = num_rand % num_bins;
+        defect = num_rand % num_bins;
 
     long x;
     do {
       x = dis(gen);
     }
-      // This is carefully written not to overflow
-    while (num_rand - defect <= (unsigned long)x);
+    // This is carefully written not to overflow
+    while (num_rand - defect <= (unsigned long) x);
 
     // Truncated division is intentional
     return x / bin_size;
@@ -113,7 +113,7 @@ count_value_runs(const std::vector<$u32>& b, u32 val) {
   for (std::size_t i = 1; i < b.size(); i++) {
     const auto current_val = b[i];
     cntr += last_val != val
-      && current_val == val;
+        && current_val == val;
     last_val = current_val;
   }
   assert(cntr > 0);

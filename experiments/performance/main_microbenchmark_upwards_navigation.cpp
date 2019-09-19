@@ -29,14 +29,15 @@ f64 F = 1.0;
 /// perfect levels increases and therefore the number of navigational steps
 /// decreases. If the number of steps is less than 5, the results are
 /// (significantly) distorted due to other overheads.
-std::vector<$f64> bit_densities = {0.0001, 0.001, 0.01, 0.1};
+std::vector<$f64> bit_densities = { 0.0001, 0.001, 0.01, 0.1 };
 /// The bitmap length.
 u64 N = 1ull << 20;
 //===----------------------------------------------------------------------===//
 // Helper
 auto now_nanos = []() {
   return std::chrono::duration_cast<std::chrono::nanoseconds>(
-      std::chrono::steady_clock::now().time_since_epoch()).count();
+      std::chrono::steady_clock::now().time_since_epoch())
+      .count();
 };
 //===----------------------------------------------------------------------===//
 void run(u64 n, f64 f, f64 d, i64 bitmap_id) {
@@ -69,8 +70,8 @@ void run(u64 n, f64 f, f64 d, i64 bitmap_id) {
     std::cerr << "The given bitmap is not suitable for this experiment." << std::endl;
     std::cerr << enc_bitmap.info() << std::endl;
     std::cerr << " # of upward steps = " << up_step_sum
-        << ", # of probe positions = " << probe_positions.size()
-        << std::endl;
+              << ", # of probe positions = " << probe_positions.size()
+              << std::endl;
     return;
   }
 
@@ -85,9 +86,9 @@ void run(u64 n, f64 f, f64 d, i64 bitmap_id) {
     tsc_cntr += tsc_end - tsc_begin;
   }
   std::cout << n << "," << f << "," << d
-      << "," << (tsc_cntr * 1.0 / up_step_sum)
-      << "," << enc_bitmap.info()
-      << std::endl;
+            << "," << (tsc_cntr * 1.0 / up_step_sum)
+            << "," << enc_bitmap.info()
+            << std::endl;
 }
 //===----------------------------------------------------------------------===//
 $i32 main() {

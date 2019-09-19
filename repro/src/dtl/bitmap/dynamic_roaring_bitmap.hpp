@@ -13,14 +13,12 @@ namespace dtl {
 /// Compressed representation of a bitmap of length N.
 /// Wraps a Roaring bitmap.
 struct dynamic_roaring_bitmap {
-
   Roaring bitmap_;
   std::size_t size_;
 
   dynamic_roaring_bitmap() = default; // NOLINT
 
-  explicit
-  dynamic_roaring_bitmap(const boost::dynamic_bitset<$u32>& in)
+  explicit dynamic_roaring_bitmap(const boost::dynamic_bitset<$u32>& in)
       : size_(in.size()) {
     auto i = in.find_first();
     while (i != boost::dynamic_bitset<$u32>::npos) {
@@ -51,7 +49,7 @@ struct dynamic_roaring_bitmap {
   boost::dynamic_bitset<$u32>
   to_bitset() {
     boost::dynamic_bitset<$u32> ret(size_);
-    for(Roaring::const_iterator i = bitmap_.begin() ; i != bitmap_.end() ; i++) {
+    for (Roaring::const_iterator i = bitmap_.begin(); i != bitmap_.end(); i++) {
       ret[*i] = true;
     }
     return ret;
@@ -122,9 +120,7 @@ struct dynamic_roaring_bitmap {
   //===--------------------------------------------------------------------===//
   /// 1-fill iterator, with skip support.
   class iter {
-
     const dynamic_roaring_bitmap& rbm_;
-
 
     //===------------------------------------------------------------------===//
     // Iterator state
@@ -138,13 +134,10 @@ struct dynamic_roaring_bitmap {
     //===------------------------------------------------------------------===//
 
   public:
-
-    explicit
-    iter(const dynamic_roaring_bitmap& rbm)
+    explicit iter(const dynamic_roaring_bitmap& rbm)
         : rbm_(rbm),
           roaring_iter(rbm.bitmap_.begin()),
           roaring_iter_end(rbm.bitmap_.end()) {
-
       if (roaring_iter == roaring_iter_end) {
         pos_ = rbm_.size_;
         length_ = 0;
@@ -212,7 +205,6 @@ struct dynamic_roaring_bitmap {
     length() const noexcept {
       return (length_ > rbm_.size_ ? 0 : length_);
     }
-
   };
 
   iter __forceinline__
@@ -235,7 +227,6 @@ struct dynamic_roaring_bitmap {
         + ",\"size\":" + std::to_string(size_in_byte())
         + "}";
   }
-
 };
 //===----------------------------------------------------------------------===//
 } // namespace dtl

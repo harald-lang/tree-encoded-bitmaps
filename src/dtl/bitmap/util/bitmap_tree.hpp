@@ -8,8 +8,8 @@
 
 #include <boost/dynamic_bitset.hpp>
 
-#include <immintrin.h>
 #include <iomanip>
+#include <immintrin.h>
 //===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//
@@ -20,7 +20,6 @@ namespace dtl {
 /// which a TEB is constructed.
 template<i32 optimization_level_ = 3>
 class bitmap_tree : public binary_tree_structure {
-
   using tree_t = dtl::binary_tree_structure;
   using bitmap_t = boost::dynamic_bitset<$u32>;
 
@@ -70,7 +69,7 @@ class bitmap_tree : public binary_tree_structure {
   /// The node indexes that need to be stored explicitly.
   range_t explicit_node_idxs_;
   /// The indexes of nodes with explicit labels.
-//  range_t explicit_label_idxs_; // TODO use range rather than the two variables below
+  //  range_t explicit_label_idxs_; // TODO use range rather than the two variables below
   /// The first leaf node index that carries a 1-label.
   std::size_t first_node_idx_with_1label_ = 0;
   /// The last leaf node index that carries a 1-label.
@@ -89,10 +88,8 @@ class bitmap_tree : public binary_tree_structure {
   std::size_t last_bit_idx_ = 0;
 
 public:
-
   /// C'tor
-  explicit
-  bitmap_tree(const bitmap_t& bitmap, f64 fpr = 0.0)
+  explicit bitmap_tree(const bitmap_t& bitmap, f64 fpr = 0.0)
       : binary_tree_structure(bitmap.size()),
         labels_(max_node_cnt_ + offset),
         inner_node_cnt_(0),
@@ -104,7 +101,6 @@ public:
         last_node_idx_with_1label_(0),
         first_bit_idx_(0), // first and last bit idx will be initialized in init_tree()
         last_bit_idx_(0) {
-
     // Init the binary tree and perform bottom-up pruning.
     init_tree(bitmap);
 
@@ -243,7 +239,7 @@ public:
           u1 prune_causes_false_positives = left_bit ^ right_bit;
           u1 both_nodes_are_leaves =
               !is_inner_node(src_node_idx)
-                  & !is_inner_node(src_node_idx + 1);
+              & !is_inner_node(src_node_idx + 1);
           u1 prune = both_nodes_are_leaves & !prune_causes_false_positives;
           if (prune) {
             binary_tree_structure::set_leaf(dst_node_idx); // FIXME inefficient
@@ -318,7 +314,8 @@ public:
       // Count the trailing leaf nodes.
       if (!is_inner) {
         ++trailing_leaf_node_cnt_;
-      } else {
+      }
+      else {
         trailing_leaf_node_cnt_ = 0;
         explicit_node_idxs_.end = idx + 1;
       }
@@ -345,7 +342,6 @@ public:
           last_node_idx_with_1label_ = idx;
         }
       }
-
     }
     explicit_node_idxs_.begin = leading_inner_node_cnt_;
     if (explicit_node_idxs_.end < explicit_node_idxs_.begin) {
@@ -366,7 +362,8 @@ public:
     last_node_idx_with_1label_ = last_bit_idx_ + n_ - 1;
     leading_0label_cnt_ = first_bit_idx_;
     trailing_0label_cnt_ = (first_bit_idx_ != n_)
-        ? n_ - last_bit_idx_ - 1 : 0;
+        ? n_ - last_bit_idx_ - 1
+        : 0;
   }
 
   // to be called after init_tree().
@@ -486,18 +483,18 @@ public:
         break;
       }
     }
-    #ifndef NDEBUG
+#ifndef NDEBUG
     validate_counters();
-    #endif
+#endif
 
     if (optimization_level_ <= 1) return;
 
     // Restore the tree instance with the minimum size.
     expand_until(min_size_tree_idx);
 
-    #ifndef NDEBUG
+#ifndef NDEBUG
     validate_counters();
-    #endif
+#endif
   }
 
   /// Expands the tree nodes which have an index less than the given node index.
@@ -514,16 +511,16 @@ public:
       // DANGER: The tree structure is modified during iterating.
       set_inner(idx);
 
-      #ifndef NDEBUG
+#ifndef NDEBUG
       validate_counters();
-      #endif
+#endif
     }
   }
 
   // For debugging purposes.
   void __forceinline__
   validate_counters() {
-    #ifndef NDEBUG
+#ifndef NDEBUG
     // TODO remove special case
     //===------------------------------------------------------------------===//
     // Validation
@@ -555,7 +552,7 @@ public:
     assert(_trailing_0label_cnt == trailing_0label_cnt_);
     assert(_first_node_idx_with_1label == first_node_idx_with_1label_);
     assert(_last_node_idx_with_1label == last_node_idx_with_1label_);
-    #endif
+#endif
   }
 
   /// Estimates the size in bytes, when the bitmap tree is succinctly encoded.
@@ -737,9 +734,8 @@ public:
         }
         else {
           std::cout << (is_leaf_node(node_idx)
-              ? is_leaf_node(parent_of(node_idx)) ? " " : "0"
-              : "1"
-          );
+                  ? is_leaf_node(parent_of(node_idx)) ? " " : "0"
+                  : "1");
         }
         for (std::size_t i = 0; i < spaces; ++i) {
           std::cout << " ";
@@ -750,7 +746,6 @@ public:
   }
 
 private:
-
   /// Expands the VERY FIRST explicit node. // TODO generalize to expand arbitrary nodes
   void __forceinline__
   set_inner(u64 idx) {
@@ -882,7 +877,7 @@ private:
     binary_tree_structure::set_leaf(idx);
   }
 
-  void __attribute__ ((noinline))
+  void __attribute__((noinline))
   run_optimize() {
     // Optimization level 2.
     if (optimization_level_ > 1) {
@@ -935,6 +930,7 @@ private:
     }
   }
 
+  // clang-format off
   //===--------------------------------------------------------------------===//
   // Lossy compression.
   // EXPERIMENTAL CODE
@@ -1403,6 +1399,7 @@ private:
     }
   }
   //===--------------------------------------------------------------------===//
+  // clang-format on
 };
 //===----------------------------------------------------------------------===//
 } // namespace dtl

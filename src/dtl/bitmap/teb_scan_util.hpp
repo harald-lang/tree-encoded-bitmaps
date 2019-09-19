@@ -11,8 +11,8 @@ namespace dtl {
 //===----------------------------------------------------------------------===//
 static u64 __forceinline__
 fetch_bits(const dtl::data_view<u64>& bitmap,
-           i64 bit_idx_begin,
-           i64 bit_idx_end /* non-inclusive */) {
+    i64 bit_idx_begin,
+    i64 bit_idx_end /* non-inclusive */) {
   using word_type = $u64;
   static constexpr u64 word_bitlength = sizeof(word_type) * 8;
 
@@ -32,8 +32,9 @@ fetch_bits(const dtl::data_view<u64>& bitmap,
   else if (bit_idx_begin < 0) {
     const auto offset = std::abs(bit_idx_begin);
     word_type ret_val = (~word_type(0)) >> (word_bitlength - offset);
-    ret_val |= dtl::bitmap_fun<$u64>::fetch_bits(bitmap.begin(), 0,
-                                                 cnt - offset) << offset;
+    ret_val |= dtl::bitmap_fun<$u64>::fetch_bits(bitmap.begin(),
+                   0, cnt - offset)
+        << offset;
     return ret_val;
   }
   else {
@@ -47,8 +48,8 @@ fetch_bits(const dtl::data_view<u64>& bitmap,
 //===----------------------------------------------------------------------===//
 static u64 __forceinline__
 fetch_n_bits(const dtl::data_view<u64>& bitmap,
-             i64 bit_idx_begin,
-             i64 cnt) {
+    i64 bit_idx_begin,
+    i64 cnt) {
   return fetch_bits(bitmap, bit_idx_begin, bit_idx_begin + cnt);
 }
 //===----------------------------------------------------------------------===//
@@ -79,7 +80,8 @@ fetch_bits(const dtl::data_view<u64>& bitmap,
     const auto offset = std::abs(bit_idx_begin);
     word_type ret_val = (lo_word) >> (word_bitlength - offset);
     ret_val |= dtl::bitmap_fun<$u64>::fetch_bits(bitmap.begin(), 0,
-        cnt - offset) << offset;
+                   cnt - offset)
+        << offset;
     return ret_val;
   }
   else {
@@ -96,7 +98,8 @@ fetch_n_bits(const dtl::data_view<u64>& bitmap,
     i64 bit_idx_begin,
     i64 cnt,
     u1 lo_bit, u1 hi_bit) {
-  return fetch_bits(bitmap, bit_idx_begin, bit_idx_begin + cnt, lo_bit, hi_bit);
+  return fetch_bits(
+      bitmap, bit_idx_begin, bit_idx_begin + cnt, lo_bit, hi_bit);
 }
 //===----------------------------------------------------------------------===//
 } // namespace dtl

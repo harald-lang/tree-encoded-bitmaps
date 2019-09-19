@@ -33,8 +33,10 @@ static constexpr u64 RUNS = 10;
 /// The (default) size of a randomly generated bitmap.
 static constexpr u64 N = 1u << 20;
 /// A timestamp that identifies the current experiment.
-static const i64 RUN_ID = std::chrono::duration_cast<std::chrono::seconds>(
-    std::chrono::system_clock::now().time_since_epoch()).count();
+static const i64 RUN_ID =
+    std::chrono::duration_cast<std::chrono::seconds>(
+        std::chrono::system_clock::now().time_since_epoch())
+        .count();
 /// The database file where the bitmaps are stored.
 static const std::string DB_FILE =
     dtl::env<std::string>::get("DB_FILE", "./random_bitmaps.sqlite3");
@@ -85,12 +87,8 @@ run(const config& c, std::ostream& os) {
   auto dec_bs = dtl::to_bitmap_using_iterator(enc_bs);
   if (bs != dec_bs) {
     std::cerr << "Validation failed for "
-//              << T::name() << ", "
               << type_info << "."
               << "\nBitmap ID: " << c.bitmap_id
-//              << "\nExpected: " << bs
-//              << "\n but got: " << dec_bs
-//              << "\n" << enc_bs
               << std::endl;
     std::exit(1);
   }
@@ -105,7 +103,8 @@ run(const config& c, std::ostream& os) {
      << "," << c.clustering_factor
      << "," << dtl::determine_clustering_factor(bs)
      << "," << size_in_bytes
-     << "," << "\"" << type_info << "\""
+     << ","
+     << "\"" << type_info << "\""
      << std::endl;
 }
 //===----------------------------------------------------------------------===//
@@ -121,15 +120,16 @@ run(config c, std::ostream& os) {
     case bitmap_t::teb:
       run<dtl::teb<>>(c, os);
       break;
-//    case bitmap_t::teb_scan: /* deprecated*/
-//      run<dtl::teb_scan<>>(c, os);
-//      break;
     case bitmap_t::teb_wrapper:
       run<dtl::teb_wrapper>(c, os);
       break;
     case bitmap_t::wah:
       run<dtl::dynamic_wah32>(c, os);
       break;
+      // clang-format off
+//    case bitmap_t::teb_scan: /* deprecated*/
+//      run<dtl::teb_scan<>>(c, os);
+//      break;
     // EXPERIMENTAL
 //    case bitmap_t::position_list:
 //      run<dtl::position_list<$u32>>(c, os);
@@ -149,6 +149,7 @@ run(config c, std::ostream& os) {
 //    case bitmap_t::partitioned_range_list_u16:
 //      run<dtl::partitioned_range_list<$u32, $u16>>(c, os);
 //      break;
+      // clang-format on
   }
 }
 //===----------------------------------------------------------------------===//
@@ -156,8 +157,8 @@ static void
 run(const std::vector<config>& configs) {
   std::function<void(const config&, std::ostream&)> fn =
       [](const config c, std::ostream& os) -> void {
-        run(c, os);
-      };
+    run(c, os);
+  };
   dispatch(configs, fn);
 }
 //===----------------------------------------------------------------------===//

@@ -16,7 +16,8 @@ static const auto cpu_mask = dtl::this_thread::get_cpu_affinity(); // NOLINT
 template<typename T>
 static void
 dispatch(const std::vector<T>& tasks,
-    std::function<void(const T&, std::ostream&)> fn,
+    std::function<void(const T&, std::ostream&)>
+        fn,
     i64 thread_cnt = dtl::env<$u64>::get("THREAD_CNT", cpu_mask.count())) {
   i64 task_cnt = tasks.size();
   i64 min_batch_size = 1;
@@ -29,8 +30,7 @@ dispatch(const std::vector<T>& tasks,
   auto thread_fn = [&](u32 thread_id) {
     while (true) {
       // Grab work.
-      const auto inc = std::min(std::max(min_batch_size, (task_cnt - cntr)
-          / thread_cnt), max_batch_size);
+      const auto inc = std::min(std::max(min_batch_size, (task_cnt - cntr) / thread_cnt), max_batch_size);
       const auto config_idx_begin = cntr.fetch_add(inc);
       const auto config_idx_end = std::min(config_idx_begin + inc, task_cnt);
       if (config_idx_begin >= task_cnt) break;
@@ -75,7 +75,7 @@ dispatch(const std::size_t idx_begin, const std::size_t idx_end,
     i64 thread_cnt = dtl::env<$u64>::get("THREAD_CNT", cpu_mask.count())) {
   // FIXME hack
   std::vector<std::size_t> v(idx_end - idx_begin);
-  std::generate(v.begin(), v.end(), [n = idx_begin] () mutable { return n++; });
+  std::generate(v.begin(), v.end(), [n = idx_begin]() mutable { return n++; });
   dispatch(v, fn, thread_cnt);
 }
 //===----------------------------------------------------------------------===//

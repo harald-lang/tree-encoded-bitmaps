@@ -17,7 +17,7 @@ struct data_view {
     return std::distance(std::begin(*this), std::end(*this));
   }
   inline bool
-  operator==(const data_view& other){
+  operator==(const data_view& other) {
     if (begin() == other.begin() && end() == other.end()) return true;
     const auto len = end() - begin();
     const auto other_len = other.end() - other.begin();

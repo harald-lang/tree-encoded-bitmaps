@@ -14,7 +14,6 @@ namespace dtl {
 /// Partitioned position list.
 template<typename _block_type = $u32, typename _local_position_t = $u8>
 struct partitioned_position_list {
-
   using position_t = uint32_t;
   using local_position_t = _local_position_t;
 
@@ -50,9 +49,8 @@ struct partitioned_position_list {
   // TODO make private
   partitioned_position_list() = default;
 
-  explicit
-  partitioned_position_list(const boost::dynamic_bitset<_block_type>& in)
-    : partitions_(), positions_(), n_(in.size()) {
+  explicit partitioned_position_list(const boost::dynamic_bitset<_block_type>& in)
+      : partitions_(), positions_(), n_(in.size()) {
     std::size_t current_pos = in.find_first();
     while (current_pos < in.size()) {
       push_back(static_cast<position_t>(current_pos));
@@ -61,9 +59,7 @@ struct partitioned_position_list {
   }
 
   ~partitioned_position_list() = default;
-
   partitioned_position_list(const partitioned_position_list& other) = default;
-
   partitioned_position_list(partitioned_position_list&& other) noexcept = default;
 
   __forceinline__ partitioned_position_list&
@@ -106,6 +102,7 @@ struct partitioned_position_list {
     return ret;
   }
 
+  // clang-format off
 //  /// Bitwise AND
 //  partitioned_position_list __forceinline__
 //  operator&(const partitioned_position_list& other) const {
@@ -194,6 +191,7 @@ struct partitioned_position_list {
 //    std::swap(positions_, y.positions_);
 //    return *this;
 //  }
+  // clang-format on
 
   void
   print(std::ostream& os) const {
@@ -222,18 +220,15 @@ struct partitioned_position_list {
   }
 
   /// Returns the value of the bit at the position pos.
-  u1
-  test(const std::size_t pos) const {
+  u1 test(const std::size_t pos) const {
     // FIXME search the partitions first
     auto it = std::lower_bound(positions_.begin(), positions_.end(), pos);
     return *it == pos;
   }
 
-
   //===--------------------------------------------------------------------===//
   /// Iterator, with skip support.
   class iter {
-
     const partitioned_position_list& outer_;
 
     //===------------------------------------------------------------------===//
@@ -250,17 +245,15 @@ struct partitioned_position_list {
     //===------------------------------------------------------------------===//
 
   public:
-
     explicit __forceinline__
     iter(const partitioned_position_list& outer)
         : outer_(outer),
           partitions_read_pos_(0),
           positions_read_pos_(0),
           range_begin_(outer.positions_.empty()
-                       ? outer_.n_
-                       : outer_.positions_[0] + outer_.partitions_[0].begin),
+                  ? outer_.n_
+                  : outer_.positions_[0] + outer_.partitions_[0].begin),
           range_length_(outer.positions_.empty() ? 0 : 1) {
-
       const auto& parts = outer_.partitions_;
       const auto& pos = outer_.positions_;
 
@@ -284,10 +277,7 @@ struct partitioned_position_list {
       const auto& pos = outer_.positions_;
       while (positions_read_pos_ < pos.size()
           && pos[positions_read_pos_ - 1] < pos[positions_read_pos_]
-          && pos[positions_read_pos_] ==
-              range_begin_
-                  + range_length_
-                  - parts[partitions_read_pos_].begin) {
+          && pos[positions_read_pos_] == range_begin_ + range_length_ - parts[partitions_read_pos_].begin) {
         ++positions_read_pos_;
         ++range_length_;
       }
@@ -339,8 +329,7 @@ struct partitioned_position_list {
             to_pos,
             [](const partition_info& part, const std::size_t pos) -> u1 {
               return (part.begin + partition_size) < pos;
-            }
-        );
+            });
         partitions_read_pos_ = static_cast<u64>(std::distance(
             parts.begin(), part_search));
         if (part_search == parts.end()) {
@@ -403,7 +392,6 @@ struct partitioned_position_list {
     length() const noexcept {
       return range_length_;
     }
-
   };
   //===--------------------------------------------------------------------===//
 
@@ -431,7 +419,6 @@ struct partitioned_position_list {
   }
 
 private:
-
   //===--------------------------------------------------------------------===//
   // Helper functions.
   //===--------------------------------------------------------------------===//
@@ -458,7 +445,6 @@ private:
     part_info.offset = static_cast<position_t>(positions_.size());
   }
   //===--------------------------------------------------------------------===//
-
 };
 //===----------------------------------------------------------------------===//
 } // namespace dtl

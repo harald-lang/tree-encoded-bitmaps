@@ -1,8 +1,8 @@
+#include "common.hpp"
+#include "common_bitwise.hpp"
 #include "experiments/util/bitmap_db.hpp"
 #include "experiments/util/gen.hpp"
 #include "experiments/util/prep_data.hpp"
-#include "common.hpp"
-#include "common_bitwise.hpp"
 
 #include <dtl/dtl.hpp>
 
@@ -27,7 +27,6 @@ $i32 main() {
 
   // Loop over n.
   for ($u64 n = n_min; n <= n_max; n <<= 1) {
-
     //===------------------------------------------------------------------===//
     // Fix d1, f1, f2, and vary d2.
     {
@@ -126,18 +125,18 @@ $i32 main() {
     auto bitmap_ids2 = db.find_bitmaps(c.n, c.clustering_factor2, c.density2);
     if (bitmap_ids1.size() < RUNS) {
       std::cerr << "There are only " << bitmap_ids1.size() << " prepared "
-          << "bitmaps for the parameters n=" << c.n << ", f="
-          << c.clustering_factor1 << ", d=" << c.density1 << ", but " << RUNS
-          << " are required."
-          << std::endl;
+                << "bitmaps for the parameters n=" << c.n << ", f="
+                << c.clustering_factor1 << ", d=" << c.density1 << ", but " << RUNS
+                << " are required."
+                << std::endl;
       continue;
     }
     if (bitmap_ids2.size() < RUNS) {
       std::cerr << "There are only " << bitmap_ids2.size() << " prepared "
-          << "bitmaps for the parameters n=" << c.n << ", f="
-          << c.clustering_factor2 << ", d=" << c.density2 << ", but " << RUNS
-          << " are required."
-          << std::endl;
+                << "bitmaps for the parameters n=" << c.n << ", f="
+                << c.clustering_factor2 << ", d=" << c.density2 << ", but " << RUNS
+                << " are required."
+                << std::endl;
       continue;
     }
 
@@ -152,7 +151,7 @@ $i32 main() {
   }
 
   std::cerr << "Prepared " << benchmark_configs.size() << " benchmark(s)."
-      << std::endl;
+            << std::endl;
 
   {
     // Shuffle the configurations to better predict the overall runtime of the

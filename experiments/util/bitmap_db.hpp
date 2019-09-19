@@ -10,7 +10,6 @@
 #include <vector>
 //===----------------------------------------------------------------------===//
 class bitmap_db {
-
   const std::string file_;
   std::mutex mutex_;
   sqlite3* db_;
@@ -22,7 +21,6 @@ class bitmap_db {
   sqlite3_stmt* select_all_ids_stmt_;
 
 public:
-
   explicit bitmap_db(const std::string& file);
   virtual ~bitmap_db();
 
@@ -53,12 +51,10 @@ public:
   }
 
 private:
-
   /// Opens the database.
   void open();
   /// Initialize the database schema and prepare the SQL statements.
   void init();
   /// Close the database. Called by the constructor.
   void close();
-
 };

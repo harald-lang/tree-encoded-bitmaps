@@ -14,14 +14,14 @@
 // Experiment: Comparison of compression ratios of (uniform) random bitmaps.
 //===----------------------------------------------------------------------===//
 /// Data generation.
-void gen_data_uniform(const std::vector<$u64>& n_values,
-                      const std::vector<$f64>& bit_densities) {
+void gen_data_uniform(
+    const std::vector<$u64>& n_values,
+    const std::vector<$f64>& bit_densities) {
   // Prepare the random bitmaps.
   std::cout << "Preparing the data set." << std::endl;
   std::vector<config> missing_bitmaps;
-  for (auto d: bit_densities) {
-    for (auto n: n_values) {
-
+  for (auto d : bit_densities) {
+    for (auto n : n_values) {
       if (d < 0 || d > 1.0) continue;
 
       auto ids = db.find_bitmaps(n, d);
@@ -34,7 +34,6 @@ void gen_data_uniform(const std::vector<$u64>& n_values,
           missing_bitmaps.push_back(c);
         }
       }
-
     }
   }
 
@@ -50,24 +49,24 @@ void gen_data_uniform(const std::vector<$u64>& n_values,
       std::shuffle(missing_bitmaps.begin(), missing_bitmaps.end(), gen);
     }
 
-    std::atomic<std::size_t> failure_cntr {0};
+    std::atomic<std::size_t> failure_cntr { 0 };
     std::function<void(const config&, std::ostream&)> fn =
         [&](const config c, std::ostream& os) -> void {
-          try {
-            const auto b = gen_random_bitmap_uniform(c.n, c.density);
-            const auto id = db.store_bitmap(c.n, c.density, b);
-            // Validation.
-            const auto loaded = db.load_bitmap(id);
-            if (b != loaded) {
-              // Fatal!
-              std::cerr << "Validation failed" << std::endl;
-              std::exit(1);
-            }
-          }
-          catch (std::exception& ex) {
-            ++failure_cntr;
-          }
-        };
+      try {
+        const auto b = gen_random_bitmap_uniform(c.n, c.density);
+        const auto id = db.store_bitmap(c.n, c.density, b);
+        // Validation.
+        const auto loaded = db.load_bitmap(id);
+        if (b != loaded) {
+          // Fatal!
+          std::cerr << "Validation failed" << std::endl;
+          std::exit(1);
+        }
+      }
+      catch (std::exception& ex) {
+        ++failure_cntr;
+      }
+    };
     dispatch(missing_bitmaps, fn);
 
     if (failure_cntr > 0) {
@@ -80,7 +79,6 @@ void gen_data_uniform(const std::vector<$u64>& n_values,
 }
 //===----------------------------------------------------------------------===//
 $i32 main() {
-
   // Prepare benchmark settings.
   u64 n_min = 1ull << 20;
   u64 n_max = 1ull << 20;
@@ -90,12 +88,12 @@ $i32 main() {
   std::vector<$f64> bit_densities;
   // log scale
   for ($f64 d = 1; d <= 10000; d *= 1.25) {
-    bit_densities.push_back(1.0 - d/10000);
+    bit_densities.push_back(1.0 - d / 10000);
   }
   // linear scale
   bit_densities.push_back(0.01);
   for ($f64 d = 5; d <= 100; d += 5) {
-//    bit_densities.push_back(d/100);
+    //    bit_densities.push_back(d/100);
   }
 
   std::vector<$u64> n_values;
@@ -105,8 +103,8 @@ $i32 main() {
 
   if (GEN_DATA) {
     std::vector<params_uniform> params;
-    for (auto d: bit_densities) {
-      for (auto n: n_values) {
+    for (auto d : bit_densities) {
+      for (auto n : n_values) {
         if (n == 0 || d < 0 || d > 1.0) continue;
         params_uniform p;
         p.n = n;
@@ -120,14 +118,15 @@ $i32 main() {
   else {
     if (db.empty()) {
       std::cerr << "Bitmap database is empty. Use GEN_DATA=1 to populate the "
-          "database." << std::endl;
+                   "database."
+                << std::endl;
       std::exit(1);
     }
   }
 
   std::vector<config> configs;
-  for (auto d: bit_densities) {
-    for (auto n: n_values) {
+  for (auto d : bit_densities) {
+    for (auto n : n_values) {
       if (n == 0 || d < 0 || d > 1.0) continue;
 
       config c;
@@ -141,9 +140,9 @@ $i32 main() {
       }
       if (bitmap_ids.size() < RUNS) {
         std::cerr << "There are only " << bitmap_ids.size() << " prepared "
-            << "bitmaps for the parameters n=" << n
-            << ", d=" << d << ", but " << RUNS << " are required."
-            << std::endl;
+                  << "bitmaps for the parameters n=" << n
+                  << ", d=" << d << ", but " << RUNS << " are required."
+                  << std::endl;
       }
       for (auto bitmap_id : bitmap_ids) {
         c.bitmap_id = bitmap_id;
@@ -154,7 +153,6 @@ $i32 main() {
           configs.push_back(c);
         }
       }
-
     }
   }
 

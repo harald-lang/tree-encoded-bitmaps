@@ -28,8 +28,7 @@ bitmap_db::~bitmap_db() {
   close();
 }
 //===----------------------------------------------------------------------===//
-void
-bitmap_db::open() {
+void bitmap_db::open() {
   auto rc = sqlite3_open(file_.c_str(), &db_);
   if (rc) {
     std::stringstream err;
@@ -41,8 +40,7 @@ bitmap_db::open() {
   }
 }
 //===----------------------------------------------------------------------===//
-void
-bitmap_db::init() {
+void bitmap_db::init() {
   auto rc = sqlite3_open(file_.c_str(), &db_);
   if (rc) {
     std::stringstream err;
@@ -55,18 +53,18 @@ bitmap_db::init() {
 
   const std::string sql_create_table =
       "create table if not exists bitmaps (\n"
-          "  id       integer primary key,\n"
-          "  n        bigint not null,\n"
-          "  d        decimal(7,6) not null,\n"
-          "  d_actual decimal(7,6) not null,\n"
-          "  f        decimal(7,6) not null,\n"
-          "  f_actual decimal(7,6) not null,\n"
-          "  bitmap   blob\n"
-          ");";
+      "  id       integer primary key,\n"
+      "  n        bigint not null,\n"
+      "  d        decimal(7,6) not null,\n"
+      "  d_actual decimal(7,6) not null,\n"
+      "  f        decimal(7,6) not null,\n"
+      "  f_actual decimal(7,6) not null,\n"
+      "  bitmap   blob\n"
+      ");";
 
   char* err_msg = nullptr;
   rc = sqlite3_exec(db_, sql_create_table.c_str(),
-                    nullptr, nullptr, &err_msg);
+      nullptr, nullptr, &err_msg);
   if (rc) {
     std::stringstream err;
     err << "Can't create table 'bitmaps': "
@@ -81,7 +79,7 @@ bitmap_db::init() {
   {
     const std::string sql_stmt =
         "insert into bitmaps (n, d, d_actual, f, f_actual, bitmap)\n"
-            "  values (:n, :d, :d_actual, :f, :f_actual, :bitmap )";
+        "  values (:n, :d, :d_actual, :f, :f_actual, :bitmap )";
     rc = sqlite3_prepare_v2(db_, sql_stmt.c_str(), -1, &insert_stmt_, nullptr);
     if (rc) {
       std::stringstream err;
@@ -161,10 +159,8 @@ bitmap_db::init() {
   //===--------------------------------------------------------------------===//
 }
 //===----------------------------------------------------------------------===//
-void
-bitmap_db::close() {
+void bitmap_db::close() {
   if (db_ != nullptr) {
-
     sqlite3_finalize(insert_stmt_);
     sqlite3_finalize(select_by_id_stmt_);
     sqlite3_finalize(select_ids_stmt_);
@@ -185,9 +181,7 @@ bitmap_db::close() {
   }
 }
 //===----------------------------------------------------------------------===//
-i64
-bitmap_db::store_bitmap(u64 n, f64 f, f64 d, const dtl::bitmap& b) {
-
+i64 bitmap_db::store_bitmap(u64 n, f64 f, f64 d, const dtl::bitmap& b) {
   // Determine the actual bit density and clustering factor.
   const auto d_actual = dtl::determine_bit_density(b);
   const auto f_actual = dtl::determine_clustering_factor(b);
@@ -212,7 +206,7 @@ bitmap_db::store_bitmap(u64 n, f64 f, f64 d, const dtl::bitmap& b) {
       encoded_bitmap.data(), encoded_bitmap.size(), SQLITE_TRANSIENT);
 
   $i32 rc;
-  while(true) {
+  while (true) {
     rc = sqlite3_step(insert_stmt_);
     if (!(rc == SQLITE_LOCKED || rc == SQLITE_BUSY)) {
       break;
@@ -238,11 +232,11 @@ bitmap_db::load_bitmap(i64 id) {
       sqlite3_bind_parameter_index(select_by_id_stmt_, ":id"), id);
 
   $i32 rc;
-  while((rc = sqlite3_step(select_by_id_stmt_)) == SQLITE_ROW) {
+  while ((rc = sqlite3_step(select_by_id_stmt_)) == SQLITE_ROW) {
     auto* blob = reinterpret_cast<u8*>(
         sqlite3_column_blob(select_by_id_stmt_, 6));
     const auto bytes = sqlite3_column_bytes(select_by_id_stmt_, 6);
-    return dtl::base64_decode_bitmap(dtl::data_view<u8>{blob, blob + bytes});
+    return dtl::base64_decode_bitmap(dtl::data_view<u8> { blob, blob + bytes });
   }
   std::stringstream err;
   err << "Can't fetch data. Error: " << rc << " - "
@@ -265,7 +259,7 @@ bitmap_db::find_bitmaps(u64 n, f64 f, f64 d) {
 
   std::vector<$i64> ret;
   $i32 rc;
-  while((rc = sqlite3_step(select_ids_stmt_)) == SQLITE_ROW) {
+  while ((rc = sqlite3_step(select_ids_stmt_)) == SQLITE_ROW) {
     ret.push_back(sqlite3_column_int64(select_ids_stmt_, 0));
   }
   if (rc != SQLITE_DONE) {
@@ -278,8 +272,7 @@ bitmap_db::find_bitmaps(u64 n, f64 f, f64 d) {
   return ret;
 }
 //===----------------------------------------------------------------------===//
-void
-bitmap_db::delete_bitmap(i64 id) {
+void bitmap_db::delete_bitmap(i64 id) {
   std::lock_guard<std::mutex> lock(mutex_);
   // Critical section.
   sqlite3_reset(delete_by_id_stmt_);
@@ -287,7 +280,7 @@ bitmap_db::delete_bitmap(i64 id) {
       sqlite3_bind_parameter_index(delete_by_id_stmt_, ":id"), id);
 
   $i32 rc;
-  while((rc = sqlite3_step(delete_by_id_stmt_)) == SQLITE_ROW) {
+  while ((rc = sqlite3_step(delete_by_id_stmt_)) == SQLITE_ROW) {
   }
   if (rc != SQLITE_DONE) {
     std::stringstream err;
@@ -306,7 +299,7 @@ bitmap_db::count() {
 
   std::size_t ret = 0;
   $i32 rc;
-  while((rc = sqlite3_step(count_stmt_)) == SQLITE_ROW) {
+  while ((rc = sqlite3_step(count_stmt_)) == SQLITE_ROW) {
     ret = sqlite3_column_int64(count_stmt_, 0);
   }
   if (rc != SQLITE_DONE) {
@@ -319,8 +312,7 @@ bitmap_db::count() {
   return ret;
 }
 //===----------------------------------------------------------------------===//
-u1
-bitmap_db::empty() {
+u1 bitmap_db::empty() {
   return count() == 0;
 }
 //===----------------------------------------------------------------------===//
@@ -332,7 +324,7 @@ bitmap_db::ids() {
 
   std::vector<$i64> ret;
   $i32 rc;
-  while((rc = sqlite3_step(select_all_ids_stmt_)) == SQLITE_ROW) {
+  while ((rc = sqlite3_step(select_all_ids_stmt_)) == SQLITE_ROW) {
     ret.push_back(sqlite3_column_int64(select_all_ids_stmt_, 0));
   }
   if (rc != SQLITE_DONE) {

@@ -11,21 +11,17 @@ namespace dtl {
 /// A statically sized stack.
 template<typename T, std::size_t N>
 class static_stack2 {
-
 private:
-
   std::array<T, N> stack_;
   std::size_t cnt_;
 
   T top_element;
 
 public:
-
   __forceinline__
-  static_stack2() : cnt_(0) { }
+  static_stack2() : cnt_(0) {}
 
-  __forceinline__
-  ~static_stack2() = default;
+  __forceinline__ ~static_stack2() = default;
 
   __forceinline__
   static_stack2(const static_stack2& other) = default;
@@ -77,7 +73,7 @@ public:
 
   __forceinline__ T
   back() const {
-//    return stack_[cnt_ - 1];
+    //    return stack_[cnt_ - 1];
     return top_element;
     assert(cnt_ >= 0 && cnt_ <= N);
   }
@@ -98,7 +94,6 @@ public:
   pop() {
     pop_back();
   }
-
 };
 //===----------------------------------------------------------------------===//
 } // namespace dtl

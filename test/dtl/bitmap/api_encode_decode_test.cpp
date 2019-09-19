@@ -25,10 +25,11 @@ TYPED_TEST(api_encode_decode_test, encode_decode_0_to_255) {
     std::cout << bs << " (" << i << ")" << std::endl;
     T t(bs);
     dtl::bitmap dec = dtl::to_bitmap_using_iterator(t);
-    ASSERT_EQ(bs, dec) << "Decoding failed for i=" << i
-      << ". - '" << bs << "' -> '" << t
-      << "' -> '" << dec << "'"
-      << std::endl;
+    ASSERT_EQ(bs, dec)
+        << "Decoding failed for i=" << i
+        << ". - '" << bs << "' -> '" << t
+        << "' -> '" << dec << "'"
+        << std::endl;
   }
 }
 //===----------------------------------------------------------------------===//
@@ -41,16 +42,17 @@ TYPED_TEST(api_encode_decode_test, encode_decode_0_to_65536) {
     std::cout << bs << std::endl;
     T t(bs);
     dtl::bitmap dec = dtl::to_bitmap_using_iterator(t);
-    ASSERT_EQ(bs, dec) << "Decoding failed for i=" << i
-      << ". - '" << bs << "' -> '" << t
-      << "' -> '" << dec << "'"
-      << std::endl;
+    ASSERT_EQ(bs, dec)
+        << "Decoding failed for i=" << i
+        << ". - '" << bs << "' -> '" << t
+        << "' -> '" << dec << "'"
+        << std::endl;
   }
 }
 //===----------------------------------------------------------------------===//
 // Encode, decode, and compare the results (varying bitmap sizes).
 TYPED_TEST(api_encode_decode_test,
-           encode_decode_varying_bitmap_sizes) {
+    encode_decode_varying_bitmap_sizes) {
   using T = TypeParam;
 
   for (auto len = 128; len <= 1024; len *= 2) {
@@ -61,10 +63,10 @@ TYPED_TEST(api_encode_decode_test,
       T t(bs);
       dtl::bitmap dec = dtl::to_bitmap_using_iterator(t);
       ASSERT_EQ(bs, dec)
-        << "Decoding failed: "
-        << "'" << bs << "' -> '" << t
-        << "' -> '" << dec << "'"
-        << std::endl;
+          << "Decoding failed: "
+          << "'" << bs << "' -> '" << t
+          << "' -> '" << dec << "'"
+          << std::endl;
     }
     // all bits one
     bs.flip();
@@ -72,10 +74,10 @@ TYPED_TEST(api_encode_decode_test,
       T t(bs);
       dtl::bitmap dec = dtl::to_bitmap_using_iterator(t);
       ASSERT_EQ(bs, dec)
-        << "Decoding failed: "
-        << "'" << bs << "' -> '" << t
-        << "' -> '" << dec << "'"
-        << std::endl;
+          << "Decoding failed: "
+          << "'" << bs << "' -> '" << t
+          << "' -> '" << dec << "'"
+          << std::endl;
     }
     // random bitmap
     {
@@ -84,13 +86,12 @@ TYPED_TEST(api_encode_decode_test,
         T t(bs);
         dtl::bitmap dec = dtl::to_bitmap_using_iterator(t);
         ASSERT_EQ(bs, dec)
-          << "Decoding failed: "
-          << "'" << bs << "' -> '" << t
-          << "' -> '" << dec << "'"
-          << std::endl;
+            << "Decoding failed: "
+            << "'" << bs << "' -> '" << t
+            << "' -> '" << dec << "'"
+            << std::endl;
       }
     }
-
   }
 }
 //===----------------------------------------------------------------------===//

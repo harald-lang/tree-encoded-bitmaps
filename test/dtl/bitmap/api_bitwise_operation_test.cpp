@@ -33,8 +33,8 @@ TYPED_TEST(api_bitwise_operation_test, bitwise_and) {
     for (std::size_t b = 0; b < (1u << LEN); b++) {
       dtl::bitmap bm_b(LEN, b);
       dtl::bitmap bm_expected = bm_a & bm_b;
-      std::cout << "a=" << bm_a << " (" << a <<  ")"
-                << ", b=" << bm_b << " (" << b <<  ")"
+      std::cout << "a=" << bm_a << " (" << a << ")"
+                << ", b=" << bm_b << " (" << b << ")"
                 << ", r=" << bm_expected << std::endl;
 
       T tm_b(bm_b);
@@ -57,8 +57,8 @@ TYPED_TEST(api_bitwise_operation_test, bitwise_and_iter) {
     for (std::size_t b = 0; b < (1u << LEN); b++) {
       dtl::bitmap bm_b(LEN, b);
       dtl::bitmap bm_expected = bm_a & bm_b;
-      std::cout << "a=" << bm_a << " (" << a <<  ")"
-                << ", b=" << bm_b << " (" << b <<  ")"
+      std::cout << "a=" << bm_a << " (" << a << ")"
+                << ", b=" << bm_b << " (" << b << ")"
                 << ", r=" << bm_expected << std::endl;
 
       T tm_b(bm_b);
@@ -118,8 +118,8 @@ TYPED_TEST(api_bitwise_operation_test, bitwise_or) {
     for (std::size_t b = 0; b < (1u << LEN); b++) {
       dtl::bitmap bm_b(LEN, b);
       dtl::bitmap bm_expected = bm_a | bm_b;
-      std::cout << "a=" << bm_a << " (" << a <<  ")"
-                << ", b=" << bm_b << " (" << b <<  ")"
+      std::cout << "a=" << bm_a << " (" << a << ")"
+                << ", b=" << bm_b << " (" << b << ")"
                 << ", r=" << bm_expected << std::endl;
 
       T tm_b(bm_b);
@@ -128,7 +128,6 @@ TYPED_TEST(api_bitwise_operation_test, bitwise_or) {
       ASSERT_EQ(bm_actual, bm_expected)
           << "Test (a | b) failed for a=" << bm_a << " (" << a << ")"
           << " and b=" << bm_b << "(" << b << ")" << std::endl;
-
     }
   }
 }
@@ -143,8 +142,8 @@ TYPED_TEST(api_bitwise_operation_test, bitwise_or_iter) {
     for (std::size_t b = 0; b < (1u << LEN); b++) {
       dtl::bitmap bm_b(LEN, b);
       dtl::bitmap bm_expected = bm_a | bm_b;
-      std::cout << "a=" << bm_a << " (" << a <<  ")"
-                << ", b=" << bm_b << " (" << b <<  ")"
+      std::cout << "a=" << bm_a << " (" << a << ")"
+                << ", b=" << bm_b << " (" << b << ")"
                 << ", r=" << bm_expected << std::endl;
 
       T tm_b(bm_b);
@@ -153,7 +152,6 @@ TYPED_TEST(api_bitwise_operation_test, bitwise_or_iter) {
       ASSERT_EQ(bm_actual, bm_expected)
           << "Test (a | b) failed for a=" << bm_a << " (" << a << ")"
           << " and b=" << bm_b << "(" << b << ")" << std::endl;
-
     }
   }
 }
@@ -203,8 +201,8 @@ TYPED_TEST(api_bitwise_operation_test, bitwise_xor) {
     for (std::size_t b = 0; b < (1u << LEN); b++) {
       dtl::bitmap bm_b(LEN, b);
       dtl::bitmap bm_expected = bm_a ^ bm_b;
-      std::cout << "a=" << bm_a << " (" << a <<  ")"
-                << ", b=" << bm_b << " (" << b <<  ")"
+      std::cout << "a=" << bm_a << " (" << a << ")"
+                << ", b=" << bm_b << " (" << b << ")"
                 << ", r=" << bm_expected << std::endl;
 
       T tm_b(bm_b);
@@ -227,8 +225,8 @@ TYPED_TEST(api_bitwise_operation_test, bitwise_xor_iter) {
     for (std::size_t b = 0; b < (1u << LEN); b++) {
       dtl::bitmap bm_b(LEN, b);
       dtl::bitmap bm_expected = bm_a ^ bm_b;
-      std::cout << "a=" << bm_a << " (" << a <<  ")"
-                << ", b=" << bm_b << " (" << b <<  ")"
+      std::cout << "a=" << bm_a << " (" << a << ")"
+                << ", b=" << bm_b << " (" << b << ")"
                 << ", r=" << bm_expected << std::endl;
 
       T tm_b(bm_b);
@@ -310,8 +308,8 @@ TYPED_TEST(api_bitwise_operation_test, bitwise_xor_re) {
       // consider only RE cases
       if ((bm_a & bm_b) != bm_a) continue;
       dtl::bitmap bm_expected = bm_a ^ bm_b;
-      std::cout << "a=" << bm_a << " (" << a <<  ")"
-                << ", b=" << bm_b << " (" << b <<  ")"
+      std::cout << "a=" << bm_a << " (" << a << ")"
+                << ", b=" << bm_b << " (" << b << ")"
                 << ", r=" << bm_expected << std::endl;
 
       T tm_b(bm_b);
@@ -336,8 +334,8 @@ TYPED_TEST(api_bitwise_operation_test, bitwise_xor_re_iter) {
       // consider only RE cases
       if ((bm_a & bm_b) != bm_a) continue;
       dtl::bitmap bm_expected = bm_a ^ bm_b;
-      std::cout << "a=" << bm_a << " (" << a <<  ")"
-                << ", b=" << bm_b << " (" << b <<  ")"
+      std::cout << "a=" << bm_a << " (" << a << ")"
+                << ", b=" << bm_b << " (" << b << ")"
                 << ", r=" << bm_expected << std::endl;
 
       T tm_b(bm_b);

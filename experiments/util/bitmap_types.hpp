@@ -33,28 +33,28 @@ enum class bitmap_t {
 };
 static const std::vector<bitmap_t>
     bitmap_t_list = []() {
-        std::vector<bitmap_t> l;
-        for (auto bitmap_type = static_cast<int>(bitmap_t::_first);
-             bitmap_type <= static_cast<int>(bitmap_t::_last);
-             ++bitmap_type) {
-          l.push_back(static_cast<bitmap_t>(bitmap_type));
-        }
-        return l;
-      }();
+      std::vector<bitmap_t> l;
+      for (auto bitmap_type = static_cast<int>(bitmap_t::_first);
+           bitmap_type <= static_cast<int>(bitmap_t::_last);
+           ++bitmap_type) {
+        l.push_back(static_cast<bitmap_t>(bitmap_type));
+      }
+      return l;
+    }();
 //===----------------------------------------------------------------------===//
 std::vector<std::string> bitmap_names {
-    "bitmap",
-    "roaring",
-    "teb",
-    "teb_scan", /* deprecated */
-    "teb_wrapper",
-    "wah",
-    "position_list",
-    "partitioned_position_list_u8",
-    "partitioned_position_list_u16",
-    "range_list",
-    "partitioned_range_list_u8",
-    "partitioned_range_list_u16",
+  "bitmap",
+  "roaring",
+  "teb",
+  "teb_scan", /* deprecated */
+  "teb_wrapper",
+  "wah",
+  "position_list",
+  "partitioned_position_list_u8",
+  "partitioned_position_list_u16",
+  "range_list",
+  "partitioned_range_list_u8",
+  "partitioned_range_list_u16",
 };
 std::ostream& operator<<(std::ostream& out, const bitmap_t& b) {
   const auto i = static_cast<int>(b);
@@ -63,30 +63,54 @@ std::ostream& operator<<(std::ostream& out, const bitmap_t& b) {
   return out;
 }
 //===----------------------------------------------------------------------===//
-template<bitmap_t B> struct type_of {
-  using type = void; };
-template<> struct type_of<bitmap_t::bitmap> {
-  using type = dtl::dynamic_bitmap<$u32>; };
-template<> struct type_of<bitmap_t::roaring> {
-  using type = dtl::dynamic_roaring_bitmap; };
-template<> struct type_of<bitmap_t::teb> {
-  using type = dtl::teb<>; };
+template<bitmap_t B>
+struct type_of {
+  using type = void;
+};
+template<>
+struct type_of<bitmap_t::bitmap> {
+  using type = dtl::dynamic_bitmap<$u32>;
+};
+template<>
+struct type_of<bitmap_t::roaring> {
+  using type = dtl::dynamic_roaring_bitmap;
+};
+template<>
+struct type_of<bitmap_t::teb> {
+  using type = dtl::teb<>;
+};
 //template<> struct type_of<bitmap_t::teb_scan> { /* deprecated */
 //  using type = dtl::teb_scan<>; };
-template<> struct type_of<bitmap_t::teb_wrapper> {
-  using type = dtl::teb_wrapper; };
-template<> struct type_of<bitmap_t::wah> {
-  using type = dtl::dynamic_wah32; };
-template<> struct type_of<bitmap_t::position_list> {
-  using type = dtl::position_list<$u32>; };
-template<> struct type_of<bitmap_t::partitioned_position_list_u8> {
-  using type = dtl::partitioned_position_list<$u32, $u8>; };
-template<> struct type_of<bitmap_t::partitioned_position_list_u16> {
-  using type = dtl::partitioned_position_list<$u32, $u16>; };
-template<> struct type_of<bitmap_t::range_list> {
-  using type = dtl::range_list<$u32>; };
-template<> struct type_of<bitmap_t::partitioned_range_list_u8> {
-  using type = dtl::partitioned_range_list<$u32, $u8>; };
-template<> struct type_of<bitmap_t::partitioned_range_list_u16> {
-  using type = dtl::partitioned_range_list<$u32, $u16>; };
+template<>
+struct type_of<bitmap_t::teb_wrapper> {
+  using type = dtl::teb_wrapper;
+};
+template<>
+struct type_of<bitmap_t::wah> {
+  using type = dtl::dynamic_wah32;
+};
+template<>
+struct type_of<bitmap_t::position_list> {
+  using type = dtl::position_list<$u32>;
+};
+template<>
+struct type_of<bitmap_t::partitioned_position_list_u8> {
+  using type = dtl::partitioned_position_list<$u32, $u8>;
+};
+template<>
+struct type_of<bitmap_t::partitioned_position_list_u16> {
+  using type = dtl::partitioned_position_list<$u32, $u16>;
+};
+template<>
+struct type_of<bitmap_t::range_list> {
+  using type = dtl::range_list<$u32>;
+};
+template<>
+struct type_of<bitmap_t::partitioned_range_list_u8> {
+  using type = dtl::partitioned_range_list<$u32, $u8>;
+};
+template<>
+struct type_of<bitmap_t::partitioned_range_list_u16> {
+  using type = dtl::partitioned_range_list<$u32, $u16>;
+};
 //===----------------------------------------------------------------------===//

@@ -30,8 +30,7 @@ seq_db::~seq_db() {
   close();
 }
 //===----------------------------------------------------------------------===//
-void
-seq_db::open() {
+void seq_db::open() {
   auto rc = sqlite3_open(file_.c_str(), &db_);
   if (rc) {
     std::stringstream err;
@@ -43,8 +42,7 @@ seq_db::open() {
   }
 }
 //===----------------------------------------------------------------------===//
-void
-seq_db::init() {
+void seq_db::init() {
   auto rc = sqlite3_open(file_.c_str(), &db_);
   if (rc) {
     std::stringstream err;
@@ -65,15 +63,15 @@ seq_db::init() {
       ");\n"
       "create table if not exists seq_data (\n"
       "  id int not null,\n"
-//      "  value_seq_no bigint not null,\n"
-//      "  value int not null,\n"
+      //      "  value_seq_no bigint not null,\n"
+      //      "  value int not null,\n"
       "  data blob,\n"
       "  foreign key (id) references seq_def(id)\n"
       ");";
 
   char* err_msg = nullptr;
   rc = sqlite3_exec(db_, sql_create_table.c_str(),
-                    nullptr, nullptr, &err_msg);
+      nullptr, nullptr, &err_msg);
   if (rc) {
     std::stringstream err;
     err << "Can't create table: "
@@ -88,7 +86,7 @@ seq_db::init() {
   {
     const std::string sql_stmt =
         "insert into seq_def (n, c, f, f_actual)\n"
-         "  values (:n, :c, :f, :f_actual )";
+        "  values (:n, :c, :f, :f_actual )";
     rc = sqlite3_prepare_v2(db_, sql_stmt.c_str(), -1, &insert_def_stmt_, nullptr);
     if (rc) {
       std::stringstream err;
@@ -101,9 +99,9 @@ seq_db::init() {
   {
     const std::string sql_stmt =
         "insert into seq_data (id, data)\n"
-         "  values (:id, :data )";
-//        "insert into seq_data (id, value_seq_no, value)\n"
-//         "  values (:id, :value_seq_no, :value )";
+        "  values (:id, :data )";
+    //        "insert into seq_data (id, value_seq_no, value)\n"
+    //         "  values (:id, :value_seq_no, :value )";
     rc = sqlite3_prepare_v2(db_, sql_stmt.c_str(), -1, &insert_value_stmt_, nullptr);
     if (rc) {
       std::stringstream err;
@@ -117,7 +115,7 @@ seq_db::init() {
     const std::string sql_stmt =
         "select * from seq_data\n"
         " where id = :id\n";
-//        " order by value_seq_no";
+    //        " order by value_seq_no";
     rc = sqlite3_prepare_v2(db_, sql_stmt.c_str(), -1, &select_by_id_stmt_,
         nullptr);
     if (rc) {
@@ -197,10 +195,8 @@ seq_db::init() {
   //===--------------------------------------------------------------------===//
 }
 //===----------------------------------------------------------------------===//
-void
-seq_db::close() {
+void seq_db::close() {
   if (db_ != nullptr) {
-
     sqlite3_finalize(insert_def_stmt_);
     sqlite3_finalize(insert_value_stmt_);
     sqlite3_finalize(select_by_id_stmt_);
@@ -223,9 +219,7 @@ seq_db::close() {
   }
 }
 //===----------------------------------------------------------------------===//
-i64
-seq_db::put(u64 n, u32 c, f64 f, const seq_t& s) {
-
+i64 seq_db::put(u64 n, u32 c, f64 f, const seq_t& s) {
   // Determine the actual bit density and clustering factor.
   const auto f_actual = dtl::determine_clustering_factor(s);
 
@@ -243,7 +237,7 @@ seq_db::put(u64 n, u32 c, f64 f, const seq_t& s) {
   sqlite3_bind_double(insert_def_stmt_,
       sqlite3_bind_parameter_index(insert_def_stmt_, ":f_actual"), f_actual);
   $i32 rc;
-  while(true) {
+  while (true) {
     rc = sqlite3_step(insert_def_stmt_);
     if (!(rc == SQLITE_LOCKED || rc == SQLITE_BUSY)) {
       break;
@@ -263,15 +257,15 @@ seq_db::put(u64 n, u32 c, f64 f, const seq_t& s) {
   sqlite3_reset(insert_value_stmt_);
   sqlite3_bind_int64(insert_value_stmt_,
       sqlite3_bind_parameter_index(insert_value_stmt_, ":id"), seq_id);
-//    sqlite3_bind_int64(insert_value_stmt_,
-//        sqlite3_bind_parameter_index(insert_value_stmt_, ":value_seq_no"), i);
-//    sqlite3_bind_int64(insert_value_stmt_,
-//        sqlite3_bind_parameter_index(insert_value_stmt_, ":value"), s[i]);
+  //    sqlite3_bind_int64(insert_value_stmt_,
+  //        sqlite3_bind_parameter_index(insert_value_stmt_, ":value_seq_no"), i);
+  //    sqlite3_bind_int64(insert_value_stmt_,
+  //        sqlite3_bind_parameter_index(insert_value_stmt_, ":value"), s[i]);
   sqlite3_bind_blob64(insert_value_stmt_,
       sqlite3_bind_parameter_index(insert_value_stmt_, ":data"),
       reinterpret_cast<const void*>(s.data()), s.size() * 4, SQLITE_TRANSIENT);
 
-  while(true) {
+  while (true) {
     rc = sqlite3_step(insert_value_stmt_);
     if (!(rc == SQLITE_LOCKED || rc == SQLITE_BUSY)) {
       break;
@@ -300,13 +294,13 @@ seq_db::get(i64 id) {
 
   $i32 rc;
   seq_t ret;
-  while((rc = sqlite3_step(select_by_id_stmt_)) == SQLITE_ROW) {
+  while ((rc = sqlite3_step(select_by_id_stmt_)) == SQLITE_ROW) {
     auto* blob = reinterpret_cast<u8*>(
         sqlite3_column_blob(select_by_id_stmt_, 1));
     const auto bytes = sqlite3_column_bytes(select_by_id_stmt_, 1);
     dtl::data_view<u32> ints {
-        reinterpret_cast<u32*>(blob),
-        reinterpret_cast<u32*>(blob + bytes)
+      reinterpret_cast<u32*>(blob),
+      reinterpret_cast<u32*>(blob + bytes)
     };
     seq_t ret(ints.begin(), ints.end());
     return ret;
@@ -332,7 +326,7 @@ seq_db::find(u64 n, u32 c, f64 f) {
 
   std::vector<$i64> ret;
   $i32 rc;
-  while((rc = sqlite3_step(select_ids_stmt_)) == SQLITE_ROW) {
+  while ((rc = sqlite3_step(select_ids_stmt_)) == SQLITE_ROW) {
     ret.push_back(sqlite3_column_int64(select_ids_stmt_, 0));
   }
   if (rc != SQLITE_DONE) {
@@ -345,8 +339,7 @@ seq_db::find(u64 n, u32 c, f64 f) {
   return ret;
 }
 //===----------------------------------------------------------------------===//
-void
-seq_db::remove(i64 id) {
+void seq_db::remove(i64 id) {
   std::lock_guard<std::mutex> lock(mutex_);
   // Critical section.
   sqlite3_reset(delete_seq_values_by_id_stmt_);
@@ -354,7 +347,7 @@ seq_db::remove(i64 id) {
       sqlite3_bind_parameter_index(delete_seq_values_by_id_stmt_, ":id"), id);
 
   $i32 rc;
-  while((rc = sqlite3_step(delete_seq_values_by_id_stmt_)) == SQLITE_ROW) {
+  while ((rc = sqlite3_step(delete_seq_values_by_id_stmt_)) == SQLITE_ROW) {
   }
   if (rc != SQLITE_DONE) {
     std::stringstream err;
@@ -368,7 +361,7 @@ seq_db::remove(i64 id) {
   sqlite3_bind_int64(delete_seq_def_by_id_stmt_,
       sqlite3_bind_parameter_index(delete_seq_def_by_id_stmt_, ":id"), id);
 
-  while((rc = sqlite3_step(delete_seq_def_by_id_stmt_)) == SQLITE_ROW) {
+  while ((rc = sqlite3_step(delete_seq_def_by_id_stmt_)) == SQLITE_ROW) {
   }
   if (rc != SQLITE_DONE) {
     std::stringstream err;
@@ -387,7 +380,7 @@ seq_db::count() {
 
   std::size_t ret = 0;
   $i32 rc;
-  while((rc = sqlite3_step(count_stmt_)) == SQLITE_ROW) {
+  while ((rc = sqlite3_step(count_stmt_)) == SQLITE_ROW) {
     ret = sqlite3_column_int64(count_stmt_, 0);
   }
   if (rc != SQLITE_DONE) {
@@ -400,8 +393,7 @@ seq_db::count() {
   return ret;
 }
 //===----------------------------------------------------------------------===//
-u1
-seq_db::empty() {
+u1 seq_db::empty() {
   return count() == 0;
 }
 //===----------------------------------------------------------------------===//
@@ -413,7 +405,7 @@ seq_db::ids() {
 
   std::vector<$i64> ret;
   $i32 rc;
-  while((rc = sqlite3_step(select_all_ids_stmt_)) == SQLITE_ROW) {
+  while ((rc = sqlite3_step(select_all_ids_stmt_)) == SQLITE_ROW) {
     ret.push_back(sqlite3_column_int64(select_all_ids_stmt_, 0));
   }
   if (rc != SQLITE_DONE) {

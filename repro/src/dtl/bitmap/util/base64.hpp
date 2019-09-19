@@ -47,8 +47,8 @@ base64_encode_bitmap(const dtl::bitmap& b) {
   bitmap_data[0] = bitmap_length;
   boost::to_block_range(b, bitmap_data.begin() + 1);
   const dtl::data_view<u8> bitmap_view {
-      reinterpret_cast<u8*>(&bitmap_data[0]),
-      reinterpret_cast<u8*>(&bitmap_data[0] + bitmap_data.size())
+    reinterpret_cast<u8*>(&bitmap_data[0]),
+    reinterpret_cast<u8*>(&bitmap_data[0] + bitmap_data.size())
   };
   return encode64(bitmap_view);
 }
@@ -74,8 +74,8 @@ base64_decode_bitmap(const dtl::data_view<u8>& d) {
   const auto decoded_bytes = decode64(d);
   assert(decoded_bytes.size() % 4 == 0);
   const dtl::data_view<u32> view {
-      reinterpret_cast<u32*>(&decoded_bytes[0] + 4),
-      reinterpret_cast<u32*>(&decoded_bytes[0] + decoded_bytes.size())
+    reinterpret_cast<u32*>(&decoded_bytes[0] + 4),
+    reinterpret_cast<u32*>(&decoded_bytes[0] + decoded_bytes.size())
   };
   dtl::bitmap bm(view.begin(), view.end());
   // Adjust the size.

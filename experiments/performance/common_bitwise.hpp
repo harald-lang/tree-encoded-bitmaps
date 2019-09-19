@@ -1,10 +1,11 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include <dtl/bitmap/bitwise_operations.hpp>
 #include "common.hpp"
+
+#include <dtl/bitmap/bitwise_operations.hpp>
 //===----------------------------------------------------------------------===//
 template<typename T>
-void __attribute__ ((noinline))
+void __attribute__((noinline))
 run_intersect(const config_pair& c, std::ostream& os) {
   const auto duration_nanos = RUN_DURATION_NANOS;
   const std::size_t MIN_REPS = 10;
@@ -149,8 +150,10 @@ run_intersect(const config_pair& c, std::ostream& os) {
      << "," << c.bitmap_id2
      << "," << enc_bs1.size_in_byte()
      << "," << enc_bs2.size_in_byte()
-     << "," << "\"" << type_info1 << "\""
-     << "," << "\"" << type_info2 << "\""
+     << ","
+     << "\"" << type_info1 << "\""
+     << ","
+     << "\"" << type_info2 << "\""
      << "," << checksum
      << std::endl;
 }
@@ -166,16 +169,17 @@ void run_intersect(config_pair c, std::ostream& os) {
     case bitmap_t::teb:
       run_intersect<dtl::teb<>>(c, os);
       break;
-//    case bitmap_t::teb_scan:
-//      run_intersect<dtl::teb_scan<>>(c, os);
-//      break;
     case bitmap_t::wah:
       run_intersect<dtl::dynamic_wah32>(c, os);
       break;
     case bitmap_t::teb_wrapper:
       run_intersect<dtl::teb_wrapper>(c, os);
       break;
-    // EXPERIMENTAL
+      // clang-format off
+//    case bitmap_t::teb_scan:
+//      run_intersect<dtl::teb_scan<>>(c, os);
+//      break;
+// EXPERIMENTAL
 //    case bitmap_t::position_list:
 //      run_intersect<dtl::position_list<$u32>>(c, os);
 //      break;
@@ -194,14 +198,15 @@ void run_intersect(config_pair c, std::ostream& os) {
 //    case bitmap_t::partitioned_range_list_u16:
 //      run_intersect<dtl::partitioned_range_list<$u32, $u16>>(c, os);
 //      break;
+      // clang-format on
   }
 }
 //===----------------------------------------------------------------------===//
 void run_intersect(const std::vector<config_pair>& configs) {
   std::function<void(const config_pair&, std::ostream&)> fn =
       [](const config_pair c, std::ostream& os) -> void {
-        run_intersect(c, os);
-      };
+    run_intersect(c, os);
+  };
   const auto thread_cnt = 1; // run performance measurements single-threaded
   dispatch(configs, fn, thread_cnt);
 }

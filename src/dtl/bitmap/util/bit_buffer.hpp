@@ -28,7 +28,7 @@ class bit_buffer {
   static constexpr u64 buffer_bitlength = 64;
   static constexpr u64 slot_bitlength = _slot_bitlength;
   static constexpr u64 slot_mask = (1ul << slot_bitlength) - 1;
-  static constexpr u64 slot_cnt = buffer_bitlength / slot_bitlength ;
+  static constexpr u64 slot_cnt = buffer_bitlength / slot_bitlength;
   static constexpr u64 initial_read_mask =
       bit_buffer_internal::every_nth_bit_set<slot_bitlength>::value;
 
@@ -36,7 +36,6 @@ class bit_buffer {
   $u64 read_mask_;
 
 public:
-
   bit_buffer() : buf_(0), read_mask_(initial_read_mask) {}
   explicit bit_buffer(u64 val) : buf_(val), read_mask_(initial_read_mask) {}
   bit_buffer(const bit_buffer& other) = default;
@@ -103,7 +102,6 @@ public:
   read() const noexcept {
     return _pext_u64(buf_, read_mask_);
   }
-
 };
 //===----------------------------------------------------------------------===//
 } // namespace dtl

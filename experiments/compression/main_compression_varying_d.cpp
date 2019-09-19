@@ -14,7 +14,6 @@
 // Experiment: TODO add description
 //===----------------------------------------------------------------------===//
 $i32 main() {
-
   // Prepare benchmark settings.
   u64 n_min = 1ull << 20;
   u64 n_max = 1ull << 20;
@@ -25,8 +24,8 @@ $i32 main() {
   std::vector<$f64> bit_densities { 0.01 };
   std::cerr << "d:" << std::endl;
   for ($f64 d = 5; d <= 100; d += 5) {
-    bit_densities.push_back(d/100);
-    std::cerr << (d/100) << std::endl;
+    bit_densities.push_back(d / 100);
+    std::cerr << (d / 100) << std::endl;
   }
 
   std::vector<$u64> n_values;
@@ -36,9 +35,9 @@ $i32 main() {
 
   if (GEN_DATA) {
     std::vector<params_markov> params;
-    for (auto f: clustering_factors) {
-      for (auto d: bit_densities) {
-        for (auto n: n_values) {
+    for (auto f : clustering_factors) {
+      for (auto d : bit_densities) {
+        for (auto n : n_values) {
           if (!markov_parameters_are_valid(n, f, d)) continue;
           params_markov p;
           p.n = n;
@@ -54,15 +53,16 @@ $i32 main() {
   else {
     if (db.empty()) {
       std::cerr << "Bitmap database is empty. Use GEN_DATA=1 to populate the "
-          "database." << std::endl;
+                   "database."
+                << std::endl;
       std::exit(1);
     }
   }
 
   std::vector<config> configs;
-  for (auto f: clustering_factors) {
-    for (auto d: bit_densities) {
-      for (auto n: n_values) {
+  for (auto f : clustering_factors) {
+    for (auto d : bit_densities) {
+      for (auto n : n_values) {
         if (!markov_parameters_are_valid(n, f, d)) continue;
         config c;
         c.n = n;
@@ -75,9 +75,9 @@ $i32 main() {
         }
         if (bitmap_ids.size() < RUNS) {
           std::cerr << "There are only " << bitmap_ids.size() << " prepared "
-              << "bitmaps for the parameters n=" << n << ", f=" << f
-              << ", d=" << d << ", but " << RUNS << " are required."
-              << std::endl;
+                    << "bitmaps for the parameters n=" << n << ", f=" << f
+                    << ", d=" << d << ", but " << RUNS << " are required."
+                    << std::endl;
         }
         for (auto bitmap_id : bitmap_ids) {
           c.bitmap_id = bitmap_id;

@@ -13,7 +13,6 @@ template<typename _word_type = $u64, u1 _inclusive = false>
 /// Rank implementation that uses a precomputed lookup table (aka a dictionary).
 /// Adapted from https://github.com/efficient/SuRF/blob/master/include/popcount.h
 struct rank1_surf {
-
   using word_type = typename std::remove_cv<_word_type>::type;
 
   using size_type = $u32;
@@ -40,13 +39,13 @@ struct rank1_surf {
     uint64_t p = 0;
 
     for (uint64_t i = 0; i < lastword; i++) {
-      p += dtl::bits::pop_count(bits[x+i]);
+      p += dtl::bits::pop_count(bits[x + i]);
     }
 
     // 'nbits' may or may not fall on a multiple of 64 boundary,
     // so we may need to zero out the right side of the last word
     // (accomplished by shifting it right, since we're just popcounting)
-    uint64_t lastshifted = bits[x+lastword] << (63 - ((nbits - 1) & popcountmask));
+    uint64_t lastshifted = bits[x + lastword] << (63 - ((nbits - 1) & popcountmask));
     p += dtl::bits::pop_count(lastshifted);
     return p;
   }
@@ -105,9 +104,8 @@ struct rank1_surf {
     const auto offset = idx & (block_bitlength - 1);
     return (lut[block_id]
         + popcountLinear(bitmap_ptr, block_id * words_per_block,
-                         offset + is_inclusive));
+            offset + is_inclusive));
   }
-
 
   /// Initializes the rank LuT in place. The function estimate_size_in_bytes()
   /// allows to predetermine the number of required memory.
@@ -126,8 +124,8 @@ struct rank1_surf {
       lut[i] = bit_cntr;
       const auto word_cnt_in_current_block =
           (i + 1) * words_per_block <= bitmap_word_cnt
-              ? words_per_block
-              : bitmap_word_cnt % words_per_block;
+          ? words_per_block
+          : bitmap_word_cnt % words_per_block;
       const auto nbits = word_cnt_in_current_block * word_bitlength;
       bit_cntr += popcountLinear(
           bitmap_begin, i * words_per_block, nbits);
@@ -155,8 +153,7 @@ struct rank1_surf {
   }
 
   /// Returns the size in bytes.
-  u64
-  size_in_bytes() const {
+  u64 size_in_bytes() const {
     return lut.size() * sizeof(size_type); // lut size
   }
 
@@ -168,8 +165,6 @@ struct rank1_surf {
         + ",\"block_size\":" + std::to_string(block_bitlength / 8)
         + "}";
   }
-
 };
 //===----------------------------------------------------------------------===//
 } // namespace dtl
-

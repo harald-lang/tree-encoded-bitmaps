@@ -1,5 +1,5 @@
-#include "gtest/gtest.h"
 #include "api_types.hpp"
+#include "gtest/gtest.h"
 
 #include <dtl/bitmap.hpp>
 #include <dtl/bitmap/util/convert.hpp>
@@ -25,7 +25,8 @@ TYPED_TEST(api_random_access_test, empty_bitmap) {
     dtl::bitmap bs(n);
     T t(bs);
     for (std::size_t i = 0; i < n; ++i) {
-      ASSERT_FALSE(t.test(i)) << "Point lookup failed at index i=" << i
+      ASSERT_FALSE(t.test(i))
+          << "Point lookup failed at index i=" << i
           << ". - Expected 'false' but got 'true'."
           << std::endl;
     }
@@ -47,7 +48,8 @@ TYPED_TEST(api_random_access_test, sparse_uniform_bitmap) {
         u1 b = t.test(i);
         std::cout << b << std::endl;
       }
-      ASSERT_EQ(a, b) << "Point lookup failed at index i=" << i
+      ASSERT_EQ(a, b)
+          << "Point lookup failed at index i=" << i
           << ". - Expected '" << (a ? "true" : "false")
           << "' but got '" << (b ? "true" : "false") << "'.\n"
           << "Bitmap info:\n"
@@ -67,7 +69,8 @@ TYPED_TEST(api_random_access_test, dense_uniform_bitmap) {
     for (std::size_t i = 0; i < n; ++i) {
       u1 a = bs[i];
       u1 b = t.test(i);
-      ASSERT_EQ(a, b) << "Point lookup failed at index i=" << i
+      ASSERT_EQ(a, b)
+          << "Point lookup failed at index i=" << i
           << ". - Expected '" << (a ? "true" : "false")
           << "' but got '" << (b ? "true" : "false") << "'."
           << std::endl;

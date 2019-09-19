@@ -14,7 +14,6 @@ namespace dtl {
 /// Partitioned range list.
 template<typename _block_type = $u32, typename _local_position_t = $u8>
 struct partitioned_range_list {
-
   using position_t = uint32_t;
   using local_position_t = _local_position_t;
 
@@ -52,7 +51,6 @@ struct partitioned_range_list {
          << static_cast<u64>(offset)
          << "]";
     }
-
   };
 
   /// The number of entries per partition.
@@ -70,9 +68,8 @@ struct partitioned_range_list {
   // TODO make private
   partitioned_range_list() = default;
 
-  explicit
-  partitioned_range_list(const boost::dynamic_bitset<_block_type>& in)
-    : partitions_(), ranges_(), n_(in.size()) {
+  explicit partitioned_range_list(const boost::dynamic_bitset<_block_type>& in)
+      : partitions_(), ranges_(), n_(in.size()) {
     std::size_t current_begin = in.find_first();
     std::size_t current_length = 1;
     while (current_begin < n_) {
@@ -80,7 +77,7 @@ struct partitioned_range_list {
           && in[current_begin + current_length]) {
         ++current_length;
       }
-      push_back(current_begin ,current_length);
+      push_back(current_begin, current_length);
       current_begin = in.find_next(current_begin + current_length);
       current_length = 1;
     }
@@ -119,16 +116,16 @@ struct partitioned_range_list {
     for (const partition_info& part : partitions_) {
       auto curr_local_range = ranges_[part.offset];
       set_bits(ret,
-               part.begin + curr_local_range.begin,
-               part.begin + curr_local_range.begin + curr_local_range.length);
+          part.begin + curr_local_range.begin,
+          part.begin + curr_local_range.begin + curr_local_range.length);
       for (std::size_t i = part.offset + 1; i < ranges_.size(); ++i) {
-        if (ranges_[i].begin  <= curr_local_range.begin + curr_local_range.length) {
+        if (ranges_[i].begin <= curr_local_range.begin + curr_local_range.length) {
           break;
         }
         curr_local_range = ranges_[i];
         set_bits(ret,
-                 part.begin + curr_local_range.begin,
-                 part.begin + curr_local_range.begin + curr_local_range.length);
+            part.begin + curr_local_range.begin,
+            part.begin + curr_local_range.begin + curr_local_range.length);
       }
     }
     return ret;
@@ -250,18 +247,16 @@ struct partitioned_range_list {
   }
 
   /// Returns the value of the bit at the position pos.
-  u1
-  test(const std::size_t pos) const {
+  u1 test(const std::size_t pos) const {
     // TODO implement
-//    auto it = std::lower_bound(ranges_.begin(), ranges_.end(), pos);
-//    return *it == pos;
+    //    auto it = std::lower_bound(ranges_.begin(), ranges_.end(), pos);
+    //    return *it == pos;
     return false;
   }
 
   //===--------------------------------------------------------------------===//
   /// Iterator, with skip support.
   class iter {
-
     const partitioned_range_list& outer_;
 
     //===------------------------------------------------------------------===//
@@ -278,17 +273,17 @@ struct partitioned_range_list {
     //===------------------------------------------------------------------===//
 
   public:
-
     explicit __forceinline__
     iter(const partitioned_range_list& outer)
         : outer_(outer),
           partitions_read_pos_(0),
           ranges_read_pos_(0),
           range_begin_(outer.ranges_.empty()
-                       ? outer_.n_
-                       : outer_.partitions_[0].begin + outer_.ranges_[0].begin),
+                  ? outer_.n_
+                  : outer_.partitions_[0].begin + outer_.ranges_[0].begin),
           range_length_(outer.ranges_.empty()
-                        ? 0ul : outer_.ranges_[0].length) {
+                  ? 0ul
+                  : outer_.ranges_[0].length) {
     }
 
     void __forceinline__
@@ -296,7 +291,7 @@ struct partitioned_range_list {
       ++ranges_read_pos_;
       if (ranges_read_pos_ < outer_.ranges_.size()) {
         if (outer_.ranges_[ranges_read_pos_].begin
-                <= outer_.ranges_[ranges_read_pos_ - 1].begin) {
+            <= outer_.ranges_[ranges_read_pos_ - 1].begin) {
           ++partitions_read_pos_;
         }
         range_begin_ = outer_.partitions_[partitions_read_pos_].begin
@@ -348,7 +343,7 @@ struct partitioned_range_list {
       auto range_search = std::lower_bound(
           ranges.begin() + part_offset_begin,
           ranges.begin() + part_offset_end,
-          range{to_pos_local, 0 /*don't care*/},
+          range { to_pos_local, 0 /*don't care*/ },
           [](const range& lhs, const range& rhs) -> u1 {
             return lhs.begin + lhs.length <= rhs.begin;
           });
@@ -365,8 +360,7 @@ struct partitioned_range_list {
           // necessarily match exactly with the beginning. Thus, the length
           // of the matching range may need to be adjusted.
           range_begin_ = part.begin + to_pos_local;
-          range_length_ = (*range_search).length -
-              (to_pos_local - (*range_search).begin);
+          range_length_ = (*range_search).length - (to_pos_local - (*range_search).begin);
         }
       }
       else {
@@ -400,7 +394,6 @@ struct partitioned_range_list {
     length() const noexcept {
       return range_length_;
     }
-
   };
   //===--------------------------------------------------------------------===//
 
@@ -428,7 +421,6 @@ struct partitioned_range_list {
   }
 
 private:
-
   //===--------------------------------------------------------------------===//
   // Helper functions.
   //===--------------------------------------------------------------------===//
@@ -450,7 +442,7 @@ private:
         ? static_cast<local_position_t>(partition_size - r.begin)
         : static_cast<local_position_t>(length);
     ranges_.push_back(r);
-    if (! exceeds_partition) return;
+    if (!exceeds_partition) return;
     push_back(begin + r.length, length - r.length);
   }
 
@@ -466,13 +458,12 @@ private:
   /// Sets the bits [from, to) in the given bitset.
   inline void
   set_bits(boost::dynamic_bitset<_block_type>& bitset,
-           const std::size_t from, const std::size_t to) {
+      const std::size_t from, const std::size_t to) {
     for (std::size_t i = from; i < to; ++i) {
       bitset[i] = true;
     }
   }
   //===--------------------------------------------------------------------===//
-
 };
 //===----------------------------------------------------------------------===//
 } // namespace dtl

@@ -11,26 +11,23 @@ namespace dtl {
 //===----------------------------------------------------------------------===//
 template<typename _word_type>
 struct bitmap_view {
-
   using word_type = _word_type;
   static constexpr std::size_t word_bitlength = sizeof(word_type) * 8;
 
   using fn = dtl::bitmap_fun<word_type>;
   data_view<word_type> data_;
 
-  explicit
-  bitmap_view(data_view<word_type> data)
+  explicit bitmap_view(data_view<word_type> data)
       : data_(data) {
     assert(data_.size() > 0);
   }
 
-  explicit
-  bitmap_view(word_type* begin, word_type* end)
-      : data_(dtl::data_view<word_type>{begin, end}) {
+  explicit bitmap_view(word_type* begin, word_type* end)
+      : data_(dtl::data_view<word_type> { begin, end }) {
   }
 
   bitmap_view()
-      : data_(data_view<word_type> {nullptr, nullptr}) {
+      : data_(data_view<word_type> { nullptr, nullptr }) {
   }
 
   void
@@ -59,10 +56,7 @@ struct bitmap_view {
     assert(i < (data_.size() * word_bitlength));
     bitmap_fun<word_type>::set(data_.begin(), i, val);
   }
-
 };
 //===----------------------------------------------------------------------===//
 
-
 } // namespace dtl
-

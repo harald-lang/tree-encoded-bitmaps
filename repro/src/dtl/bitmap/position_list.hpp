@@ -14,7 +14,6 @@ namespace dtl {
 /// Position list.
 template<typename _block_type = $u32>
 struct position_list {
-
   using position_t = uint32_t;
 
   std::vector<position_t> positions_;
@@ -25,9 +24,8 @@ struct position_list {
   // TODO make private
   position_list() = default;
 
-  explicit
-  position_list(const boost::dynamic_bitset<_block_type>& in)
-    : positions_(), n_(in.size()) {
+  explicit position_list(const boost::dynamic_bitset<_block_type>& in)
+      : positions_(), n_(in.size()) {
     std::size_t current_pos = in.find_first();
     while (current_pos < in.size()) {
       positions_.push_back(static_cast<position_t>(current_pos));
@@ -36,9 +34,7 @@ struct position_list {
   }
 
   ~position_list() = default;
-
   position_list(const position_list& other) = default;
-
   position_list(position_list&& other) noexcept = default;
 
   __forceinline__ position_list&
@@ -175,12 +171,12 @@ struct position_list {
   static std::string
   name() {
     return "position_list_"
-        + std::to_string(sizeof(position_t) * 8);;
+        + std::to_string(sizeof(position_t) * 8);
+    ;
   }
 
   /// Returns the value of the bit at the position pos.
-  u1
-  test(const std::size_t pos) const {
+  u1 test(const std::size_t pos) const {
     auto it = std::lower_bound(positions_.begin(), positions_.end(), pos);
     return *it == pos;
   }
@@ -188,7 +184,6 @@ struct position_list {
   //===--------------------------------------------------------------------===//
   /// Iterator, with skip support.
   class iter {
-
     const position_list& outer_;
 
     //===------------------------------------------------------------------===//
@@ -203,14 +198,13 @@ struct position_list {
     //===------------------------------------------------------------------===//
 
   public:
-
     explicit __forceinline__
     iter(const position_list& outer)
         : outer_(outer),
           read_pos_(outer.positions_.empty() ? outer_.positions_.size() : 0),
           range_begin_(read_pos_ < outer.positions_.size()
-                       ? outer_.positions_[0]
-                       : outer_.n_),
+                  ? outer_.positions_[0]
+                  : outer_.n_),
           range_length_(read_pos_ < outer.positions_.size() ? 1 : 0) {
       // Determine the length of the current range.
       if (read_pos_ == 0) {
@@ -280,7 +274,6 @@ struct position_list {
     length() const noexcept {
       return range_length_;
     }
-
   };
   //===--------------------------------------------------------------------===//
 
@@ -304,7 +297,6 @@ struct position_list {
         + ",\"positions\":" + std::to_string(positions_.size())
         + "}";
   }
-
 };
 //===----------------------------------------------------------------------===//
 } // namespace dtl

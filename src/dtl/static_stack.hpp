@@ -11,20 +11,14 @@ namespace dtl {
 /// A statically sized stack.
 template<typename T, std::size_t N>
 class alignas(64) static_stack {
-
-//private:
 public:
-
   std::array<T, N> stack_;
   std::size_t cnt_;
 
-public:
-
   __forceinline__
-  static_stack() : cnt_(0) { }
+  static_stack() : cnt_(0) {}
 
-  __forceinline__
-  ~static_stack() = default;
+  __forceinline__ ~static_stack() = default;
 
   __forceinline__
   static_stack(const static_stack& other) = default;
@@ -126,7 +120,6 @@ public:
   rewind(std::size_t i) noexcept {
     cnt_ = i;
   }
-
 };
 //===----------------------------------------------------------------------===//
 } // namespace dtl

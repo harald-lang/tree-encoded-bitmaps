@@ -32,7 +32,7 @@ f64 F = 1.0;
 /// decreases. If the number of downward steps is less than 5, the results
 /// are (significantly) distorted due to the overhead in the
 /// 'nav_from_root_to(pos)' function.
-std::vector<$f64> bit_densities = {0.0001, 0.001, 0.01, 0.1};
+std::vector<$f64> bit_densities = { 0.0001, 0.001, 0.01, 0.1 };
 /// The bitmap length.
 u64 N = 1ull << 20;
 /// Each measurement is repeated until the time below is elapsed.
@@ -41,7 +41,8 @@ static $u64 RUN_DURATION_NANOS = 1000e6; // 1s
 // Helper
 auto now_nanos = []() {
   return std::chrono::duration_cast<std::chrono::nanoseconds>(
-      std::chrono::steady_clock::now().time_since_epoch()).count();
+      std::chrono::steady_clock::now().time_since_epoch())
+      .count();
 };
 //===----------------------------------------------------------------------===//
 void run(u64 n, f64 f, f64 d, i64 bitmap_id) {
@@ -49,7 +50,7 @@ void run(u64 n, f64 f, f64 d, i64 bitmap_id) {
   const auto plain_bitmap = db.load_bitmap(bid);
 
   using T = dtl::teb_wrapper;
-//  using T = dtl::teb<3>;
+  //  using T = dtl::teb<3>;
 
   T enc_bitmap(plain_bitmap);
 
@@ -89,13 +90,13 @@ void run(u64 n, f64 f, f64 d, i64 bitmap_id) {
   boost::replace_all(type_info, "\"", "\"\""); // Escape JSON for CSV output.
 
   std::cout << n << "," << f << "," << d
-      << "," << (e.getCounter("cycles") / down_step_sum)
-      << "," << (e.getCounter("instructions") / down_step_sum)
-      << "," << (e.getCounter("branch-misses") / down_step_sum)
-      << "," << e.getIPC()
-      << "," << type_info
-      << "," << chksum
-      << std::endl;
+            << "," << (e.getCounter("cycles") / down_step_sum)
+            << "," << (e.getCounter("instructions") / down_step_sum)
+            << "," << (e.getCounter("branch-misses") / down_step_sum)
+            << "," << e.getIPC()
+            << "," << type_info
+            << "," << chksum
+            << std::endl;
 }
 //===----------------------------------------------------------------------===//
 $i32 main() {
@@ -118,6 +119,5 @@ $i32 main() {
       run(N, F, d, ids[0]);
     }
   }
-
 }
 //===----------------------------------------------------------------------===//

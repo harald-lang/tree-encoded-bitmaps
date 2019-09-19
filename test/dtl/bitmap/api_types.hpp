@@ -48,11 +48,11 @@ using types_under_test = ::testing::Types<
     wah
 
     // EXPERIMENTAL
-//    position_list_32,
-//    partitioned_position_list_32_u8,
-//    partitioned_position_list_32_u16,
-//    range_list_32,
-//    partitioned_range_list_32_u8,
-//    partitioned_range_list_32_u16
->;
+    // position_list_32,
+    // partitioned_position_list_32_u8,
+    // partitioned_position_list_32_u16,
+    // range_list_32,
+    // partitioned_range_list_32_u8,
+    // partitioned_range_list_32_u16
+    >;
 //===----------------------------------------------------------------------===//

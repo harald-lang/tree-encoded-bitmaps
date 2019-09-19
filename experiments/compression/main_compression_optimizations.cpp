@@ -34,8 +34,7 @@ struct config_t {
   }
 };
 //===----------------------------------------------------------------------===//
-void
-run(const config_t& config, std::ostream& os) {
+void run(const config_t& config, std::ostream& os) {
   $f64 size_wah = 0;
   $f64 size_roaring = 0;
   $f64 size_teb_o0 = 0;
@@ -45,7 +44,6 @@ run(const config_t& config, std::ostream& os) {
 
   // # of runs
   for ($u64 r = 0; r < RUNS; r++) {
-
     auto bm = gen_random_bitmap_markov(config.n,
         config.clustering_factor,
         config.bit_density);
@@ -56,10 +54,10 @@ run(const config_t& config, std::ostream& os) {
     size_roaring += roaring.size_in_byte();
     dtl::teb<0> teb_o0(bm);
     size_teb_o0 += teb_o0.size_in_byte();
-//    dtl::teb<1> teb_o1(bm); // deprecated. in the paper we only distinguish between -o0 and -o3
-//    size_teb_o1 += teb_o1.size_in_byte();
-//    dtl::teb<2> teb_o2(bm);
-//    size_teb_o2 += teb_o2.size_in_byte();
+    //    dtl::teb<1> teb_o1(bm); // deprecated. in the paper we only distinguish between -o0 and -o3
+    //    size_teb_o1 += teb_o1.size_in_byte();
+    //    dtl::teb<2> teb_o2(bm);
+    //    size_teb_o2 += teb_o2.size_in_byte();
     dtl::teb<3> teb_o3(bm);
     size_teb_o3 += teb_o3.size_in_byte();
 
@@ -77,14 +75,14 @@ run(const config_t& config, std::ostream& os) {
         std::cerr << "Validation failed. (TEBo0)" << std::endl;
         std::exit(1);
       }
-//      if (bm != dtl::to_bitmap_using_iterator(teb_o1)) {
-//        std::cerr << "Validation failed. (TEBo1)" << std::endl;
-//        std::exit(1);
-//      }
-//      if (bm != dtl::to_bitmap_using_iterator(teb_o2)) {
-//        std::cerr << "Validation failed. (TEBo2)" << std::endl;
-//        std::exit(1);
-//      }
+      //      if (bm != dtl::to_bitmap_using_iterator(teb_o1)) {
+      //        std::cerr << "Validation failed. (TEBo1)" << std::endl;
+      //        std::exit(1);
+      //      }
+      //      if (bm != dtl::to_bitmap_using_iterator(teb_o2)) {
+      //        std::cerr << "Validation failed. (TEBo2)" << std::endl;
+      //        std::exit(1);
+      //      }
       if (bm != dtl::to_bitmap_using_iterator(teb_o3)) {
         std::cerr << "Validation failed. (TEBo3)" << std::endl;
         std::exit(1);
@@ -107,19 +105,18 @@ run(const config_t& config, std::ostream& os) {
 }
 //===----------------------------------------------------------------------===//
 $i32 main() {
-
   std::vector<$u64> n_s { 1ull << 20 };
   std::vector<$f64> clustering_factors { 8 };
 
   std::vector<$f64> bit_densities { 0.01 };
   for ($f64 d = 5; d <= 85; d += 5) {
-    bit_densities.push_back(d/100);
+    bit_densities.push_back(d / 100);
   }
 
   std::vector<config_t> configs;
-  for (auto n: n_s) {
-    for (auto d: bit_densities) {
-      for (auto f: clustering_factors) {
+  for (auto n : n_s) {
+    for (auto d : bit_densities) {
+      for (auto f : clustering_factors) {
         if (f > n * d) {
           std::stringstream err;
           err << "Skipping n=" << n << ", d=" << d << ", f=" << f << "."
@@ -138,15 +135,15 @@ $i32 main() {
 
   std::function<void(const config_t&, std::ostream&)> fn =
       [](const config_t c, std::ostream& os) -> void {
-        try {
-          run(c, os);
-        }
-        catch (...) {
-          std::stringstream err;
-          err << "Failed to run " << c << "." << std::endl;
-          std::cerr << err.str();
-        }
-      };
+    try {
+      run(c, os);
+    }
+    catch (...) {
+      std::stringstream err;
+      err << "Failed to run " << c << "." << std::endl;
+      std::cerr << err.str();
+    }
+  };
   dispatch<config_t>(configs, fn);
 }
 //===----------------------------------------------------------------------===//

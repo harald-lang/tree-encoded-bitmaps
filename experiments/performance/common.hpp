@@ -36,8 +36,10 @@ static $u64 RUNS = 10;
 /// The (default) size of a randomly generated bitmap.
 static constexpr u64 N = 1u << 20;
 /// A timestamp that identifies the current experiment.
-static const i64 RUN_ID = std::chrono::duration_cast<std::chrono::seconds>(
-    std::chrono::system_clock::now().time_since_epoch()).count();
+static const i64 RUN_ID =
+    std::chrono::duration_cast<std::chrono::seconds>(
+        std::chrono::system_clock::now().time_since_epoch())
+        .count();
 /// The database file where the bitmaps are stored.
 static const std::string DB_FILE =
     dtl::env<std::string>::get("DB_FILE", "./random_bitmaps.sqlite3");
@@ -49,14 +51,14 @@ static bitmap_db db(DB_FILE);
 //static $u64 RUN_DURATION_NANOS = 250e6; // run for at least 250ms
 static $u64 RUN_DURATION_NANOS = 1250e6; // run for at least 1250ms
 //===----------------------------------------------------------------------===//
-u64
-now_nanos() {
+u64 now_nanos() {
   return std::chrono::duration_cast<std::chrono::nanoseconds>(
-      std::chrono::steady_clock::now().time_since_epoch()).count();
+      std::chrono::steady_clock::now().time_since_epoch())
+      .count();
 }
 //===----------------------------------------------------------------------===//
 template<typename T>
-void __attribute__ ((noinline))
+void __attribute__((noinline))
 run(const config& c, std::ostream& os) {
   const auto duration_nanos = RUN_DURATION_NANOS;
   const std::size_t MIN_REPS = 10;
@@ -100,7 +102,6 @@ run(const config& c, std::ostream& os) {
     }
   }
 
-
   // The actual measurement.
   $u64 runtime_nanos_scan_it = 0;
   $u64 runtime_cycles_scan_it = 0;
@@ -129,7 +130,7 @@ run(const config& c, std::ostream& os) {
     if ((length_sink / rep_cntr) != bs_count) {
       std::cerr << "Validation failed: " << c << std::endl;
       std::cerr << "Expected length to be " << bs_count
-          << " but got " << (length_sink / rep_cntr) << std::endl;
+                << " but got " << (length_sink / rep_cntr) << std::endl;
       std::exit(1);
     }
 
@@ -169,7 +170,7 @@ run(const config& c, std::ostream& os) {
     if ((length_sink / rep_cntr) != bs_count) {
       std::cerr << "Validation failed: " << c << std::endl;
       std::cerr << "Expected length to be " << bs_count
-          << " but got " << (length_sink / rep_cntr) << std::endl;
+                << " but got " << (length_sink / rep_cntr) << std::endl;
       std::exit(1);
     }
 
@@ -195,7 +196,8 @@ run(const config& c, std::ostream& os) {
      << "," << dtl::determine_clustering_factor(bs)
      << "," << c.bitmap_id
      << "," << enc_bs.size_in_byte()
-     << "," << "\"" << type_info << "\""
+     << ","
+     << "\"" << type_info << "\""
      << "," << checksum
      << std::endl;
 }
@@ -213,16 +215,17 @@ void run(config c, std::ostream& os) {
     case bitmap_t::teb:
       run<dtl::teb<>>(c, os);
       break;
-//    case bitmap_t::teb_scan: /* deprecated*/
-//      run<dtl::teb_scan<>>(c, os);
-//      break;
     case bitmap_t::teb_wrapper:
       run<dtl::teb_wrapper>(c, os);
       break;
     case bitmap_t::wah:
       run<dtl::dynamic_wah32>(c, os);
       break;
-    // EXPERIMENTAL
+      // clang-format off
+//    case bitmap_t::teb_scan: /* deprecated*/
+//      run<dtl::teb_scan<>>(c, os);
+//      break;
+// EXPERIMENTAL
 //    case bitmap_t::position_list:
 //      run<dtl::position_list<$u32>>(c, os);
 //      break;
@@ -241,14 +244,15 @@ void run(config c, std::ostream& os) {
 //    case bitmap_t::partitioned_range_list_u16:
 //      run<dtl::partitioned_range_list<$u32, $u16>>(c, os);
 //      break;
+      // clang-format on
   }
 }
 //===----------------------------------------------------------------------===//
 void run(const std::vector<config>& configs) {
   std::function<void(const config&, std::ostream&)> fn =
       [](const config c, std::ostream& os) -> void {
-        run(c, os);
-      };
+    run(c, os);
+  };
   const auto thread_cnt = 1; // run performance measurements single-threaded
   dispatch(configs, fn, thread_cnt);
 }

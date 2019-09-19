@@ -13,7 +13,6 @@ namespace dtl {
 /// Wraps a boost dynamic_bitset. (used for comparisons)
 template<typename _block_type = u64>
 struct dynamic_bitmap {
-
   boost::dynamic_bitset<_block_type> bitmap_;
 
   // The number of bits.
@@ -21,10 +20,8 @@ struct dynamic_bitmap {
 
   dynamic_bitmap() = default;
 
-  explicit
-  dynamic_bitmap(const boost::dynamic_bitset<_block_type>& in)
-    : bitmap_(in), n_(in.size()) {
-
+  explicit dynamic_bitmap(const boost::dynamic_bitset<_block_type>& in)
+      : bitmap_(in), n_(in.size()) {
     if (!dtl::is_power_of_two(n_)) {
       throw std::invalid_argument(
           "The length of the bitmap must be a power of two.");
@@ -115,7 +112,6 @@ struct dynamic_bitmap {
   //===--------------------------------------------------------------------===//
   /// 1-fill iterator, with skip support.
   class iter {
-
     const dynamic_bitmap& outer_;
 
     //===------------------------------------------------------------------===//
@@ -128,7 +124,6 @@ struct dynamic_bitmap {
     //===------------------------------------------------------------------===//
 
   public:
-
     void __forceinline__
     next() {
       pos_ += length_;
@@ -203,7 +198,6 @@ struct dynamic_bitmap {
     length() const noexcept {
       return length_;
     }
-
   };
   //===--------------------------------------------------------------------===//
 
@@ -226,7 +220,6 @@ struct dynamic_bitmap {
         + ",\"size\":" + std::to_string(size_in_byte())
         + "}";
   }
-
 };
 //===----------------------------------------------------------------------===//
 } // namespace dtl

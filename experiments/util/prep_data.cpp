@@ -5,13 +5,10 @@
 
 #include <dtl/dtl.hpp>
 //===----------------------------------------------------------------------===//
-void
-prep_data(
+void prep_data(
     std::vector<params_markov>& params,
     const std::size_t cnt,
-    bitmap_db& db
-) {
-
+    bitmap_db& db) {
   // Prepare the random bitmaps.
   std::cout << "Preparing the data set." << std::endl;
   std::vector<params_markov> missing_bitmaps;
@@ -38,14 +35,14 @@ prep_data(
 
   if (!missing_bitmaps.empty()) {
     std::cout << "Generating " << missing_bitmaps.size()
-        << " random bitmaps." << std::endl;
+              << " random bitmaps." << std::endl;
 
     const std::size_t failure_cntr = gen(missing_bitmaps, db);
 
     if (failure_cntr > 0) {
-      std::cerr << "Failed to generate all required bitmaps. "
-          << failure_cntr << " bitmaps are still missing."
-          << std::endl;
+      std::cerr
+          << "Failed to generate all required bitmaps. " << failure_cntr
+          << " bitmaps are still missing." << std::endl;
     }
   }
 
@@ -70,19 +67,17 @@ prep_data(
           incomplete_bitmaps.push_back(c);
         }
       }
-
     }
     std::cout << incomplete_bitmaps.size() << " remaining." << std::endl;
     if (!incomplete_bitmaps.empty()) {
       std::cout << "Generating " << incomplete_bitmaps.size()
-          << " random bitmaps. (pass " << pass << ")" << std::endl;
+                << " random bitmaps. (pass " << pass << ")" << std::endl;
 
       const std::size_t failure_cntr = gen(incomplete_bitmaps, db);
 
       if (failure_cntr == 0) {
         break;
       }
-
     }
     else {
       break;
@@ -90,16 +85,13 @@ prep_data(
     pass++;
   }
   std::cerr << "Done generating random bitmaps after "
-      << pass << " passes." << std::endl;
+            << pass << " passes." << std::endl;
 }
 //===----------------------------------------------------------------------===//
-void
-prep_data(
+void prep_data(
     std::vector<params_uniform>& params,
     const std::size_t cnt,
-    bitmap_db& db
-) {
-
+    bitmap_db& db) {
   // Prepare the random bitmaps.
   std::cout << "Preparing the data set." << std::endl;
   std::vector<params_uniform> missing_bitmaps;
@@ -123,14 +115,12 @@ prep_data(
 
   if (!missing_bitmaps.empty()) {
     std::cout << "Generating " << missing_bitmaps.size()
-        << " random bitmaps." << std::endl;
-
+              << " random bitmaps." << std::endl;
     const std::size_t failure_cntr = gen(missing_bitmaps, db);
-
     if (failure_cntr > 0) {
       std::cerr << "Failed to generate all required bitmaps. "
-          << failure_cntr << " bitmaps are still missing."
-          << std::endl;
+                << failure_cntr << " bitmaps are still missing."
+                << std::endl;
     }
   }
 
@@ -152,19 +142,15 @@ prep_data(
           incomplete_bitmaps.push_back(c);
         }
       }
-
     }
     std::cout << incomplete_bitmaps.size() << " remaining." << std::endl;
     if (!incomplete_bitmaps.empty()) {
       std::cout << "Generating " << incomplete_bitmaps.size()
-          << " random bitmaps. (pass " << pass << ")" << std::endl;
-
+                << " random bitmaps. (pass " << pass << ")" << std::endl;
       const std::size_t failure_cntr = gen(incomplete_bitmaps, db);
-
       if (failure_cntr == 0) {
         break;
       }
-
     }
     else {
       break;
@@ -172,6 +158,6 @@ prep_data(
     pass++;
   }
   std::cerr << "Done generating random bitmaps after "
-      << pass << " passes." << std::endl;
+            << pass << " passes." << std::endl;
 }
 //===----------------------------------------------------------------------===//

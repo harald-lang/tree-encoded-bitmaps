@@ -13,7 +13,6 @@ namespace dtl {
 //===----------------------------------------------------------------------===//
 /// Converts a plain bitmap into a serialized TEB.
 class teb_builder {
-
   using size_type = teb_size_type;
   using word_type = teb_word_type;
   static constexpr auto word_size = sizeof(word_type);
@@ -23,15 +22,13 @@ class teb_builder {
   dtl::bitmap_tree<> bitmap_tree_;
 
 public:
-
   /// C'tor
-  explicit
-  teb_builder(const boost::dynamic_bitset<$u32>& bitmap, f64 fpr = 0.0)
+  explicit teb_builder(const boost::dynamic_bitset<$u32>& bitmap, f64 fpr = 0.0)
       : bitmap_tree_(bitmap, fpr) {}
 
   /// Returns the serialized size in number of words.
   inline std::size_t
-  serialized_size_in_words()  {
+  serialized_size_in_words() {
     std::size_t word_cnt = 0;
     word_cnt += sizeof(teb_header) / word_size;
     word_cnt += tree_word_cnt();
@@ -46,7 +43,6 @@ public:
   serialize(word_type* dst);
 
 private:
-
   /// Determine the length of the encoded tree structure.
   inline std::size_t
   explicit_node_cnt() {
@@ -93,7 +89,6 @@ private:
     const auto word_cnt = (size_in_bytes + word_size - 1) / word_size;
     return (explicit_node_cnt() > 1024) ? word_cnt : 0; // TODO remove magic number
   }
-
 };
 //===----------------------------------------------------------------------===//
 inline void
@@ -134,8 +129,8 @@ teb_builder::serialize(word_type* dst) {
   std::size_t leaf_node_cntr = 0;
   std::size_t current_level = ~0ull;
   for (auto it = bitmap_tree_.breadth_first_begin();
-       it != bitmap_tree_.breadth_first_end(); ++it) {
-
+       it != bitmap_tree_.breadth_first_end();
+       ++it) {
     u64 idx = (*it).idx;
     u64 level = (*it).level;
     u1 is_inner = (*it).is_inner;
@@ -194,13 +189,10 @@ teb_builder::serialize(word_type* dst) {
     auto* ofs_tree = reinterpret_cast<size_type*>(metadata_ptr);
     auto* ofs_labels = ofs_tree + entry_cnt;
     for (std::size_t i = 0; i < entry_cnt; ++i) {
-      ofs_tree[i] =
-          static_cast<size_type>(level_offsets_tree[i + hdr.perfect_level_cnt]);
-      ofs_labels[i] =
-          static_cast<size_type>(level_offsets_labels[i + hdr.perfect_level_cnt]);
+      ofs_tree[i] = static_cast<size_type>(level_offsets_tree[i + hdr.perfect_level_cnt]);
+      ofs_labels[i] = static_cast<size_type>(level_offsets_labels[i + hdr.perfect_level_cnt]);
     }
   }
-
 }
 //===----------------------------------------------------------------------===//
 }; // namespace dtl

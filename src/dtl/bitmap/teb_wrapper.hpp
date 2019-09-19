@@ -17,17 +17,14 @@
 namespace dtl {
 //===----------------------------------------------------------------------===//
 class teb_wrapper {
-
   /// The serialized TEB.
   std::vector<teb_word_type> data_;
   /// The TEB logic.
   std::unique_ptr<teb_flat> teb_;
 
 public:
-
   /// C'tor
-  explicit
-  teb_wrapper(const boost::dynamic_bitset<$u32>& bitmap, f64 fpr = 0.0)
+  explicit teb_wrapper(const boost::dynamic_bitset<$u32>& bitmap, f64 fpr = 0.0)
       : data_(0), teb_(nullptr) {
     dtl::teb_builder builder(bitmap, fpr);
     const auto word_cnt = builder.serialized_size_in_words();
@@ -113,7 +110,6 @@ public:
   print(std::ostream& os) const noexcept {
     teb_->print(os);
   }
-
 };
 //===----------------------------------------------------------------------===//
 } // namespace dtl

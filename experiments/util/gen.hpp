@@ -16,8 +16,8 @@ static u1
 markov_parameters_are_valid(u64 n, $f64 f, $f64 d) {
   return d >= 0
       && d <= 1.0
-      && f >= d/(1-d)
-      && f <= d*n;
+      && f >= d / (1 - d)
+      && f <= d * n;
 }
 //===----------------------------------------------------------------------===//
 /// Generate a random bitmap with the given parameters.
@@ -28,9 +28,10 @@ markov_parameters_are_valid(u64 n, $f64 f, $f64 d) {
 static dtl::bitmap
 gen_random_bitmap_markov(u64 n, $f64 f, $f64 d) {
   if (!markov_parameters_are_valid(n, f, d)) {
-    throw std::invalid_argument("Invalid parameters for the Markov process: "
-        "n=" + std::to_string(n) + ", f=" + std::to_string(f) + ", d="
-         + std::to_string(d));
+    throw std::invalid_argument(
+        "Invalid parameters for the Markov process: n="
+        + std::to_string(n) + ", f=" + std::to_string(f) + ", d="
+        + std::to_string(d));
   }
   two_state_markov_process mp(f, d);
   dtl::bitmap bs(n);
@@ -92,9 +93,9 @@ gen_random_bitmap_uniform(u64 n, $f64 d) {
 /// not be constructed after several retries.
 static std::vector<$u32>
 gen_random_integer_sequence_markov(u64 n, u32 c, $f64 f) {
-//  if (!markov_parameters_are_valid(n, f, d)) { // TODO
-//    throw std::invalid_argument("Invalid parameters for the Markov process.");
-//  }
+  //  if (!markov_parameters_are_valid(n, f, d)) { // TODO
+  //    throw std::invalid_argument("Invalid parameters for the Markov process.");
+  //  }
   assert(c < n);
   assert(c * f < n);
 
@@ -131,7 +132,7 @@ gen_random_integer_sequence_markov(u64 n, u32 c, $f64 f) {
   std::cerr << err.str();
   throw std::invalid_argument(
       "Failed to construct a random integer sequence with the given parameters "
-          "after several retries.");
+      "after several retries.");
 }
 //===----------------------------------------------------------------------===//
 /// Generates multiple (Markov) random bitmaps in parallel and stores them in

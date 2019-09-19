@@ -13,7 +13,6 @@ namespace dtl {
 //===----------------------------------------------------------------------===//
 template<typename _word_type = $u32>
 struct rank1_naive {
-
   using word_type = typename std::remove_cv<_word_type>::type;
 
   using size_type = $u32;
@@ -37,8 +36,7 @@ struct rank1_naive {
     return ret_val;
   }
 
-  u64
-  size_in_bytes() const {
+  u64 size_in_bytes() const {
     return 0;
   }
 
@@ -54,7 +52,6 @@ struct rank1_naive {
         + ",\"size\":" + std::to_string(size_in_bytes())
         + "}";
   }
-
 };
 //===----------------------------------------------------------------------===//
 } // namespace dtl

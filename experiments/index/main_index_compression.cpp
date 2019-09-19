@@ -26,8 +26,10 @@
 // The number of independent runs.
 static constexpr u64 RUNS = 10;
 // Identifies the benchmark run.
-static const i64 RUN_ID = std::chrono::duration_cast<std::chrono::seconds>(
-    std::chrono::system_clock::now().time_since_epoch()).count();
+static const i64 RUN_ID =
+    std::chrono::duration_cast<std::chrono::seconds>(
+        std::chrono::system_clock::now().time_since_epoch())
+        .count();
 // The data set.
 static const std::string DB_FILE =
     dtl::env<std::string>::get("DB_FILE", "./random_sequences.sqlite3");
@@ -55,16 +57,14 @@ void bmi_benchmark(const config& conf, std::ostream& os);
 //===----------------------------------------------------------------------===//
 /// Data generation.
 void gen_data(const std::vector<$u64>& n_values,
-              const std::vector<$u32>& cardinalities,
-              const std::vector<$f64>& clustering_factors) {
-
+    const std::vector<$u32>& cardinalities,
+    const std::vector<$f64>& clustering_factors) {
   // Prepare the random integer sequences.
   std::cout << "Preparing the data set." << std::endl;
   std::vector<config> missing_config;
-  for (auto f: clustering_factors) {
-    for (auto c: cardinalities) {
-      for (auto n: n_values) {
-
+  for (auto f : clustering_factors) {
+    for (auto c : cardinalities) {
+      for (auto n : n_values) {
         if (c * f >= n / 4) continue;
 
         auto ids = db.find(n, c, f);
@@ -77,7 +77,6 @@ void gen_data(const std::vector<$u64>& n_values,
             missing_config.push_back(conf);
           }
         }
-
       }
     }
   }
@@ -94,28 +93,28 @@ void gen_data(const std::vector<$u64>& n_values,
       std::shuffle(missing_config.begin(), missing_config.end(), gen);
     }
 
-    std::atomic<std::size_t> failure_cntr {0};
+    std::atomic<std::size_t> failure_cntr { 0 };
     std::function<void(const config&, std::ostream&)> fn =
         [&](const config conf, std::ostream& os) -> void {
-          try {
-            const auto seq = gen_random_integer_sequence_markov(
-                conf.n, conf.c, conf.f);
-            const auto id =
-                db.put(conf.n, conf.c, conf.f, seq);
-            // Validation.
-            const auto loaded = db.get(id);
-            for (std::size_t i = 0; i < seq.size(); ++i) {
-              if (seq[i] != loaded[i]) {
-                // Fatal!
-                std::cerr << "Validation failed" << std::endl;
-                std::exit(1);
-              }
-            }
+      try {
+        const auto seq = gen_random_integer_sequence_markov(
+            conf.n, conf.c, conf.f);
+        const auto id =
+            db.put(conf.n, conf.c, conf.f, seq);
+        // Validation.
+        const auto loaded = db.get(id);
+        for (std::size_t i = 0; i < seq.size(); ++i) {
+          if (seq[i] != loaded[i]) {
+            // Fatal!
+            std::cerr << "Validation failed" << std::endl;
+            std::exit(1);
           }
-          catch (std::exception& ex) {
-            ++failure_cntr;
-          }
-        };
+        }
+      }
+      catch (std::exception& ex) {
+        ++failure_cntr;
+      }
+    };
     dispatch(missing_config, fn);
 
     if (failure_cntr > 0) {
@@ -129,10 +128,9 @@ void gen_data(const std::vector<$u64>& n_values,
   while (true) {
     std::cout << "Preparing the data set. (pass " << pass << ")" << std::endl;
     std::vector<config> incomplete;
-    for (auto f: clustering_factors) {
-      for (auto c: cardinalities) {
-        for (auto n: n_values) {
-
+    for (auto f : clustering_factors) {
+      for (auto c : cardinalities) {
+        for (auto n : n_values) {
           if (c * f >= n / 4) continue;
 
           auto ids = db.find(n, c, f);
@@ -145,7 +143,6 @@ void gen_data(const std::vector<$u64>& n_values,
               incomplete.push_back(conf);
             }
           }
-
         }
       }
     }
@@ -163,33 +160,32 @@ void gen_data(const std::vector<$u64>& n_values,
         std::shuffle(incomplete.begin(), incomplete.end(), gen);
       }
 
-      std::atomic<std::size_t> failure_cntr {0};
+      std::atomic<std::size_t> failure_cntr { 0 };
       std::function<void(const config&, std::ostream&)> fn =
           [&](const config conf, std::ostream& os) -> void {
-            try {
-              const auto seq = gen_random_integer_sequence_markov(
-                  conf.n, conf.c, conf.f);
-              const auto id = db.put(
-                  conf.n, conf.c, conf.f, seq);
-              // Validation.
-              const auto loaded = db.get(id);
-              for (std::size_t i = 0; i < seq.size(); ++i) {
-                if (seq[i] != loaded[i]) {
-                  // Fatal!
-                  std::cerr << "Validation failed" << std::endl;
-                  std::exit(1);
-                }
-              }
+        try {
+          const auto seq = gen_random_integer_sequence_markov(
+              conf.n, conf.c, conf.f);
+          const auto id = db.put(
+              conf.n, conf.c, conf.f, seq);
+          // Validation.
+          const auto loaded = db.get(id);
+          for (std::size_t i = 0; i < seq.size(); ++i) {
+            if (seq[i] != loaded[i]) {
+              // Fatal!
+              std::cerr << "Validation failed" << std::endl;
+              std::exit(1);
             }
-            catch (std::exception& ex) {
-              ++failure_cntr;
-            }
-          };
+          }
+        }
+        catch (std::exception& ex) {
+          ++failure_cntr;
+        }
+      };
       dispatch(incomplete, fn);
       if (failure_cntr == 0) {
         break;
       }
-
     }
     else {
       break;
@@ -201,7 +197,6 @@ void gen_data(const std::vector<$u64>& n_values,
 }
 //===----------------------------------------------------------------------===//
 $i32 main() {
-
   // Prepare benchmark settings.
   u64 n_min = 1ull << 10;
   u64 n_max = 1ull << 20;
@@ -229,16 +224,16 @@ $i32 main() {
   else {
     if (db.empty()) {
       std::cerr << "Integer sequence database is empty. Use GEN_DATA=1 to "
-          "populate the database." << std::endl;
+                   "populate the database."
+                << std::endl;
       std::exit(1);
     }
   }
 
   std::vector<config> configs;
-  for (auto f: clustering_factors) {
-    for (auto c: cardinalities) {
-      for (auto n: n_values) {
-
+  for (auto f : clustering_factors) {
+    for (auto c : cardinalities) {
+      for (auto n : n_values) {
         if (c * f >= n / 4) continue;
 
         config conf;
@@ -252,9 +247,9 @@ $i32 main() {
         }
         if (seq_ids.size() < RUNS) {
           std::cerr << "There are only " << seq_ids.size() << " prepared "
-              << "sequences for the parameters n=" << n << ", c=" << c
-              << ", f=" << f << ", but " << RUNS << " are required."
-              << std::endl;
+                    << "sequences for the parameters n=" << n << ", c=" << c
+                    << ", f=" << f << ", but " << RUNS << " are required."
+                    << std::endl;
         }
         for (auto seq_id : seq_ids) {
           conf.seq_id = seq_id;
@@ -265,7 +260,6 @@ $i32 main() {
             configs.push_back(conf);
           }
         }
-
       }
     }
   }
@@ -281,9 +275,9 @@ $i32 main() {
   // Run the actual benchmark.
   std::function<void(const config&, std::ostream&)> fn =
       [&](const config conf, std::ostream& os) -> void {
-        const auto int_seq = db.get(conf.seq_id);
-        bmi_benchmark(conf, os);
-      };
+    const auto int_seq = db.get(conf.seq_id);
+    bmi_benchmark(conf, os);
+  };
   dispatch(configs, fn);
 }
 
@@ -328,11 +322,12 @@ run(const config& conf, std::ostream& os) {
 
   // Range encode the bitmap index.
   for (std::size_t i = 1; i < bmi.size(); ++i) {
-    *bmi[i] = *bmi[i] | *bmi[i-1];
+    *bmi[i] = *bmi[i] | *bmi[i - 1];
   }
   if (bmi.back()->count() != conf.n) {
     std::cout << "Validation failed. All bits in the last bitmap of a "
-        "range-encoded bitmap index are supposed to be set." << std::endl;
+                 "range-encoded bitmap index are supposed to be set."
+              << std::endl;
     std::exit(1);
   }
   delete bmi[conf.c - 1];
@@ -394,7 +389,7 @@ void bmi_benchmark(const config& conf, std::ostream& os) {
       run<type_of<bitmap_t::teb>::type>(conf, os);
       break;
     case bitmap_t::teb_scan:
-//      run<type_of<bitmap_t::teb_scan>::type>(conf, os); // TODO remove
+      //      run<type_of<bitmap_t::teb_scan>::type>(conf, os); // TODO remove
       break;
     case bitmap_t::wah:
       run<type_of<bitmap_t::wah>::type>(conf, os);

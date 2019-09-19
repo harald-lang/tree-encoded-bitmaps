@@ -36,25 +36,21 @@ class bit_buffer_avx512 {
   static constexpr u64 buffer_bitlength = 512;
   static constexpr u64 slot_bitlength = _slot_bitlength;
   static constexpr u64 slot_mask = (1ul << slot_bitlength) - 1;
-  static constexpr u64 slot_cnt = buffer_bitlength / slot_bitlength ;
-//  static constexpr __m512i initial_read_mask = (r512 {
-//      .u16 = {1u,1u,1u,1u,1u,1u,1u,1u,1u,1u,1u,1u,1u,1u,1u,1u,1u,1u,1u,1u}
-//  }).i;
+  static constexpr u64 slot_cnt = buffer_bitlength / slot_bitlength;
 
   const __m512i initial_read_mask_;
   __m512i buf_;
   __m512i read_mask_;
 
 public:
-
-  bit_buffer_avx512() :
-      initial_read_mask_(_mm512_set1_epi16(1)),
-      buf_(_mm512_setzero_si512()),
-      read_mask_(initial_read_mask_) {}
-  explicit bit_buffer_avx512(__m512i val) :
-      initial_read_mask_(_mm512_set1_epi16(1)),
-      buf_(val),
-      read_mask_(initial_read_mask_) {}
+  bit_buffer_avx512()
+      : initial_read_mask_(_mm512_set1_epi16(1)),
+        buf_(_mm512_setzero_si512()),
+        read_mask_(initial_read_mask_) {}
+  explicit bit_buffer_avx512(__m512i val)
+      : initial_read_mask_(_mm512_set1_epi16(1)),
+        buf_(val),
+        read_mask_(initial_read_mask_) {}
   bit_buffer_avx512(const bit_buffer_avx512& other) = default;
   bit_buffer_avx512(bit_buffer_avx512&& other) noexcept = default;
   bit_buffer_avx512& operator=(const bit_buffer_avx512& other) = default;
@@ -73,22 +69,19 @@ public:
 
   inline u64
   get(u64 slot_idx) const {
-    r512 copy {.i = buf_};
+    r512 copy { .i = buf_ };
     return copy.u16[slot_idx];
   }
 
   inline void
   set(u64 slot_idx, u64 value) noexcept {
-    r512 copy {.i = buf_};
+    r512 copy { .i = buf_ };
     copy.u16[slot_idx] = value;
     buf_ = copy.i;
   }
 
   inline void
   broadcast(u64 value) noexcept {
-//    u16 v = static_cast<u16>(value);
-//    r512 t {.u16 = {v, v, v, v, v, v, v, v, v, v, v, v, v, v, v, v}};
-//    buf_ = t.i;
     buf_ = _mm512_set1_epi16(value);
   }
 
@@ -104,7 +97,7 @@ public:
 
   inline u64
   get_read_pos(u64 slot_idx) const noexcept {
-    r512 copy {.i = read_mask_};
+    r512 copy { .i = read_mask_ };
     return dtl::bits::tz_count(copy.u16[slot_idx]);
   }
 
@@ -127,7 +120,6 @@ public:
   read_ahead() const noexcept {
     return _mm512_test_epi16_mask(buf_, _mm512_slli_epi16(read_mask_, 1u));
   }
-
 };
 //===----------------------------------------------------------------------===//
 } // namespace dtl

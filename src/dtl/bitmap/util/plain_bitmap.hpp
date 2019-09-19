@@ -14,10 +14,8 @@ namespace dtl {
 /// A plain uncompressed fixed size bitmap.
 template<
     typename _word_type,
-    typename _alloc = std::allocator<_word_type>
->
+    typename _alloc = std::allocator<_word_type>>
 class plain_bitmap {
-
   using word_type = typename std::remove_cv<_word_type>::type;
   static_assert(std::is_integral<word_type>::value,
       "The word type must be an integral type.");
@@ -39,10 +37,8 @@ class plain_bitmap {
   _alloc allocator_;
 
 public:
-
   /// Construct a bitmap of length n.
-  explicit
-  plain_bitmap(std::size_t n, const _alloc& alloc = _alloc())
+  explicit plain_bitmap(std::size_t n, const _alloc& alloc = _alloc())
       : n_(n), bitmap_(word_cnt(n)), allocator_(alloc) {}
 
   /// Test the i-th bit.
@@ -114,7 +110,6 @@ public:
     assert((e - b) <= (sizeof(word_type) * 8));
     return bitmap_fun<word_type>::fetch_bits(bitmap_.data(), b, e);
   }
-
 };
 //===----------------------------------------------------------------------===//
 } // namespace dtl

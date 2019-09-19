@@ -21,14 +21,12 @@ static const auto& filemanager_instance = ibis::fileManager::instance();
 /// 32- or 64-bit words.
 template<typename bitvector_t = ibis::bitvector>
 struct dynamic_wah {
-
   bitvector_t bv;
   std::size_t size_;
 
   dynamic_wah() = default;
 
-  explicit
-  dynamic_wah(const boost::dynamic_bitset<$u32>& in)
+  explicit dynamic_wah(const boost::dynamic_bitset<$u32>& in)
       : size_(in.size()) {
     auto i = in.find_first();
     while (i != boost::dynamic_bitset<$u32>::npos) {
@@ -39,9 +37,7 @@ struct dynamic_wah {
   }
 
   ~dynamic_wah() = default;
-
   dynamic_wah(const dynamic_wah& other) = default;
-
   dynamic_wah(dynamic_wah&& other) noexcept = default;
 
   dynamic_wah&
@@ -54,7 +50,7 @@ struct dynamic_wah {
   std::size_t
   size_in_byte() const {
     return bv.bytes() /* size of the compressed bitmap */
-        + sizeof(size_);  /* bit-length of the original bitmap */
+        + sizeof(size_); /* bit-length of the original bitmap */
   }
 
   /// Returns the size of the bitmap.
@@ -130,15 +126,13 @@ struct dynamic_wah {
   }
 
   /// Returns the value of the bit at the position pos.
-  u1
-  test(const std::size_t pos) const {
+  u1 test(const std::size_t pos) const {
     return bv.getBit(pos);
   }
 
   //===--------------------------------------------------------------------===//
   /// 1-fill iterator, with skip support.
   class iter {
-
     const dynamic_wah& outer_;
 
     /// Position iterator.
@@ -154,7 +148,6 @@ struct dynamic_wah {
     //===------------------------------------------------------------------===//
 
   public:
-
     explicit __forceinline__
     iter(const dynamic_wah& outer)
         : outer_(outer),
@@ -242,7 +235,6 @@ struct dynamic_wah {
     length() const noexcept {
       return length_;
     }
-
   };
   //===--------------------------------------------------------------------===//
 
@@ -263,11 +255,9 @@ struct dynamic_wah {
     return "{\"name\":\"" + name() + "\""
         + ",\"n\":" + std::to_string(size_)
         + ",\"size\":" + std::to_string(size_in_byte())
-        + ",\"word_size\":" +
-          std::to_string(sizeof(typename bitvector_t::word_t))
+        + ",\"word_size\":" + std::to_string(sizeof(typename bitvector_t::word_t))
         + "}";
   }
-
 };
 //===----------------------------------------------------------------------===//
 } // namespace internal

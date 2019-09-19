@@ -10,18 +10,17 @@ namespace internal {
 // Functors for bitwise operations.
 //===----------------------------------------------------------------------===//
 struct bitwise_and {
-
   template<typename iter_ta, typename iter_tb>
   static void __forceinline__
   next(iter_ta& it_a, iter_tb& it_b, $u64& output_pos, $u64& output_length) {
     while (!(it_a.end() || it_b.end())) {
       const auto a_begin = it_a.pos();
-      const auto a_end   = it_a.pos() + it_a.length();
+      const auto a_end = it_a.pos() + it_a.length();
       const auto b_begin = it_b.pos();
-      const auto b_end   = it_b.pos() + it_b.length();
+      const auto b_end = it_b.pos() + it_b.length();
 
       const auto begin_max = (a_begin < b_begin) ? b_begin : a_begin;
-      const auto end_min   = (a_end < b_end)     ? a_end   : b_end;
+      const auto end_min = (a_end < b_end) ? a_end : b_end;
       u1 overlap = begin_max < end_min;
 
       if (overlap) {
@@ -48,24 +47,22 @@ struct bitwise_and {
     output_pos = 0;
     output_length = 0;
   }
-
 };
 //===----------------------------------------------------------------------===//
 struct bitwise_or {
-
   template<typename iter_ta, typename iter_tb>
   static void __forceinline__
   next(iter_ta& it_a, iter_tb& it_b, $u64& output_pos, $u64& output_length) {
     while (!(it_a.end() || it_b.end())) {
       const auto a_begin = it_a.pos();
-      const auto a_end   = it_a.pos() + it_a.length();
+      const auto a_end = it_a.pos() + it_a.length();
       const auto b_begin = it_b.pos();
-      const auto b_end   = it_b.pos() + it_b.length();
+      const auto b_end = it_b.pos() + it_b.length();
 
       const auto begin_min = (a_begin > b_begin) ? b_begin : a_begin;
       const auto begin_max = (a_begin < b_begin) ? b_begin : a_begin;
-      const auto end_min   = (a_end < b_end)     ? a_end   : b_end;
-      const auto end_max   = (a_end > b_end)     ? a_end   : b_end;
+      const auto end_min = (a_end < b_end) ? a_end : b_end;
+      const auto end_max = (a_end > b_end) ? a_end : b_end;
       u1 contiguous = begin_max <= end_min;
 
       if (contiguous) {
@@ -110,24 +107,22 @@ struct bitwise_or {
     output_pos = 0;
     output_length = 0;
   }
-
 };
 //===----------------------------------------------------------------------===//
 struct bitwise_xor {
-
   template<typename iter_ta, typename iter_tb>
   static void __forceinline__
   next(iter_ta& it_a, iter_tb& it_b, $u64& output_pos, $u64& output_length) {
     while (!(it_a.end() || it_b.end())) {
       const auto a_begin = it_a.pos();
-      const auto a_end   = it_a.pos() + it_a.length();
+      const auto a_end = it_a.pos() + it_a.length();
       const auto b_begin = it_b.pos();
-      const auto b_end   = it_b.pos() + it_b.length();
+      const auto b_end = it_b.pos() + it_b.length();
 
       const auto begin_min = (a_begin > b_begin) ? b_begin : a_begin;
       const auto begin_max = (a_begin < b_begin) ? b_begin : a_begin;
-      const auto end_min   = (a_end < b_end)     ? a_end   : b_end;
-      const auto end_max   = (a_end > b_end)     ? a_end   : b_end;
+      const auto end_min = (a_end < b_end) ? a_end : b_end;
+      const auto end_max = (a_end > b_end) ? a_end : b_end;
       u1 overlapping = begin_max <= end_min;
 
       if (overlapping) {
@@ -135,7 +130,7 @@ struct bitwise_xor {
           it_a.next();
           it_b.skip_to(a_end);
         }
-        else if (b_end < a_end){
+        else if (b_end < a_end) {
           it_b.next();
           it_a.skip_to(b_end);
         }
@@ -182,19 +177,17 @@ struct bitwise_xor {
     output_pos = 0;
     output_length = 0;
   }
-
 };
 //===----------------------------------------------------------------------===//
 struct bitwise_xor_re {
-
   template<typename iter_ta, typename iter_tb>
   static void __forceinline__
   next(iter_ta& it_a, iter_tb& it_b, $u64& output_pos, $u64& output_length) {
     while (!(it_a.end() || it_b.end())) {
       const auto a_begin = it_a.pos();
-      const auto a_end   = it_a.pos() + it_a.length();
+      const auto a_end = it_a.pos() + it_a.length();
       const auto b_begin = it_b.pos();
-      const auto b_end   = it_b.pos() + it_b.length();
+      const auto b_end = it_b.pos() + it_b.length();
 
       if (a_begin < b_begin) {
         if (a_end < b_begin) {
@@ -224,7 +217,7 @@ struct bitwise_xor_re {
         return;
       }
       else /* a_begin == b_begin */ {
-        const auto end_min = (a_end < b_end) ? a_end   : b_end;
+        const auto end_min = (a_end < b_end) ? a_end : b_end;
         it_a.skip_to(end_min);
         it_b.skip_to(end_min);
       }
@@ -246,13 +239,11 @@ struct bitwise_xor_re {
     output_pos = 0;
     output_length = 0;
   }
-
 };
 //===----------------------------------------------------------------------===//
 /// Iterator template for bitwise operations.
 template<typename iter_ta, typename iter_tb, typename operation>
 class bitwise_iter {
-
   /// The first input iterator.
   iter_ta& it_a_;
   /// The second input iterator.
@@ -263,17 +254,17 @@ class bitwise_iter {
   $u64 length_ = 0;
 
 public:
-
   bitwise_iter(iter_ta& it_a, iter_tb& it_b)
       : it_a_(it_a), it_b_(it_b) {
     next();
   }
 
   __forceinline__
-  bitwise_iter(bitwise_iter&&) noexcept = default;
+  bitwise_iter(bitwise_iter&&) noexcept
+      = default;
 
   void __forceinline__
-  next() noexcept __attribute__ ((flatten, hot)) {
+  next() noexcept __attribute__((flatten, hot)) {
     operation::next(it_a_, it_b_, pos_, length_);
   }
 
@@ -300,7 +291,6 @@ public:
   length() const noexcept {
     return length_;
   }
-
 };
 //===----------------------------------------------------------------------===//
 } // namespace internal

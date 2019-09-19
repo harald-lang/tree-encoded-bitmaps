@@ -37,7 +37,7 @@ void run(const std::string& dir, std::ostream& result_out) {
 
   std::vector<std::string> filenames;
   fs::directory_iterator end_it;
-  for (fs::directory_iterator dir_it(dir); dir_it != end_it; ++dir_it ) {
+  for (fs::directory_iterator dir_it(dir); dir_it != end_it; ++dir_it) {
     const auto file = dir_it->path().string();
     filenames.push_back(file);
     ++file_cnt;
@@ -58,10 +58,10 @@ void run(const std::string& dir, std::ostream& result_out) {
   const auto c = file_cnt;
 
   result_out << "min_val: " << min_val
-      << " max_val: " << max_val
-      << " bitmap_cnt: " << file_cnt
-      << " n: " << n
-      << std::endl;
+             << " max_val: " << max_val
+             << " bitmap_cnt: " << file_cnt
+             << " n: " << n
+             << std::endl;
 
   $f64 min_d = std::numeric_limits<f64>::max();
   $f64 max_d = std::numeric_limits<f64>::min();
@@ -70,7 +70,6 @@ void run(const std::string& dir, std::ostream& result_out) {
   $f64 min_f = std::numeric_limits<f64>::max();
   $f64 max_f = std::numeric_limits<f64>::min();
   $f64 sum_f = 0.0;
-
 
   std::atomic<std::size_t> bytes_roaring { 0 };
   std::atomic<std::size_t> bytes_wah { 0 };
@@ -112,13 +111,13 @@ void run(const std::string& dir, std::ostream& result_out) {
   }
   result_out << "cardinality: " << total_bit_cnt << std::endl;
   result_out << "d (min/avg/max): "
-      << min_d << " / "
-      << (sum_d / file_cnt) << " / "
-      << max_d << std::endl;
+             << min_d << " / "
+             << (sum_d / file_cnt) << " / "
+             << max_d << std::endl;
   result_out << "f (min/avg/max): "
-      << min_f << " / "
-      << (sum_f / file_cnt) << " / "
-      << max_f << std::endl;
+             << min_f << " / "
+             << (sum_f / file_cnt) << " / "
+             << max_f << std::endl;
 
   auto thread_fn = [&](const std::size_t bid, std::ostream& os) {
     auto& bm = bitmaps[bid];
@@ -130,7 +129,7 @@ void run(const std::string& dir, std::ostream& result_out) {
     std::size_t w64 = 0;
     {
       dtl::dynamic_roaring_bitmap roaring(bm);
-      r= roaring.size_in_byte();
+      r = roaring.size_in_byte();
     }
     {
       dtl::dynamic_wah32 wah(bm);
@@ -149,7 +148,8 @@ void run(const std::string& dir, std::ostream& result_out) {
         std::exit(1);
       }
     }
-    // TEB (lossy compressed)
+    // clang-format off
+// TEB (lossy compressed)
 //    {
 //      const auto fpr = 0.0001;
 //      dtl::teb_wrapper teb(bm_pow2, fpr);
@@ -168,19 +168,20 @@ void run(const std::string& dir, std::ostream& result_out) {
 //      }
 //      os << teb.info() << std::endl;
 //    }
+    // clang-format on
 
     bytes_roaring += r;
-    bytes_wah     += w;
-    bytes_wah64   += w64;
-    bytes_teb     += t;
+    bytes_wah += w;
+    bytes_wah64 += w64;
+    bytes_teb += t;
   };
 
   dispatch(0, bitmaps.size(), thread_fn);
 
   result_out << "roaring: " << std::setw(15) << bytes_roaring << " bytes, " << std::setw(15) << std::setprecision(4) << ((bytes_roaring * 8.0) / total_bit_cnt) << " bits/int" << std::endl;
-  result_out << "teb:     " << std::setw(15) << bytes_teb     << " bytes, " << std::setw(15) << std::setprecision(4) << ((bytes_teb     * 8.0) / total_bit_cnt) << " bits/int" << std::endl;
-  result_out << "wah:     " << std::setw(15) << bytes_wah     << " bytes, " << std::setw(15) << std::setprecision(4) << ((bytes_wah     * 8.0) / total_bit_cnt) << " bits/int" << std::endl;
-  result_out << "wah64:   " << std::setw(15) << bytes_wah64   << " bytes, " << std::setw(15) << std::setprecision(4) << ((bytes_wah64   * 8.0) / total_bit_cnt) << " bits/int" << std::endl;
+  result_out << "teb:     " << std::setw(15) << bytes_teb << " bytes, " << std::setw(15) << std::setprecision(4) << ((bytes_teb * 8.0) / total_bit_cnt) << " bits/int" << std::endl;
+  result_out << "wah:     " << std::setw(15) << bytes_wah << " bytes, " << std::setw(15) << std::setprecision(4) << ((bytes_wah * 8.0) / total_bit_cnt) << " bits/int" << std::endl;
+  result_out << "wah64:   " << std::setw(15) << bytes_wah64 << " bytes, " << std::setw(15) << std::setprecision(4) << ((bytes_wah64 * 8.0) / total_bit_cnt) << " bits/int" << std::endl;
 }
 //===----------------------------------------------------------------------===//
 $i32 main() {

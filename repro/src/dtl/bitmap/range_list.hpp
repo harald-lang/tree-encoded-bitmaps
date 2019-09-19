@@ -14,7 +14,6 @@ namespace dtl {
 /// Position list.
 template<typename _block_type = $u32>
 struct range_list {
-
   using position_t = uint32_t;
 
   struct range {
@@ -40,9 +39,8 @@ struct range_list {
   // TODO make private
   range_list() = default;
 
-  explicit
-  range_list(const boost::dynamic_bitset<_block_type>& in)
-    : ranges_(), n_(in.size()) {
+  explicit range_list(const boost::dynamic_bitset<_block_type>& in)
+      : ranges_(), n_(in.size()) {
     std::size_t current_begin = in.find_first();
     std::size_t current_length = 1;
     while (current_begin < n_) {
@@ -51,17 +49,15 @@ struct range_list {
         ++current_length;
       }
       ranges_.emplace_back(
-          range{static_cast<position_t>(current_begin),
-                static_cast<position_t>(current_length)});
+          range { static_cast<position_t>(current_begin),
+              static_cast<position_t>(current_length) });
       current_begin = in.find_next(current_begin + current_length);
       current_length = 1;
     }
   }
 
   ~range_list() = default;
-
   range_list(const range_list& other) = default;
-
   range_list(range_list&& other) noexcept = default;
 
   __forceinline__ range_list&
@@ -200,12 +196,12 @@ struct range_list {
   static std::string
   name() {
     return "range_list_"
-        + std::to_string(sizeof(position_t) * 8);;
+        + std::to_string(sizeof(position_t) * 8);
+    ;
   }
 
   /// Returns the value of the bit at the position pos.
-  u1
-  test(const std::size_t pos) const {
+  u1 test(const std::size_t pos) const {
     auto it = std::lower_bound(ranges_.begin(), ranges_.end(), pos);
     const auto rb = (*it).begin;
     const auto re = rb + (*it).length;
@@ -215,7 +211,6 @@ struct range_list {
   //===--------------------------------------------------------------------===//
   /// Iterator, with skip support.
   class iter {
-
     const range_list& outer_;
 
     //===------------------------------------------------------------------===//
@@ -230,17 +225,16 @@ struct range_list {
     //===------------------------------------------------------------------===//
 
   public:
-
     explicit __forceinline__
     iter(const range_list& outer)
         : outer_(outer),
           read_pos_(0),
           range_begin_(read_pos_ < outer.ranges_.size()
-                       ? outer_.ranges_[0].begin
-                       : outer_.n_),
+                  ? outer_.ranges_[0].begin
+                  : outer_.n_),
           range_length_(read_pos_ < outer.ranges_.size()
-                        ? outer_.ranges_[0].length
-                        : 0) {
+                  ? outer_.ranges_[0].length
+                  : 0) {
     }
 
     iter(iter&&) noexcept = default;
@@ -270,7 +264,7 @@ struct range_list {
       }
       auto search = std::lower_bound(
           outer_.ranges_.begin(), outer_.ranges_.end(),
-          range{to_pos, 1},
+          range { to_pos, 1 },
           [](const range& lhs, const range& rhs) -> bool {
             return lhs.begin + lhs.length < rhs.begin + rhs.length;
           });
@@ -305,7 +299,6 @@ struct range_list {
     length() const noexcept {
       return range_length_;
     }
-
   };
   //===--------------------------------------------------------------------===//
 
@@ -329,7 +322,6 @@ struct range_list {
         + ",\"ranges\":" + std::to_string(ranges_.size())
         + "}";
   }
-
 };
 //===----------------------------------------------------------------------===//
 } // namespace dtl
