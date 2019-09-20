@@ -20,7 +20,7 @@ include_directories(src)
 include_directories(repro/src)
 
 add_subdirectory(../fastbit Fastbit) # Fastbit: which includes WAH
-include_directories(../fastbit/src)
+include_directories(SYSTEM ../fastbit/src)
 
 # Roaring Bitmaps (deprecated since we switched to the unity build)
 #add_subdirectory(../CRoaring CRoaring)
@@ -29,7 +29,7 @@ include_directories(../fastbit/src)
 #include_directories(../sdsl-lite/include)
 
 add_subdirectory(../dtl dtl)
-include_directories(../dtl/src)
+include_directories(SYSTEM ../dtl/src)
 #include_directories(dtl_storage/src)
 include_directories(../) #TODO remove
 
@@ -292,7 +292,6 @@ target_link_libraries(real fastbit pthread dl boost_system boost_filesystem jema
 # copy the data set to the build directory
 file(COPY experiments/real/real-roaring-dataset DESTINATION ${PROJECT_BINARY_DIR})
 
-
 # Performance, varying f (markov)
 set(EXPERIMENT_PERFORMANCE_VARYING_F_SOURCE_FILES
         ${SOURCE_FILES}
@@ -302,16 +301,6 @@ set(EXPERIMENT_PERFORMANCE_VARYING_F_SOURCE_FILES
         )
 add_executable(ex_performance_varying_f ${EXPERIMENT_PERFORMANCE_VARYING_F_SOURCE_FILES})
 target_link_libraries(ex_performance_varying_f fastbit pthread dl)
-
-# Performance, construction
-set(EXPERIMENT_PERFORMANCE_CONSTRUCTION_SOURCE_FILES
-        ${SOURCE_FILES}
-        ${BENCHMARK_SOURCE_FILES}
-        experiments/performance/common.hpp
-        experiments/performance/main_performance_construction.cpp
-        )
-add_executable(ex_performance_construction ${EXPERIMENT_PERFORMANCE_CONSTRUCTION_SOURCE_FILES})
-target_link_libraries(ex_performance_construction fastbit pthread dl)
 
 # Performance, skyline
 set(EXPERIMENT_PERFORMANCE_SKYLINE_SOURCE_FILES
@@ -331,6 +320,22 @@ set(EXPERIMENT_PERFORMANCE_INTERSECT_SOURCE_FILES
         )
 add_executable(ex_performance_intersect ${EXPERIMENT_PERFORMANCE_INTERSECT_SOURCE_FILES})
 target_link_libraries(ex_performance_intersect fastbit pthread dl)
+
+set(EXPERIMENT_MICROBENCHMARK_DOWNWARDS_NAV_SOURCE_FILES
+        ${SOURCE_FILES}
+        ${BENCHMARK_SOURCE_FILES}
+        experiments/performance/main_microbenchmark_downwards_navigation.cpp
+        )
+add_executable(ex_microbenchmark_downwards_nav ${EXPERIMENT_MICROBENCHMARK_DOWNWARDS_NAV_SOURCE_FILES})
+target_link_libraries(ex_microbenchmark_downwards_nav fastbit pthread dl)
+
+set(EXPERIMENT_MICROBENCHMARK_UPWARDS_NAV_SOURCE_FILES
+        ${SOURCE_FILES}
+        ${BENCHMARK_SOURCE_FILES}
+        experiments/performance/main_microbenchmark_upwards_navigation.cpp
+        )
+add_executable(ex_microbenchmark_upwards_nav ${EXPERIMENT_MICROBENCHMARK_UPWARDS_NAV_SOURCE_FILES})
+target_link_libraries(ex_microbenchmark_upwards_nav fastbit pthread dl)
 
 # Index compression
 set(EXPERIMENT_INDEX_COMPRESSION_SOURCE_FILES
