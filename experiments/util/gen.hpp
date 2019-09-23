@@ -139,14 +139,12 @@ gen_random_integer_sequence_markov(u64 n, u32 c, $f64 f) {
 /// the database. When the return values is > 0, then some of the bitmap
 /// couldn't be generated.
 std::size_t
-gen(
-    std::vector<params_markov>& params,
+gen(std::vector<params_markov>& params,
     bitmap_db& db // the database, where the generated bitmaps are stored
 );
 //===----------------------------------------------------------------------===//
 std::size_t
-gen(
-    std::vector<params_uniform>& params,
+gen(std::vector<params_uniform>& params,
     bitmap_db& db // the database, where the generated bitmaps are stored
 );
 //===----------------------------------------------------------------------===//

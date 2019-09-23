@@ -16,8 +16,7 @@
 #include <vector>
 //===----------------------------------------------------------------------===//
 std::size_t
-gen(
-    std::vector<params_markov>& params,
+gen(std::vector<params_markov>& params,
     bitmap_db& db // the database, where the generated bitmaps are stored
 ) {
   // Shuffle the configurations to better predict the overall runtime of the
@@ -51,8 +50,7 @@ gen(
 }
 //===----------------------------------------------------------------------===//
 std::size_t
-gen(
-    std::vector<params_uniform>& params,
+gen(std::vector<params_uniform>& params,
     bitmap_db& db // the database, where the generated bitmaps are stored
 ) {
   // Shuffle the configurations to better predict the overall runtime of the

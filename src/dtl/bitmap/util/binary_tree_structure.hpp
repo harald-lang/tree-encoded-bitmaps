@@ -6,6 +6,7 @@
 #include <dtl/math.hpp>
 
 #include <bitset>
+#include <cassert>
 #include <functional>
 #include <queue>
 //===----------------------------------------------------------------------===//
@@ -200,6 +201,7 @@ public:
     inline breadth_first_iterator&
     operator++() {
       ++idx_;
+      assert(idx_ > 0);
       while (idx_ < tree_.max_node_cnt_) {
         is_inner_ = tree_.is_inner_node(idx_);
         u1 parent_is_inner = tree_.is_inner_node(tree_.parent_of(idx_));
@@ -265,7 +267,8 @@ public:
       }
     }
 
-    inline void
+//    inline
+    void __attribute__((noinline))
     next_batch() {
       assert(level_of(idx_) > 0);
       // Clear the buffer.
@@ -310,12 +313,12 @@ public:
               u1 left_child_is_inner = ((buf_this_level >> (i * 2)) & 1) != 0;
               u1 right_child_is_inner = ((buf_this_level >> (i * 2 + 1)) & 1) != 0;
 
-              if (left_child_is_inner || parent_is_inner) {
+              if (parent_is_inner || left_child_is_inner) {
                 buf_[buf_end_] =
                     node_t { idx_ + (i * 2), this_level, left_child_is_inner };
                 ++buf_end_;
               }
-              if (right_child_is_inner || parent_is_inner) {
+              if (parent_is_inner || right_child_is_inner) {
                 buf_[buf_end_] =
                     node_t { idx_ + (i * 2 + 1), this_level, right_child_is_inner };
                 ++buf_end_;
