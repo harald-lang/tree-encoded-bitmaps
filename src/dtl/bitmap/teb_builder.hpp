@@ -128,8 +128,8 @@ teb_builder::serialize(word_type* dst) {
   std::size_t node_cntr = 0;
   std::size_t leaf_node_cntr = 0;
   std::size_t current_level = ~0ull;
-  for (auto it = bitmap_tree_.breadth_first_begin();
-       it != bitmap_tree_.breadth_first_end();
+  for (auto it = bitmap_tree_.const_breadth_first_begin();
+       it != bitmap_tree_.const_breadth_first_end();
        ++it) {
     u64 idx = (*it).idx;
     u64 level = (*it).level;
