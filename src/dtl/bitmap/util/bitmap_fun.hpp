@@ -130,8 +130,7 @@ struct bitmap_fun {
   find_first(const word_type* bitmap_begin, const word_type* bitmap_end) {
     const std::size_t word_cnt = bitmap_end - bitmap_begin;
     std::size_t word_idx = 0;
-    while (word_idx < word_cnt
-        && dtl::bits::pop_count(bitmap_begin[word_idx]) == 0) {
+    while (word_idx < word_cnt && bitmap_begin[word_idx] == word_type(0)) {
       ++word_idx;
     }
     if (word_idx < word_cnt) {
@@ -147,8 +146,7 @@ struct bitmap_fun {
   find_last(const word_type* bitmap_begin, const word_type* bitmap_end) {
     const std::size_t word_cnt = bitmap_end - bitmap_begin;
     std::size_t word_idx = word_cnt;
-    while (word_idx > 0
-        && dtl::bits::pop_count(bitmap_begin[word_idx - 1]) == 0) {
+    while (word_idx > 0 && bitmap_begin[word_idx - 1] == word_type(0)) {
       --word_idx;
     }
     if (word_idx > 0) {
