@@ -52,7 +52,7 @@ struct bitmap_fun {
     const word_type Z = ~word_type(0);
 
     const word_type X = Z << (b % word_bitlength);
-    const word_type Y = Z >> ((64 - (e % word_bitlength)) % word_bitlength);
+    const word_type Y = Z >> ((word_bitlength - (e % word_bitlength)) % word_bitlength);
     if (x == y) {
       bitmap[x] |= (X & Y);
     }
@@ -84,7 +84,7 @@ struct bitmap_fun {
     const word_type Z = ~word_type(0);
 
     const word_type X = Z << (b % word_bitlength);
-    const word_type Y = Z >> ((64 - (e % word_bitlength)) % word_bitlength);
+    const word_type Y = Z >> ((word_bitlength - (e % word_bitlength)) % word_bitlength);
     if (x == y) {
       bitmap[x] &= ~(X & Y);
     }
