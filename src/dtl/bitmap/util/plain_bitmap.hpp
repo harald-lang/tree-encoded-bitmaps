@@ -77,7 +77,7 @@ public:
     assert((b / word_bitlength) < bitmap_.size());
     assert(b <= n_);
     assert(e <= n_);
-    assert(b < e);
+    assert(b <= e);
     bitmap_fun<word_type>::set(bitmap_.data(), b, e);
   }
 
@@ -95,7 +95,7 @@ public:
     assert((b / word_bitlength) < bitmap_.size());
     assert(b <= n_);
     assert(e <= n_);
-    assert(b < e);
+    assert(b <= e);
     bitmap_fun<word_type>::clear(bitmap_.data(), b, e);
   }
 
@@ -112,7 +112,7 @@ public:
     assert((b / word_bitlength) < bitmap_.size());
     assert(b <= n_);
     assert(e <= n_);
-    assert(b < e);
+    assert(b <= e);
     assert((e - b) <= (sizeof(word_type) * 8));
     return bitmap_fun<word_type>::fetch_bits(bitmap_.data(), b, e);
   }

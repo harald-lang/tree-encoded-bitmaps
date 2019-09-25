@@ -44,6 +44,7 @@ struct bitmap_fun {
   /// Set the bits in [b,e).
   static void __forceinline__
   set(word_type* bitmap, std::size_t b, std::size_t e) noexcept {
+    if (b >= e) { return; }
     assert(b < e);
     // The algorithm below has been adapted from the paper "Consistently faster
     // and smaller compressed bitmaps with Roaring" by Lemire et al.
