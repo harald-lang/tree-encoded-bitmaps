@@ -41,6 +41,12 @@ public:
   explicit plain_bitmap(std::size_t n, const _alloc& alloc = _alloc())
       : n_(n), bitmap_(word_cnt(n)), allocator_(alloc) {}
 
+  /// Return the size of the bitmap.
+  std::size_t
+  size() const noexcept {
+    return n_;
+  }
+
   /// Test the i-th bit.
   u1 __forceinline__
   operator[](std::size_t i) const {
