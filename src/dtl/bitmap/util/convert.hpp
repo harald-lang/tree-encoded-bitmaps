@@ -60,4 +60,29 @@ to_bitmap_from_iterator(It& it, u64 n) {
   return bm;
 }
 //===----------------------------------------------------------------------===//
+/// Convert the given bitmap into a position list.
+template<typename T>
+static std::vector<$u32>
+to_position_list(const T& bitmap) {
+  std::vector<$u32> positions;
+  auto it = bitmap.scan_it();
+  while (!it.end()) {
+    for (std::size_t i = it.pos(); i < it.pos() + it.length(); ++i) {
+      positions.push_back(i);
+    }
+    it.next();
+  }
+  return positions;
+}
+static std::vector<$u32>
+to_position_list(const boost::dynamic_bitset<$u32>& bitmap) {
+  std::vector<$u32> positions;
+  auto i = bitmap.find_first();
+  while (i != boost::dynamic_bitset<$u32>::npos) {
+    positions.push_back(i);
+    i = bitmap.find_next(i);
+  }
+  return positions;
+}
+//===----------------------------------------------------------------------===//
 } // namespace dtl
