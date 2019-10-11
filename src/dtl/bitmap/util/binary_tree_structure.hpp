@@ -38,7 +38,7 @@ public: // TODO make private
 public:
   /// Constructs a perfect binary tree (structure) with n leaf nodes and n-1
   /// inner nodes.  Note, n must be a power of two.
-  explicit binary_tree_structure(u64 n)
+  explicit binary_tree_structure(u64 n, u1 init = true)
       : n_(n),
         max_node_cnt_(2 * n_ - 1),
         height_(dtl::log_2(n_)),
@@ -50,7 +50,9 @@ public:
     }
 
     // Initialize a perfect binary tree.
-    is_inner_node_.set(0, (max_node_cnt_ / 2) + offset);
+    if (init) {
+      is_inner_node_.set(0, (max_node_cnt_ / 2) + offset);
+    }
   }
 
   binary_tree_structure(const binary_tree_structure& other) = default;
