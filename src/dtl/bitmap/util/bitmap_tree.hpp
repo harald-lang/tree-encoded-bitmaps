@@ -299,6 +299,7 @@ public:
       u64 idx = (*it).idx;
       u64 level = (*it).level;
       u1 is_inner = (*it).is_inner;
+      u1 is_leaf = !is_inner;
 
       ++node_cnt;
       inner_node_cnt_ += is_inner;
@@ -319,8 +320,6 @@ public:
         trailing_leaf_node_cnt_ = 0;
         explicit_node_idxs_.end = idx + 1;
       }
-
-      u1 is_leaf = is_leaf_node(idx);
 
       if (!found_leaf_node_with_1label && is_leaf) {
         if (label_of_node(idx) == false) {
@@ -347,6 +346,13 @@ public:
     if (explicit_node_idxs_.end < explicit_node_idxs_.begin) {
       explicit_node_idxs_.end = explicit_node_idxs_.begin;
     }
+
+    if (!found_leaf_node_with_1label) {
+      // Handle the special case where the entire bitmap is 0.
+      trailing_0label_cnt_ = 0;
+    }
+    counters_are_valid = true;
+  }
   }
 
   // TODO make private
