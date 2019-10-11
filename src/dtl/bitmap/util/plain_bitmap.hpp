@@ -55,6 +55,14 @@ public:
     return bitmap_fun<word_type>::test(bitmap_.data(), i);
   }
 
+  /// Test the i-th bit.
+  u1 __forceinline__
+  test(std::size_t i) const {
+    assert((i / word_bitlength) < bitmap_.size());
+    assert(i <= n_);
+    return bitmap_fun<word_type>::test(bitmap_.data(), i);
+  }
+
   /// Set the i-th bit.
   void __forceinline__
   set(std::size_t i, u1 val) {
@@ -115,6 +123,24 @@ public:
     assert(b <= e);
     assert((e - b) <= (sizeof(word_type) * 8));
     return bitmap_fun<word_type>::fetch_bits(bitmap_.data(), b, e);
+  }
+
+  /// Returns the position of the first set bit within the range [b,e). If no
+  /// bits are set, e is returned.
+  std::size_t __attribute__((noinline))
+  find_first(std::size_t b, std::size_t e) const {
+    assert(b <= n_);
+    assert(e <= n_);
+    assert(b <= e);
+    return bitmap_fun<word_type>::find_first(bitmap_.data(), b, e);
+  }
+
+  void
+  print(std::ostream& os) const noexcept {
+    for (std::size_t i = 0; i < n_; ++i) {
+      os << (test(i) ? "1" : "0");
+    }
+    os << std::endl;
   }
 };
 //===----------------------------------------------------------------------===//
