@@ -245,23 +245,22 @@ struct bitwise_xor_re {
 template<typename iter_ta, typename iter_tb, typename operation>
 class bitwise_iter {
   /// The first input iterator.
-  iter_ta& it_a_;
+  iter_ta it_a_;
   /// The second input iterator.
-  iter_tb& it_b_;
+  iter_tb it_b_;
   /// Points to the beginning of the current 1-fill.
   $u64 pos_ = 0;
   /// The length of the current 1-fill.
   $u64 length_ = 0;
 
 public:
-  bitwise_iter(iter_ta& it_a, iter_tb& it_b)
-      : it_a_(it_a), it_b_(it_b) {
+  bitwise_iter(iter_ta&& it_a, iter_tb&& it_b)
+      : it_a_(std::move(it_a)), it_b_(std::move(it_b)) {
     next();
   }
 
   __forceinline__
-  bitwise_iter(bitwise_iter&&) noexcept
-      = default;
+  bitwise_iter(bitwise_iter&&) = default;
 
   void __forceinline__
   next() noexcept __attribute__((flatten, hot)) {
@@ -299,27 +298,27 @@ public:
 /// given input iterators.
 template<typename iter_ta, typename iter_tb>
 auto __forceinline__
-bitwise_and_it(iter_ta& it_a, iter_tb& it_b) {
+bitwise_and_it(iter_ta&& it_a, iter_tb&& it_b) {
   return internal::bitwise_iter<iter_ta, iter_tb, internal::bitwise_and>(
-      it_a, it_b);
+      std::forward<iter_ta>(it_a), std::forward<iter_tb>(it_b));
 };
 //===----------------------------------------------------------------------===//
 /// Constructs a run iterator that represents the logical disjunction of the
 /// given input iterators.
 template<typename iter_ta, typename iter_tb>
 auto __forceinline__
-bitwise_or_it(iter_ta& it_a, iter_tb& it_b) {
+bitwise_or_it(iter_ta&& it_a, iter_tb&& it_b) {
   return internal::bitwise_iter<iter_ta, iter_tb, internal::bitwise_or>(
-      it_a, it_b);
+      std::forward<iter_ta>(it_a), std::forward<iter_tb>(it_b));
 };
 //===----------------------------------------------------------------------===//
 /// Constructs a run iterator that represents the logical exclusive
 /// disjunction of the given input iterators.
 template<typename iter_ta, typename iter_tb>
 auto __forceinline__
-bitwise_xor_it(iter_ta& it_a, iter_tb& it_b) {
+bitwise_xor_it(iter_ta&& it_a, iter_tb&& it_b) {
   return internal::bitwise_iter<iter_ta, iter_tb, internal::bitwise_xor>(
-      it_a, it_b);
+      std::forward<iter_ta>(it_a), std::forward<iter_tb>(it_b));
 };
 //===----------------------------------------------------------------------===//
 /// Constructs a run iterator that represents the logical exclusive
@@ -327,9 +326,9 @@ bitwise_xor_it(iter_ta& it_a, iter_tb& it_b) {
 /// range encoding.
 template<typename iter_ta, typename iter_tb>
 auto __forceinline__
-bitwise_xor_re_it(iter_ta& it_a, iter_tb& it_b) {
+bitwise_xor_re_it(iter_ta&& it_a, iter_tb&& it_b) {
   return internal::bitwise_iter<iter_ta, iter_tb, internal::bitwise_xor_re>(
-      it_a, it_b);
+      std::forward<iter_ta>(it_a), std::forward<iter_tb>(it_b));
 };
 //===----------------------------------------------------------------------===//
 } // namespace dtl
