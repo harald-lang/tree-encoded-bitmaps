@@ -33,6 +33,16 @@ public:
     teb_ = std::make_unique<teb_flat>(data_.data());
   }
 
+  /// C'tor
+  explicit teb_wrapper(const bitmap_tree<>& bitmap_tree, f64 fpr = 0.0)
+      : data_(0), teb_(nullptr) {
+    dtl::teb_builder builder(bitmap_tree);
+    const auto word_cnt = builder.serialized_size_in_words();
+    data_.resize(word_cnt);
+    builder.serialize(data_.data());
+    teb_ = std::make_unique<teb_flat>(data_.data());
+  }
+
   /// Return the name of the implementation.
   static std::string
   name() noexcept {
