@@ -98,6 +98,17 @@ public:
     return 2 * node_idx + 2;
   }
 
+  /// Returns the ID of the sibling node.
+  static inline u64
+  sibling_of(u64 node_idx) {
+    $u64 n = node_idx;
+    const auto is_left_sibling = node_idx & 1ull;
+    n += is_left_sibling;
+    const auto is_right_sibling = (node_idx & 1ull) == 0 ? 1 : 0;
+    n -= is_right_sibling;
+    return n;
+  }
+
   /// Returns the level of the given node.
   static inline u64
   level_of(u64 node_idx) {
