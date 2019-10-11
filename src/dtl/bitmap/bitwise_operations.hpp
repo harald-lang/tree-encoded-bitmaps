@@ -269,8 +269,19 @@ public:
 
   void __forceinline__
   skip_to(const std::size_t to_pos) noexcept {
-    it_a_.skip_to(to_pos);
-    it_b_.skip_to(to_pos);
+    if (to_pos < (pos_ + length_)) {
+      length_ -= to_pos - pos_;
+      pos_ = to_pos;
+      return;
+    }
+    // TODO: implement efficient skip support
+    while (!end() && (pos_ + length_) <= to_pos) {
+      operation::next(it_a_, it_b_, pos_, length_);
+    }
+    if (!end() && to_pos > pos_) {
+      length_ -= to_pos - pos_;
+      pos_ = to_pos;
+    }
   }
 
   /// Returns true if the iterator reached the end, false otherwise.
