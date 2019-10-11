@@ -39,8 +39,8 @@ void skip_test(u64 n, u64 bitmap, u64 skip_to_pos,
   }
   else {
     ASSERT_TRUE(!it.end()) << info.str();
+    ASSERT_EQ(it.pos(), expected_pos) << info.str();
   }
-  ASSERT_EQ(it.pos(), expected_pos) << info.str();
   if (expected_pos != n) {
     //    ASSERT_EQ(it.length(), expected_len);
   }

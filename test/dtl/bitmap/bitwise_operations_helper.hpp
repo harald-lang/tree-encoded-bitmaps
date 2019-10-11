@@ -95,9 +95,10 @@ template<typename T>
 dtl::bitmap
 bitwise_and_iter(const T& bitmap_a, const T& bitmap_b) {
   dtl::bitmap ret_val(bitmap_a.size());
-  auto it_a = bitmap_a.scan_it();
-  auto it_b = bitmap_b.it();
-  auto and_it = dtl::bitwise_and_it(it_a, it_b);
+  auto and_it = dtl::bitwise_and_it(bitmap_a.scan_it(), bitmap_b.it());
+//  auto it_a = bitmap_a.scan_it();
+//  auto it_b = bitmap_b.it();
+//  auto and_it = dtl::bitwise_and_it(it_a, it_b);
   while (!and_it.end()) {
     const auto begin = and_it.pos();
     const auto end = and_it.pos() + and_it.length();
@@ -182,9 +183,10 @@ template<typename T>
 dtl::bitmap
 bitwise_or_iter(const T& bitmap_a, const T& bitmap_b) {
   dtl::bitmap ret_val(bitmap_a.size());
-  auto it_a = bitmap_a.scan_it();
-  auto it_b = bitmap_b.it();
-  auto or_it = dtl::bitwise_or_it(it_a, it_b);
+  auto or_it = dtl::bitwise_or_it(bitmap_a.scan_it(), bitmap_b.it());
+//  auto it_a = bitmap_a.scan_it();
+//  auto it_b = bitmap_b.it();
+//  auto or_it = dtl::bitwise_or_it(it_a, it_b);
   while (!or_it.end()) {
     const auto begin = or_it.pos();
     const auto end = or_it.pos() + or_it.length();
@@ -284,9 +286,10 @@ template<typename T>
 dtl::bitmap
 bitwise_xor_iter(const T& bitmap_a, const T& bitmap_b) {
   dtl::bitmap ret_val(bitmap_a.size());
-  auto it_a = bitmap_a.scan_it();
-  auto it_b = bitmap_b.it();
-  auto xor_it = dtl::bitwise_xor_it(it_a, it_b);
+  auto xor_it = dtl::bitwise_xor_it(bitmap_a.scan_it(), bitmap_b.it());
+//  auto it_a = bitmap_a.scan_it();
+//  auto it_b = bitmap_b.it();
+//  auto xor_it = dtl::bitwise_xor_it(it_a, it_b);
   while (!xor_it.end()) {
     const auto begin = xor_it.pos();
     const auto end = xor_it.pos() + xor_it.length();
@@ -373,9 +376,10 @@ template<typename T>
 dtl::bitmap
 bitwise_xor_re_iter(const T& bitmap_a, const T& bitmap_b) {
   dtl::bitmap ret_val(bitmap_a.size());
-  auto it_a = bitmap_a.scan_it();
-  auto it_b = bitmap_b.it();
-  auto xor_it = dtl::bitwise_xor_re_it(it_a, it_b);
+  auto xor_it = dtl::bitwise_xor_it(bitmap_a.scan_it(), bitmap_b.it());
+//  auto it_a = bitmap_a.scan_it();
+//  auto it_b = bitmap_b.it();
+//  auto xor_it = dtl::bitwise_xor_re_it(it_a, it_b);
   while (!xor_it.end()) {
     const auto begin = xor_it.pos();
     const auto end = xor_it.pos() + xor_it.length();
