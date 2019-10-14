@@ -132,7 +132,11 @@ public:
     assert(b <= n_);
     assert(e <= n_);
     assert(b <= e);
-    return bitmap_fun<word_type>::find_first(bitmap_.data(), b, e);
+    const auto ret_val = bitmap_fun<word_type>::find_first(bitmap_.data(), b, e);
+    assert(ret_val >= b);
+    assert(ret_val <= e);
+    assert(ret_val == bitmap_fun<word_type>::find_first_dense(bitmap_.data(), b, e));
+    return ret_val;
   }
 
   void

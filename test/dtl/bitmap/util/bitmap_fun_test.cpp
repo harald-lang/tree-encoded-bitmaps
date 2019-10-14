@@ -81,6 +81,113 @@ TEST(bitmap_fun,
 }
 //===----------------------------------------------------------------------===//
 TEST(bitmap_fun,
+    find_first_in_range__word_aligned) {
+  // We use the plain bitmap here for simplicity. Internally, the call is
+  // forwarded to bitmap_fun.
+  const auto n = 128;
+  dtl::plain_bitmap<$u32> bs(n);
+  for (std::size_t i = 0; i < n; ++i) {
+    bs.set(i);
+    ASSERT_EQ(bs.find_first(0, n), i);
+    bs.clear(i);
+  }
+}
+//===----------------------------------------------------------------------===//
+TEST(bitmap_fun,
+    find_first_in_range__with_offset_at_the_begin) {
+  // We use the plain bitmap here for simplicity. Internally, the call is
+  // forwarded to bitmap_fun.
+  const auto n = 128;
+  dtl::plain_bitmap<$u32> bs(n);
+  for (std::size_t offset = 1; offset < 64; ++offset) {
+    for (std::size_t i = offset; i < n - offset; ++i) {
+      // Set all bit outside of the range. Those should be ignored.
+      bs.set(0, offset);
+
+      bs.set(i);
+      ASSERT_EQ(bs.find_first(offset, n), i)
+        << " offset was " << offset;
+
+      bs.clear(0, offset);
+      bs.clear(i);
+    }
+  }
+}
+//===----------------------------------------------------------------------===//
+TEST(bitmap_fun,
+    find_first_in_range__with_offset_at_the_end) {
+  // We use the plain bitmap here for simplicity. Internally, the call is
+  // forwarded to bitmap_fun.
+  const std::size_t n = 128;
+  dtl::plain_bitmap<$u32> bs(n);
+  for (std::size_t offset = 1; offset < 64; ++offset) {
+    for (std::size_t i = 0; i < n - offset; ++i) {
+      // Set all bit outside of the range. Those should be ignored.
+      bs.set(n - offset, n);
+
+      bs.set(i);
+      ASSERT_EQ(bs.find_first(0, n - offset), i)
+        << " offset was " << offset;
+
+      bs.clear(n - offset, n);
+      bs.clear(i);
+    }
+  }
+}
+//===----------------------------------------------------------------------===//
+TEST(bitmap_fun,
+    find_first_in_range__with_offsets) {
+  // We use the plain bitmap here for simplicity. Internally, the call is
+  // forwarded to bitmap_fun.
+  const std::size_t n = 256;
+  dtl::plain_bitmap<$u32> bs(n);
+  for (std::size_t offset_b = 1; offset_b < 64; ++offset_b) {
+    for (std::size_t offset_e = 1; offset_e < 64; ++offset_e) {
+      for (std::size_t i = offset_b; i < n - offset_b - offset_e; ++i) {
+        // Set all bit outside of the range. Those should be ignored.
+        bs.set(0, offset_b);
+        bs.set(n - offset_e, n);
+
+        bs.set(i);
+        ASSERT_EQ(bs.find_first(offset_b, n - offset_e), i)
+          << " offsets were " << offset_b << "/" << offset_e;
+
+        bs.clear(0, offset_b);
+        bs.clear(n - offset_e, n);
+        bs.clear(i);
+      }
+    }
+  }
+}
+//===----------------------------------------------------------------------===//
+TEST(bitmap_fun,
+    find_first_in_range__full) {
+  // We use the plain bitmap here for simplicity. Internally, the call is
+  // forwarded to bitmap_fun.
+  const std::size_t n = 128;
+  dtl::plain_bitmap<$u32> bs(n);
+  for (std::size_t range_offset = 0; range_offset < n; ++range_offset) {
+    for (std::size_t range_len = 0; range_len < n; ++range_len) {
+      if (range_offset + range_len >= n) continue;
+      for (std::size_t i = range_offset; i < range_offset + range_len; ++i) {
+        // Set all bit outside of the range. Those should be ignored.
+        bs.set(0, range_offset);
+        bs.set(range_offset + range_len, n);
+
+        bs.set(i);
+        ASSERT_EQ(bs.find_first(range_offset, range_offset + range_len), i)
+          << " range offset was " << range_offset << ", length "
+          << range_len;
+
+        bs.clear(0, range_offset);
+        bs.clear(range_offset + range_len, n);
+        bs.clear(i);
+      }
+    }
+  }
+}
+//===----------------------------------------------------------------------===//
+TEST(bitmap_fun,
     to_positions__single_32_bit_word) {
   using word_type = $u32;
   constexpr auto word_bitwidth = sizeof(word_type) * 8;

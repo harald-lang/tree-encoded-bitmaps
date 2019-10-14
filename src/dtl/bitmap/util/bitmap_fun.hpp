@@ -20,7 +20,7 @@ struct bitmap_fun {
     const auto block_idx = i / word_bitlength;
     const auto word = bitmap[block_idx];
     const auto bit_idx = i % word_bitlength;
-    return (word & (word_type(1) << i)) != 0;
+    return (word & (word_type(1) << bit_idx)) != 0;
   }
 
   /// Set the bit at position i.
@@ -78,6 +78,7 @@ struct bitmap_fun {
   /// Clear the bits in [b,e).
   static void __forceinline__
   clear(word_type* bitmap, std::size_t b, std::size_t e) noexcept {
+    if (e <= b) return;
     assert(b < e);
     // The algorithm below has been adapted from the paper "Consistently faster
     // and smaller compressed bitmaps with Roaring" by Lemire et al.
@@ -158,12 +159,56 @@ struct bitmap_fun {
     return word_cnt * sizeof(word_type) * 8;
   }
 
-  /// Find the next set bit [b,e). Returns 'e' if all bits in [b,e) are 0.
+  /// Find the first set bit [b,e). Returns 'e' if all bits in [b,e) are 0.
   static std::size_t
   find_first(const word_type* bitmap,
       const std::size_t b,
       const std::size_t e) {
+    if (e <= b) return e;
+    const auto x = b / word_bitlength;
+    const auto y = (e - 1) / word_bitlength;
 
+    const auto X_off = (b % word_bitlength);
+    const word_type X = ~word_type(0) << X_off;
+    const word_type Y = ~word_type(0) >> ((word_bitlength - (e % word_bitlength)) % word_bitlength);
+
+    if (likely(x == y)) {
+      const word_type w = bitmap[x] & (X & Y);
+      if (w == 0) return e;
+      return b + dtl::bits::tz_count(w >> X_off);
+    }
+    else {
+      const word_type w_b = bitmap[x] >> X_off;
+      if (w_b != 0) {
+        return b + dtl::bits::tz_count(w_b);
+      }
+      for (std::size_t k = x + 1; k < y; ++k) {
+        const word_type w = bitmap[k];
+        if (w != 0) {
+          return b
+              + (word_bitlength - X_off)
+              + ((k - (x + 1)) * word_bitlength)
+              + dtl::bits::tz_count(w);
+        }
+      }
+      const word_type w_e = bitmap[y] & Y;
+      if (w_e != 0) {
+        return b
+            + ((y - x) * word_bitlength)
+            - X_off
+            + dtl::bits::tz_count(w_e);
+      }
+    }
+    return e;
+  }
+
+  /// Find the first set bit [b,e). Returns 'e' if all bits in [b,e) are 0.
+  /// This function is supposed to be called, when the underlying bitmap is
+  /// dense.
+  static std::size_t
+  find_first_dense(const word_type* bitmap,
+      const std::size_t b,
+      const std::size_t e) {
     for (std::size_t i = b; i < e; ++i) {
       if (test(bitmap, i)) {
         return i;
