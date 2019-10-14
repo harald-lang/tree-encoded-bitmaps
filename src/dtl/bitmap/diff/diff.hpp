@@ -86,7 +86,7 @@ public:
     diff_->set(i, bitmap_->test(i) ^ val);
   }
 
-  /// Applies the pending updates and clears the diff.
+  /// Apply the pending updates and clear the diff.
   template<typename M>
   void
   merge() {
@@ -95,7 +95,7 @@ public:
     merge_strategy.merge(bitmap_, diff_);
 
     // Clear the diff.
-    std::unique_ptr<D> empty_diff = std::make_unique<D>();
+    std::unique_ptr<D> empty_diff = std::make_unique<D>(bitmap_->size());
     std::swap(diff_, empty_diff);
   }
 
