@@ -24,7 +24,14 @@ class teb_builder {
 public:
   /// C'tor
   explicit teb_builder(const boost::dynamic_bitset<$u32>& bitmap, f64 fpr = 0.0)
-      : bitmap_tree_(bitmap, fpr) {}
+      : bitmap_tree_(bitmap, fpr) {
+    bitmap_tree_.ensure_counters_are_valid();
+  }
+
+  explicit teb_builder(const bitmap_tree<>& bitmap_tree)
+      : bitmap_tree_(bitmap_tree) {
+    bitmap_tree_.ensure_counters_are_valid();
+  }
 
   /// Returns the serialized size in number of words.
   inline std::size_t

@@ -2,6 +2,7 @@
 //===----------------------------------------------------------------------===//
 #include <dtl/bits.hpp>
 #include <dtl/dtl.hpp>
+#include <dtl/simd.hpp>
 
 #include <cassert>
 //===----------------------------------------------------------------------===//
@@ -157,6 +158,19 @@ struct bitmap_fun {
     return word_cnt * sizeof(word_type) * 8;
   }
 
+  /// Find the next set bit [b,e). Returns 'e' if all bits in [b,e) are 0.
+  static std::size_t
+  find_first(const word_type* bitmap,
+      const std::size_t b,
+      const std::size_t e) {
+
+    for (std::size_t i = b; i < e; ++i) {
+      if (test(bitmap, i)) {
+        return i;
+      }
+    }
+    return e;
+  }
 
   /// Scans the bitmap (that consists of a single word) for set bits and produces
   /// a position list. The positions are written to the given destination

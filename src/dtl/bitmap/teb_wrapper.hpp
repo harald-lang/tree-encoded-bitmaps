@@ -17,6 +17,7 @@
 namespace dtl {
 //===----------------------------------------------------------------------===//
 class teb_wrapper {
+public: // TODO remove
   /// The serialized TEB.
   std::vector<teb_word_type> data_;
   /// The TEB logic.

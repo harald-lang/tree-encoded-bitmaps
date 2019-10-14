@@ -18,6 +18,7 @@ class teb_wrapper;
 //===----------------------------------------------------------------------===//
 /// The TEB logic that is used to access a serialized TEB.
 class teb_flat {
+public: // TODO remove
   friend class teb_iter;
   friend class teb_scan_iter;
   friend class teb_wrapper;
@@ -308,7 +309,8 @@ public:
     }
   }
 
-private:
+//private:
+public: // TODO revert
   /// Computes the (inclusive) rank of the given tree node.
   size_type __teb_inline__
   rank_inclusive(size_type node_idx) const noexcept {

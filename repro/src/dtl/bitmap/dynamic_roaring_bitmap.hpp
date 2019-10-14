@@ -28,6 +28,12 @@ struct dynamic_roaring_bitmap {
     bitmap_.runOptimize();
   }
 
+  /// Constructs an empty bitmap of size n. This kind of constructor is only
+  /// available when the current type is suitable as a differential data
+  /// structure.
+  explicit dynamic_roaring_bitmap(std::size_t n)
+      : size_(n) { };
+
   ~dynamic_roaring_bitmap() = default;
   dynamic_roaring_bitmap(const dynamic_roaring_bitmap& other) = default;
   dynamic_roaring_bitmap(dynamic_roaring_bitmap&& other) noexcept = default;
@@ -79,6 +85,14 @@ struct dynamic_roaring_bitmap {
     return ret;
   }
 
+  /// Bitwise XOR (assignment)
+  __forceinline__ dynamic_roaring_bitmap&
+  operator^=(const dynamic_roaring_bitmap& other) {
+    assert(size() == other.size());
+    bitmap_ ^= other.bitmap_;
+    return *this;
+  }
+
   /// Bitwise XOR (range encoding)
   __forceinline__ dynamic_roaring_bitmap
   xor_re(const dynamic_roaring_bitmap& other) const {
@@ -95,6 +109,13 @@ struct dynamic_roaring_bitmap {
     return *this;
   }
 
+  /// Try to reduce the memory consumption. This function is supposed to be
+  /// called after the bitmap has been modified.
+  __forceinline__ void
+  shrink() {
+    bitmap_.runOptimize();
+  }
+
   void
   print(std::ostream& os) const {
     os << "n/a";
@@ -103,6 +124,18 @@ struct dynamic_roaring_bitmap {
   static std::string
   name() {
     return "roaring";
+  }
+
+  /// Set the i-th bit to the given value. This function is only available when
+  /// the current type is suitable as a differential data structure.
+  void __forceinline__
+  set(std::size_t i, u1 val) noexcept {
+    if (val) {
+      bitmap_.add(i);
+    }
+    else {
+      bitmap_.remove(i);
+    }
   }
 
   /// Returns the value of the bit at the position pos.

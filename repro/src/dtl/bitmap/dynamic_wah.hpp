@@ -36,6 +36,12 @@ struct dynamic_wah {
     bv.compress();
   }
 
+  /// Constructs an empty bitmap of size n. This kind of constructor is only
+  /// available when the current type is suitable as a differential data
+  /// structure.
+  explicit dynamic_wah(std::size_t n)
+    : size_(n) { };
+
   ~dynamic_wah() = default;
   dynamic_wah(const dynamic_wah& other) = default;
   dynamic_wah(dynamic_wah&& other) noexcept = default;
@@ -47,14 +53,14 @@ struct dynamic_wah {
   operator=(dynamic_wah&& other) noexcept = default;
 
   /// Return the size in bytes.
-  std::size_t
+  std::size_t __forceinline__
   size_in_byte() const {
     return bv.bytes() /* size of the compressed bitmap */
         + sizeof(size_); /* bit-length of the original bitmap */
   }
 
   /// Returns the size of the bitmap.
-  std::size_t
+  std::size_t __forceinline__
   size() const {
     return size_;
   }
@@ -93,6 +99,14 @@ struct dynamic_wah {
     return ret;
   }
 
+  /// Bitwise XOR (assignment)
+  __forceinline__ dynamic_wah&
+  operator^=(const dynamic_wah& other) {
+    assert(size() == other.size());
+    bv ^= other.bv;
+    return *this;
+  }
+
   /// Bitwise AND (range encoding)
   dynamic_wah
   xor_re(const dynamic_wah& other) const {
@@ -125,9 +139,24 @@ struct dynamic_wah {
     }
   }
 
+  /// Set the i-th bit to the given value. This function is only available when
+  /// the current type is suitable as a differential data structure.
+  void __forceinline__
+  set(std::size_t i, u1 val) noexcept {
+    bv.setBit(i, val);
+  }
+
   /// Returns the value of the bit at the position pos.
-  u1 test(const std::size_t pos) const {
+  u1 __forceinline__
+  test(const std::size_t pos) const {
     return bv.getBit(pos);
+  }
+
+  /// Try to reduce the memory consumption. This function is supposed to be
+  /// called after the bitmap has been modified.
+  __forceinline__ void
+  shrink() {
+    bv.compress();
   }
 
   //===--------------------------------------------------------------------===//
@@ -221,17 +250,17 @@ struct dynamic_wah {
       }
     }
 
-    u1
+    u1 __forceinline__
     end() const noexcept {
       return length_ == 0;
     }
 
-    u64
+    u64 __forceinline__
     pos() const noexcept {
       return pos_;
     }
 
-    u64
+    u64 __forceinline__
     length() const noexcept {
       return length_;
     }

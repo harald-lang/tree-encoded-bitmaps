@@ -141,6 +141,7 @@ set(TEST_FILES
         test/dtl/bitmap/api_run_iterator_skip_test.cpp
         test/dtl/bitmap/api_bitwise_operation_test.cpp
         test/dtl/bitmap/bitwise_operations_helper.hpp
+        test/dtl/bitmap/diff_test.cpp
         test/dtl/bitmap/teb_scan_util_test.cpp
         )
 add_executable(tester ${TEST_FILES})
@@ -159,6 +160,8 @@ set(UTIL_SOURCE_FILES
 
 set(TEB_SOURCE_FILES
         src/dtl/bitmap.hpp
+        src/dtl/bitmap/diff/diff.hpp
+        src/dtl/bitmap/diff/merge.hpp
         src/dtl/bitmap/util/binary_tree_structure.hpp
         src/dtl/bitmap/util/bit_buffer.hpp
         src/dtl/bitmap/util/bit_buffer_avx2.hpp

@@ -23,6 +23,7 @@ class bitmap_tree : public binary_tree_structure {
   using tree_t = dtl::binary_tree_structure;
   using bitmap_t = boost::dynamic_bitset<$u32>;
 
+protected:
   /// The labels of the tree nodes.
   plain_bitmap<$u64> labels_;
 
@@ -87,6 +88,9 @@ class bitmap_tree : public binary_tree_structure {
   /// to 'n' when the bits in the original bitmap are all 0.
   std::size_t last_bit_idx_ = 0;
 
+  /// Used to keep track of whether the counters are up to date or invalidated.
+  $u1 counters_are_valid = false;
+
 public:
   /// C'tor
   explicit bitmap_tree(const bitmap_t& bitmap, f64 fpr = 0.0)
@@ -127,6 +131,44 @@ public:
         compress_lossy(bitmap, fpr); // FIXME experimental
       }
     }
+  }
+
+protected:
+  /// C'tor
+  explicit bitmap_tree(const std::size_t n, u1 init = true)
+      : binary_tree_structure(n, init),
+        labels_(max_node_cnt_ + offset),
+        inner_node_cnt_(0),
+        leading_inner_node_cnt_(0),
+        trailing_leaf_node_cnt_(0),
+        leading_0label_cnt_(0),
+        trailing_0label_cnt_(0),
+        first_node_idx_with_1label_(0),
+        last_node_idx_with_1label_(0),
+        first_bit_idx_(0), // first and last bit idx will be initialized in init_tree()
+        last_bit_idx_(0) {
+  }
+
+public:
+  /// Construct a bitmap tree from a run iterator. // TODO deprecated, remove
+  template<typename _it>
+  static bitmap_tree
+  from_run_iterator(const std::size_t n, _it run_iter) {
+    bitmap_tree bmt(n);
+
+    // Copy the input bitmap to the last level of the tree.
+    while (!run_iter.end()) {
+      const auto b = n + run_iter.pos();
+      const auto e = n + run_iter.pos() + run_iter.length();
+      bmt.labels_.set(b, e);
+      run_iter.next();
+    }
+    bmt.init_labels();
+    bmt.prune_tree();
+    // Init the counters that are required to estimate the TEB size.
+    bmt.init_counters_perfect_binary_tree();
+    std::cout << bmt << std::endl;
+    return bmt;
   }
 
   bitmap_tree(const bitmap_tree& other) = default;
@@ -274,6 +316,8 @@ public:
         }
       }
     }
+    // Invalidate the counters.
+    counters_are_valid = false;
   }
 
   /// Determine the total number of tree nodes and which of these nodes need
@@ -353,6 +397,12 @@ public:
     }
     counters_are_valid = true;
   }
+
+  void
+  ensure_counters_are_valid() noexcept {
+    if (!counters_are_valid) {
+      init_counters();
+    }
   }
 
   // TODO make private
@@ -370,10 +420,11 @@ public:
     trailing_0label_cnt_ = (first_bit_idx_ != n_)
         ? n_ - last_bit_idx_ - 1
         : 0;
+    counters_are_valid = true;
   }
 
   // to be called after init_tree().
-  // the tree must not be pruned in any way.
+  // the tree MUST NOT be pruned in any way.
   void __attribute__((noinline))
   compress() {
     assert(explicit_node_idxs_.begin == n_ - 1);
@@ -727,6 +778,7 @@ public:
 
   void
   print(std::ostream& os) const noexcept {
+    std::stringstream l_os;
     for (std::size_t level = 0; level <= height_; ++level) {
       std::cout << std::setw(4) << level << ": ";
       u64 node_idx_from = (1ull << level) - 1;
@@ -737,11 +789,17 @@ public:
             : 0;
         if (node_idx == root()) {
           std::cout << (is_leaf_node(node_idx) ? "0" : "1");
+          if (is_leaf_node(node_idx)) {
+            l_os << (label_of_node(node_idx) ? "1" : "0");
+          }
         }
         else {
           std::cout << (is_leaf_node(node_idx)
                   ? is_leaf_node(parent_of(node_idx)) ? " " : "0"
                   : "1");
+          if (is_leaf_node(node_idx) && !is_leaf_node(parent_of(node_idx))) {
+            l_os << (label_of_node(node_idx) ? "1" : "0");
+          }
         }
         for (std::size_t i = 0; i < spaces; ++i) {
           std::cout << " ";
@@ -749,6 +807,9 @@ public:
       }
       std::cout << std::endl;
     }
+    std::cout
+        << std::setw(4) << "L" << ": "
+        << l_os.str() << std::endl;
   }
 
 private:
