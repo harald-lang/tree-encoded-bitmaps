@@ -1,5 +1,6 @@
 #pragma once
 //===----------------------------------------------------------------------===//
+#include <dtl/bitmap/util/bitmap_fun.hpp>
 #include <dtl/dtl.hpp>
 
 #include <boost/dynamic_bitset.hpp>
