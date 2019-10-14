@@ -4,6 +4,7 @@
 #include <dtl/bitmap.hpp>
 #include <dtl/bitmap/diff/diff.hpp>
 #include <dtl/bitmap/diff/merge.hpp>
+#include <dtl/bitmap/diff/merge_teb.hpp>
 #include <dtl/bitmap/util/random.hpp>
 //===----------------------------------------------------------------------===//
 // Tests for the differential update feature.
@@ -34,7 +35,10 @@ using diff_types_under_test = ::testing::Types<
     TestSetting<wah, wah, dtl::merge_naive_iter>,
     // In-place merge.
     TestSetting<roaring_bitmap, roaring_bitmap, dtl::merge_inplace>,
-    TestSetting<wah, wah, dtl::merge_inplace>>;
+    TestSetting<wah, wah, dtl::merge_inplace>,
+    // Tree-based merge (TEB only).
+    TestSetting<teb_v2, roaring_bitmap, dtl::merge_tree>,
+    TestSetting<teb_v2, wah, dtl::merge_tree>>;
 //===----------------------------------------------------------------------===//
 // Fixture for the parameterized test case.
 template<typename T>
@@ -151,7 +155,7 @@ TYPED_TEST(diff_test, merge) {
 TYPED_TEST(diff_test, random_updates) {
   using T = typename TypeParam::type;
 
-  for (auto len = 128; len <= 8192 * 2; len *= 2) {
+  for (auto len = 1024; len <= 8192 * 2; len *= 2) {
     std::cout << "testing size " << len << std::endl;
     for (std::size_t rep = 0; rep < 10; ++rep) {
       const auto bm_initial = dtl::gen_random_bitmap_markov(len, 8.0, 0.1);
@@ -159,25 +163,27 @@ TYPED_TEST(diff_test, random_updates) {
       T enc(bm_initial);
       auto plain = bm_initial;
 
-      // perform multiple batch updates
+      // Perform multiple batch updates.
       for (std::size_t i = 0; i < 5; ++i) {
         // prepare the updates
         const auto update = dtl::gen_random_bitmap_uniform(len, 0.01);
         plain |= update; // for comparison
-        // apply the updates
+        // Enqueue the updates.
         auto pos = update.find_first();
         while (pos != boost::dynamic_bitset<$u32>::npos) {
           enc.set(pos, true);
           pos = update.find_next(pos);
         }
-      }
+        // Merge the pending updates.
+        using merge_type = typename TypeParam::merge_type;
+        enc.template merge<merge_type>();
 
-      dtl::bitmap dec = dtl::to_bitmap_using_iterator(enc);
-      ASSERT_EQ(plain, dec)
-          << "Updates failed: "
-          << "'" << plain << "' -> '" << enc
-          << "' -> '" << dec << "'"
-          << std::endl;
+        dtl::bitmap dec = dtl::to_bitmap_using_iterator(enc);
+        ASSERT_EQ(plain, dec)
+            << "Failed to apply updates:\n"
+            << "              :'" << update << "'\n"
+            << "i=" << i << std::endl;
+      }
     }
   }
 }

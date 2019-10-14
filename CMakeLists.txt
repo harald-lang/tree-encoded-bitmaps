@@ -162,6 +162,7 @@ set(TEB_SOURCE_FILES
         src/dtl/bitmap.hpp
         src/dtl/bitmap/diff/diff.hpp
         src/dtl/bitmap/diff/merge.hpp
+        src/dtl/bitmap/diff/merge_teb.hpp
         src/dtl/bitmap/util/binary_tree_structure.hpp
         src/dtl/bitmap/util/bit_buffer.hpp
         src/dtl/bitmap/util/bit_buffer_avx2.hpp
@@ -169,6 +170,7 @@ set(TEB_SOURCE_FILES
         src/dtl/bitmap/util/bitmap_fun.hpp
         src/dtl/bitmap/util/bitmap_tree.hpp
         src/dtl/bitmap/util/bitmap_view.hpp
+        src/dtl/bitmap/util/mutable_bitmap_tree.hpp
         src/dtl/bitmap/util/plain_bitmap.hpp
         src/dtl/bitmap/util/rank1_naive.hpp
         src/dtl/bitmap/util/rank1_surf.hpp

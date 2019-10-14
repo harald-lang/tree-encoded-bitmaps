@@ -46,15 +46,15 @@ using types_under_test = ::testing::Types<
 
     // A Tree-encoded Bitmap implementation which allows to enable/disable the
     // space optimizations described in the paper.
-    teb_o0,
-    teb_o1,
-    teb_o2,
-    teb_o3,
+    // teb_o0,
+    // teb_o1,
+    // teb_o2,
+    // teb_o3,
 
     // Competitors
     plain_bitmap_32,
     roaring_bitmap,
-    wah
+    wah,
 
     // Differential
     diff_teb_roaring,

@@ -328,6 +328,7 @@ public: // TODO revert
   /// Returns true if the given node is an inner node, false otherwise.
   u1 __teb_inline__
   is_inner_node(size_type node_idx) const noexcept {
+    assert(node_idx < 2 * n_);
     const auto implicit_1bit_cnt = implicit_inner_node_cnt_;
     const auto implicit_leaf_begin = tree_bit_cnt_ + implicit_inner_node_cnt_;
     if (node_idx < implicit_1bit_cnt) {

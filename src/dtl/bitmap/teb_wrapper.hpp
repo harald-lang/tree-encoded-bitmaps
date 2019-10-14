@@ -44,6 +44,11 @@ public:
     teb_ = std::make_unique<teb_flat>(data_.data());
   }
 
+  teb_wrapper(const teb_wrapper& other) = delete;
+  teb_wrapper(teb_wrapper&& other) noexcept = default;
+  teb_wrapper& operator=(const teb_wrapper& other) = delete;
+  teb_wrapper& operator=(teb_wrapper&& other) noexcept = default;
+
   /// Return the name of the implementation.
   static std::string
   name() noexcept {
