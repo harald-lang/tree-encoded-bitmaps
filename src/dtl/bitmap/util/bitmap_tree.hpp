@@ -569,7 +569,7 @@ public:
       set_inner(idx);
 
 #ifndef NDEBUG
-      validate_counters();
+//      validate_counters();
 #endif
     }
   }

@@ -208,14 +208,17 @@ struct dynamic_bitmap {
   };
   //===--------------------------------------------------------------------===//
 
-  iter __forceinline__
+  using skip_iter_type = iter;
+  using scan_iter_type = iter;
+
+  skip_iter_type __forceinline__
   it() const {
-    return iter(*this);
+    return skip_iter_type(*this);
   }
 
-  iter __forceinline__
+  scan_iter_type __forceinline__
   scan_it() const {
-    return iter(*this);
+    return scan_iter_type(*this);
   }
 
   /// Returns the name of the instance including the most important parameters
