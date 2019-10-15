@@ -142,6 +142,7 @@ set(TEST_FILES
         test/dtl/bitmap/api_bitwise_operation_test.cpp
         test/dtl/bitmap/bitwise_operations_helper.hpp
         test/dtl/bitmap/diff_test.cpp
+        test/dtl/bitmap/update_test.cpp
         test/dtl/bitmap/teb_scan_util_test.cpp
         )
 add_executable(tester ${TEST_FILES})

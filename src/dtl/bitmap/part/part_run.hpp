@@ -94,7 +94,7 @@ class part_run {
     /// Sets the boolean value.
     void
     set_value(u1 val) noexcept {
-      assert(is_value()); // otherwise we would leak memory
+      assert(is_value() || ptr == nullptr); // otherwise we would leak memory
       if (val == true) {
         ptr = reinterpret_cast<B*>(ptr_tag_mask | value_mask);
       }
@@ -475,6 +475,53 @@ public:
     return scan_iter_type(*this);
   }
   //===--------------------------------------------------------------------===//
+
+  /// Set the i-th bit to the given value.
+  void __forceinline__
+  set(std::size_t i, u1 val) noexcept {
+    const auto part_idx = i / part_bitlength;
+    auto& current_part = parts_[part_idx];
+    // Helper function to decompress a partition.
+    auto decompress = [&]() {
+      if (current_part.is_pointer()) {
+        B* b = current_part.get_pointer();
+        auto dec = dtl::to_bitmap_using_iterator(*b);
+        return std::move(dec);
+      }
+      else {
+        boost::dynamic_bitset<$u32> dec(n_);
+        if (current_part.get_value() == true) {
+          dec.flip();
+        }
+        return std::move(dec);
+      }
+
+    };
+    // Helper function to compress a partition.
+    auto compress_and_install = [&](boost::dynamic_bitset<$u32>& b) {
+      // Delete outdated bitmap (if exists).
+      if (current_part.is_pointer()) {
+        delete current_part.get_pointer();
+        current_part.set_pointer(nullptr);
+      }
+      // Is it a single-run partition?
+      const auto b_count = b.count();
+      if (b_count == 0 || b_count == part_bitlength) {
+        current_part.set_value(b_count == part_bitlength);
+      }
+      else {
+        // Compress.
+        current_part.set_pointer(new B(b));
+      }
+    };
+
+    // Decompress.
+    auto dec = decompress();
+    // Apply the update.
+    dec[i % part_bitlength] = val;
+    // Re-compress and install.
+    compress_and_install(dec);
+  }
 };
 //===----------------------------------------------------------------------===//
 } // namespace dtl
