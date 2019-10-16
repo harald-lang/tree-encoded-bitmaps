@@ -274,14 +274,10 @@ public:
       pos_ = to_pos;
       return;
     }
-    // TODO: implement efficient skip support
-    while (!end() && (pos_ + length_) <= to_pos) {
-      operation::next(it_a_, it_b_, pos_, length_);
-    }
-    if (!end() && to_pos > pos_) {
-      length_ -= to_pos - pos_;
-      pos_ = to_pos;
-    }
+    // TODO remove condition check. - the problem here is, that internally, the iterators were already advanced
+    if (to_pos > it_a_.pos()) it_a_.skip_to(to_pos);
+    if (to_pos > it_b_.pos()) it_b_.skip_to(to_pos);
+    operation::next(it_a_, it_b_, pos_, length_);
   }
 
   /// Returns true if the iterator reached the end, false otherwise.
