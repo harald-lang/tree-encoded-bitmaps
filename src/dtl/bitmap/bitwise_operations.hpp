@@ -12,7 +12,7 @@ namespace internal {
 struct bitwise_and {
   template<typename iter_ta, typename iter_tb>
   static void __forceinline__
-  next(iter_ta& it_a, iter_tb& it_b, $u64& output_pos, $u64& output_length) {
+  first(iter_ta& it_a, iter_tb& it_b, $u64& output_pos, $u64& output_length) {
     while (!(it_a.end() || it_b.end())) {
       const auto a_begin = it_a.pos();
       const auto a_end = it_a.pos() + it_a.length();
@@ -24,12 +24,52 @@ struct bitwise_and {
       u1 overlap = begin_max < end_min;
 
       if (overlap) {
-        if (a_end <= b_end) {
-          it_a.next();
+        // Produce an output.
+        output_pos = begin_max;
+        output_length = end_min - begin_max;
+        return;
+      }
+      else {
+        if (a_end < b_end) {
+          it_a.skip_to(b_begin);
         }
-        if (b_end <= a_end) {
-          it_b.next();
+        else {
+          it_b.skip_to(a_begin);
         }
+      }
+    }
+    output_pos = 0;
+    output_length = 0;
+  }
+
+  template<typename iter_ta, typename iter_tb>
+  static void __forceinline__
+  next(iter_ta& it_a, iter_tb& it_b, $u64& output_pos, $u64& output_length) {
+    // assert a and b overlap
+    {
+      const auto a_begin = it_a.pos();
+      const auto a_end = it_a.pos() + it_a.length();
+      const auto b_begin = it_b.pos();
+      const auto b_end = it_b.pos() + it_b.length();
+      if (a_end <= b_end) {
+        it_a.next();
+      }
+      if (b_end <= a_end) {
+        it_b.next();
+      }
+    }
+
+    while (!(it_a.end() || it_b.end())) {
+      const auto a_begin = it_a.pos();
+      const auto a_end = it_a.pos() + it_a.length();
+      const auto b_begin = it_b.pos();
+      const auto b_end = it_b.pos() + it_b.length();
+
+      const auto begin_max = (a_begin < b_begin) ? b_begin : a_begin;
+      const auto end_min = (a_end < b_end) ? a_end : b_end;
+      u1 overlap = begin_max < end_min;
+
+      if (overlap) {
         // Produce an output.
         output_pos = begin_max;
         output_length = end_min - begin_max;
@@ -50,6 +90,12 @@ struct bitwise_and {
 };
 //===----------------------------------------------------------------------===//
 struct bitwise_or {
+  template<typename iter_ta, typename iter_tb>
+  static void __forceinline__
+  first(iter_ta& it_a, iter_tb& it_b, $u64& output_pos, $u64& output_length) {
+    next(it_a, it_b, output_pos, output_length);
+  }
+
   template<typename iter_ta, typename iter_tb>
   static void __forceinline__
   next(iter_ta& it_a, iter_tb& it_b, $u64& output_pos, $u64& output_length) {
@@ -110,6 +156,13 @@ struct bitwise_or {
 };
 //===----------------------------------------------------------------------===//
 struct bitwise_xor {
+  // TODO implement
+  template<typename iter_ta, typename iter_tb>
+  static void __forceinline__
+  first(iter_ta& it_a, iter_tb& it_b, $u64& output_pos, $u64& output_length) {
+    next(it_a, it_b, output_pos, output_length);
+  }
+
   template<typename iter_ta, typename iter_tb>
   static void __forceinline__
   next(iter_ta& it_a, iter_tb& it_b, $u64& output_pos, $u64& output_length) {
@@ -123,7 +176,7 @@ struct bitwise_xor {
       const auto begin_max = (a_begin < b_begin) ? b_begin : a_begin;
       const auto end_min = (a_end < b_end) ? a_end : b_end;
       const auto end_max = (a_end > b_end) ? a_end : b_end;
-      u1 overlapping = begin_max <= end_min;
+      u1 overlapping = begin_max < end_min;
 
       if (overlapping) {
         if (a_end < b_end) {
@@ -144,7 +197,7 @@ struct bitwise_xor {
         if (output_length > 0) return;
       }
       else {
-        if (a_end < b_begin) {
+        if (a_end <= b_begin) {
           it_a.next();
           // Produce an output.
           output_pos = a_begin;
@@ -180,6 +233,13 @@ struct bitwise_xor {
 };
 //===----------------------------------------------------------------------===//
 struct bitwise_xor_re {
+  // TODO implement
+  template<typename iter_ta, typename iter_tb>
+  static void __forceinline__
+  first(iter_ta& it_a, iter_tb& it_b, $u64& output_pos, $u64& output_length) {
+    next(it_a, it_b, output_pos, output_length);
+  }
+
   template<typename iter_ta, typename iter_tb>
   static void __forceinline__
   next(iter_ta& it_a, iter_tb& it_b, $u64& output_pos, $u64& output_length) {
@@ -256,7 +316,7 @@ class bitwise_iter {
 public:
   bitwise_iter(iter_ta&& it_a, iter_tb&& it_b)
       : it_a_(std::move(it_a)), it_b_(std::move(it_b)) {
-    next();
+    operation::first(it_a_, it_b_, pos_, length_);
   }
 
   __forceinline__
