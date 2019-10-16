@@ -28,16 +28,18 @@ class diff {
   std::unique_ptr<B> bitmap_;
   /// Contains the pending updates.
   std::unique_ptr<D> diff_;
+  /// Used to avoid unnecessary merge operations.
+  $u1 has_pending_updates_;
 
 public:
-
   using bitmap_type = B;
   using diff_type = D;
 
   /// C'tor (similar to all other implementations)
   diff(const boost::dynamic_bitset<$u32>& bitmap)
       : bitmap_(std::make_unique<B>(bitmap)),
-        diff_(std::make_unique<D>(bitmap.size())) {}
+        diff_(std::make_unique<D>(bitmap.size())),
+        has_pending_updates_(false) {}
 
   /// Return the name of the implementation.
   static std::string
@@ -83,6 +85,7 @@ public:
   /// Set the i-th bit to the given value.
   void __forceinline__
   set(std::size_t i, u1 val) noexcept {
+    has_pending_updates_ = true;
     diff_->set(i, bitmap_->test(i) ^ val);
   }
 
@@ -90,6 +93,8 @@ public:
   template<typename M>
   void
   merge() {
+    if (!has_pending_updates_) return;
+
     // Apply the updates.
     M merge_strategy;
     merge_strategy.merge(bitmap_, diff_);
@@ -128,12 +133,14 @@ public:
   }
 
   /// Returns a pointer to the compressed bitmap.
-  B* get_bitmap() const noexcept {
+  B*
+  get_bitmap() const noexcept {
     return bitmap_.get();
   }
 
   /// Returns a pointer to the diff.
-  D* get_diff() const noexcept {
+  D*
+  get_diff() const noexcept {
     return diff_.get();
   }
 };
