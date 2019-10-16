@@ -19,6 +19,7 @@ class part {
   static_assert(dtl::is_power_of_two(P),
       "The partition size must be a power of two.");
 
+protected:
   /// Pointer to the partitions.
   std::vector<std::unique_ptr<B>> parts_;
   /// The (total) length of the bitmap.
@@ -309,19 +310,6 @@ public:
     return scan_iter_type(*this);
   }
   //===--------------------------------------------------------------------===//
-
-  /// Set the i-th bit to the given value.
-  void __forceinline__
-  set(std::size_t i, u1 val) noexcept {
-    const auto part_idx = i / part_bitlength;
-    // Decompress the partition.
-    auto dec = dtl::to_bitmap_using_iterator(*parts_[part_idx]);
-    // Apply the update.
-    dec[i % part_bitlength] = val;
-    // Re-compress and install the partition.
-    auto compressed_part_ptr = std::make_unique<B>(dec);
-    std::swap(compressed_part_ptr, parts_[part_idx]);
-  }
 };
 //===----------------------------------------------------------------------===//
 } // namespace dtl

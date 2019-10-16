@@ -142,6 +142,7 @@ set(TEST_FILES
         test/dtl/bitmap/api_bitwise_operation_test.cpp
         test/dtl/bitmap/bitwise_operations_helper.hpp
         test/dtl/bitmap/diff_test.cpp
+        test/dtl/bitmap/part_diff_test.cpp
         test/dtl/bitmap/update_test.cpp
         test/dtl/bitmap/teb_scan_util_test.cpp
         )
@@ -166,6 +167,8 @@ set(TEB_SOURCE_FILES
         src/dtl/bitmap/diff/merge_teb.hpp
         src/dtl/bitmap/part/part.hpp
         src/dtl/bitmap/part/part_run.hpp
+        src/dtl/bitmap/part/part_updirect.hpp
+        src/dtl/bitmap/part/part_upforward.hpp
         src/dtl/bitmap/util/binary_tree_structure.hpp
         src/dtl/bitmap/util/bit_buffer.hpp
         src/dtl/bitmap/util/bit_buffer_avx2.hpp

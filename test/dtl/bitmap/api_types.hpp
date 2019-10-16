@@ -9,6 +9,8 @@
 #include <dtl/bitmap/dynamic_wah.hpp>
 #include <dtl/bitmap/part/part.hpp>
 #include <dtl/bitmap/part/part_run.hpp>
+#include <dtl/bitmap/part/part_updirect.hpp>
+#include <dtl/bitmap/part/part_upforward.hpp>
 #include <dtl/bitmap/partitioned_position_list.hpp>
 #include <dtl/bitmap/partitioned_range_list.hpp>
 #include <dtl/bitmap/position_list.hpp>
@@ -22,10 +24,12 @@ using teb_o0 = dtl::teb<0>;
 using teb_o1 = dtl::teb<1>;
 using teb_o2 = dtl::teb<2>;
 using teb_o3 = dtl::teb<3>;
+
 // Competitors
 using plain_bitmap_32 = dtl::dynamic_bitmap<$u32>;
 using roaring_bitmap = dtl::dynamic_roaring_bitmap;
 using wah = dtl::dynamic_wah32;
+
 // Differential (EXPERIMENTAL)
 using diff_teb_roaring = dtl::diff<teb_v2, roaring_bitmap>;
 using diff_teb_wah = dtl::diff<teb_v2, wah>;
@@ -33,11 +37,20 @@ using diff_roaring_roaring = dtl::diff<roaring_bitmap, roaring_bitmap>;
 using diff_roaring_wah = dtl::diff<roaring_bitmap, wah>;
 using diff_wah_roaring = dtl::diff<wah, roaring_bitmap>;
 using diff_wah_wah = dtl::diff<wah, wah>;
+
 // Partitioned (EXPERIMENTAL)
-using part_8_teb = dtl::part<teb_v2, 1ull << 8>;
-using part_16_teb = dtl::part<teb_v2, 1ull << 16>;
-using part_8_wah = dtl::part<wah, 1ull << 8>;
-using part_16_wah = dtl::part<wah, 1ull << 16>;
+// - Updates are handled directly (by re-compressing affected partitions)..
+using part_8_teb = dtl::part_updirect<teb_v2, 1ull << 8>;
+using part_16_teb = dtl::part_updirect<teb_v2, 1ull << 16>;
+using part_8_wah = dtl::part_updirect<wah, 1ull << 8>;
+using part_16_wah = dtl::part_updirect<wah, 1ull << 16>;
+// - Updates are forwarded to the internal type.
+using part_8_upfwd_wah = dtl::part_upforward<wah, 1ull << 8>;
+using part_16_upfwd_wah = dtl::part_upforward<wah, 1ull << 16>;
+using part_8_upfwd_diff_teb = dtl::part_upforward<diff_teb_roaring, 1ull << 8>;
+using part_16_upfwd_diff_teb = dtl::part_upforward<diff_teb_roaring, 1ull << 16>;
+
+// Partitioned, with single-value optimization (EXPERIMENTAL)
 using part_run_8_teb = dtl::part_run<teb_v2, 1ull << 8>;
 using part_run_16_teb = dtl::part_run<teb_v2, 1ull << 16>;
 using part_run_8_wah = dtl::part_run<wah, 1ull << 8>;
@@ -67,7 +80,7 @@ using types_under_test = ::testing::Types<
     roaring_bitmap,
     wah,
 
-    // Differential
+    // Differential (EXPERIMENTAL)
     diff_teb_roaring,
     diff_teb_wah,
     diff_roaring_roaring,
