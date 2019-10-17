@@ -179,7 +179,7 @@ set(TEB_SOURCE_FILES
         src/dtl/bitmap/util/bitmap_view.hpp
         src/dtl/bitmap/util/mutable_bitmap_tree.hpp
         src/dtl/bitmap/util/plain_bitmap.hpp
-        src/dtl/bitmap/util/rank1_naive.hpp
+        src/dtl/bitmap/util/rank1_logic_linear.hpp
         src/dtl/bitmap/util/rank1.hpp
         src/dtl/bitmap/util/rank1_logic_surf.hpp
         src/dtl/bitmap/bitwise_operations.hpp

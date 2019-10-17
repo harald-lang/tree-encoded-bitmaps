@@ -3,6 +3,7 @@
 #include <dtl/bitmap/util/plain_bitmap.hpp>
 #include <dtl/bitmap/util/random.hpp>
 #include <dtl/bitmap/util/rank1.hpp>
+#include <dtl/bitmap/util/rank1_logic_linear.hpp>
 #include <dtl/bitmap/util/rank1_logic_surf.hpp>
 //===----------------------------------------------------------------------===//
 // Tests for the rank1 implementations.
@@ -24,7 +25,10 @@ using rank_types_under_test = ::testing::Types<
     dtl::rank1_logic_surf<word_type, inclusive, 128>,
     dtl::rank1_logic_surf<word_type, exclusive, 128>,
     dtl::rank1_logic_surf<word_type, inclusive, 64>,
-    dtl::rank1_logic_surf<word_type, exclusive, 64>>;
+    dtl::rank1_logic_surf<word_type, exclusive, 64>,
+    dtl::rank1_logic_linear<word_type, inclusive>,
+    dtl::rank1_logic_linear<word_type, exclusive>,
+    >;
 //===----------------------------------------------------------------------===//
 // Fixture for the parameterized test case.
 template<typename T>

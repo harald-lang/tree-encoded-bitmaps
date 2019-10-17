@@ -5,7 +5,6 @@
 
 #include <string>
 #include <type_traits>
-#include <vector>
 //===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//
@@ -14,7 +13,7 @@ namespace dtl {
 template<
     /// The word type used to store bitmaps.
     typename _word_type = $u64,
-    /// Inclusive [b,e] vs exclusive [b,e]
+    /// Inclusive [b,e] vs exclusive [b,e)
     u1 _inclusive = false,
     /// The granularity of the rank lookup table.
     u64 _block_bitlength = 512>
@@ -36,7 +35,6 @@ struct rank1_logic_surf {
   rank1_logic_surf() = delete;
   ~rank1_logic_surf() = delete;
 
-private:
   /// Computes the popcount within the range [x, x + nbits).
   static size_type __forceinline__
   popcount_linear(const uint64_t* bits, uint64_t x, uint64_t nbits) noexcept {
