@@ -114,7 +114,7 @@ public:
   /// Returns the name of the implementation.
   static std::string
   name() noexcept {
-    return std::string("\"SuRF\"");
+    return std::string("SuRF");
   }
 };
 //===----------------------------------------------------------------------===//

@@ -58,7 +58,7 @@ struct rank1_logic_linear {
   /// Returns the name of the implementation.
   static std::string
   name() noexcept {
-    return std::string("\"Linear\"");
+    return std::string("Linear");
   }
 };
 //===----------------------------------------------------------------------===//

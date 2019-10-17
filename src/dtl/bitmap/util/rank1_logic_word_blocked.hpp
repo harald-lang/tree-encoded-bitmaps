@@ -79,7 +79,7 @@ struct rank1_logic_word_blocked {
   /// Returns the name of the implementation.
   static std::string
   name() noexcept {
-    return std::string("\"WordBlocked\"");
+    return std::string("WordBlocked");
   }
 };
 //===----------------------------------------------------------------------===//
