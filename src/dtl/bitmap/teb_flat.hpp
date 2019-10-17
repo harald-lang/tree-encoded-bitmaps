@@ -27,7 +27,7 @@ public: // TODO remove
   static constexpr auto word_size = sizeof(word_type);
   static constexpr auto word_bitlength = word_size * 8;
 
-  using rank_type = teb_rank_type;
+  using rank_type = teb_rank_logic_type;
   using size_type = teb_size_type;
   using bitmap_fn = dtl::bitmap_fun<word_type>;
 
@@ -50,7 +50,7 @@ public: // TODO remove
   const dtl::bitmap_view<const word_type> L_;
 
   const size_type* rank_lut_ptr_;
-  rank_type rank_;
+  teb_rank_type rank_;
 
   const size_type* level_offsets_tree_lut_ptr_;
   const size_type* level_offsets_labels_lut_ptr_;

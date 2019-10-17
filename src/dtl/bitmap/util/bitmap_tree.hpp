@@ -2,7 +2,8 @@
 //===----------------------------------------------------------------------===//
 #include "binary_tree_structure.hpp"
 #include "plain_bitmap.hpp"
-#include "rank1_surf.hpp"
+#include "rank1.hpp"
+#include "rank1_logic_surf.hpp"
 
 #include <dtl/dtl.hpp>
 
@@ -661,7 +662,7 @@ public:
     }
     // Rank helper structure
     if (explicit_tree_node_cnt > 1024) {
-      bytes += dtl::rank1_surf<u64>::estimate_size_in_bytes(explicit_tree_node_cnt);
+      bytes += dtl::rank1_logic_surf<u64>::estimate_size_in_bytes(explicit_tree_node_cnt);
     }
 
     // Labels

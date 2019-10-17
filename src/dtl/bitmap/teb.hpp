@@ -20,10 +20,10 @@
 
 #include "boost/dynamic_bitset.hpp"
 
-#include <dtl/dtl.hpp>
-#include <dtl/bits.hpp>
-#include <dtl/bitmap/util/rank1_surf.hpp>
 #include <dtl/bitmap/util/bit_buffer.hpp>
+#include <dtl/bitmap/util/rank1.hpp>
+#include <dtl/bits.hpp>
+#include <dtl/dtl.hpp>
 #ifdef __AVX2__
 #include <dtl/bitmap/util/bit_buffer_avx2.hpp>
 #endif // __AVX2__
@@ -89,7 +89,7 @@ public:
 
   /// Support data structure for rank1 operations on the tree structure.
   static constexpr u1 inclusive = true;
-  using rank_support = dtl::rank1_surf<word_type, inclusive>;
+  using rank_support = dtl::rank1<dtl::rank1_logic_surf<word_type, inclusive>>;
   rank_support rank_;
 
   /// The number of implicit inner nodes in the tree structure.

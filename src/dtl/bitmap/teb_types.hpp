@@ -1,6 +1,7 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include "util/rank1_surf.hpp"
+#include "util/rank1.hpp"
+#include "util/rank1_logic_surf.hpp"
 
 #include <dtl/dtl.hpp>
 //===----------------------------------------------------------------------===//
@@ -20,8 +21,10 @@ namespace dtl {
 using teb_size_type = $u32;
 /// The storage type. The size of a TEB is a multiple of sizeof(teb_word_type).
 using teb_word_type = $u64;
+/// The rank1 logic.
+using teb_rank_logic_type = dtl::rank1_logic_surf<teb_word_type, true>;
 /// Support data structure for rank1 operations on the tree structure.
-using teb_rank_type = dtl::rank1_surf<teb_word_type, true>;
+using teb_rank_type = dtl::rank1<teb_rank_logic_type>;
 //===----------------------------------------------------------------------===//
 #pragma pack(push, 1)
 /// The header of a TEB.

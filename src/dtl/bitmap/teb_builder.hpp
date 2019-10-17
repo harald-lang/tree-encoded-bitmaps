@@ -185,7 +185,8 @@ teb_builder::serialize(word_type* dst) {
   // Write the rank LuT.
   auto* rank_ptr = teb_flat::get_rank_ptr(ptr);
   if (rank_ptr != nullptr) {
-    teb_rank_type::init_inplace(tree_ptr, tree_ptr + tree_word_cnt, rank_ptr);
+    teb_rank_logic_type::init_inplace(
+        tree_ptr, tree_ptr + tree_word_cnt, rank_ptr);
   }
 
   // Write the additional meta data.
