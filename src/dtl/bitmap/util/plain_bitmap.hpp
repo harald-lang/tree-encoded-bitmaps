@@ -107,9 +107,22 @@ public:
     bitmap_fun<word_type>::clear(bitmap_.data(), b, e);
   }
 
+  /// Returns a pointer to the first word of the bitmap.
   __forceinline__ word_type*
-  data() {
+  data() noexcept {
     return bitmap_.data();
+  }
+
+  /// Returns a pointer to the first word of the bitmap.
+  __forceinline__ word_type*
+  data_begin() noexcept {
+    return bitmap_.data();
+  }
+
+  /// Returns a pointer to one past the last word of the bitmap.
+  __forceinline__ word_type*
+  data_end() noexcept {
+    return bitmap_.data() + bitmap_.size();
   }
 
   /// Fetch up to size(word_type)*8 consecutive bits from the range [b,e).
@@ -144,7 +157,6 @@ public:
     for (std::size_t i = 0; i < n_; ++i) {
       os << (test(i) ? "1" : "0");
     }
-    os << std::endl;
   }
 };
 //===----------------------------------------------------------------------===//

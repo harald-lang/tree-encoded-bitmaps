@@ -134,6 +134,7 @@ set(TEST_FILES
         test/dtl/bitmap/util/bit_buffer_avx512_test.cpp
         test/dtl/bitmap/util/bit_buffer_test.cpp
         test/dtl/bitmap/util/bitmap_fun_test.cpp
+        test/dtl/bitmap/util/rank_test.cpp
         test/dtl/bitmap/api_types.hpp
         test/dtl/bitmap/api_encode_decode_test.cpp
         test/dtl/bitmap/api_random_access_test.cpp

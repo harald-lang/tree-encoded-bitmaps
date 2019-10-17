@@ -9,9 +9,15 @@
 //===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//
-template<typename _word_type = $u64, u1 _inclusive = false>
 /// Rank implementation that uses a precomputed lookup table (aka a dictionary).
 /// Adapted from https://github.com/efficient/SuRF/blob/master/include/popcount.h
+template<
+    /// The word type used to store bitmaps.
+    typename _word_type = $u64,
+    /// Inclusive [b,e] vs exclusive [b,e]
+    u1 _inclusive = false,
+    /// The granularity of the rank lookup table.
+    u64 _block_bitlength = 512>
 struct rank1_surf {
   using word_type = typename std::remove_cv<_word_type>::type;
 
@@ -20,11 +26,16 @@ struct rank1_surf {
   /// Lookup table for the pre-computed rank values on block level.
   std::vector<size_type> lut;
 
-  static constexpr u64 block_bitlength = 512;
+  static constexpr u64 block_bitlength = _block_bitlength;
   static constexpr u64 word_bitlength = sizeof(word_type) * 8;
   static constexpr u64 words_per_block = block_bitlength / word_bitlength;
-
   static constexpr u64 is_inclusive = _inclusive ? 1 : 0;
+
+  static_assert(dtl::is_power_of_two(block_bitlength),
+      "The block size must be a power of two.");
+  static_assert((block_bitlength % word_bitlength) == 0,
+      "The block size must be a multiple of word size.");
+
   ~rank1_surf() = default;
 
 #define popcountsize 64ULL
@@ -108,7 +119,7 @@ struct rank1_surf {
   }
 
   /// Initializes the rank LuT in place. The function estimate_size_in_bytes()
-  /// allows to predetermine the number of required memory.
+  /// allows to predetermine the required memory.
   static void
   init_inplace(
       const word_type* const bitmap_begin,
