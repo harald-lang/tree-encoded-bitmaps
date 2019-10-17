@@ -182,6 +182,7 @@ set(TEB_SOURCE_FILES
         src/dtl/bitmap/util/rank1_logic_linear.hpp
         src/dtl/bitmap/util/rank1.hpp
         src/dtl/bitmap/util/rank1_logic_surf.hpp
+        src/dtl/bitmap/util/rank1_logic_word_blocked.hpp
         src/dtl/bitmap/bitwise_operations.hpp
         src/dtl/bitmap/iterator.hpp
         src/dtl/bitmap/teb.hpp

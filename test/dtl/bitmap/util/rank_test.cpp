@@ -5,6 +5,7 @@
 #include <dtl/bitmap/util/rank1.hpp>
 #include <dtl/bitmap/util/rank1_logic_linear.hpp>
 #include <dtl/bitmap/util/rank1_logic_surf.hpp>
+#include <dtl/bitmap/util/rank1_logic_word_blocked.hpp>
 //===----------------------------------------------------------------------===//
 // Tests for the rank1 implementations.
 //===----------------------------------------------------------------------===//
@@ -28,6 +29,8 @@ using rank_types_under_test = ::testing::Types<
     dtl::rank1_logic_surf<word_type, exclusive, 64>,
     dtl::rank1_logic_linear<word_type, inclusive>,
     dtl::rank1_logic_linear<word_type, exclusive>,
+    dtl::rank1_logic_word_blocked<word_type, inclusive>,
+    dtl::rank1_logic_word_blocked<word_type, exclusive>
     >;
 //===----------------------------------------------------------------------===//
 // Fixture for the parameterized test case.
