@@ -304,6 +304,15 @@ set(REAL_SOURCE_FILES
 add_executable(real ${REAL_SOURCE_FILES})
 target_link_libraries(real fastbit pthread dl boost_system boost_filesystem jemalloc)
 
+# REVISION Real (varying rank granularities)
+set(REAL_REVISION_SOURCE_FILES
+        ${SOURCE_FILES}
+        ${BENCHMARK_SOURCE_FILES}
+        experiments/real/real_revision.cpp
+        )
+add_executable(real_revision ${REAL_REVISION_SOURCE_FILES})
+target_link_libraries(real_revision fastbit pthread dl boost_system boost_filesystem jemalloc)
+
 # copy the data set to the build directory
 file(COPY experiments/real/real-roaring-dataset DESTINATION ${PROJECT_BINARY_DIR})
 
@@ -335,6 +344,17 @@ set(EXPERIMENT_PERFORMANCE_INTERSECT_SOURCE_FILES
         )
 add_executable(ex_performance_intersect ${EXPERIMENT_PERFORMANCE_INTERSECT_SOURCE_FILES})
 target_link_libraries(ex_performance_intersect fastbit pthread dl)
+
+# REVISION: Performance, intersect (varying rank granularity)
+set(EXPERIMENT_PERFORMANCE_INTERSECT_REVISION_SOURCE_FILES
+        ${SOURCE_FILES}
+        ${BENCHMARK_SOURCE_FILES}
+        experiments/performance/common.hpp
+        experiments/performance/common_bitwise_revision.hpp
+        experiments/performance/main_performance_intersect_revision.cpp
+        )
+add_executable(ex_performance_intersect_revision ${EXPERIMENT_PERFORMANCE_INTERSECT_REVISION_SOURCE_FILES})
+target_link_libraries(ex_performance_intersect_revision fastbit pthread dl)
 
 set(EXPERIMENT_MICROBENCHMARK_DOWNWARDS_NAV_SOURCE_FILES
         ${SOURCE_FILES}

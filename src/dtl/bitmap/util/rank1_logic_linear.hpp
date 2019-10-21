@@ -23,6 +23,7 @@ struct rank1_logic_linear {
   using word_type = typename std::remove_cv<_word_type>::type;
   using size_type = $u32;
   static constexpr u64 is_inclusive = _inclusive ? 1 : 0;
+  static constexpr u64 block_bitlength = 0;
 
   // Pure static.
   rank1_logic_linear() = delete;

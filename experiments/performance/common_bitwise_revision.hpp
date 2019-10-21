@@ -3,6 +3,9 @@
 #include "common.hpp"
 
 #include <dtl/bitmap/bitwise_operations.hpp>
+#include <dtl/bitmap/util/rank1_logic_word_blocked.hpp>
+#include <dtl/bitmap/util/rank1_logic_surf.hpp>
+#include <dtl/bitmap/util/rank1_logic_linear.hpp>
 //===----------------------------------------------------------------------===//
 template<typename T>
 void __attribute__((noinline))
@@ -157,15 +160,43 @@ void run_intersect(config_pair c, std::ostream& os) {
       run_intersect<dtl::dynamic_roaring_bitmap>(c, os);
       break;
     case bitmap_t::teb:
-      run_intersect<dtl::teb<>>(c, os);
+      // REVISION: Vary the rank granularity.
+      {
+        using rank_type = dtl::rank1<dtl::rank1_logic_word_blocked<$u64, true>>;
+        run_intersect<dtl::teb<3, rank_type>>(c, os);
+      }
+      {
+        using rank_type = dtl::rank1<dtl::rank1_logic_surf<$u64, true, 128>>;
+        run_intersect<dtl::teb<3, rank_type>>(c, os);
+      }
+      {
+        using rank_type = dtl::rank1<dtl::rank1_logic_surf<$u64, true, 256>>;
+        run_intersect<dtl::teb<3, rank_type>>(c, os);
+      }
+      {
+        using rank_type = dtl::rank1<dtl::rank1_logic_surf<$u64, true, 512>>;
+        run_intersect<dtl::teb<3, rank_type>>(c, os);
+      }
+      {
+        using rank_type = dtl::rank1<dtl::rank1_logic_surf<$u64, true, 1024>>;
+        run_intersect<dtl::teb<3, rank_type>>(c, os);
+      }
+      {
+        using rank_type = dtl::rank1<dtl::rank1_logic_surf<$u64, true, 2048>>;
+        run_intersect<dtl::teb<3, rank_type>>(c, os);
+      }
+      {
+        using rank_type = dtl::rank1<dtl::rank1_logic_linear<$u64, true>>;
+        run_intersect<dtl::teb<3, rank_type>>(c, os);
+      }
       break;
     case bitmap_t::wah:
       run_intersect<dtl::dynamic_wah32>(c, os);
       break;
-    case bitmap_t::teb_wrapper:
-      run_intersect<dtl::teb_wrapper>(c, os);
-      break;
       // clang-format off
+//    case bitmap_t::teb_wrapper:
+//      run_intersect<dtl::teb_wrapper>(c, os);
+//      break;
 //    case bitmap_t::teb_scan:
 //      run_intersect<dtl::teb_scan<>>(c, os);
 //      break;
