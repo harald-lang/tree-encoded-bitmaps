@@ -1,6 +1,7 @@
 #pragma once
 //===----------------------------------------------------------------------===//
 #include "experiments/util/bitmap_db.hpp"
+#include "experiments/util/bitmap_types.hpp"
 #include "experiments/util/threading.hpp"
 
 #include <dtl/bitmap/dynamic_bitmap.hpp>
@@ -44,24 +45,6 @@ static const std::string DB_FILE =
 static u64 GEN_DATA = dtl::env<$u64>::get("GEN_DATA", 0);
 /// The database instance where the bitmaps are stored.
 static bitmap_db db(DB_FILE);
-//===----------------------------------------------------------------------===//
-/// All implementations that should be considered in the experiment.
-enum class bitmap_t {
-  bitmap,
-  roaring,
-  teb,
-  teb_scan,
-  teb_wrapper,
-  wah,
-  position_list,
-  partitioned_position_list_u8,
-  partitioned_position_list_u16,
-  range_list,
-  partitioned_range_list_u8,
-  partitioned_range_list_u16,
-  _first = bitmap,
-  _last = partitioned_range_list_u16
-};
 //===----------------------------------------------------------------------===//
 /// Refers to a single independent task that is executed during the experiment.
 struct config {

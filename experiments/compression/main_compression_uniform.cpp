@@ -88,12 +88,13 @@ $i32 main() {
   std::vector<$f64> bit_densities;
   // log scale
   for ($f64 d = 1; d <= 10000; d *= 1.25) {
-    bit_densities.push_back(1.0 - d / 10000);
+    bit_densities.push_back(d / 10000);
+//    bit_densities.push_back(1.0 - d / 10000); // reverse
   }
   // linear scale
   bit_densities.push_back(0.01);
   for ($f64 d = 5; d <= 100; d += 5) {
-    //    bit_densities.push_back(d/100);
+    bit_densities.push_back(d/100);
   }
 
   std::vector<$u64> n_values;
@@ -136,6 +137,9 @@ $i32 main() {
 
       auto bitmap_ids = db.find_bitmaps(n, d);
       if (bitmap_ids.empty()) {
+        std::cerr
+            << "Couldn't find any bitmap with n=" << n << " and d=" << d << "."
+            << std::endl;
         continue;
       }
       if (bitmap_ids.size() < RUNS) {
