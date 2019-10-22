@@ -113,6 +113,11 @@ public:
     return bitmap_.data();
   }
 
+  __forceinline__ const word_type*
+  data() const noexcept {
+    return bitmap_.data();
+  }
+
   /// Returns a pointer to the first word of the bitmap.
   __forceinline__ word_type*
   data_begin() noexcept {
@@ -138,6 +143,59 @@ public:
     return bitmap_fun<word_type>::fetch_bits(bitmap_.data(), b, e);
   }
 
+  /// Bitwise AND
+  plain_bitmap __forceinline__
+  operator&(const plain_bitmap& other) const {
+    assert(size() == other.size());
+    plain_bitmap ret(size());
+    for (std::size_t w = 0; w < bitmap_.size(); ++w) {
+      ret.data()[w] = data()[w] & other.data()[w]; // TODO SIMDize
+    }
+    return ret;
+  }
+
+  /// Bitwise OR
+  plain_bitmap __forceinline__
+  operator|(const plain_bitmap& other) const {
+    assert(size() == other.size());
+    plain_bitmap ret(size());
+    for (std::size_t w = 0; w < bitmap_.size(); ++w) {
+      ret.data()[w] = data()[w] | other.data()[w]; // TODO SIMDize
+    }
+    return ret;
+  }
+
+  /// Bitwise XOR
+  plain_bitmap __forceinline__
+  operator^(const plain_bitmap& other) const {
+    assert(size() == other.size());
+    plain_bitmap ret(size());
+    for (std::size_t w = 0; w < bitmap_.size(); ++w) {
+      ret.data()[w] = data()[w] ^ other.data()[w]; // TODO SIMDize
+    }
+    return ret;
+  }
+
+  /// Bitwise NOT
+  plain_bitmap __forceinline__
+  operator~() const {
+    plain_bitmap ret(size());
+    for (std::size_t w = 0; w < bitmap_.size(); ++w) {
+      ret.data()[w] = ~(data()[w]); // TODO SIMDize
+    }
+    return ret;
+  }
+
+
+  /// Returns the position of the first set bit. If no bits are set, the length
+  /// of the bitmap is returned.
+  std::size_t __attribute__((noinline))
+  find_first() const {
+    const auto ret_val = bitmap_fun<word_type>::find_first(
+        bitmap_.data(), bitmap_.data() + bitmap_.size());
+    return std::min(ret_val, n_);
+  }
+
   /// Returns the position of the first set bit within the range [b,e). If no
   /// bits are set, e is returned.
   std::size_t __attribute__((noinline))
@@ -149,6 +207,29 @@ public:
     assert(ret_val >= b);
     assert(ret_val <= e);
     assert(ret_val == bitmap_fun<word_type>::find_first_dense(bitmap_.data(), b, e));
+    return ret_val;
+  }
+
+  /// Returns the position of the last set bit. If no bits are set, the length
+  /// of the bitmap is returned.
+  std::size_t __attribute__((noinline))
+  find_last() const {
+    const auto ret_val = bitmap_fun<word_type>::find_last(
+        bitmap_.data(), bitmap_.data() + bitmap_.size());
+    return std::min(ret_val, n_);
+  }
+
+  /// Counts the number of set bits within the range [b,e).
+  std::size_t __attribute__((noinline))
+  count(std::size_t b, std::size_t e) const noexcept {
+    const auto ret_val = bitmap_fun<word_type>::count(bitmap_.data(), b, e);
+#ifndef NDEBUG
+    std::size_t cntr = 0;
+    for (std::size_t i = b; i <  e; ++i) {
+      cntr += test(i);
+    }
+    assert(cntr == ret_val);
+#endif
     return ret_val;
   }
 
