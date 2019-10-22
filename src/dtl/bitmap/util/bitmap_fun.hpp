@@ -129,7 +129,7 @@ struct bitmap_fun {
 
   /// Find the first set bit.  Returns the index of the first set bit. If no
   /// bits are set, the length of the bitmap is returned.
-  static std::size_t
+  static std::size_t __forceinline__
   find_first(const word_type* bitmap_begin, const word_type* bitmap_end) {
     const std::size_t word_cnt = bitmap_end - bitmap_begin;
     std::size_t word_idx = 0;
@@ -145,7 +145,7 @@ struct bitmap_fun {
 
   /// Find the last set bit.  Returns the index of the last set bit. If no bits
   /// are set, the length of the bitmap is returned.
-  static std::size_t
+  static std::size_t __forceinline__
   find_last(const word_type* bitmap_begin, const word_type* bitmap_end) {
     const std::size_t word_cnt = bitmap_end - bitmap_begin;
     std::size_t word_idx = word_cnt;
@@ -160,7 +160,7 @@ struct bitmap_fun {
   }
 
   /// Find the first set bit [b,e). Returns 'e' if all bits in [b,e) are 0.
-  static std::size_t
+  static std::size_t __forceinline__
   find_first(const word_type* bitmap,
       const std::size_t b,
       const std::size_t e) {
@@ -205,7 +205,7 @@ struct bitmap_fun {
   /// Find the first set bit [b,e). Returns 'e' if all bits in [b,e) are 0.
   /// This function is supposed to be called, when the underlying bitmap is
   /// dense.
-  static std::size_t
+  static std::size_t __forceinline__
   find_first_dense(const word_type* bitmap,
       const std::size_t b,
       const std::size_t e) {
@@ -217,6 +217,50 @@ struct bitmap_fun {
     return e;
   }
 
+  /// Count the set bits.
+  static std::size_t __forceinline__
+  count(const word_type* __restrict bitmap_begin,
+      const word_type* __restrict bitmap_end) {
+    const std::size_t word_cnt = bitmap_end - bitmap_begin;
+    std::size_t pop_cnt = 0;
+    for (std::size_t word_idx = 0; word_idx < word_cnt; ++word_idx) {
+      pop_cnt += dtl::bits::pop_count(bitmap_begin[word_idx]);
+    }
+    return pop_cnt;
+  }
+
+  /// Count the set bits in [b,e).
+  static std::size_t __forceinline__
+  count(const word_type* bitmap,
+      const std::size_t b,
+      const std::size_t e) {
+    if (e <= b) return 0;
+    const auto x = b / word_bitlength;
+    const auto y = (e - 1) / word_bitlength;
+
+    const auto X_off = (b % word_bitlength);
+    const word_type X = ~word_type(0) << X_off;
+    const word_type Y = ~word_type(0) >> ((word_bitlength - (e % word_bitlength)) % word_bitlength);
+
+
+    if (x == y) {
+      const word_type w = bitmap[x] & (X & Y);
+      return dtl::bits::pop_count(w);
+    }
+    else {
+      std::size_t pop_cnt = 0;
+      const word_type w_b = bitmap[x] >> X_off;
+      pop_cnt += dtl::bits::pop_count(w_b);
+      for (std::size_t k = x + 1; k < y; ++k) {
+        const word_type w = bitmap[k];
+        pop_cnt += dtl::bits::pop_count(w);
+      }
+      const word_type w_e = bitmap[y] & Y;
+      pop_cnt += dtl::bits::pop_count(w_e);
+      return pop_cnt;
+    }
+  }
+
   /// Scans the bitmap (that consists of a single word) for set bits and produces
   /// a position list. The positions are written to the given destination
   /// pointer. The function returns the number for values written to 'dst_ptr'.
@@ -224,7 +268,7 @@ struct bitmap_fun {
   /// Note: Based on the implementation of Song and Chen described in the paper
   /// 'Exploiting SIMD for Complex Numerical Predicates'. This implementation
   /// works well when only few bits are set.
-  static std::size_t
+  static std::size_t __forceinline__
   to_positions(word_type bitmap_word, $u32* dst_ptr, $u32 offset) {
     $u32* writer = dst_ptr;
     for ($u32 m = dtl::bits::pop_count(bitmap_word); m > 0; m--) {
@@ -235,6 +279,17 @@ struct bitmap_fun {
     }
     return writer - dst_ptr;
   }
+  //  static std::size_t // TODO remove naive implementation)
+  //  to_positions(const word_type bitmap_word, $u32* dst_ptr, $u32 offset) {
+  //    $u32* writer = dst_ptr;
+  //    for (std::size_t i = 0; i < word_bitlength; ++i) {
+  //      if (dtl::bits::bit_test(bitmap_word, i)) {
+  //        *writer = i + offset;
+  //        writer++;
+  //      }
+  //    }
+  //    return writer - dst_ptr;
+  //  }
 
   /// Scans the (word aligned) bitmap set bits and produces a position list. The
   /// positions are written to the given destination pointer. The function
@@ -256,7 +311,7 @@ struct bitmap_fun {
 
   /// Fall back implementation of 'to_positions()'; when neither AVX2 nor AVX512
   /// is available.
-  static std::size_t
+  static inline std::size_t
   to_positions_x86(
       const word_type* bitmap_begin,
       const word_type* bitmap_end,
@@ -280,7 +335,7 @@ struct bitmap_fun {
 
 #ifdef __AVX2__
   /// AVX2 implementation of 'to_positions()'
-  static std::size_t
+  static inline std::size_t
   to_positions_avx2(
       const word_type* bitmap_begin,
       const word_type* bitmap_end,
@@ -317,7 +372,7 @@ struct bitmap_fun {
 
 #ifdef __AVX512F__
   /// AVX-512 implementation of 'to_positions()'
-  static std::size_t
+  static inline std::size_t
   to_positions_avx512(
       const word_type* bitmap_begin,
       const word_type* bitmap_end,
@@ -353,7 +408,7 @@ struct bitmap_fun {
   /// Scans the given range [b,e) of the bitmap and produce a position list.
   /// The positions are written to the given destination pointer.
   /// The function returns the number for values written to 'dst_ptr'.
-  static std::size_t
+  static std::size_t __forceinline__
   to_positions(const word_type* bitmap,
       const std::size_t b,
       const std::size_t e,
