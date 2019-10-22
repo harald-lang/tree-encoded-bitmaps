@@ -26,6 +26,7 @@ struct dynamic_roaring_bitmap {
       i = in.find_next(i);
     }
     bitmap_.runOptimize();
+    bitmap_.shrinkToFit();
   }
 
   /// Constructs an empty bitmap of size n. This kind of constructor is only
@@ -47,7 +48,7 @@ struct dynamic_roaring_bitmap {
   /// Return the size in bytes.
   std::size_t
   size_in_byte() const {
-    return bitmap_.getSizeInBytes(false) /* size of the compressed bitmap */
+    return bitmap_.getSizeInBytes(true) /* size of the compressed bitmap */
         + sizeof(size_) /* bit-length of the original bitmap */;
   }
 
@@ -114,6 +115,7 @@ struct dynamic_roaring_bitmap {
   __forceinline__ void
   shrink() {
     bitmap_.runOptimize();
+    bitmap_.shrinkToFit();
   }
 
   void
