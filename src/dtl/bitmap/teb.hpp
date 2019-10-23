@@ -5,7 +5,6 @@
 #if defined(NDEBUG)
 // Release build.
 #define __teb_inline__ inline __attribute__((always_inline))
-//#define __teb_inline__ __attribute__((noinline))
 #else
 #define __teb_inline__
 #endif
@@ -30,12 +29,14 @@
 #ifdef __AVX512BW__
 #include <dtl/bitmap/util/bit_buffer_avx512.hpp>
 #endif // __AVX512BW__
-#include <dtl/bitmap/util/bitmap_tree.hpp>
 #include <dtl/bitmap/util/binary_tree_structure.hpp>
+#include <dtl/bitmap/util/bitmap_tree.hpp>
+#include <dtl/bitmap/util/bitmap_view.hpp>
+#include <dtl/bitmap/util/rank1_logic_linear.hpp>
+#include <dtl/bitmap/util/rank1_logic_word_blocked.hpp>
+#include <dtl/math.hpp>
 #include <dtl/static_stack.hpp>
 #include <dtl/static_stack2.hpp>
-#include <dtl/bitmap/util/bitmap_view.hpp>
-#include <dtl/math.hpp>
 #include <navin/bitpack.hpp>
 
 #include "teb_scan_util.hpp"
@@ -62,7 +63,10 @@ namespace dtl {
 /// - top nodes: refer to the nodes within the last perfect level.
 ///
 static constexpr i32 teb_default_opt_level = 3;
-template<i32 optimization_level_ = teb_default_opt_level>
+template<
+    i32 optimization_level_ = teb_default_opt_level,
+    typename _rank_type = dtl::rank1<dtl::rank1_logic_surf<$u64, true>>
+    >
 class teb {
 
 public:
@@ -89,7 +93,12 @@ public:
 
   /// Support data structure for rank1 operations on the tree structure.
   static constexpr u1 inclusive = true;
-  using rank_support = dtl::rank1<dtl::rank1_logic_surf<word_type, inclusive>>;
+//  using rank_support = dtl::rank1<dtl::rank1_logic_surf<word_type, inclusive>>;
+//  using rank_support = dtl::rank1<dtl::rank1_logic_surf<word_type, inclusive, 256>>;
+//  using rank_support = dtl::rank1<dtl::rank1_logic_surf<word_type, inclusive, 128>>;
+//  using rank_support = dtl::rank1<dtl::rank1_logic_linear<word_type, inclusive>>;
+//  using rank_support = dtl::rank1<dtl::rank1_logic_word_blocked<word_type, inclusive>>;
+  using rank_support = _rank_type;
   rank_support rank_;
 
   /// The number of implicit inner nodes in the tree structure.
@@ -141,8 +150,8 @@ public:
          ++it) {
       ++node_cntr;
 
-      u64 idx = (*it).idx;
-      u64 level = (*it).level;
+      u64 idx = (*it);
+      u64 level = bitmap_tree.level_of(idx);
 
       if (current_level != level) {
         level_offsets_structure_[level] = node_cntr - 1;
@@ -543,6 +552,9 @@ public:
   auto _get_label_trailing_0bit_cnt() { return implicit_trailing_label_cnt_; }
   //===--------------------------------------------------------------------===//
 
+  __forceinline__ void
+  shrink() {} // does nothing
+
 private:
 
   u1 __teb_inline__
@@ -638,8 +650,8 @@ private:
 
 };
 //===----------------------------------------------------------------------===//
-template<i32 optimization_level_>
-class teb<optimization_level_>::iter {
+template<i32 optimization_level_, typename _rank_type>
+class teb<optimization_level_, _rank_type>::iter {
 
   /// The fundamental type to encode paths within the tree.
   using path_t = $u64;
@@ -972,7 +984,7 @@ produce_output:
   }
 
   void __teb_inline__
-  next() noexcept __attribute__ ((noinline, flatten, hot)) {
+  next() noexcept __attribute__ ((flatten, hot)) {
     while (top_node_idx_current_ < top_node_idx_end_) {
       while (!stack_.empty()) {
         // The current node.
@@ -1016,13 +1028,21 @@ produce_output:
           node_info.is_inner = left_child_is_inner;
           // Push the right child only if necessary.
           u1 push_right_child = (right_child_is_inner | right_child_label);
-          stack_entry& right_child_info = stack_.push();
-          right_child_info.node_idx = right_child_idx;
-          right_child_info.path = node_info.path | 1;
-          right_child_info.level = node_info.level;
-          right_child_info.rank = right_child_rank;
-          right_child_info.is_inner = right_child_is_inner;
-          stack_.cnt_ = push_right_child ? stack_.cnt_ : stack_.cnt_ - 1;
+          if (push_right_child) {
+            stack_entry& right_child_info = stack_.push();
+            right_child_info.node_idx = right_child_idx;
+            right_child_info.path = node_info.path | 1;
+            right_child_info.level = node_info.level;
+            right_child_info.rank = right_child_rank;
+            right_child_info.is_inner = right_child_is_inner;
+          }
+//          stack_entry& right_child_info = stack_.push();
+//          right_child_info.node_idx = right_child_idx;
+//          right_child_info.path = node_info.path | 1;
+//          right_child_info.level = node_info.level;
+//          right_child_info.rank = right_child_rank;
+//          right_child_info.is_inner = right_child_is_inner;
+//          stack_.cnt_ = push_right_child ? stack_.cnt_ : stack_.cnt_ - 1;
         }
         // Reached a leaf node.
         if (node_label) {
@@ -1317,8 +1337,8 @@ produce_output:
   /// --------------------------------------------------------------------------
 
   /// Fast-forwards the iterator to the given position.
-  void //__teb_inline__ TODO revert
-  skip_to(const std::size_t to_pos) noexcept __attribute__((noinline)) {
+  void __teb_inline__
+  skip_to(const std::size_t to_pos) noexcept {
     if (to_pos >= teb_.n_) {
       pos_ = teb_.n_;
       length_ = 0;
@@ -1371,8 +1391,8 @@ produce_output:
 };
 //===----------------------------------------------------------------------===//
 /// 1-fill iterator, WITHOUT skip support.
-template<i32 optimization_level_>
-class teb<optimization_level_>::scan_iter {
+template<i32 optimization_level_, typename _rank_type>
+class teb<optimization_level_, _rank_type>::scan_iter {
 
   /// The fundamental type to encode paths within the tree.
   using path_t = $u64;
@@ -2664,8 +2684,8 @@ done:
 
   /// Forwards the iterator to the given position. - Note: This functions
   /// simply calls next() until the desired position has been reached.
-  void // __teb_inline__ TODO revert
-  skip_to(const std::size_t to_pos) noexcept  __attribute__((noinline)) {
+  void __teb_inline__
+  skip_to(const std::size_t to_pos) noexcept {
     if (to_pos >= teb_.n_) {
       results_[0].pos = teb_.n_;
       results_[0].length = 0;

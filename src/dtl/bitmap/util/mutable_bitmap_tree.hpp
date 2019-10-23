@@ -35,9 +35,15 @@ public:
     // encoding of the given TEB.
 
     // Init the upper balanced part of the tree.
+    const std::size_t first_explicit_node_idx = teb.implicit_inner_node_cnt_;
     this->is_inner_node_.set(
         std::size_t(0) /* + this->offset */, // set the bits < offset to 1
-        std::size_t(teb.implicit_inner_node_cnt_) + this->offset);
+        first_explicit_node_idx + this->offset);
+    this->is_active_node_.set(
+        std::size_t(0) /* + this->offset */, // set the bits < offset to 1
+        std::size_t(
+            std::min(this->right_child_of(first_explicit_node_idx - 1) + 1, this->max_node_cnt_)
+            ) + this->offset);
 
     // The current node index within the perfect binary tree data structure.
     // Recall that the node indexes in the perfect binary tree do not correspond
@@ -77,7 +83,7 @@ public:
       ++node_idx_succ;
       is_inner_node = teb.is_inner_node(node_idx_succ);
       if (is_inner_node) {
-        this->is_inner_node_.set(node_idx_impl + this->offset);
+        binary_tree_structure::set_inner(node_idx_impl);
       }
       else {
         ++label_idx_succ;
@@ -117,7 +123,7 @@ public:
         ++node_idx_succ;
         is_inner_node = teb.is_inner_node(node_idx_succ);
         if (is_inner_node) {
-          this->is_inner_node_.set(node_idx_impl + this->offset);
+          binary_tree_structure::set_inner(node_idx_impl);
         }
         else {
           ++label_idx_succ;
@@ -129,7 +135,9 @@ public:
         ++node_idx_impl;
       }
     }
-
+#ifndef NDEBUG
+    validate_active_nodes(); // TODO remove
+#endif
     this->init_counters();
   }
 
@@ -189,7 +197,7 @@ public:
 
       // Expand the current leaf node.
       u1 label = this->label_of_node(node_idx);
-      this->is_inner_node_.set(node_idx + this->offset);
+      binary_tree_structure::set_inner(node_idx);
 
       u1 direction_bit = dtl::bits::bit_test(pos, i);
 
@@ -215,7 +223,8 @@ public:
         const auto left_label = this->labels_.test(left_child_idx + this->offset);
         const auto right_label = this->labels_.test(right_child_idx + this->offset);
         if (left_label == right_label) {
-          this->is_inner_node_.set(node_idx + this->offset, false);
+//          this->is_inner_node_.set(node_idx + this->offset, false);
+          binary_tree_structure::set_leaf(node_idx);
           this->labels_.set(node_idx + this->offset, left_label);
 
           return true;
@@ -237,6 +246,60 @@ public:
     // TODO optimize toggle - avoid test()
     const auto val = test(pos);
     set(pos, !val);
+  }
+
+  // Validation code // TODO remove - should be a test for the binary tree structure
+  void
+  validate_active_nodes() {
+    for (std::size_t i = 0; i < this->max_node_cnt_; ++i) {
+      u1 is_inner = this->is_inner_node(i);
+      if (is_inner) {
+        assert(this->is_active_node(i));
+        assert(this->is_active_node(this->left_child_of(i)));
+        assert(this->is_active_node(this->right_child_of(i)));
+        if (i != this->root()) {
+          assert(this->is_active_node(this->parent_of(i)));
+        }
+      }
+      else {
+        if (i == this->root()) {
+          assert(this->is_active_node(i));
+        }
+        else {
+          const auto parent = this->parent_of(i);
+          if (this->is_inner_node(parent)) {
+            assert(this->is_active_node(parent));
+            assert(this->is_active_node(i));
+          }
+          else {
+            assert(this->is_active_node(i) == false);
+          }
+        }
+      }
+    }
+  }
+
+  void
+  fix_active_nodes() {
+    auto act = [&](std::size_t i, u1 val) {
+      this->is_active_node_.set(i + this->offset, val);
+    };
+    act(0, true); // root
+    for (std::size_t i = 1; i < this->max_node_cnt_; ++i) {
+      u1 is_inner = this->is_inner_node(i);
+      assert(this->is_inner_node(this->parent_of(i)));
+      if (is_inner) {
+        act(i, true);
+        act(this->left_child_of(i), true);
+        act(this->right_child_of(i), true);
+      }
+      else {
+        const auto parent = this->parent_of(i);
+        if (this->is_inner_node(parent)) {
+          act(i, true);
+        }
+      }
+    }
   }
 };
 //===----------------------------------------------------------------------===//

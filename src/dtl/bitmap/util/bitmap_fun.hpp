@@ -106,7 +106,6 @@ struct bitmap_fun {
       u64 bit_idx_begin,
       u64 bit_idx_end /* non-inclusive */) {
     assert(bit_idx_end > bit_idx_begin);
-    static constexpr u64 word_bitlength = sizeof(word_type) * 8;
     const auto word_idx_begin = bit_idx_begin / word_bitlength;
     const auto word_idx_end = (bit_idx_end - 1) / word_bitlength;
     assert(word_idx_end - word_idx_begin <= 1);
@@ -124,6 +123,66 @@ struct bitmap_fun {
       bitmap_word_0 >>= (bit_idx_begin % word_bitlength);
       bitmap_word_1 &= (~word_type(0)) >> (word_bitlength - ((bit_idx_end % word_bitlength)));
       return bitmap_word_0 | (bitmap_word_1 << (word_bitlength - (bit_idx_begin % word_bitlength)));
+    }
+  }
+
+  /// Store up to size(word_type)*8 consecutive bits.
+  static void __forceinline__
+  store_bits(word_type* bitmap,
+      u64 bit_idx_begin,
+      u64 bit_idx_end, /* non-inclusive */
+      word_type bits_to_store) {
+    assert(bit_idx_end > bit_idx_begin);
+    const auto word_idx_0 = bit_idx_begin / word_bitlength;
+    const auto word_idx_1 = (bit_idx_end - 1) / word_bitlength;
+    assert(word_idx_1 - word_idx_0 <= 1);
+    if (word_idx_0 == word_idx_1) {
+      u64 cnt = bit_idx_end - bit_idx_begin;
+      const auto word_idx = word_idx_0;
+      const auto off = (bit_idx_begin % word_bitlength);
+      const word_type store_mask = (cnt == word_bitlength)
+          ? ~word_type(0)
+          : ((word_type(1) << cnt) - 1) << off;
+      // Load the corresponding word and zero the bits that are to be written.
+      word_type bitmap_word = bitmap[word_idx] & ~store_mask;
+      // Prepare the store. (AND to clear higher bits, just to be safe)
+      word_type store_word = (bits_to_store << off) & store_mask;
+      store_word |= bitmap_word;
+      // The actual store.
+      bitmap[word_idx] = store_word;
+      return;
+    }
+    else {
+      const auto off_0 = (bit_idx_begin % word_bitlength);
+      const auto off_1 = u64(0);
+
+      u64 cnt_0 = word_bitlength - off_0;
+      u64 cnt_1 = (bit_idx_end - bit_idx_begin) - cnt_0;
+      assert(cnt_0 > 0);
+      assert(cnt_0 < word_bitlength);
+      assert(cnt_1 > 0);
+      assert(cnt_1 < word_bitlength);
+      assert(cnt_0 + cnt_1 == (bit_idx_end - bit_idx_begin));
+
+      const word_type store_mask_0 = ((word_type(1) << cnt_0) - 1) << off_0;
+      const word_type store_mask_1 = ((word_type(1) << cnt_1) - 1); // offset is always 0
+      assert(dtl::bits::bit_test(store_mask_0, word_bitlength - 1));
+      assert(dtl::bits::bit_test(store_mask_1, 0));
+
+      // Load the corresponding words and zero the bits that are to be written.
+      word_type bitmap_word_0 = bitmap[word_idx_0] & ~store_mask_0;
+      word_type bitmap_word_1 = bitmap[word_idx_1] & ~store_mask_1;
+
+      // Prepare the store.
+      word_type store_word_0 = (bits_to_store << off_0);
+      store_word_0 |= bitmap_word_0;
+      word_type store_word_1 = (bits_to_store >> cnt_0) & store_mask_1; // AND to clear higher bits, just to be safe)
+      store_word_1 |= bitmap_word_1;
+
+      // The actual store.
+      bitmap[word_idx_0] = store_word_0;
+      bitmap[word_idx_1] = store_word_1;
+      return;
     }
   }
 
@@ -216,6 +275,36 @@ struct bitmap_fun {
     }
     return e;
   }
+
+  /// Finds the position of the next set bit within the range (b,e). If no set
+  /// bit is found, the length of the bitmap is returned.
+  static std::size_t
+  find_next(const word_type* bitmap_begin, const word_type* bitmap_end,
+      const std::size_t b) noexcept {
+    // Adapted from the boost::dynamic_bitset.
+    std::size_t i = b + 1;
+    auto word_idx = i / word_bitlength;
+    const auto bit_idx_in_word = i % word_bitlength;
+
+    const word_type shifted = bitmap_begin[word_idx] >> bit_idx_in_word;
+
+    if (shifted != word_type(0)) {
+      return i + dtl::bits::tz_count(shifted);
+    }
+
+    ++word_idx;
+    const std::size_t word_cnt = bitmap_end - bitmap_begin;
+    while (word_idx < word_cnt && bitmap_begin[word_idx] == 0) {
+      ++word_idx;
+    }
+    if (word_idx >= word_cnt) {
+      return word_cnt * word_bitlength;
+    }
+
+    return word_idx * word_bitlength
+        + dtl::bits::tz_count(bitmap_begin[word_idx]);
+  }
+
 
   /// Count the set bits.
   static std::size_t __forceinline__

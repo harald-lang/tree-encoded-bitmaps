@@ -1,11 +1,14 @@
 #pragma once
 //===----------------------------------------------------------------------===//
 #include "bitmap_fun.hpp"
+#include "bitmap_writer.hpp"
+#include "buffer.hpp"
 
 #include <dtl/dtl.hpp>
 
 #include <cassert>
 #include <cstddef>
+#include <memory>
 #include <type_traits>
 #include <vector>
 //===----------------------------------------------------------------------===//
@@ -32,14 +35,19 @@ class plain_bitmap {
   /// The number of bits.
   std::size_t n_;
   /// The actual bitmap.
-  std::vector<word_type, _alloc> bitmap_;
+  dtl::buffer<word_type, _alloc> bitmap_;
   /// The allocator.
-  _alloc allocator_;
+  _alloc allocator_; // TODO remove
 
 public:
   /// Construct a bitmap of length n.
   explicit plain_bitmap(std::size_t n, const _alloc& alloc = _alloc())
       : n_(n), bitmap_(word_cnt(n)), allocator_(alloc) {}
+
+  /// Construct a bitmap of length n.
+  explicit plain_bitmap(std::size_t n, u1 init, const _alloc& alloc = _alloc())
+      : n_(n), bitmap_(word_cnt(n), init), allocator_(alloc) {
+  }
 
   /// Return the size of the bitmap.
   std::size_t
@@ -143,11 +151,21 @@ public:
     return bitmap_fun<word_type>::fetch_bits(bitmap_.data(), b, e);
   }
 
+  void __forceinline__
+  store_bits(std::size_t b, std::size_t e, word_type bits_to_store) {
+    assert((b / word_bitlength) < bitmap_.size());
+    assert(b <= n_);
+    assert(e <= n_);
+    assert(b <= e);
+    assert((e - b) <= (sizeof(word_type) * 8));
+    return bitmap_fun<word_type>::store_bits(bitmap_.data(), b, e, bits_to_store);
+  }
+
   /// Bitwise AND
   plain_bitmap __forceinline__
   operator&(const plain_bitmap& other) const {
     assert(size() == other.size());
-    plain_bitmap ret(size());
+    plain_bitmap ret(size(), false);
     for (std::size_t w = 0; w < bitmap_.size(); ++w) {
       ret.data()[w] = data()[w] & other.data()[w]; // TODO SIMDize
     }
@@ -158,7 +176,7 @@ public:
   plain_bitmap __forceinline__
   operator|(const plain_bitmap& other) const {
     assert(size() == other.size());
-    plain_bitmap ret(size());
+    plain_bitmap ret(size(), false);
     for (std::size_t w = 0; w < bitmap_.size(); ++w) {
       ret.data()[w] = data()[w] | other.data()[w]; // TODO SIMDize
     }
@@ -169,7 +187,7 @@ public:
   plain_bitmap __forceinline__
   operator^(const plain_bitmap& other) const {
     assert(size() == other.size());
-    plain_bitmap ret(size());
+    plain_bitmap ret(size(), false);
     for (std::size_t w = 0; w < bitmap_.size(); ++w) {
       ret.data()[w] = data()[w] ^ other.data()[w]; // TODO SIMDize
     }
@@ -179,13 +197,12 @@ public:
   /// Bitwise NOT
   plain_bitmap __forceinline__
   operator~() const {
-    plain_bitmap ret(size());
+    plain_bitmap ret(size(), false);
     for (std::size_t w = 0; w < bitmap_.size(); ++w) {
       ret.data()[w] = ~(data()[w]); // TODO SIMDize
     }
     return ret;
   }
-
 
   /// Returns the position of the first set bit. If no bits are set, the length
   /// of the bitmap is returned.
@@ -219,6 +236,18 @@ public:
     return std::min(ret_val, n_);
   }
 
+  /// Finds the position of the next set bit within the range (b,e). If no set
+  /// bit is found, the length of the bitmap is returned.
+  inline std::size_t
+  find_next(std::size_t b) const noexcept {
+    if (b >= (n_ - 1)) {
+      return n_;
+    }
+    const auto ret_val = bitmap_fun<word_type>::find_next(
+        bitmap_.data(), bitmap_.data() + bitmap_.size(), b);
+    return std::min(ret_val, n_);
+  }
+
   /// Counts the number of set bits within the range [b,e).
   std::size_t __attribute__((noinline))
   count(std::size_t b, std::size_t e) const noexcept {
@@ -238,6 +267,11 @@ public:
     for (std::size_t i = 0; i < n_; ++i) {
       os << (test(i) ? "1" : "0");
     }
+  }
+
+  bitmap_writer<word_type>
+  writer(std::size_t start_idx) {
+    return bitmap_writer<word_type>(bitmap_.data(), start_idx);
   }
 };
 //===----------------------------------------------------------------------===//

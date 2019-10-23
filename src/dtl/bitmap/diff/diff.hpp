@@ -86,7 +86,12 @@ public:
   void __forceinline__
   set(std::size_t i, u1 val) noexcept {
     has_pending_updates_ = true;
-    diff_->set(i, bitmap_->test(i) ^ val);
+    u1 bitmap_val = bitmap_->test(i);
+    u1 diff_val = diff_->test(i);
+    u1 current_val = bitmap_val ^ diff_val;
+    if (current_val != val) {
+      diff_->set(i, bitmap_val ^ val);
+    }
   }
 
   /// Apply the pending updates and clear the diff.
@@ -102,6 +107,13 @@ public:
     // Clear the diff.
     std::unique_ptr<D> empty_diff = std::make_unique<D>(bitmap_->size());
     std::swap(diff_, empty_diff);
+  }
+
+  /// Try to reduce the memory consumption. This function is supposed to be
+  /// called after the bitmap has been modified.
+  void __forceinline__
+  shrink() {
+    diff_->shrink();
   }
 
   //===--------------------------------------------------------------------===//

@@ -177,6 +177,8 @@ set(TEB_SOURCE_FILES
         src/dtl/bitmap/util/bitmap_fun.hpp
         src/dtl/bitmap/util/bitmap_tree.hpp
         src/dtl/bitmap/util/bitmap_view.hpp
+        src/dtl/bitmap/util/bitmap_writer.hpp
+        src/dtl/bitmap/util/buffer.hpp
         src/dtl/bitmap/util/mutable_bitmap_tree.hpp
         src/dtl/bitmap/util/plain_bitmap.hpp
         src/dtl/bitmap/util/rank1_logic_linear.hpp

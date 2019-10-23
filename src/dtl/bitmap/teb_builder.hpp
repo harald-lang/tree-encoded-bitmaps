@@ -8,6 +8,7 @@
 #include <boost/dynamic_bitset.hpp>
 
 #include <dtl/dtl.hpp>
+#include <boost/concept_check.hpp>
 //===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//
@@ -46,7 +47,7 @@ public:
   }
 
   /// Serializes the TEB to the given destination address.
-  inline void
+  void
   serialize(word_type* dst);
 
 private:
@@ -98,6 +99,7 @@ private:
   }
 };
 //===----------------------------------------------------------------------===//
+//void __attribute__((noinline))
 inline void
 teb_builder::serialize(word_type* dst) {
   // Prepare the header.
@@ -121,26 +123,35 @@ teb_builder::serialize(word_type* dst) {
   auto* tree_ptr = teb_flat::get_tree_ptr(ptr);
   auto tree_word_cnt = teb_flat::get_tree_word_cnt(ptr);
   dtl::bitmap_view<word_type> tree_data(tree_ptr, tree_ptr + tree_word_cnt);
-  std::size_t tree_data_write_pos = 0;
 
   auto* label_ptr = teb_flat::get_label_ptr(ptr);
   auto label_word_cnt = teb_flat::get_label_word_cnt(ptr);
   dtl::bitmap_view<word_type> label_data(label_ptr, label_ptr + label_word_cnt);
-  std::size_t label_data_write_pos = 0;
 
   std::array<std::size_t, 32> level_offsets_tree; // NOLINT
   std::array<std::size_t, 32> level_offsets_labels; // NOLINT
 
+  const std::size_t tree_bit_cnt = tree_word_cnt * word_bitlength;
+  const std::size_t label_bit_cnt = label_word_cnt * word_bitlength;
+
+#ifndef NDEBUG
+  // Slow-path. Left there for validation. // TODO remove
   // Encode the tree into level-order.
+  std::size_t tree_data_write_pos = 0;
+  std::size_t label_data_write_pos = 0;
+
   std::size_t node_cntr = 0;
   std::size_t leaf_node_cntr = 0;
   std::size_t current_level = ~0ull;
-  for (auto it = bitmap_tree_.const_breadth_first_begin();
-       it != bitmap_tree_.const_breadth_first_end();
-       ++it) {
-    u64 idx = (*it).idx;
-    u64 level = (*it).level;
-    u1 is_inner = (*it).is_inner;
+
+  // Skip over the perfect levels.
+  node_cntr = bitmap_tree_.get_leading_inner_node_cnt();
+
+  const auto it_end = bitmap_tree_.breadth_first_end();
+  for (auto it = bitmap_tree_.breadth_first_begin(node_cntr);
+      it != it_end; ++it) {
+    u64 idx = (*it);
+    u64 level = bitmap_tree_.level_of(idx);
 
     ++node_cntr;
 
@@ -151,12 +162,11 @@ teb_builder::serialize(word_type* dst) {
       current_level = level;
     }
 
-    // Skip the implicit leading inner nodes.
-    if (node_cntr <= hdr.implicit_inner_node_cnt) {
-      continue;
-    }
+    assert(node_cntr > hdr.implicit_inner_node_cnt);
 
-    leaf_node_cntr += !is_inner;
+    u1 is_inner = bitmap_tree_.is_inner_node(idx);
+    u1 is_leaf = !is_inner;
+    leaf_node_cntr += is_leaf;
 
     // Emit a 1-bit if the current node is an inner node, a 0-bit otherwise.
     if (idx < bitmap_tree_.get_last_explicit_node_idx()) {
@@ -165,7 +175,7 @@ teb_builder::serialize(word_type* dst) {
       ++tree_data_write_pos;
     }
     // Add the label of the leaf node (if necessary).
-    if (!is_inner) {
+    if (is_leaf) {
       if (idx >= bitmap_tree_.get_first_node_idx_with_1label()
           && idx <= bitmap_tree_.get_last_node_idx_with_1label()) {
         assert(label_data_write_pos < hdr.label_bit_cnt);
@@ -175,11 +185,128 @@ teb_builder::serialize(word_type* dst) {
     }
   }
   // Fill the remaining bits with 0s.
-  for (std::size_t i = tree_data_write_pos; i < hdr.tree_bit_cnt; ++i) {
-    tree_data.set(i, false);
-  }
-  for (std::size_t i = label_data_write_pos; i < hdr.label_bit_cnt; ++i) {
-    label_data.set(i, false);
+  tree_data.clear(tree_data_write_pos, hdr.tree_bit_cnt);
+  label_data.clear(label_data_write_pos, hdr.label_bit_cnt);
+#endif
+
+  {
+    auto* is_active_ptr = bitmap_tree_.is_active_node_.data();
+    auto* is_inner_ptr = bitmap_tree_.is_inner_node_.data();
+    auto* label_ptr = bitmap_tree_.labels_.data();
+    const auto word_cnt = bitmap_tree_.is_active_node_.data_end()
+        - bitmap_tree_.is_active_node_.data_begin();
+
+    auto succinct_tree_writer = tree_data.writer(0, hdr.tree_bit_cnt);
+    auto succinct_labels_writer = label_data.writer(0, hdr.label_bit_cnt);
+
+    const std::size_t c = bitmap_tree_.get_leading_inner_node_cnt() + bitmap_tree_.offset;
+    const std::size_t z = bitmap_tree_.get_leading_0label_cnt();
+
+    auto append_to_tree = [&](word_type bits_to_append, std::size_t bit_cnt) {
+      succinct_tree_writer.write(bits_to_append, bit_cnt);
+    };
+
+    // Keep track of the total number of observed labels.
+    std::size_t label_cntr = 0;
+    auto append_to_labels = [&](word_type bits_to_append, const std::size_t bit_cnt) {
+      if (likely(label_cntr >= z)) {
+        succinct_labels_writer.write(bits_to_append, bit_cnt);
+      }
+      else if (label_cntr + bit_cnt > z) {
+        auto o = (label_cntr + bit_cnt) - z;
+        assert(o < word_bitlength);
+        auto a = bits_to_append >> (bit_cnt - o);
+        auto c = bit_cnt - (bit_cnt - o);
+        succinct_labels_writer.write(a, c);
+      }
+      // Update the counter.
+      label_cntr += bit_cnt;
+    };
+
+    // Iterate over the (implicit) tree word-wise in level order. As we skip
+    // over the perfect levels, the first relevant node may not be word aligned,
+    // thus we handle the first read differently.
+    {
+      const auto w = c / word_bitlength;
+      const auto o = c % word_bitlength;
+      auto is_active_word = is_active_ptr[w] >> o;
+      auto is_inner_word = is_inner_ptr[w] >> o;
+      auto label_word = label_ptr[w] >> o;
+
+      // Extract the relevant tree bits from the current word.
+      u64 tree_bits_extract_mask = is_active_word;
+      u64 tree_bits_to_append = _pext_u64(is_inner_word, tree_bits_extract_mask);
+
+      // Extract the relevant label bits.
+      u64 label_bits_extract_mask = ~is_inner_word & is_active_word;
+      u64 label_bits_to_append = _pext_u64(label_word, label_bits_extract_mask);
+
+      // Determine the number of extracted bits.
+      u64 extracted_tree_bit_cnt = dtl::bits::pop_count(tree_bits_extract_mask);
+      u64 extracted_label_bit_cnt = dtl::bits::pop_count(label_bits_extract_mask);
+
+      append_to_tree(tree_bits_to_append, extracted_tree_bit_cnt);
+      append_to_labels(label_bits_to_append, extracted_label_bit_cnt);
+    }
+    // Read the rest of the tree (word aligned).
+    for (std::size_t w = (c / word_bitlength) + 1; w < word_cnt; ++w) {
+      // The current part of the tree.
+      auto is_active_word = is_active_ptr[w];
+      auto is_inner_word = is_inner_ptr[w];
+      auto label_word = label_ptr[w];
+
+      // Extract the relevant tree bits from the current word.
+      u64 tree_bits_extract_mask = is_active_word;
+      u64 tree_bits_to_append = _pext_u64(is_inner_word, tree_bits_extract_mask);
+
+      // Extract the relevant label bits.
+      u64 label_bits_extract_mask = ~is_inner_word & is_active_word;
+      u64 label_bits_to_append = _pext_u64(label_word, label_bits_extract_mask);
+
+      // Determine the number of extracted bits.
+      u64 extracted_tree_bit_cnt = dtl::bits::pop_count(tree_bits_extract_mask);
+      u64 extracted_label_bit_cnt = dtl::bits::pop_count(label_bits_extract_mask);
+
+      append_to_tree(tree_bits_to_append, extracted_tree_bit_cnt);
+      append_to_labels(label_bits_to_append, extracted_label_bit_cnt);
+    }
+    succinct_tree_writer.flush();
+    succinct_labels_writer.flush();
+
+    // Compute the level offsets.
+    if (hdr.has_level_offsets) {
+      // Used to compute the offsets for the labels.
+      const auto active_leaf_nodes =
+          bitmap_tree_.is_active_node_ & ~bitmap_tree_.is_inner_node_;
+      // The number of entries in the table.
+      const auto entry_cnt = hdr.encoded_tree_height - hdr.perfect_level_cnt;
+
+      std::size_t offset_tree = 0;
+      std::size_t offset_labels = 0;
+      {
+        // Init offsets.
+        assert(hdr.perfect_level_cnt > 0);
+        const std::size_t level = hdr.perfect_level_cnt - 1;
+        offset_tree = bitmap_tree_.is_active_node_.count(
+            bitmap_tree_.offset,
+            bitmap_tree_.first_node_idx_at_level(level) + bitmap_tree_.offset);
+        offset_labels = active_leaf_nodes.count(
+            bitmap_tree_.offset,
+            bitmap_tree_.first_node_idx_at_level(level) + bitmap_tree_.offset);
+      }
+
+      for (std::size_t i = 0; i < entry_cnt; ++i) {
+        const std::size_t level = (i + hdr.perfect_level_cnt);
+        offset_tree += bitmap_tree_.is_active_node_.count(
+          bitmap_tree_.first_node_idx_at_level(level - 1) + bitmap_tree_.offset,
+          bitmap_tree_.first_node_idx_at_level(level) + bitmap_tree_.offset);
+        offset_labels += active_leaf_nodes.count(
+            bitmap_tree_.first_node_idx_at_level(level - 1) + bitmap_tree_.offset,
+            bitmap_tree_.first_node_idx_at_level(level) + bitmap_tree_.offset);
+        level_offsets_tree[level] = offset_tree;
+        level_offsets_labels[level] = offset_labels;
+      }
+    }
   }
 
   // Write the rank LuT.

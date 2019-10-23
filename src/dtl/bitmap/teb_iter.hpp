@@ -654,9 +654,9 @@ public:
   /// --------------------------------------------------------------------------
 
   /// Fast-forwards the iterator to the given position.
-  void //__teb_inline__ TODO revert
-  skip_to(const std::size_t to_pos) noexcept __attribute__((noinline)) {
-    if (to_pos >= teb_.n_) {
+  void __teb_inline__
+  skip_to(const std::size_t to_pos) noexcept {
+    if (to_pos >= teb_.n_) { // TODO remove condition
       pos_ = teb_.n_;
       length_ = 0;
       return;
