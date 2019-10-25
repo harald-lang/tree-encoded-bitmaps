@@ -84,31 +84,31 @@ public:
   };
 
   /// Returns the ID of the root node.
-  static inline u64
+  static constexpr inline u64
   root() {
     return 0;
   }
 
   /// Returns the ID of the parent node.
-  static inline u64
+  static constexpr inline u64
   parent_of(u64 node_idx) {
     return (node_idx - 1) / 2;
   }
 
   /// Returns the ID of left child node.
-  static inline u64
+  static constexpr inline u64
   left_child_of(u64 node_idx) {
     return 2 * node_idx + 1;
   }
 
   /// Returns the ID of right child node.
-  static inline u64
+  static constexpr inline u64
   right_child_of(u64 node_idx) {
     return 2 * node_idx + 2;
   }
 
   /// Returns the ID of the sibling node.
-  static inline u64
+  static constexpr inline u64
   sibling_of(u64 node_idx) {
     $u64 n = node_idx;
     const auto is_left_sibling = node_idx & 1ull;
@@ -119,7 +119,7 @@ public:
   }
 
   /// Returns the level of the given node.
-  static inline u64
+  static constexpr inline u64
   level_of(u64 node_idx) {
     return log_2(node_idx + 1);
   }
@@ -129,7 +129,7 @@ public:
     return dtl::log_2(n_);
   }
 
-  static inline u64
+  static constexpr inline u64
   first_node_idx_at_level(u64 level) {
     return (1ull << level) - 1;
   }
