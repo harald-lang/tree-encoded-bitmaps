@@ -62,6 +62,12 @@ public:
         + 16; // two pointers
   }
 
+  /// Return the size of the differential data structure in bytes.
+  std::size_t __forceinline__
+  diff_size_in_byte() const noexcept {
+    return diff_->size_in_byte();
+  }
+
   /// Returns the name of the instance including the most important parameters
   /// in JSON.
   std::string
