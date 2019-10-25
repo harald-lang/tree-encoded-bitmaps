@@ -29,6 +29,7 @@
 #include <cmath>
 #include <iostream>
 #include <limits>
+#include <string>
 #include <utility>
 //===----------------------------------------------------------------------===//
 /// The number of independent runs.

@@ -3,6 +3,7 @@
 #include "experiments/util/bitmap_db.hpp"
 #include "experiments/util/bitmap_types.hpp"
 #include "experiments/util/threading.hpp"
+#include "version.h"
 
 #include <dtl/bitmap/dynamic_bitmap.hpp>
 #include <dtl/bitmap/dynamic_roaring_bitmap.hpp>
@@ -28,6 +29,7 @@
 #include <iostream>
 #include <limits>
 #include <string>
+#include <utility>
 //===----------------------------------------------------------------------===//
 /// The number of independent runs.
 static constexpr u64 RUNS = 10;

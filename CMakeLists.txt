@@ -368,6 +368,16 @@ set(EXPERIMENT_PERFORMANCE_CONSTRUCTION_SOURCE_FILES
 add_executable(ex_performance_construction ${EXPERIMENT_PERFORMANCE_CONSTRUCTION_SOURCE_FILES})
 target_link_libraries(ex_performance_construction fastbit pthread dl)
 
+# REVISION: Compression, diff updates with size limit
+set(EXPERIMENT_COMPRESSION_DIFF_UPDATES_WITH_SIZE_LIMIT_SOURCE_FILES
+        ${SOURCE_FILES}
+        ${BENCHMARK_SOURCE_FILES}
+        experiments/compression/common.hpp
+        experiments/compression/main_compression_diff_updates_with_size_limit.cpp
+        )
+add_executable(ex_compression_diff_updates_with_size_limit ${EXPERIMENT_COMPRESSION_DIFF_UPDATES_WITH_SIZE_LIMIT_SOURCE_FILES})
+target_link_libraries(ex_compression_diff_updates_with_size_limit fastbit pthread dl)
+
 set(EXPERIMENT_MICROBENCHMARK_DOWNWARDS_NAV_SOURCE_FILES
         ${SOURCE_FILES}
         ${BENCHMARK_SOURCE_FILES}
