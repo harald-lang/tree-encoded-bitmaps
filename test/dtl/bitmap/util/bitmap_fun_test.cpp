@@ -360,3 +360,40 @@ TEST(bitmap_fun,
   }
 }
 //===----------------------------------------------------------------------===//
+TEST(bitmap_fun,
+    find_next_zero) {
+  using word_type = $u64;
+  constexpr auto word_bitwidth = sizeof(word_type) * 8;
+
+  const std::size_t n = word_bitwidth * 3;
+  dtl::plain_bitmap<word_type> bm(n);
+
+  for (std::size_t b = 0; b < n; ++b) {
+    for (std::size_t e = b; e < n; ++e) {
+      bm.clear(0, bm.size());
+      bm.set(b, e);
+      std::cout << bm << std::endl;
+      if (b == e) {
+        ASSERT_EQ(bm.find_next_zero(b, n), std::min(b + 1, n))
+                      << " with b = " << b << " and e = " << e << std::endl;
+      }
+      else {
+        ASSERT_TRUE(bm.test(b));
+        ASSERT_TRUE(bm.test(e - 1));
+        ASSERT_EQ(bm.find_next_zero(b, n), std::min(e, n))
+                      << " with b = " << b << " and e = " << e << std::endl;
+      }
+    }
+  }
+
+  bm.set(1, bm.size());
+  ASSERT_EQ(bm.size(), bm.find_next_zero(0, bm.size()));
+  bm.clear(1);
+  ASSERT_EQ(1, bm.find_next_zero(0, bm.size()));
+  bm.set(0);
+  ASSERT_EQ(1, bm.find_next_zero(0, bm.size()));
+  bm.set(1);
+  bm.clear(2);
+  ASSERT_EQ(2, bm.find_next_zero(0, bm.size()));
+}
+//===----------------------------------------------------------------------===//

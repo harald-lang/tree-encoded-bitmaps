@@ -248,6 +248,18 @@ public:
     return std::min(ret_val, n_);
   }
 
+  /// Finds the position of the next ZERO bit within the range (b,e). If no set
+  /// bit is found, e is returned.
+  inline std::size_t
+  find_next_zero(const std::size_t b, const std::size_t e) const noexcept {
+    if (b >= (n_ - 1)) {
+      return n_;
+    }
+    const auto ret_val = bitmap_fun<word_type>::find_next_zero(
+        bitmap_.data(), b, e);
+    return ret_val;
+  }
+
   /// Counts the number of set bits within the range [b,e).
   std::size_t __attribute__((noinline))
   count(std::size_t b, std::size_t e) const noexcept {

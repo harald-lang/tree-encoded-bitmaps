@@ -276,8 +276,8 @@ struct bitmap_fun {
     return e;
   }
 
-  /// Finds the position of the next set bit within the range (b,e). If no set
-  /// bit is found, the length of the bitmap is returned.
+  /// Finds the position of the next set bit within the range (b,n). If no set
+  /// bit is found, the length n of the bitmap is returned. // TODO change signature to b,e
   static std::size_t
   find_next(const word_type* bitmap_begin, const word_type* bitmap_end,
       const std::size_t b) noexcept {
@@ -303,6 +303,39 @@ struct bitmap_fun {
 
     return word_idx * word_bitlength
         + dtl::bits::tz_count(bitmap_begin[word_idx]);
+  }
+
+  /// Finds the position of the next ZERO bit within the range (b,e). If no set
+  /// bit is found, e is returned.
+  static std::size_t
+  find_next_zero(const word_type* bitmap_begin,
+      const std::size_t b, const std::size_t e) noexcept {
+    if (e <= b) return e;
+    // Adapted from the boost::dynamic_bitset.
+    std::size_t i = b + 1;
+    auto word_idx = i / word_bitlength;
+    const auto bit_idx_in_word = i % word_bitlength;
+
+    // Shifting in zeros, ....
+    const word_type shifted = (~bitmap_begin[word_idx]) >> bit_idx_in_word;
+
+    if (shifted != word_type(0)) {
+      return i + dtl::bits::tz_count(shifted);
+    }
+
+    ++word_idx;
+    const std::size_t last_word_idx = ((e - 1) / word_bitlength);
+    while (word_idx <= last_word_idx
+        && bitmap_begin[word_idx] == ~word_type(0)) {
+      ++word_idx;
+    }
+    if (word_idx > last_word_idx) {
+      return e;
+    }
+
+    word_type w = ~bitmap_begin[word_idx];
+    return word_idx * word_bitlength
+        + dtl::bits::tz_count(w);
   }
 
 
