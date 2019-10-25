@@ -136,7 +136,7 @@ public:
       }
     }
 #ifndef NDEBUG
-    validate_active_nodes(); // TODO remove
+    this->validate_active_nodes(); // TODO remove
 #endif
     this->init_counters();
   }
@@ -248,59 +248,6 @@ public:
     set(pos, !val);
   }
 
-  // Validation code // TODO remove - should be a test for the binary tree structure
-  void
-  validate_active_nodes() {
-    for (std::size_t i = 0; i < this->max_node_cnt_; ++i) {
-      u1 is_inner = this->is_inner_node(i);
-      if (is_inner) {
-        assert(this->is_active_node(i));
-        assert(this->is_active_node(this->left_child_of(i)));
-        assert(this->is_active_node(this->right_child_of(i)));
-        if (i != this->root()) {
-          assert(this->is_active_node(this->parent_of(i)));
-        }
-      }
-      else {
-        if (i == this->root()) {
-          assert(this->is_active_node(i));
-        }
-        else {
-          const auto parent = this->parent_of(i);
-          if (this->is_inner_node(parent)) {
-            assert(this->is_active_node(parent));
-            assert(this->is_active_node(i));
-          }
-          else {
-            assert(this->is_active_node(i) == false);
-          }
-        }
-      }
-    }
-  }
-
-  void
-  fix_active_nodes() {
-    auto act = [&](std::size_t i, u1 val) {
-      this->is_active_node_.set(i + this->offset, val);
-    };
-    act(0, true); // root
-    for (std::size_t i = 1; i < this->max_node_cnt_; ++i) {
-      u1 is_inner = this->is_inner_node(i);
-      assert(this->is_inner_node(this->parent_of(i)));
-      if (is_inner) {
-        act(i, true);
-        act(this->left_child_of(i), true);
-        act(this->right_child_of(i), true);
-      }
-      else {
-        const auto parent = this->parent_of(i);
-        if (this->is_inner_node(parent)) {
-          act(i, true);
-        }
-      }
-    }
-  }
 };
 //===----------------------------------------------------------------------===//
 } // namespace dtl

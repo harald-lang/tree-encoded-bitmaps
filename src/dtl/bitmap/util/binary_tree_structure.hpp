@@ -170,9 +170,24 @@ public:
   inline void
   set_inner(u64 node_idx) {
     assert(node_idx == root() || is_inner_node(parent_of(node_idx)));
+    assert((left_child_of(node_idx) + offset) / (sizeof($u64) * 8)
+        == (right_child_of(node_idx) + offset) / (sizeof($u64) * 8));
     is_inner_node_.set(node_idx + offset);
-    is_active_node_.set(left_child_of(node_idx) + offset);
-    is_active_node_.set(right_child_of(node_idx) + offset);
+    // Set the two child nodes active. The specialized function below sets two
+    // bits at once.
+    is_active_node_.set2(left_child_of(node_idx) + offset);
+  }
+
+  /// Turns the given node into an inner node.
+  /// WARNING: This function does NOT update the active node bitmap for
+  ///          performance reasons. The caller has to take care, that the
+  ///          active flags are set manually.
+  inline void
+  set_inner_fast(u64 node_idx) {
+    assert(node_idx == root() || is_inner_node(parent_of(node_idx)));
+    is_inner_node_.set(node_idx + offset);
+    assert((left_child_of(node_idx) + offset) / (sizeof($u64) * 8)
+        == (right_child_of(node_idx) + offset) / (sizeof($u64) * 8));
   }
 
   /// Returns true if given node is expanded, false otherwise. A tree node is
@@ -451,6 +466,66 @@ public:
   const_breadth_first_end() const {
     return const_breadth_first_iterator(*this, max_node_cnt_);
   }
+
+  //===--------------------------------------------------------------------===//
+  // Validation code for debug builds.
+  //===--------------------------------------------------------------------===//
+  /// Validates that the active flags are set correctly.
+  void
+  validate_active_nodes() {
+    for (std::size_t i = 0; i < this->max_node_cnt_; ++i) {
+      u1 is_inner = this->is_inner_node(i);
+      if (is_inner) {
+        assert(this->is_active_node(i));
+        assert(this->is_active_node(this->left_child_of(i)));
+        assert(this->is_active_node(this->right_child_of(i)));
+        if (i != this->root()) {
+          assert(this->is_active_node(this->parent_of(i)));
+        }
+      }
+      else {
+        if (i == this->root()) {
+          assert(this->is_active_node(i));
+        }
+        else {
+          const auto parent = this->parent_of(i);
+          if (this->is_inner_node(parent)) {
+            assert(this->is_active_node(parent));
+            assert(this->is_active_node(i));
+          }
+          else {
+            assert(this->is_active_node(i) == false);
+          }
+        }
+      }
+    }
+  }
+
+  /// Sets the active flags.
+  void
+  fix_active_nodes() {
+    auto act = [&](std::size_t i, u1 val) {
+      this->is_active_node_.set(i + this->offset, val);
+    };
+    act(0, true); // root
+    for (std::size_t i = 1; i < this->max_node_cnt_; ++i) {
+      u1 is_inner = this->is_inner_node(i);
+      assert(this->is_inner_node(this->parent_of(i)));
+      if (is_inner) {
+        act(i, true);
+        act(this->left_child_of(i), true);
+        act(this->right_child_of(i), true);
+      }
+      else {
+        const auto parent = this->parent_of(i);
+        if (this->is_inner_node(parent)) {
+          act(i, true);
+        }
+      }
+    }
+  }
+  //===--------------------------------------------------------------------===//
+
 
 private:
   /// Mark the given node as a leaf node. The function propagates the call

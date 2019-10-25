@@ -87,6 +87,17 @@ public:
     bitmap_fun<word_type>::set(bitmap_.data(), i);
   }
 
+  /// Set the i-th and the i+1-th bit to 1. // TODO remove
+  void __forceinline__
+  set2(std::size_t i) {
+    assert((i / word_bitlength) < bitmap_.size());
+    assert(((i + 1) / word_bitlength) < bitmap_.size());
+    assert(i < n_);
+    const auto block_idx = i / word_bitlength;
+    const auto bit_idx = i % word_bitlength;
+    bitmap_.data()[block_idx] |= word_type(0b11) << bit_idx;
+  }
+
   /// Set the bits in [b,e) to 1.
   void __forceinline__
   set(std::size_t b, std::size_t e) {
@@ -281,7 +292,7 @@ public:
     }
   }
 
-  bitmap_writer<word_type>
+  inline bitmap_writer<word_type>
   writer(std::size_t start_idx) {
     return bitmap_writer<word_type>(bitmap_.data(), start_idx);
   }

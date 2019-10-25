@@ -9,6 +9,7 @@
 
 #include <boost/dynamic_bitset.hpp>
 
+#include <cstring>
 #include <iomanip>
 #include <immintrin.h>
 //===----------------------------------------------------------------------===//
@@ -19,7 +20,7 @@ namespace dtl {
 /// The template parameter controls the space optimizations.
 /// An instance can be seen as an intermediate representation of a bitmap from
 /// which a TEB is constructed.
-template<i32 optimization_level_ = 3>
+template<i32 optimization_level_ = 3, u1 fast_path = true>
 class bitmap_tree : public binary_tree_structure {
   using tree_t = dtl::binary_tree_structure;
   using bitmap_t = boost::dynamic_bitset<$u32>;
@@ -93,6 +94,8 @@ protected:
   /// Used to keep track of whether the counters are up to date or invalidated.
   $u1 counters_are_valid = false;
 
+  std::size_t uncompressed_size = 0;
+
 public:
   /// C'tor
   explicit bitmap_tree(const bitmap_t& bitmap, f64 fpr = 0.0)
@@ -109,8 +112,9 @@ public:
         last_bit_idx_(0) {
     // Init the binary tree.
     init_tree(bitmap);
+    uncompressed_size = estimate_encoded_size_in_bytes();
 
-    if (false) {
+    if (!fast_path) {
       // Fused code path.
       compress();
     }
@@ -118,6 +122,7 @@ public:
       // Classic code path.
       init_labels();
       prune_tree();
+//      prune_tree_v2();
 
       // Run space optimizations.
       {
@@ -488,6 +493,22 @@ public:
       // Bitmap cannot be compressed.
       assert(false); // TODO abort compression
     }
+
+//    // Fast-expand the current level.
+//    {
+//      // The node index range of the current level, that is to be expanded.
+//      const auto hi_node_idx_begin = first_node_idx_at_level(level);
+//      const auto hi_node_idx_end = first_node_idx_at_level(level + 1);
+//      // The node index range of the next deeper level, where childs are added.
+//      const auto lo_node_idx_begin = first_node_idx_at_level(level + 1);
+//      const auto lo_node_idx_end = first_node_idx_at_level(level + 2);
+//
+//      is_inner_node_.set(hi_node_idx_begin, hi_node_idx_end);
+//      is_active_node_.set(lo_node_idx_begin, lo_node_idx_end);
+//    }
+//
+//    ++level;
+
 #ifndef NDEBUG
     // Validate active nodes.
     for (std::size_t i = 0; i < max_node_cnt_; ++i) {
@@ -809,7 +830,7 @@ public:
       if (idx >= node_idx) break;
       // Expand the leaf node to an inner node.
       // DANGER: The tree structure is modified during iterating.
-      set_inner(idx);
+      set_inner<false>(idx);
 
 #ifndef NDEBUG
 //      validate_counters();
@@ -961,6 +982,7 @@ public:
     return bytes;
   }
 
+
   /// Returns the maximum number of tree nodes. Which is 2n-1 for perfect
   /// full binary trees.
   inline std::size_t
@@ -1099,12 +1121,22 @@ public:
 
 private:
   /// Expands the VERY FIRST explicit node. // TODO generalize to expand arbitrary nodes
+  template<u1 fast>
 //  void __forceinline__
 //  void __attribute__((noinline))
   void
   set_inner(u64 idx) {
     assert(is_leaf_node(idx));
-    binary_tree_structure::set_inner(idx);
+    if (fast) {
+      binary_tree_structure::set_inner_fast(idx); // FIXME this invalidates the active node bitmap
+    }
+    else {
+      binary_tree_structure::set_inner(idx);
+    }
+
+    const auto left_child_idx = left_child_of(idx);
+    const auto right_child_idx = right_child_of(idx);
+
     // Update the counters.
     ++inner_node_cnt_;
 
@@ -1124,12 +1156,10 @@ private:
       explicit_node_idxs_.end = explicit_node_idxs_.begin;
     }
     else {
-      const auto left_child_idx = left_child_of(idx);
       if (left_child_idx >= explicit_node_idxs_.end) {
         // The newly created leaf is implicit.
         ++trailing_leaf_node_cnt_;
       }
-      const auto right_child_idx = right_child_of(idx);
       if (right_child_idx >= explicit_node_idxs_.end) {
         // The newly created leaf is implicit.
         ++trailing_leaf_node_cnt_;
@@ -1141,7 +1171,6 @@ private:
       // The current node, that has been expanded had an implicit 0-label.
       --leading_0label_cnt_;
 
-      const auto left_child_idx = left_child_of(idx);
       if (left_child_idx < first_node_idx_with_1label_) {
         // The label of the newly created leaf is implicit.
         ++leading_0label_cnt_;
@@ -1150,7 +1179,6 @@ private:
         // The label of the newly created leaf is implicit.
         ++trailing_0label_cnt_;
       }
-      const auto right_child_idx = right_child_of(idx);
       if (left_child_idx < first_node_idx_with_1label_) {
         // The label of the newly created leaf is implicit.
         ++leading_0label_cnt_;
@@ -1165,7 +1193,7 @@ private:
       // The current node is the first node with a 1-label.
       // Now that this node has been expanded, the node idx with the first
       // 1-label is somewhere in (idx, left-child(idx)].
-      for (std::size_t i = idx + 1; i <= left_child_of(idx); ++i) {
+      for (std::size_t i = idx + 1; i <= left_child_idx; ++i) {
         if (is_leaf_node(i)) {
           if (label_of_node(i) == true) {
             first_node_idx_with_1label_ = i;
@@ -1184,12 +1212,11 @@ private:
       // The node idx with the last 1-label is now the
       // max(last_node_idx_with_1label_, right-child(idx)).
       last_node_idx_with_1label_ =
-          std::max(last_node_idx_with_1label_, right_child_of(idx));
-      if (last_node_idx_with_1label_ == right_child_of(idx)) {
+          std::max(last_node_idx_with_1label_, right_child_idx);
+      if (last_node_idx_with_1label_ == right_child_idx) {
         trailing_0label_cnt_ = 0;
       }
     }
-//    if (idx > last_node_idx_with_1label_) {
     else {
       // The current node, that has been expanded had an implicit 0-label.
       // The node idx is greater than the last node idx with a 1-label,
@@ -1231,71 +1258,200 @@ private:
   }
 
   void __attribute__((noinline))
+  uncompress() {
+    is_inner_node_.set(0, first_node_idx_at_level(last_level()) + offset);
+    is_active_node_.set(0, first_node_idx_at_level(last_level() + 1) + offset);
+    init_counters_perfect_binary_tree();
+#ifndef NDEBUG
+    validate_counters();
+#endif
+  }
+
+  void __attribute__((noinline))
   run_optimize() {
     // Optimization level 2.
     if (optimization_level_ > 1) {
-
+      D(std::cout << "run_optimize:" << std::endl);
+      D(std::cout << estimate_encoded_size_in_bytes() << "/" << uncompressed_size << std::endl;)
       D(std::size_t expand_cntr = 0;) // TODO remove
-
+      D(std::cout << "expand " << expand_cntr << ", size " << estimate_encoded_size_in_bytes() << std::endl;)
       // Gradual decompression.
-//      auto org_state = *this; // Memorize the fully pruned tree instance. // TODO avoid at least one copy
       // Find the tree instance with the minimum size.
-//      auto min_idx = root(); // Pruned all the way up to the root node.
       auto min_idx = explicit_node_idxs_.begin;
+      auto min_level = level_of(min_idx);
       auto min_size = estimate_encoded_size_in_bytes();
-//      const auto it_end = breadth_first_end();
-//      std::cout << *it_end << std::endl;
-      if (min_size > 64) {
-        auto cpy = *this; // Work with a copy.
-        const auto it_end = cpy.first_node_idx_at_level(height_);
-        for (auto it = cpy.breadth_first_begin(min_idx); *it < it_end; ++it) {
-          u64 idx = (*it);
-          if (cpy.is_inner_node(idx)) continue;
-//        if (right_child_of(idx) >= max_node_cnt_) break;
+      const std::size_t threshold = std::max(1024ul, uncompressed_size / 10);
+      auto cpy = *this; // Work with a copy.
 
-          // Expand the leaf node to an inner node.
-          // DANGER: The tree structure is modified during iterating.
-          cpy.set_inner(idx);
-          D(++expand_cntr;)
-          // Estimates the size of a TEB.
+      {
+        u64 start_idx = cpy.explicit_node_idxs_.begin;
+        $u64 idx = cpy.explicit_node_idxs_.begin;
+        $u64 prev_idx = 0;
+        $u64 idx_level = cpy.level_of(idx);
+        u64 last_pruning_level = last_level();
+        $u64 old_level = idx_level;
+        auto prev_level_size = cpy.estimate_encoded_size_in_bytes();
+        auto prev_level_min_size = min_size;
+        while (idx_level < last_pruning_level
+            && !(min_level + 2 < idx_level)) {
+          assert(cpy.is_leaf_node(idx));
+
+          if (idx_level > old_level) {
+            {
+              auto now_size = cpy.estimate_encoded_size_in_bytes();
+              if (now_size > prev_level_size && old_level != min_level) {
+                D(std::cout << "no improvement for the previous level. current level = " << idx_level << std::endl;)
+                goto expand_done;
+              }
+              else {
+                prev_level_size = now_size;
+              }
+            }
+            old_level = idx_level;
+            if (idx_level < cpy.last_level()) {
+              auto last_explicit_node = cpy.explicit_node_idxs_.end - 1;
+              auto level_of_last_explicit_node = cpy.level_of(last_explicit_node);
+              if (level_of_last_explicit_node == idx_level + 1) {
+                auto parent_of_last_explicit_node = cpy.parent_of(level_of_last_explicit_node);
+                auto x_b = cpy.first_node_idx_at_level(idx_level);
+                auto x_e = parent_of_last_explicit_node;
+                auto y_b = parent_of_last_explicit_node + 1;
+                auto y_e = cpy.first_node_idx_at_level(idx_level + 1);
+                i64 x_ones = cpy.is_inner_node_.count(x_b + offset, x_e + offset);
+                i64 x_zeros = (x_e - x_b) - x_ones;
+                i64 y_ones = cpy.is_inner_node_.count(y_b + offset, y_e + offset);
+                i64 y_zeros = (y_e - y_b) - y_ones;
+                auto r = -(x_zeros + y_zeros) + 2 * x_zeros - (x_ones + y_ones);
+                if (r > 0) {
+                  D(std::cout << "expanding this level will led to a larger tree" << std::endl;)
+                  goto expand_done;
+                }
+              }
+              else {
+                auto b = cpy.first_node_idx_at_level(idx_level);
+                auto e = cpy.first_node_idx_at_level(idx_level + 1);
+                auto ones = cpy.is_inner_node_.count(
+                    b + offset,
+                    e + offset);
+//                auto f = cpy.is_inner_node_.find_first( // TODO should be find_first_zero
+//                    b + offset,
+//                    e + offset) - (b + offset);
+                auto zeros = (e - b) - ones;
+//                if (zeros - f > ones) {
+                if (zeros/2 > ones) {
+                  D(std::cout << "expanding this level will led to a larger tree" << std::endl;)
+                  goto expand_done;
+                }
+              }
+            }
+          }
+
+          cpy.template set_inner<true>(idx);
           const auto compressed_size = cpy.estimate_encoded_size_in_bytes();
-          if (compressed_size <= min_size) {
+          D(++expand_cntr;)
+          D(if (compressed_size <= min_size) {)
+          D(std::cout << "expand " << expand_cntr
+              << ", idx "<< idx << "/" << cpy.level_of(idx)
+              << ", trange ["<< cpy.explicit_node_idxs_.begin
+              << "," << cpy.explicit_node_idxs_.end << ")"
+              << ", lrange ["<< cpy.first_node_idx_with_1label_
+              << "," << (cpy.last_node_idx_with_1label_ + 1) << ")"
+              << ", ts: " << cpy.estimate_tree_size_in_bytes()
+              << ", ls: " << cpy.estimate_labels_size_in_bytes()
+              << ", size " << compressed_size << " " << (compressed_size <= min_size ? "*" : "") << std::endl;)
+          D(})
+
+          // Estimates the size of a TEB.
+          if (compressed_size <= min_size) { // less than or EQUAL because we prefer more balanced trees.
             min_idx = idx;
+            min_level = cpy.level_of(idx);
             min_size = compressed_size;
-            if (min_size <= 64) break;
           }
-          // FIXME when to stop decompression??? -------------------------------------------------------------
-          if (cpy.level_of(min_idx) /* + 1 */ < cpy.level_of(idx)) {
-//            D(std::cout << "stop expanding at level " << level_of(idx) << std::endl;)
-//            D(std::cout << "stop after expanding " << expand_cntr << " nodes" << std::endl;)
-            break;
+          if (compressed_size > min_size + threshold) {
+            D(std::cout << "above threshold" << std::endl;)
+            goto expand_done;
           }
-          if (cpy.explicit_node_idxs_.begin > cpy.explicit_node_idxs_.end) break;
+          // Note:
+          // If explicit_node_idxs_.begin overtakes parent_of(first_node_idx_with_1label_)
+          // L starts to increase in size. And the next time where L could
+          // decrease in size is when expanding first_node_idx_with_1label_.
+          // All leaf nodes in [parent_of(first_node_idx_with_1label_) + 1, first_node_idx_with_1label_)
+          // carry a 0-label. Thus, the L sequence starts with a 1 and until
+          // first_node_idx_with_1label_ is reached, 0's are inserted after the
+          // leading 1 in L.
+          // Within that range, T can increase and decrease in size.
+          //  with every expand, 1-bit is added to T, however there may be
+          //  following inner nodes which then become implicit.
+
+          if (cpy.explicit_node_idxs_.begin > cpy.explicit_node_idxs_.end) {
+            goto tree_implicit;
+          }
+
+          // Next
+          prev_idx = idx;
+          idx = cpy.explicit_node_idxs_.begin;
+          idx_level = cpy.level_of(idx);
         }
+
+        // Check if decompression stopped at the minimum sized tree.
+        if (min_idx == prev_idx) {
+          // Take the working copy as is.
+          *this = cpy;
+          // Fix active node map.
+          is_active_node_.set(start_idx + offset,
+              std::min(max_node_cnt_, right_child_of(idx) + 1) + offset);
+          D(validate_active_nodes();)
+          return;
+        }
+
+        goto expand_done;
+
+        tree_implicit:
+        D(std::cout << "tree become implicit." << std::endl;)
+        // Take the working copy as is.
+        *this = cpy;
+        // Fix active node map.
+        is_active_node_.set(start_idx + offset,
+            std::min(max_node_cnt_, right_child_of(idx) + 1) + offset);
+        D(validate_active_nodes();)
+        return;
+
+        expand_done:
+
+        // Check whether the bitmap can be compressed.
+        if (min_size > uncompressed_size) {
+          D(std::cout << "unable to compress." << std::endl;)
+          // Restore the initial tree state.
+          uncompress();
+          D(std::cout << "final size: " << estimate_encoded_size_in_bytes() << std::endl;)
+          return;
+        }
+        D(std::cout << "stop expanding at level " << level_of(idx) << std::endl;)
       }
+      D(std::cout << "stop after expanding " << expand_cntr << " nodes" << std::endl;)
+
       D(expand_cntr = 0;)
-      // Restore the tree instance with the minimum size.
-//      *this = org_state;
-      // Expand the tree down to the node 'min_idx' which identifies the
-      // smallest tree instance found in the previous step.
-      const auto e = std::min(first_node_idx_at_level(height_), min_idx + 1);
-      for (auto it = breadth_first_begin(explicit_node_idxs_.begin);
-          *it < e; ++it) {
-        u64 idx = (*it);
-        if (is_inner_node(idx)) continue;
-//        if (right_child_of(idx) >= max_node_cnt_) break;
-
-        // Expand the leaf node to an inner node.
-        // DANGER: The tree structure is modified during iterating.
-        set_inner(idx);
-        D(++expand_cntr;)
-
-//        if (idx >= min_idx) break;
-        if (min_size <= 64) break;
-        if (explicit_node_idxs_.begin > explicit_node_idxs_.end) break;
+      D(std::cout << "min_idx: " << min_idx << std::endl;)
+      // Restore the tree instance with the minimum size. Expand the tree down
+      // to the node 'min_idx' which identifies the smallest tree instance found
+      // in the previous step.
+      {
+        const auto start_idx = explicit_node_idxs_.begin;
+        const std::size_t expand_until_idx =
+            std::min(first_node_idx_at_level(height_) - 1, min_idx);
+        while (explicit_node_idxs_.begin <= expand_until_idx) {
+          assert(is_leaf_node(explicit_node_idxs_.begin));
+          set_inner<true>(explicit_node_idxs_.begin);
+          D(++expand_cntr;)
+        }
+        // Fix active node map.
+        is_active_node_.set(start_idx + offset, std::min(max_node_cnt_, right_child_of(expand_until_idx) + 1) + offset);
+        D(validate_active_nodes();)
       }
-//      D(std::cout << "first explicit node is at level " << level_of(explicit_node_idxs_.begin) << std::endl;)
-//      D(std::cout << "expanded " << expand_cntr << " nodes" << std::endl;)
+      D(std::cout << "first explicit node is at level " << level_of(explicit_node_idxs_.begin) << std::endl;)
+      D(std::cout << "expanded " << expand_cntr << " nodes" << std::endl;)
+      D(std::cout << "final size: " << estimate_encoded_size_in_bytes() << " bytes" << std::endl;)
+      D(std::cout << std::endl;)
     }
   }
 

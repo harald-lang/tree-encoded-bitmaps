@@ -127,7 +127,7 @@ public:
 
     // Construct a binary tree that represents the given bitmap.
     // Space-optimizations are performed in the (non-encoded) bitmap tree.
-    dtl::bitmap_tree<optimization_level_> bitmap_tree(bitmap, fpr);
+    dtl::bitmap_tree<optimization_level_, false> bitmap_tree(bitmap, fpr);
 
     // Encode the tree into level-order.
     implicit_inner_node_cnt_ = 0;
