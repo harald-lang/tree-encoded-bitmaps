@@ -358,6 +358,16 @@ set(EXPERIMENT_PERFORMANCE_INTERSECT_REVISION_SOURCE_FILES
 add_executable(ex_performance_intersect_revision ${EXPERIMENT_PERFORMANCE_INTERSECT_REVISION_SOURCE_FILES})
 target_link_libraries(ex_performance_intersect_revision fastbit pthread dl)
 
+# REVISION: Performance, construction
+set(EXPERIMENT_PERFORMANCE_CONSTRUCTION_SOURCE_FILES
+        ${SOURCE_FILES}
+        ${BENCHMARK_SOURCE_FILES}
+        experiments/performance/common.hpp
+        experiments/performance/main_performance_construction.cpp
+        )
+add_executable(ex_performance_construction ${EXPERIMENT_PERFORMANCE_CONSTRUCTION_SOURCE_FILES})
+target_link_libraries(ex_performance_construction fastbit pthread dl)
+
 set(EXPERIMENT_MICROBENCHMARK_DOWNWARDS_NAV_SOURCE_FILES
         ${SOURCE_FILES}
         ${BENCHMARK_SOURCE_FILES}
