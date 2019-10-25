@@ -53,7 +53,7 @@ struct task {
   diff_bitmap_t bitmap_type; // under test
   $u64 bitmap_id_a;
   $u64 bitmap_id_b;
-  $f64 diff_limit_frac;
+  $f64 limit_bytes;
 };
 //===----------------------------------------------------------------------===//
 std::vector<range_update_entry>
@@ -144,9 +144,9 @@ void do_measurement(task t, std::ostream& os) {
 
   // Determine the size limit for the differential data structure. Used to
   // trigger merges.
-  const auto diff_limit_frac = t.diff_limit_frac;
-  const std::size_t diff_size_limit_bytes =
-      static_cast<std::size_t>((bm_a.size() / 8) * diff_limit_frac);
+//  const auto diff_limit_frac = t.limit_bytes;
+//  const std::size_t diff_size_limit_bytes =
+//      static_cast<std::size_t>((bm_a.size() / 8) * diff_limit_frac);
 
   // The encoded bitmap.
   T b(bm_a);
@@ -156,6 +156,9 @@ void do_measurement(task t, std::ostream& os) {
   using merge_type = dtl::merge_naive<typename T::bitmap_type, typename T::diff_type>;
 
   // Perform the updates.
+  std::size_t diff_size = b.diff_size_in_byte();
+  std::size_t encoded_size = b.size_in_byte() - diff_size;
+
   std::size_t performed_updates_cnt = 0;
   std::size_t pending_updates_cnt = 0;
   std::size_t merge_cnt = 0;
@@ -169,14 +172,13 @@ void do_measurement(task t, std::ostream& os) {
         << "," << "\"" << b.name() << "\""
         << "," << t.bitmap_id_a
         << "," << t.bitmap_id_b
-        << "," << diff_limit_frac
         << "," << performed_updates_cnt // the number of performed updates
         << "," << total_update_cnt // the total number of updates
         << "," << merge_cnt
         << "," << pending_updates_cnt // the number of updates not yet merged
-        << "," << diff_size_limit_bytes
         << "," << b.diff_size_in_byte()
         << "," << b.size_in_byte()
+        << "," << t.limit_bytes
         << "," << dtl::determine_bit_density(bm_expected)
         << "," << dtl::determine_clustering_factor(bm_expected)
         << "," << "\"" << type_info << "\""
@@ -191,17 +193,27 @@ void do_measurement(task t, std::ostream& os) {
     ++pending_updates_cnt;
     ++performed_updates_cnt;
 
-    const auto diff_size = b.diff_size_in_byte();
-    if (diff_size >= diff_size_limit_bytes) {
+    diff_size = b.diff_size_in_byte();
+    if ((diff_size + encoded_size) >= t.limit_bytes) {
+      print();
       b.template merge<merge_type>();
       pending_updates_cnt = 0;
       ++merge_cnt;
+      encoded_size = b.size_in_byte() - b.diff_size_in_byte();
     }
 
     if (performed_updates_cnt % 100 == 0 || pending_updates_cnt == 0) {
       print();
     }
   }
+
+  std::cerr << b.name()
+      << ", bid_a=" << t.bitmap_id_a
+      << ", bid_b=" << t.bitmap_id_b
+      << ", d=" << bm_a_density
+      << ", f=" << bm_a_clustering_factor
+      << ", limit=" << t.limit_bytes
+            << ", merge_count=" << merge_cnt << std::endl;
 }
 //===----------------------------------------------------------------------===//
 // Type switch.
@@ -221,6 +233,18 @@ void do_measurement(diff_bitmap_t bitmap_type, _Params&&... params) {
   }
 }
 #undef __GEN_CASE
+//===----------------------------------------------------------------------===//
+std::size_t
+get_max(u64 bitmap_id) {
+  const auto plain = db.load_bitmap(bitmap_id);
+  const auto plain_size = plain.size() / 8;
+  const auto roaring_size = dtl::dynamic_roaring_bitmap(plain).size_in_byte();
+  const auto teb_size = dtl::teb_wrapper(plain).size_in_byte();
+//  const auto wah_size = dtl::dynamic_wah32(plain).size_in_byte();
+  const auto wah_size = roaring_size;
+  const auto max = std::max(roaring_size, std::max(teb_size, wah_size));
+  return max;
+}
 //===----------------------------------------------------------------------===//
 $i32 main() {
   // Prepare benchmark settings.
@@ -274,8 +298,8 @@ $i32 main() {
   bitmap_types.push_back(diff_bitmap_t::roaring_roaring);
   bitmap_types.push_back(diff_bitmap_t::teb_roaring);
   bitmap_types.push_back(diff_bitmap_t::teb_wah);
-  bitmap_types.push_back(diff_bitmap_t::wah_roaring);
-  bitmap_types.push_back(diff_bitmap_t::wah_wah);
+//  bitmap_types.push_back(diff_bitmap_t::wah_roaring);
+//  bitmap_types.push_back(diff_bitmap_t::wah_wah);
 
   std::vector<task> tasks;
   for (auto f : clustering_factors) {
@@ -298,8 +322,9 @@ $i32 main() {
           t.bitmap_id_a = bitmap_ids[0];
           t.bitmap_id_b = bitmap_ids[1];
           t.bitmap_type = diff_bitmap_t::teb_wah;
-          for (auto limit : { 0.01, 0.05, 0.10 }) {
-            t.diff_limit_frac = limit;
+          auto max_size = get_max(t.bitmap_id_a);
+          for (auto limit : { 0.01,  0.05, 0.10 }) {
+            t.limit_bytes = max_size + static_cast<std::size_t>(max_size * limit);
             for (auto b : bitmap_types) {
               t.bitmap_type = b;
               tasks.push_back(t);
