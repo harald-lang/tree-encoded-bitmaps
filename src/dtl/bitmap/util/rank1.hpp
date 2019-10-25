@@ -80,6 +80,15 @@ struct rank1 {
         + ",\"block_size\":" + std::to_string(rank_logic::block_bitlength / 8)
         + "}";
   }
+  // TODO remove. rank_size should go 1 level up in the JSON
+  std::string
+  info(u64 bitmap_size) const noexcept {
+    return "{\"name\":"
+        + std::string("\"") + rank_logic::name() + std::string("\"")
+        + ",\"size\":" + std::to_string(estimate_size_in_bytes(bitmap_size))
+        + ",\"block_size\":" + std::to_string(rank_logic::block_bitlength / 8)
+        + "}";
+  }
 
   /// Returns true if the rank is inclusive, false otherwise.
   inline u1

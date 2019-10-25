@@ -116,7 +116,7 @@ public:
         + ",\"perfect_levels\":"
         + std::to_string(dtl::teb<>::determine_perfect_tree_levels(teb_->implicit_inner_node_cnt_))
         + ",\"opt_level\":" + std::to_string(3) // default
-        + ",\"rank\":" + teb_->rank_.info()
+        + ",\"rank\":" + teb_->rank_.info(teb_->tree_bit_cnt_)
         + ",\"leading_zero_labels\":" + std::to_string(teb_->implicit_leading_label_cnt_)
         + "}";
   }
