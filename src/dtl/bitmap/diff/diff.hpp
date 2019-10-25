@@ -97,6 +97,7 @@ public:
     u1 current_val = bitmap_val ^ diff_val;
     if (current_val != val) {
       diff_->set(i, bitmap_val ^ val);
+      diff_->shrink();
     }
   }
 
