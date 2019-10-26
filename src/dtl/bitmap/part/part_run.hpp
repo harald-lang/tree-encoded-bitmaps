@@ -11,7 +11,7 @@ namespace dtl {
 //===----------------------------------------------------------------------===//
 /// Applies a fixed size partitioning to the given bitmap. The implementation
 /// is optimized for very sparse or very dense bitmaps. If a partition contains
-/// only a single run (either 0's or 1's), the no (compressed) bitmap is created
+/// only a single run (either 0's or 1's), then no (compressed) bitmap is created
 /// for that partition.
 template<
     /// The (compressed) bitmap type.

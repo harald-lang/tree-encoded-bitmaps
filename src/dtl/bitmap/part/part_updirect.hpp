@@ -54,7 +54,7 @@ public:
 
   /// Does nothing. Just for compatibility reasons.
   template<typename M>
-  void
+  void __forceinline__
   merge() {}
 };
 //===----------------------------------------------------------------------===//

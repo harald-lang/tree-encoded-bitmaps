@@ -97,6 +97,10 @@ public:
     u1 current_val = bitmap_val ^ diff_val;
     if (current_val != val) {
       diff_->set(i, bitmap_val ^ val);
+      // NOTE: If we do not shrink here, the memory consumption can explode,
+      // as WAH and Roaring (when used as differential data structure) may
+      // internally use an uncompressed bitmap.
+      // On the other hand point updates become more expensive.
       diff_->shrink();
     }
   }
