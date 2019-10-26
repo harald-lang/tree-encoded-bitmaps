@@ -415,5 +415,15 @@ set(EXPERIMENT_PERFORMANCE_VARYING_NUMBER_OF_PENDING_UPDATES_SOURCE_FILES
 add_executable(ex_performance_varying_number_of_pending_updates ${EXPERIMENT_PERFORMANCE_VARYING_NUMBER_OF_PENDING_UPDATES_SOURCE_FILES})
 target_link_libraries(ex_performance_varying_number_of_pending_updates fastbit pthread dl)
 
+# REVISION: Performance, update performance with varying merge thresholds.
+set(EXPERIMENT_PERFORMANCE_UPDATE_TP_VARYING_MERGE_THRESHOLDS_SOURCE_FILES
+        ${SOURCE_FILES}
+        ${BENCHMARK_SOURCE_FILES}
+        experiments/performance/common.hpp
+        experiments/performance/main_performance_update_tp_varying_merge_threshold.cpp
+        )
+add_executable(ex_performance_update_tp_varying_merge_threshold ${EXPERIMENT_PERFORMANCE_UPDATE_TP_VARYING_MERGE_THRESHOLDS_SOURCE_FILES})
+target_link_libraries(ex_performance_update_tp_varying_merge_threshold fastbit pthread dl)
+
 ##===----------------------------------------------------------------------===##
 include(CMakeListsLocal.cmake OPTIONAL)
