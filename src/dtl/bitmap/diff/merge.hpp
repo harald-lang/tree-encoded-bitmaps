@@ -78,12 +78,10 @@ struct merge_inplace {
       "This strategy requires the bitmap and the diff to be of the same type.");
   void
   merge(std::unique_ptr<B>& bitmap, std::unique_ptr<D>& diff) {
-    // TODO avoid the copy
-    auto updated_bitmap = std::make_unique<B>(*bitmap);
-    (*updated_bitmap) ^= *diff;
+    (*bitmap) ^= *diff;
     // Try to save space.
-    updated_bitmap->shrink();
-    std::swap(bitmap, updated_bitmap);
+    bitmap->shrink();
+  }
 
   static std::string
   name() {
