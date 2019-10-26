@@ -89,6 +89,22 @@ struct merge_inplace {
   name() {
     return "inplace";
   }
+};
+//===----------------------------------------------------------------------===//
+/// Mock. Do not merge at all.
+template<
+    /// The (compressed) bitmap type.
+    typename B,
+    /// The differential data structure to use.
+    typename D>
+struct merge_not {
+  void
+  merge(std::unique_ptr<B>& bitmap, std::unique_ptr<D>& diff) {
+  }
+
+  static std::string
+  name() {
+    return "not";
   }
 };
 //===----------------------------------------------------------------------===//
