@@ -119,6 +119,7 @@ set(BENCHMARK_SOURCE_FILES
         experiments/util/params.hpp
         experiments/util/prep_data.cpp
         experiments/util/prep_data.hpp
+        experiments/util/prep_updates.hpp
         experiments/util/seq_db.hpp
         experiments/util/seq_db.cpp
         experiments/util/threading.hpp
@@ -403,6 +404,16 @@ set(EXPERIMENT_INDEX_COMPRESSION_SOURCE_FILES
         )
 add_executable(ex_index_compression ${EXPERIMENT_INDEX_COMPRESSION_SOURCE_FILES})
 target_link_libraries(ex_index_compression fastbit pthread dl)
+
+# REVISION: Performance, read performance with varying number of pending updates.
+set(EXPERIMENT_PERFORMANCE_VARYING_NUMBER_OF_PENDING_UPDATES_SOURCE_FILES
+        ${SOURCE_FILES}
+        ${BENCHMARK_SOURCE_FILES}
+        experiments/performance/common.hpp
+        experiments/performance/main_performance_varying_number_of_pending_updates.cpp
+        )
+add_executable(ex_performance_varying_number_of_pending_updates ${EXPERIMENT_PERFORMANCE_VARYING_NUMBER_OF_PENDING_UPDATES_SOURCE_FILES})
+target_link_libraries(ex_performance_varying_number_of_pending_updates fastbit pthread dl)
 
 ##===----------------------------------------------------------------------===##
 include(CMakeListsLocal.cmake OPTIONAL)

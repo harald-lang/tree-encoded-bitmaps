@@ -5,6 +5,7 @@
 #include "experiments/util/gen.hpp"
 #include "experiments/util/params.hpp"
 #include "experiments/util/prep_data.hpp"
+#include "experiments/util/prep_updates.hpp"
 
 #include <dtl/dtl.hpp>
 
@@ -22,93 +23,12 @@
 //             When it exceeds a given threshold, e.g. 1% of the uncompressed
 //             bitmap size, we perform a merge operation.
 //===----------------------------------------------------------------------===//
-/// Used to queue up pending updates.
-struct update_entry {
-  $u32 pos = -1;
-  $u1 value = false;
-  update_entry(u32 pos, u1 value) : pos(pos), value(value) {}
-  bool operator<(const update_entry& o) const { return pos < o.pos; }
-  void
-  print(std::ostream& os) const noexcept {
-    os << "update_entry[pos=" << pos
-        << ",value=" << (value ? "true" : "false")
-        << "]";
-  }
-};
-struct range_update_entry {
-  $u32 pos = -1;
-  $u32 length = 0;
-  $u1 value = false;
-  bool operator<(const range_update_entry& o) const { return pos < o.pos; }
-
-  void
-  print(std::ostream& os) const noexcept {
-    os << "range_update_entry[pos=" << pos
-       << ",length=" << length
-       << ",value=" << (value ? "true" : "false")
-       << "]";
-  }
-};
 struct task {
   diff_bitmap_t bitmap_type; // under test
   $u64 bitmap_id_a;
   $u64 bitmap_id_b;
   $f64 limit_bytes;
 };
-//===----------------------------------------------------------------------===//
-std::vector<range_update_entry>
-prepare_range_updates(dtl::bitmap bm_a, dtl::bitmap bm_b) {
-  //  std::cout << "a: " << bm_a << std::endl;
-  //  std::cout << "b: " << bm_b << std::endl;
-  //  std::cout << "d: " << (bm_a ^ bm_b) << std::endl;
-  dtl::dynamic_bitmap<$u32> a(bm_a);
-  dtl::dynamic_bitmap<$u32> b(bm_b);
-  auto xor_it = dtl::bitwise_xor_it(a.scan_it(), b.scan_it());
-  std::vector<range_update_entry> updates;
-  while (!xor_it.end()) {
-    {
-      // Start a new update range.
-      updates.emplace_back();
-      auto& update_entry = updates.back();
-      update_entry.pos = xor_it.pos();
-      update_entry.length = 1;
-      update_entry.value = !a.test(xor_it.pos());
-    }
-    for (std::size_t i = 1; i < xor_it.length(); ++i) {
-      auto val = !a.test(xor_it.pos() + i);
-      if (val == updates.back().value) {
-        // Extend the current update range.
-        ++updates.back().length;
-      }
-      else {
-        // Start a new update range.
-        updates.emplace_back();
-        auto& update_entry = updates.back();
-        update_entry.pos = xor_it.pos() + i;
-        update_entry.length = 1;
-        update_entry.value = !a.test(xor_it.pos() + i);
-      }
-    }
-    xor_it.next();
-  }
-
-  // Validation
-  auto a_up = bm_a;
-  for (std::size_t u = 0; u < updates.size(); ++u) {
-    //    std::cout << std::setw(4) << u << ": " << updates[u] << std::endl;
-    auto& entry = updates[u];
-    for (std::size_t i = entry.pos; i < (entry.pos + entry.length); ++i) {
-      a_up[i] = entry.value;
-    }
-  }
-  //  std::cout << "r: " << a_up << std::endl;
-  if (a_up != bm_b) {
-    std::cerr << "Validation failed." << std::endl;
-    std::exit(1);
-  }
-
-  return updates;
-}
 //===----------------------------------------------------------------------===//
 template<typename T>
 void do_measurement(task t, std::ostream& os) {
@@ -141,12 +61,6 @@ void do_measurement(task t, std::ostream& os) {
   }
 
   const std::size_t total_update_cnt = updates.size();
-
-  // Determine the size limit for the differential data structure. Used to
-  // trigger merges.
-//  const auto diff_limit_frac = t.limit_bytes;
-//  const std::size_t diff_size_limit_bytes =
-//      static_cast<std::size_t>((bm_a.size() / 8) * diff_limit_frac);
 
   // The encoded bitmap.
   T b(bm_a);
