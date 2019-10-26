@@ -106,4 +106,22 @@ struct merge_not {
   }
 };
 //===----------------------------------------------------------------------===//
+/// Mock. Forward the merge call.
+template<
+    /// The (compressed) bitmap type.
+    typename B,
+    /// The differential data structure to use.
+    typename D>
+struct merge_forward {
+  inline void
+  merge(std::unique_ptr<B>& bitmap, std::unique_ptr<D>&) {
+    bitmap->merge();
+  }
+
+  static std::string
+  name() {
+    return "forward";
+  }
+};
+//===----------------------------------------------------------------------===//
 } // namespace dtl
