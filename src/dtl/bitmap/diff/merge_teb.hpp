@@ -42,6 +42,11 @@ struct merge_tree {
     auto updated_bitmap = std::make_unique<B>(std::move(mbt));
     std::swap(bitmap, updated_bitmap);
   }
+
+  static std::string
+  name() {
+    return "tree_merge";
+  }
 };
 //===----------------------------------------------------------------------===//
 } // namespace dtl

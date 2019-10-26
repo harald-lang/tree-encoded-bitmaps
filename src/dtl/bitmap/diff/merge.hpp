@@ -33,6 +33,11 @@ struct merge_naive {
     auto updated_bitmap = std::make_unique<B>(plain_bitmap);
     std::swap(bitmap, updated_bitmap);
   }
+
+  static std::string
+  name() {
+    return "naive";
+  }
 };
 //===----------------------------------------------------------------------===//
 /// Naive merge using the iterator interface. - The bitmap is decompressed
@@ -54,6 +59,11 @@ struct merge_naive_iter {
     auto updated_bitmap = std::make_unique<B>(plain_bitmap);
     std::swap(bitmap, updated_bitmap);
   }
+
+  static std::string
+  name() {
+    return "naive_iter";
+  }
 };
 //===----------------------------------------------------------------------===//
 /// In-place merge. Calls the (native) XOR function.
@@ -74,6 +84,11 @@ struct merge_inplace {
     // Try to save space.
     updated_bitmap->shrink();
     std::swap(bitmap, updated_bitmap);
+
+  static std::string
+  name() {
+    return "inplace";
+  }
   }
 };
 //===----------------------------------------------------------------------===//
