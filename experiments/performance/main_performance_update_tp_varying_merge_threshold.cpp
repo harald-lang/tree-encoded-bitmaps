@@ -228,8 +228,9 @@ do_measurement(task& t) {
 template<diff_bitmap_t T, diff_merge_t M>
 void
 do_measurement(task& t) {
-  for (std::size_t mt : {1000, 2500, 5000, 7500, 10000, 12500, 15000, 17500, 20000, 22500, 25000, 27500, 30000, 32500, 35000, 37500, 40000, 42500, 45000, 47500, 50000}){
+  for (std::size_t mt : {1000, 2500, 5000, 7500, 10000, 12500, 15000, 17500, 20000 }) { //, 22500, 25000, 27500, 30000, 32500, 35000, 37500, 40000, 42500, 45000, 47500, 50000}){
 //  for (std::size_t mt : {1000, 5000, 10000, 15000, 20000, 25000, 30000, 35000, 40000, 45000, 50000}){
+    if (t.update_threshold < mt) break;
     t.merge_threshold = mt;
     do_measurement<
         typename diff_type_of<T>::type,
@@ -249,6 +250,7 @@ $i32 main() {
   clustering_factors.push_back(8.0);
 
   std::vector<$f64> bit_densities;
+//  bit_densities.push_back(0.01);
   bit_densities.push_back(0.1);
 //  bit_densities.push_back(0.25);
 
@@ -302,7 +304,9 @@ $i32 main() {
           task t;
           t.bitmap_id_a = bitmap_ids[0];
           t.bitmap_id_b = bitmap_ids[1];
-          t.update_threshold = 100000;
+          const auto bm_b = db.load_bitmap(t.bitmap_id_b);
+          t.update_threshold = std::min(std::size_t(100000), bm_b.count());
+          std::cout<< t.update_threshold << std::endl;
 //          do_measurement<diff_bitmap_t::part_teb,        diff_merge_t::no>(t); // DON'T! VERY SLOW
 //          do_measurement<diff_bitmap_t::part_wah,        diff_merge_t::no>(t); // DON'T! VERY SLOW
           do_measurement<diff_bitmap_t::part_diff_teb,   diff_merge_t::naive>(t);
@@ -320,8 +324,13 @@ $i32 main() {
           do_measurement<diff_bitmap_t::teb_roaring,     diff_merge_t::naive_iter>(t);
           do_measurement<diff_bitmap_t::teb_roaring,     diff_merge_t::tree>(t);
 
-          do_measurement<diff_bitmap_t::wah_roaring,     diff_merge_t::naive>(t);
-          do_measurement<diff_bitmap_t::wah_roaring,     diff_merge_t::naive_iter>(t);
+          // DON'T use WAH (without fence pointers or partitioning).
+          // Recall, every point update cause a point lookup, with is in O(n)
+          // WAH.
+//          do_measurement<diff_bitmap_t::wah_roaring,     diff_merge_t::naive>(t);
+//          do_measurement<diff_bitmap_t::wah_roaring,     diff_merge_t::naive_iter>(t);
+          do_measurement<diff_bitmap_t::part_wah_roaring,  diff_merge_t::naive>(t);
+          do_measurement<diff_bitmap_t::part_wah_roaring,  diff_merge_t::naive_iter>(t);
 
           // DON'T use WAH as diff structure! SLOW
 //          do_measurement<diff_bitmap_t::roaring_wah,     diff_merge_t::naive>(t);

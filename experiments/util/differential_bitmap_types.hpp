@@ -9,6 +9,19 @@
 #include <dtl/bitmap/part/part_upforward.hpp>
 #include <dtl/bitmap/teb_wrapper.hpp>
 //===----------------------------------------------------------------------===//
+using partitioned_teb = dtl::part_updirect<dtl::teb_wrapper, 1ull << 16>;
+using partitioned_teb_diff_structure = dtl::dynamic_roaring_bitmap;
+using partitioned_differential_teb =
+dtl::part_upforward<dtl::diff<dtl::teb_wrapper,partitioned_teb_diff_structure>,
+    1ull << 16>;
+
+using partitioned_wah = dtl::part<dtl::dynamic_wah32, 1ull << 16>;
+using partitioned_wah_diff_structure = dtl::dynamic_roaring_bitmap;
+//using partitioned_wah_diff_structure = dtl::dynamic_wah32; // WAH disqualifies as diff structure, in general
+using partitioned_differential_wah =
+dtl::part_upforward<dtl::diff<dtl::dynamic_wah32,partitioned_wah_diff_structure>,
+    1ull << 16>;
+//===----------------------------------------------------------------------===//
 #define __DIFF_NAME_ROARING_WAH roaring_wah
 #define __DIFF_TYPE_ROARING_WAH dtl::diff<dtl::dynamic_roaring_bitmap, dtl::dynamic_wah32>
 
@@ -26,19 +39,9 @@
 
 #define __DIFF_NAME_WAH_ROARING wah_roaring
 #define __DIFF_TYPE_WAH_ROARING dtl::diff<dtl::dynamic_wah32, dtl::dynamic_roaring_bitmap>
-//===----------------------------------------------------------------------===//
-using partitioned_teb = dtl::part_updirect<dtl::teb_wrapper, 1ull << 16>;
-using partitioned_teb_diff_structure = dtl::dynamic_roaring_bitmap;
-using partitioned_differential_teb =
-    dtl::part_upforward<dtl::diff<dtl::teb_wrapper,partitioned_teb_diff_structure>,
-    1ull << 16>;
 
-using partitioned_wah = dtl::part_updirect<dtl::dynamic_wah32, 1ull << 16>;
-using partitioned_wah_diff_structure = dtl::dynamic_roaring_bitmap;
-//using partitioned_wah_diff_structure = dtl::dynamic_wah32; // WAH disqualifies as diff structure, in general
-using partitioned_differential_wah =
-dtl::part_upforward<dtl::diff<dtl::dynamic_wah32,partitioned_wah_diff_structure>,
-    1ull << 16>;
+#define __DIFF_NAME_PART_WAH_ROARING part_wah_roaring
+#define __DIFF_TYPE_PART_WAH_ROARING dtl::diff<partitioned_wah, dtl::dynamic_roaring_bitmap>
 //===----------------------------------------------------------------------===//
 // FIXME misnormer ... updatable bitmap types
 enum class diff_bitmap_t {
@@ -48,6 +51,7 @@ enum class diff_bitmap_t {
   __DIFF_NAME_TEB_ROARING,
   __DIFF_NAME_WAH_WAH,
   __DIFF_NAME_WAH_ROARING,
+  __DIFF_NAME_PART_WAH_ROARING,
   roaring,
   part_teb, // a partitioned TEB which supports direct updates
   part_diff_teb, // a partitioned TEB where each partition has a diff structure
@@ -97,6 +101,7 @@ __GENERATE(__DIFF_NAME_TEB_WAH, __DIFF_TYPE_TEB_WAH)
 __GENERATE(__DIFF_NAME_TEB_ROARING, __DIFF_TYPE_TEB_ROARING)
 __GENERATE(__DIFF_NAME_WAH_WAH, __DIFF_TYPE_WAH_WAH)
 __GENERATE(__DIFF_NAME_WAH_ROARING, __DIFF_TYPE_WAH_ROARING)
+__GENERATE(__DIFF_NAME_PART_WAH_ROARING, __DIFF_TYPE_PART_WAH_ROARING)
 #undef __GENERATE
 //===----------------------------------------------------------------------===//
 enum class diff_merge_t {
@@ -138,6 +143,9 @@ __GENERATE(__DIFF_NAME_TEB_WAH, tree, dtl::merge_tree)
 
 __GENERATE(__DIFF_NAME_WAH_ROARING, naive, dtl::merge_naive)
 __GENERATE(__DIFF_NAME_WAH_ROARING, naive_iter, dtl::merge_naive_iter)
+
+__GENERATE(__DIFF_NAME_PART_WAH_ROARING, naive, dtl::merge_naive)
+__GENERATE(__DIFF_NAME_PART_WAH_ROARING, naive_iter, dtl::merge_naive_iter)
 
 __GENERATE(__DIFF_NAME_WAH_WAH, naive, dtl::merge_naive)
 __GENERATE(__DIFF_NAME_WAH_WAH, naive_iter, dtl::merge_naive_iter)
