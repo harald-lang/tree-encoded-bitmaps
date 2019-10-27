@@ -217,7 +217,7 @@ public:
 
   /// Returns the position of the first set bit. If no bits are set, the length
   /// of the bitmap is returned.
-  std::size_t __attribute__((noinline))
+  std::size_t __forceinline__
   find_first() const {
     const auto ret_val = bitmap_fun<word_type>::find_first(
         bitmap_.data(), bitmap_.data() + bitmap_.size());
@@ -226,7 +226,7 @@ public:
 
   /// Returns the position of the first set bit within the range [b,e). If no
   /// bits are set, e is returned.
-  std::size_t __attribute__((noinline))
+  std::size_t __forceinline__
   find_first(std::size_t b, std::size_t e) const {
     assert(b <= n_);
     assert(e <= n_);
@@ -240,7 +240,7 @@ public:
 
   /// Returns the position of the last set bit. If no bits are set, the length
   /// of the bitmap is returned.
-  std::size_t __attribute__((noinline))
+  std::size_t __forceinline__
   find_last() const {
     const auto ret_val = bitmap_fun<word_type>::find_last(
         bitmap_.data(), bitmap_.data() + bitmap_.size());
