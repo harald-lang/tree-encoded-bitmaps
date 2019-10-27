@@ -12,6 +12,7 @@
 #include <dtl/bitmap/diff/diff.hpp>
 #include <dtl/bitmap/diff/merge.hpp>
 #include <dtl/bitmap/diff/merge_teb.hpp>
+#include <dtl/bitmap/part/part.hpp>
 #include <iostream>
 #include <random>
 #include <vector>
@@ -355,6 +356,8 @@ $i32 main() {
 //          do_measurement<dtl::teb<>, dtl::dynamic_roaring_bitmap>(bid_a, bid_b);
           do_measurement<dtl::teb_wrapper, dtl::dynamic_wah32>(bid_a, bid_b);
           do_measurement<dtl::teb_wrapper, dtl::dynamic_roaring_bitmap>(bid_a, bid_b);
+          do_measurement<dtl::part<dtl::teb_wrapper, 1ull << 16>, dtl::dynamic_wah32>(bid_a, bid_b);
+          do_measurement<dtl::part<dtl::teb_wrapper, 1ull << 16>, dtl::dynamic_roaring_bitmap>(bid_a, bid_b);
           do_measurement<dtl::dynamic_wah32, dtl::dynamic_wah32>(bid_a, bid_b);
           do_measurement<dtl::dynamic_wah32, dtl::dynamic_roaring_bitmap>(bid_a, bid_b);
         }
