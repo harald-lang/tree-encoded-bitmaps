@@ -307,13 +307,15 @@ public:
           assert(src_idx % 64 == 0);
           assert(src_idx % 32 == 0);
 
+          const auto src_word_idx = src_idx / 64;
+
           $u64* raw_label_ptr = labels_.data();
-          u64 src_labels = raw_label_ptr[src_idx / 64];
+          u64 src_labels = raw_label_ptr[src_word_idx];
           u32 collapse_causes_false_positives = static_cast<$u32>(
               _pext_u64(src_labels ^ (src_labels >> 1), 0x5555555555555555)); // FIXME non-portable code
 
           $u64* raw_node_ptr = is_inner_node_.data();
-          u64 src_nodes = raw_node_ptr[src_idx / 64];
+          u64 src_nodes = raw_node_ptr[src_word_idx];
           u32 both_nodes_are_leaves = static_cast<$u32>(
               _pext_u64(~src_nodes & (~src_nodes >> 1), 0x5555555555555555)); // FIXME non-portable code
 
@@ -325,10 +327,10 @@ public:
 
           // Set the pruned nodes inactive.
           $u64* raw_active_node_ptr = is_active_node_.data();
-          auto src_active_nodes = raw_active_node_ptr[src_idx / 64];
+          auto src_active_nodes = raw_active_node_ptr[src_word_idx];
           $u64 a = _pdep_u64(~collapse, 0x5555555555555555);
           a = a | (a << 1);
-          raw_active_node_ptr[src_idx / 64] = a;
+          raw_active_node_ptr[src_word_idx] = a;
 
           src_node_idx += 64;
           dst_node_idx += 32;
@@ -539,8 +541,7 @@ public:
     first_node_idx_with_1label_ = max_node_cnt_;
     last_node_idx_with_1label_ = max_node_cnt_;
 
-    auto is_leaf_node = ~is_inner_node_;
-    auto active_leaf_nodes = is_leaf_node & is_active_node_;
+    auto active_leaf_nodes = is_active_node_.and_not(is_inner_node_);
 
     {
       auto active_leaf_nodes_with_1_labels = active_leaf_nodes & labels_;
@@ -549,7 +550,7 @@ public:
       last_node_idx_with_1label_ =
           active_leaf_nodes_with_1_labels.find_last() - offset;
 
-      auto active_leaf_nodes_with_0_labels = active_leaf_nodes & ~labels_;
+      auto active_leaf_nodes_with_0_labels = active_leaf_nodes.and_not(labels_);
       leading_0label_cnt_ =
           active_leaf_nodes_with_0_labels.count(offset, first_node_idx_with_1label_ + offset);
       trailing_0label_cnt_ =

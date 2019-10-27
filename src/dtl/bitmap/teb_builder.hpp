@@ -276,7 +276,7 @@ teb_builder::serialize(word_type* dst) {
     if (hdr.has_level_offsets) {
       // Used to compute the offsets for the labels.
       const auto active_leaf_nodes =
-          bitmap_tree_.is_active_node_ & ~bitmap_tree_.is_inner_node_;
+          bitmap_tree_.is_active_node_.and_not(bitmap_tree_.is_inner_node_);
       // The number of entries in the table.
       const auto entry_cnt = hdr.encoded_tree_height - hdr.perfect_level_cnt;
 
