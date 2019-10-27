@@ -3,6 +3,8 @@
 #include <dtl/dtl.hpp>
 #include <dtl/math.hpp>
 
+#include <boost/dynamic_bitset.hpp>
+
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -23,7 +25,7 @@ struct rank1 {
 
   ~rank1() = default;
 
-  /// Initializes the rank LuT based on the given bitmap.
+  /// Initializes the rank LuT based on the given bitmap. // TODO remove boost dependency
   void
   init(const boost::dynamic_bitset<word_type>& bitmap) {
     u64 bitmap_bitlength = bitmap.m_bits.size() * word_bitlength;
