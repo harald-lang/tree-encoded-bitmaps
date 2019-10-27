@@ -197,6 +197,19 @@ public:
     return std::move(ret);
   }
 
+  /// Bitwise AND-NOT (this & ~other)
+  plain_bitmap __forceinline__
+  and_not(const plain_bitmap& other) const {
+    assert(size() == other.size());
+    plain_bitmap ret(size(), false);
+    bitmap_fun<word_type>::bitwise_and_not(
+        ret.data_begin(), ret.data_end(),
+        this->data_begin(), this->data_end(),
+        other.data_begin(), other.data_end()
+        );
+    return std::move(ret);
+  }
+
   /// Bitwise OR
   plain_bitmap __forceinline__
   operator|(const plain_bitmap& other) const {
