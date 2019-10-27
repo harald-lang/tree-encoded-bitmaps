@@ -228,8 +228,9 @@ do_measurement(task& t) {
 template<diff_bitmap_t T, diff_merge_t M>
 void
 do_measurement(task& t) {
-  for (std::size_t mt : {1000, 2500, 5000, 7500, 10000, 12500, 15000, 17500, 20000 }) { //, 22500, 25000, 27500, 30000, 32500, 35000, 37500, 40000, 42500, 45000, 47500, 50000}){
-//  for (std::size_t mt : {1000, 5000, 10000, 15000, 20000, 25000, 30000, 35000, 40000, 45000, 50000}){
+  for (std::size_t mt : {
+      1000, 2500, 5000, 7500, 10000, 12500, 15000, 17500, 20000, 22500, 25000,
+      27500, 30000, 32500, 35000, 37500, 40000, 42500, 45000, 47500, 50000}) {
     if (t.update_threshold < mt) break;
     t.merge_threshold = mt;
     do_measurement<
@@ -329,6 +330,7 @@ $i32 main() {
           // WAH.
 //          do_measurement<diff_bitmap_t::wah_roaring,     diff_merge_t::naive>(t);
 //          do_measurement<diff_bitmap_t::wah_roaring,     diff_merge_t::naive_iter>(t);
+
           do_measurement<diff_bitmap_t::part_wah_roaring,  diff_merge_t::naive>(t);
           do_measurement<diff_bitmap_t::part_wah_roaring,  diff_merge_t::naive_iter>(t);
 

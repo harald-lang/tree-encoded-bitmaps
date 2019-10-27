@@ -5,9 +5,9 @@
 #include "util/bitmap_tree.hpp"
 #include "util/bitmap_view.hpp"
 
-#include <boost/dynamic_bitset.hpp>
-
 #include <dtl/dtl.hpp>
+
+#include <boost/dynamic_bitset.hpp>
 #include <boost/concept_check.hpp>
 //===----------------------------------------------------------------------===//
 namespace dtl {

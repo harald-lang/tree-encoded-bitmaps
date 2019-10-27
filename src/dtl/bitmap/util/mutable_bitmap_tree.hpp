@@ -28,7 +28,7 @@ class mutable_bitmap_tree
 
 public:
   /// C'tor
-  explicit mutable_bitmap_tree(const dtl::teb_flat& teb)
+  explicit mutable_bitmap_tree(const dtl::teb_flat& teb) __attribute__((noinline))
       : bitmap_tree<optimization_level_>(teb.n_, false /* do not initialize the tree structure*/),
         perfect_level_cnt_(dtl::log_2(teb.implicit_inner_node_cnt_ + 1) + 1),
         tree_height_(dtl::log_2(teb.n_)) {
@@ -159,6 +159,11 @@ public:
 #endif
     this->counters_are_valid = false;
   }
+
+  explicit mutable_bitmap_tree(const boost::dynamic_bitset<$u32>& bitmap, f64 fpr = 0.0)
+      : bitmap_tree<optimization_level_>(bitmap),
+        perfect_level_cnt_(1),
+        tree_height_(dtl::log_2(bitmap.size())) {}
 
   mutable_bitmap_tree(const mutable_bitmap_tree& other) = default;
   mutable_bitmap_tree(mutable_bitmap_tree&& other) noexcept = default;

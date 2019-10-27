@@ -6,6 +6,7 @@
 #include <random>
 #include <tuple>
 //===----------------------------------------------------------------------===//
+// TODO move to dtl namespace
 /// Implementation of a two-state Markov process to generate (clustered) bit
 /// sequences as defined in the TODS paper "Optimizing Bitmap Indices With
 /// Efficient Compression" of Wu et al.
