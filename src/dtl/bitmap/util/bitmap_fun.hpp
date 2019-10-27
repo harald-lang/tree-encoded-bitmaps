@@ -231,7 +231,7 @@ struct bitmap_fun {
     const word_type X = ~word_type(0) << X_off;
     const word_type Y = ~word_type(0) >> ((word_bitlength - (e % word_bitlength)) % word_bitlength);
 
-    if (likely(x == y)) {
+    if (x == y) {
       const word_type w = bitmap[x] & (X & Y);
       if (w == 0) return e;
       return b + dtl::bits::tz_count(w >> X_off);

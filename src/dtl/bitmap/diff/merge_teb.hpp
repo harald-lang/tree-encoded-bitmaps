@@ -23,7 +23,7 @@ template<
     /// The differential data structure to use.
     typename D>
 struct merge_tree {
-  void
+  void __attribute__((noinline))
   merge(std::unique_ptr<B>& bitmap, std::unique_ptr<D>& diff) {
     // Decompress the TEB into a bitmap tree.
     dtl::mutable_bitmap_tree<> mbt(*(bitmap->teb_));

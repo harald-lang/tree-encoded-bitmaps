@@ -540,15 +540,14 @@ public:
     last_node_idx_with_1label_ = max_node_cnt_;
 
     auto is_leaf_node = ~is_inner_node_;
+    auto active_leaf_nodes = is_leaf_node & is_active_node_;
 
     {
-      auto active_leaf_nodes = is_leaf_node & is_active_node_;
       auto active_leaf_nodes_with_1_labels = active_leaf_nodes & labels_;
       first_node_idx_with_1label_ =
           active_leaf_nodes_with_1_labels.find_first() - offset;
       last_node_idx_with_1label_ =
           active_leaf_nodes_with_1_labels.find_last() - offset;
-
 
       auto active_leaf_nodes_with_0_labels = active_leaf_nodes & ~labels_;
       leading_0label_cnt_ =
@@ -561,11 +560,9 @@ public:
       auto active_inner_nodes = is_active_node_ & is_inner_node_;
       inner_node_cnt_ = active_inner_nodes.count(offset, max_node_cnt_ + offset);
       explicit_node_idxs_.end = (active_inner_nodes.find_last() - offset) + 1;
-
     }
 
     {
-      auto active_leaf_nodes = is_active_node_ & is_leaf_node;
       explicit_node_idxs_.begin =
           active_leaf_nodes.find_first(offset, max_node_cnt_ + offset) - offset;
       trailing_leaf_node_cnt_ =

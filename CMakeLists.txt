@@ -135,6 +135,7 @@ set(TEST_FILES
         test/dtl/bitmap/util/bit_buffer_avx512_test.cpp
         test/dtl/bitmap/util/bit_buffer_test.cpp
         test/dtl/bitmap/util/bitmap_fun_test.cpp
+        test/dtl/bitmap/util/bitmap_seq_reader_test.cpp
         test/dtl/bitmap/util/rank_test.cpp
         test/dtl/bitmap/api_types.hpp
         test/dtl/bitmap/api_encode_decode_test.cpp
@@ -176,6 +177,7 @@ set(TEB_SOURCE_FILES
         src/dtl/bitmap/util/bit_buffer_avx2.hpp
         src/dtl/bitmap/util/bit_buffer_avx512.hpp
         src/dtl/bitmap/util/bitmap_fun.hpp
+        src/dtl/bitmap/util/bitmap_seq_reader.hpp
         src/dtl/bitmap/util/bitmap_tree.hpp
         src/dtl/bitmap/util/bitmap_view.hpp
         src/dtl/bitmap/util/bitmap_writer.hpp

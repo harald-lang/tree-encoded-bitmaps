@@ -29,8 +29,8 @@ public:
     bitmap_tree_.ensure_counters_are_valid();
   }
 
-  explicit teb_builder(const bitmap_tree<>& bitmap_tree)
-      : bitmap_tree_(bitmap_tree) {
+  explicit teb_builder(const bitmap_tree<>&& bitmap_tree)
+      : bitmap_tree_(std::move(bitmap_tree)) {
     bitmap_tree_.ensure_counters_are_valid();
   }
 
@@ -99,7 +99,6 @@ private:
   }
 };
 //===----------------------------------------------------------------------===//
-//void __attribute__((noinline))
 inline void
 teb_builder::serialize(word_type* dst) {
   // Prepare the header.
