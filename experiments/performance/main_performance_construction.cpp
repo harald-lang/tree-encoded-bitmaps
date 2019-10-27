@@ -3,6 +3,7 @@
 #include "experiments/util/gen.hpp"
 #include "experiments/util/prep_data.hpp"
 
+#include <dtl/bitmap/part/part.hpp>
 #include <dtl/dtl.hpp>
 
 #include <iostream>
@@ -173,6 +174,7 @@ $i32 main() {
   std::function<void(const config&, std::ostream&)> fn =
       [](const config c, std::ostream& os) -> void {
     run_construction_benchmark<dtl::teb_wrapper>(c, os);
+    run_construction_benchmark<dtl::part<dtl::teb_wrapper, 1ull << 16>>(c, os);
     run_construction_benchmark<dtl::dynamic_roaring_bitmap>(c, os);
     run_construction_benchmark<dtl::dynamic_wah32>(c, os);
   };
