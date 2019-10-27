@@ -143,9 +143,21 @@ public:
     return bitmap_.data();
   }
 
+  /// Returns a const pointer to the first word of the bitmap.
+  __forceinline__ const word_type*
+  data_begin() const noexcept {
+    return bitmap_.data();
+  }
+
   /// Returns a pointer to one past the last word of the bitmap.
   __forceinline__ word_type*
   data_end() noexcept {
+    return bitmap_.data() + bitmap_.size();
+  }
+
+  /// Returns a const pointer to one past the last word of the bitmap.
+  __forceinline__ const word_type*
+  data_end() const noexcept {
     return bitmap_.data() + bitmap_.size();
   }
 
@@ -177,10 +189,12 @@ public:
   operator&(const plain_bitmap& other) const {
     assert(size() == other.size());
     plain_bitmap ret(size(), false);
-    for (std::size_t w = 0; w < bitmap_.size(); ++w) {
-      ret.data()[w] = data()[w] & other.data()[w]; // TODO SIMDize
-    }
-    return ret;
+    bitmap_fun<word_type>::bitwise_and(
+        ret.data_begin(), ret.data_end(),
+        this->data_begin(), this->data_end(),
+        other.data_begin(), other.data_end()
+        );
+    return std::move(ret);
   }
 
   /// Bitwise OR
@@ -188,10 +202,12 @@ public:
   operator|(const plain_bitmap& other) const {
     assert(size() == other.size());
     plain_bitmap ret(size(), false);
-    for (std::size_t w = 0; w < bitmap_.size(); ++w) {
-      ret.data()[w] = data()[w] | other.data()[w]; // TODO SIMDize
-    }
-    return ret;
+    bitmap_fun<word_type>::bitwise_or(
+        ret.data_begin(), ret.data_end(),
+        this->data_begin(), this->data_end(),
+        other.data_begin(), other.data_end()
+    );
+    return std::move(ret);
   }
 
   /// Bitwise XOR
@@ -199,20 +215,23 @@ public:
   operator^(const plain_bitmap& other) const {
     assert(size() == other.size());
     plain_bitmap ret(size(), false);
-    for (std::size_t w = 0; w < bitmap_.size(); ++w) {
-      ret.data()[w] = data()[w] ^ other.data()[w]; // TODO SIMDize
-    }
-    return ret;
+    bitmap_fun<word_type>::bitwise_xor(
+        ret.data_begin(), ret.data_end(),
+        this->data_begin(), this->data_end(),
+        other.data_begin(), other.data_end()
+    );
+    return std::move(ret);
   }
 
   /// Bitwise NOT
   plain_bitmap __forceinline__
   operator~() const {
     plain_bitmap ret(size(), false);
-    for (std::size_t w = 0; w < bitmap_.size(); ++w) {
-      ret.data()[w] = ~(data()[w]); // TODO SIMDize
-    }
-    return ret;
+    bitmap_fun<word_type>::bitwise_not(
+        ret.data_begin(), ret.data_end(),
+        this->data_begin(), this->data_end()
+    );
+    return std::move(ret);
   }
 
   /// Returns the position of the first set bit. If no bits are set, the length

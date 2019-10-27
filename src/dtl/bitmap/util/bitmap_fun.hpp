@@ -568,6 +568,84 @@ struct bitmap_fun {
     }
   }
 
+  /// Compute the bitwise AND.
+  static inline void
+  bitwise_and(
+      word_type* __restrict dst_begin,
+      word_type* __restrict dst_end,
+      const word_type* __restrict a_begin,
+      const word_type* __restrict a_end,
+      const word_type* __restrict b_begin,
+      const word_type* __restrict b_end
+      ) {
+    const std::size_t word_cnt = dst_end - dst_begin;
+    for (std::size_t i = 0; i < word_cnt; ++i) {
+      dst_begin[i] = a_begin[i] & b_begin[i];
+    }
+  }
+
+  /// Compute the bitwise OR.
+  static inline void
+  bitwise_or(
+      word_type* __restrict dst_begin,
+      word_type* __restrict dst_end,
+      const word_type* __restrict a_begin,
+      const word_type* __restrict a_end,
+      const word_type* __restrict b_begin,
+      const word_type* __restrict b_end
+      ) {
+    const std::size_t word_cnt = dst_end - dst_begin;
+    for (std::size_t i = 0; i < word_cnt; ++i) {
+      dst_begin[i] = a_begin[i] | b_begin[i];
+    }
+  }
+
+  /// Compute the bitwise XOR.
+  static inline void
+  bitwise_xor(
+      word_type* __restrict dst_begin,
+      word_type* __restrict dst_end,
+      const word_type* __restrict a_begin,
+      const word_type* __restrict a_end,
+      const word_type* __restrict b_begin,
+      const word_type* __restrict b_end
+      ) {
+    const std::size_t word_cnt = dst_end - dst_begin;
+    for (std::size_t i = 0; i < word_cnt; ++i) {
+      dst_begin[i] = a_begin[i] ^ b_begin[i];
+    }
+  }
+
+  /// Compute the bitwise NOT.
+  static inline void
+  bitwise_not(
+      word_type* __restrict dst_begin,
+      word_type* __restrict dst_end,
+      const word_type* __restrict src_begin,
+      const word_type* __restrict src_end
+      ) {
+    const std::size_t word_cnt = dst_end - dst_begin;
+    for (std::size_t i = 0; i < word_cnt; ++i) {
+      dst_begin[i] = ~src_begin[i];
+    }
+  }
+
+  /// Compute the bitwise a AND (NOT b).
+  static inline void
+  bitwise_and_not(
+      word_type* __restrict dst_begin,
+      word_type* __restrict dst_end,
+      const word_type* __restrict a_begin,
+      const word_type* __restrict a_end,
+      const word_type* __restrict b_begin,
+      const word_type* __restrict b_end
+  ) {
+    const std::size_t word_cnt = dst_end - dst_begin;
+    for (std::size_t i = 0; i < word_cnt; ++i) {
+      dst_begin[i] = a_begin[i] & ~b_begin[i];
+    }
+  }
+
 private:
   // Construction not allowed.
   bitmap_fun() = delete;
