@@ -81,7 +81,7 @@ void do_measurement(task t, std::ostream& os) {
     std::string type_info = b.info();
     boost::replace_all(type_info, "\"", "\"\""); // Escape JSON for CSV output.
 
-    std::cout << RUN_ID
+    os << RUN_ID
         << ",\"" << BUILD_ID << "\""
         << "," << "\"" << b.name() << "\""
         << "," << t.bitmap_id_a
@@ -235,7 +235,6 @@ $i32 main() {
           task t;
           t.bitmap_id_a = bitmap_ids[0];
           t.bitmap_id_b = bitmap_ids[1];
-          t.bitmap_type = diff_bitmap_t::teb_wah;
           auto max_size = get_max(t.bitmap_id_a);
           for (auto limit : { 0.01,  0.05, 0.10 }) {
             t.limit_bytes = max_size + static_cast<std::size_t>(max_size * limit);
