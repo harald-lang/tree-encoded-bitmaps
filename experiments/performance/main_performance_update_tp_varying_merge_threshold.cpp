@@ -307,7 +307,7 @@ $i32 main() {
           t.bitmap_id_b = bitmap_ids[1];
           const auto bm_b = db.load_bitmap(t.bitmap_id_b);
           t.update_threshold = std::min(std::size_t(100000), bm_b.count());
-          std::cout<< t.update_threshold << std::endl;
+          std::cerr<< t.update_threshold << std::endl;
 //          do_measurement<diff_bitmap_t::part_teb,        diff_merge_t::no>(t); // DON'T! VERY SLOW
 //          do_measurement<diff_bitmap_t::part_wah,        diff_merge_t::no>(t); // DON'T! VERY SLOW
           do_measurement<diff_bitmap_t::part_diff_teb,   diff_merge_t::naive>(t);
