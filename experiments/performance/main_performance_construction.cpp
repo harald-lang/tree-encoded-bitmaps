@@ -87,7 +87,7 @@ run_construction_benchmark(const config& c, std::ostream& os) {
   os << RUN_ID
      << ",\"" << BUILD_ID << "\""
      << "," << c.n
-     << "," << T::name()
+     << "," << "\"" << T::name() << "\""
      << "," << runtime_nanos
      << "," << runtime_cycles
      << "," << c.density
