@@ -134,17 +134,20 @@ void run(const std::string& dir, std::ostream& result_out) {
       r = roaring.size_in_byte();
     }
     {
-//      dtl::dynamic_wah32 wah(bm);
-//      w = wah.size_in_byte();
+      dtl::dynamic_wah32 wah(bm);
+      w = wah.size_in_byte();
     }
     {
-//      dtl::dynamic_wah64 wah(bm);
-//      w64 = wah.size_in_byte();
+      dtl::dynamic_wah64 wah(bm);
+      w64 = wah.size_in_byte();
     }
     {
-      dtl::teb<> teb(bm_pow2);
+      dtl::teb_wrapper teb(bm_pow2);
+//      dtl::teb<> teb(bm_pow2);
       t = teb.size_in_byte();
-      t_rank = teb.rank_.size_in_bytes();
+//      t_rank = 0; //teb.rank_.size_in_bytes();
+      t_rank =
+          teb.teb_->get_rank_word_cnt(teb.data_.data()) * sizeof(dtl::teb_word_type);
       const auto dec = dtl::to_bitmap_using_iterator(teb);
       if ((bm_pow2 & dec) != bm_pow2) {
         std::cerr << "Validation failed." << std::endl;
@@ -182,12 +185,14 @@ void run(const std::string& dir, std::ostream& result_out) {
 
   dispatch(0, bitmaps.size(), thread_fn);
 
+//  result_out << dir << std::endl;
 //  result_out << "roaring: " << std::setw(15) << bytes_roaring << " bytes, " << std::setw(15) << std::setprecision(4) << ((bytes_roaring * 8.0) / total_bit_cnt) << " bits/int" << std::endl;
-//  result_out << "teb:     " << std::setw(15) << bytes_teb << " bytes, " << std::setw(15) << std::setprecision(4) << ((bytes_teb * 8.0) / total_bit_cnt) << " bits/int" << std::endl;
-//  result_out << "wah:     " << std::setw(15) << bytes_wah << " bytes, " << std::setw(15) << std::setprecision(4) << ((bytes_wah * 8.0) / total_bit_cnt) << " bits/int" << std::endl;
-//  result_out << "wah64:   " << std::setw(15) << bytes_wah64 << " bytes, " << std::setw(15) << std::setprecision(4) << ((bytes_wah64 * 8.0) / total_bit_cnt) << " bits/int" << std::endl;
+//  result_out << "teb:     " << std::setw(15) << bytes_teb     << " bytes, " << std::setw(15) << std::setprecision(4) << ((bytes_teb     * 8.0) / total_bit_cnt) << " bits/int" << std::endl;
+//  result_out << "wah:     " << std::setw(15) << bytes_wah     << " bytes, " << std::setw(15) << std::setprecision(4) << ((bytes_wah     * 8.0) / total_bit_cnt) << " bits/int" << std::endl;
+//  result_out << "wah64:   " << std::setw(15) << bytes_wah64   << " bytes, " << std::setw(15) << std::setprecision(4) << ((bytes_wah64   * 8.0) / total_bit_cnt) << " bits/int" << std::endl;
 
-    result_out
+//  result_out << "TEB details:" << std::endl;
+  result_out
       << "\"" << dir << "\","
       << total_bit_cnt << ","
       << bytes_teb << "," << bytes_teb_rank << ","

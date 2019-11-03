@@ -130,7 +130,7 @@ public:
     }
 
     // Hack for very sparse/unclustered bitmaps.
-    first_1label_idx_ = teb_.L_.find_first();
+    first_1label_idx_ = teb_.L_.find_first(); // TODO always 0?
 
     results_.reserve(batch_size);
     if (teb_.encoded_tree_height_ == 1) {

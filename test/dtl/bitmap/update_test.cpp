@@ -8,6 +8,10 @@
 //===----------------------------------------------------------------------===//
 using updatable_types_under_test = ::testing::Types<
     part_8_teb,
+    part_8_wah,
+    part_8_upfwd_wah,
+    part_8_upfwd_diff_teb,
+    
     part_run_8_teb,
     roaring_bitmap,
     wah

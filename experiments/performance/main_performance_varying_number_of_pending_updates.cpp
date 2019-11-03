@@ -13,6 +13,7 @@
 #include <dtl/bitmap/diff/merge.hpp>
 #include <dtl/bitmap/diff/merge_teb.hpp>
 #include <dtl/bitmap/part/part.hpp>
+#include <dtl/bitmap/part/part_upforward.hpp>
 #include <iostream>
 #include <random>
 #include <vector>
@@ -37,7 +38,7 @@ template<typename T>
 benchmark_results __attribute__((noinline))
 run_benchmark(const T& enc_bs, const dtl::bitmap expected, std::ostream& os) {
 //  const auto duration_nanos = RUN_DURATION_NANOS;
-  const auto duration_nanos = 250e6;
+  const auto duration_nanos = 1250e6;
   const std::size_t MIN_REPS = 10;
 
   benchmark_results res;
@@ -160,7 +161,8 @@ run_benchmark(const T& enc_bs, const dtl::bitmap expected, std::ostream& os) {
   return res;
 }
 //===----------------------------------------------------------------------===//
-template<typename B, typename D>
+//template<typename B, typename D>
+template<typename T, typename Tnodiff>
 void
 do_measurement(uint64_t bid_a, uint64_t bid_b) {
   // The bitmap that is used as starting point.
@@ -183,7 +185,7 @@ do_measurement(uint64_t bid_a, uint64_t bid_b) {
   std::shuffle(range_updates.begin(), range_updates.end(), gen);
 
   // The maximum number of pending updates.
-  const std::size_t max_updates = 100000;
+  const std::size_t max_updates = 20000;
 
   std::vector<update_entry> updates;
   updates.reserve(bm_b.count());
@@ -196,13 +198,12 @@ do_measurement(uint64_t bid_a, uint64_t bid_b) {
   }
 
   // The encoded bitmap.
-  using T = dtl::diff<B, D>;
   T b(bm_a);
   // A plain bitmap used for validation.
   auto bm_expected = bm_a;
 
   // The number of data points to collect.
-  const std::size_t data_points_cnt = 20;
+  const std::size_t data_points_cnt = 1;
 
   const std::size_t update_cnt_per_iteration =
       updates.size() / data_points_cnt;
@@ -218,7 +219,7 @@ do_measurement(uint64_t bid_a, uint64_t bid_b) {
     // - without a diff structure
     auto baseline_res = res;
     {
-      B no_diff(bm_expected);
+      Tnodiff no_diff(bm_expected);
       baseline_res = run_benchmark(no_diff, bm_expected, std::cout);
     }
 
@@ -259,7 +260,7 @@ do_measurement(uint64_t bid_a, uint64_t bid_b) {
     auto baseline_res = res;
     {
       // Repeat the measurement without a differential data structure.
-      B no_diff(bm_expected);
+      Tnodiff no_diff(bm_expected);
       baseline_res = run_benchmark(no_diff, bm_expected, std::cout);
     }
 
@@ -299,7 +300,8 @@ $i32 main() {
   clustering_factors.push_back(8.0);
 
   std::vector<$f64> bit_densities;
-  bit_densities.push_back(0.25);
+  bit_densities.push_back(0.1);
+//  bit_densities.push_back(0.25);
 
   std::vector<$u64> n_values;
   for ($u64 n = n_min; n <= n_max; n <<= 1) {
@@ -350,16 +352,25 @@ $i32 main() {
         if (bitmap_ids.size() >= 2) {
           const auto bid_a = bitmap_ids[0];
           const auto bid_b = bitmap_ids[1];
-          do_measurement<dtl::dynamic_roaring_bitmap, dtl::dynamic_wah32>(bid_a, bid_b);
-          do_measurement<dtl::dynamic_roaring_bitmap, dtl::dynamic_roaring_bitmap>(bid_a, bid_b);
-//          do_measurement<dtl::teb<>, dtl::dynamic_wah32>(bid_a, bid_b);
-//          do_measurement<dtl::teb<>, dtl::dynamic_roaring_bitmap>(bid_a, bid_b);
-          do_measurement<dtl::teb_wrapper, dtl::dynamic_wah32>(bid_a, bid_b);
-          do_measurement<dtl::teb_wrapper, dtl::dynamic_roaring_bitmap>(bid_a, bid_b);
-          do_measurement<dtl::part<dtl::teb_wrapper, 1ull << 16>, dtl::dynamic_wah32>(bid_a, bid_b);
-          do_measurement<dtl::part<dtl::teb_wrapper, 1ull << 16>, dtl::dynamic_roaring_bitmap>(bid_a, bid_b);
-          do_measurement<dtl::dynamic_wah32, dtl::dynamic_wah32>(bid_a, bid_b);
-          do_measurement<dtl::dynamic_wah32, dtl::dynamic_roaring_bitmap>(bid_a, bid_b);
+          auto bm_b = db.load_bitmap(bid_b);
+          std::cerr << "popcount(bm_b)=" << bm_b.count() << std::endl;
+          // The bitmap type to use as differential data structure.
+          using D = dtl::dynamic_roaring_bitmap;
+          // The partition size to use.
+          static constexpr std::size_t P = 1ull << 16;
+          // Aliases
+          using T = dtl::teb_wrapper;
+          using R = dtl::dynamic_roaring_bitmap;
+          using W = dtl::dynamic_wah32;
+          using pW = dtl::part<dtl::dynamic_wah32, P>;
+
+          do_measurement<dtl::diff<R,  D>,                        R >(bid_a, bid_b);
+          do_measurement<dtl::diff<T,  D>,                        T >(bid_a, bid_b);
+          do_measurement<dtl::diff<W,  D>,                        W >(bid_a, bid_b);
+          do_measurement<dtl::diff<pW, D>,                        pW>(bid_a, bid_b);
+          do_measurement<dtl::part_upforward<dtl::diff<R, D>, P>, dtl::part<R,P>>(bid_a, bid_b);
+          do_measurement<dtl::part_upforward<dtl::diff<T, D>, P>, dtl::part<T,P>>(bid_a, bid_b);
+          do_measurement<dtl::part_upforward<dtl::diff<W, D>, P>, dtl::part<W,P>>(bid_a, bid_b);
         }
       }
     }

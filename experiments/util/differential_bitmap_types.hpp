@@ -21,6 +21,12 @@ using partitioned_wah_diff_structure = dtl::dynamic_roaring_bitmap;
 using partitioned_differential_wah =
 dtl::part_upforward<dtl::diff<dtl::dynamic_wah32,partitioned_wah_diff_structure>,
     1ull << 16>;
+
+using partitioned_roaring = dtl::part<dtl::dynamic_roaring_bitmap, 1ull << 16>;
+using partitioned_roaring_diff_structure = dtl::dynamic_roaring_bitmap;
+using partitioned_differential_roaring =
+dtl::part_upforward<dtl::diff<dtl::dynamic_roaring_bitmap,partitioned_roaring_diff_structure>,
+    1ull << 16>;
 //===----------------------------------------------------------------------===//
 #define __DIFF_NAME_ROARING_WAH roaring_wah
 #define __DIFF_TYPE_ROARING_WAH dtl::diff<dtl::dynamic_roaring_bitmap, dtl::dynamic_wah32>
@@ -57,6 +63,8 @@ enum class diff_bitmap_t {
   part_diff_teb, // a partitioned TEB where each partition has a diff structure
   part_wah, // a partitioned WAH which supports direct updates
   part_diff_wah, // a partitioned WAH where each partition has a diff structure
+  part_roaring, // a partitioned Roaring bitmap
+  part_diff_roaring, // a partitioned Roaring bitmap where each partition has a diff structure
 };
 //===----------------------------------------------------------------------===//
 template<diff_bitmap_t B>
@@ -87,6 +95,16 @@ struct diff_type_of<diff_bitmap_t::part_wah> {
 template<>
 struct diff_type_of<diff_bitmap_t::part_diff_wah> {
   using type = partitioned_differential_wah;
+};
+
+template<>
+struct diff_type_of<diff_bitmap_t::part_roaring> {
+  using type = partitioned_roaring;
+};
+
+template<>
+struct diff_type_of<diff_bitmap_t::part_diff_roaring> {
+  using type = partitioned_differential_roaring;
 };
 
 #define __GENERATE(NAME, TYPE)               \
@@ -192,6 +210,23 @@ template<>
 struct diff_merge_type_of<diff_bitmap_t::part_diff_wah, diff_merge_t::naive_iter> {
   // Merge is handled by the bitmap itself.
   using type = dtl::merge_naive_iter<dtl::dynamic_wah32,partitioned_wah_diff_structure>;
+};
+
+// Partitioned/differential Roaring.
+template<>
+struct diff_merge_type_of<diff_bitmap_t::part_diff_roaring, diff_merge_t::naive> {
+  // Merge is handled by the bitmap itself.
+  using type = dtl::merge_naive<dtl::dynamic_roaring_bitmap,partitioned_roaring_diff_structure>;
+};
+template<>
+struct diff_merge_type_of<diff_bitmap_t::part_diff_roaring, diff_merge_t::naive_iter> {
+  // Merge is handled by the bitmap itself.
+  using type = dtl::merge_naive_iter<dtl::dynamic_roaring_bitmap,partitioned_roaring_diff_structure>;
+};
+template<>
+struct diff_merge_type_of<diff_bitmap_t::part_diff_roaring, diff_merge_t::inplace> {
+  // Merge is handled by the bitmap itself.
+  using type = dtl::merge_inplace<dtl::dynamic_roaring_bitmap,partitioned_roaring_diff_structure>;
 };
 //===----------------------------------------------------------------------===//
 #undef __DIFF_NAME_ROARING_WAH

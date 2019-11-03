@@ -173,10 +173,10 @@ $i32 main() {
   // Run the actual benchmark.
   std::function<void(const config&, std::ostream&)> fn =
       [](const config c, std::ostream& os) -> void {
-    run_construction_benchmark<dtl::teb_wrapper>(c, os);
-    run_construction_benchmark<dtl::part<dtl::teb_wrapper, 1ull << 16>>(c, os);
-    run_construction_benchmark<dtl::dynamic_roaring_bitmap>(c, os);
-    run_construction_benchmark<dtl::dynamic_wah32>(c, os);
+        run_construction_benchmark<dtl::dynamic_wah32>(c, os);
+        run_construction_benchmark<dtl::dynamic_roaring_bitmap>(c, os);
+        run_construction_benchmark<dtl::teb_wrapper>(c, os);
+        run_construction_benchmark<dtl::part<dtl::teb_wrapper, 1ull << 16>>(c, os);
   };
   const auto thread_cnt = 1; // run performance measurements single-threaded
   dispatch(configs, fn, thread_cnt);
