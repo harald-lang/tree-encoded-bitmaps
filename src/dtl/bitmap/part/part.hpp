@@ -30,7 +30,7 @@ public:
   static constexpr std::size_t part_bitlength = P;
 
   /// C'tor (similar to all other implementations)
-  part(const boost::dynamic_bitset<$u32>& bitmap)
+  explicit part(const boost::dynamic_bitset<$u32>& bitmap)
       : parts_(), n_(bitmap.size()) {
     const std::size_t part_cnt =
         (bitmap.size() + (part_bitlength - 1)) / part_bitlength;

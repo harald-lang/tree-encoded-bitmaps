@@ -11,7 +11,7 @@
 //===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//
-// TODO
+/// A buffered bitmap writer.
 template<typename _word_type>
 class bitmap_writer {
   using word_type = typename std::remove_cv<_word_type>::type;
@@ -30,12 +30,13 @@ class bitmap_writer {
   std::size_t buffer_write_idx_ = 0;
 
 public:
-  inline bitmap_writer(word_type* bitmap, std::size_t start_idx)
+  inline bitmap_writer(word_type* bitmap, std::size_t start_idx) noexcept
       : bitmap_(bitmap), write_idx_(start_idx) {
   }
 
+  /// Write the 'bit_cnt' low order bits from the given word to the bitmap.
   inline void
-  write(word_type word, std::size_t bit_cnt) {
+  write(word_type word, std::size_t bit_cnt) noexcept {
     if (bit_cnt == 0) return;
     assert(bit_cnt <= word_bitlength);
     //    assert(write_idx_ + bit_cnt <= bitmap_.size());
@@ -51,8 +52,9 @@ public:
     }
   }
 
+  /// Flush the buffer.
   inline void
-  flush() {
+  flush() noexcept {
     if (buffer_write_idx_ == 0) return;
     fn::store_bits(bitmap_, write_idx_, write_idx_ + buffer_write_idx_, buffer_);
 #ifndef NDEBUG
@@ -68,7 +70,8 @@ public:
   }
 };
 //===----------------------------------------------------------------------===//
-// TODO
+/// A buffered bitmap writer. When the writer exceeds the end of the bitmap
+/// further calls to 'write' have no effect.
 template<typename _word_type>
 class bitmap_limit_writer {
   using word_type = typename std::remove_cv<_word_type>::type;
@@ -88,22 +91,22 @@ class bitmap_limit_writer {
   std::size_t buffer_write_idx_ = 0;
 
   inline u1
-  exceeded() {
+  exceeded() noexcept {
     return write_idx_ == limit_;
   }
 
 public:
   inline bitmap_limit_writer(word_type* bitmap,
-      std::size_t start_idx, std::size_t limit_idx)
+      std::size_t start_idx, std::size_t limit_idx) noexcept
       : bitmap_(bitmap),
         write_idx_(start_idx),
-        limit_(limit_idx)
-        {
+        limit_(limit_idx) {
     assert(start_idx <= limit_idx);
   }
 
+  /// Write the 'bit_cnt' low order bits from the given word to the bitmap.
   inline void
-  write(word_type word, std::size_t bit_cnt) {
+  write(word_type word, std::size_t bit_cnt) noexcept {
     if (bit_cnt == 0) return;
     if (exceeded()) return;
     assert(bit_cnt <= word_bitlength);
@@ -120,8 +123,9 @@ public:
     }
   }
 
+  /// Flush the buffer.
   inline void
-  flush() {
+  flush() noexcept {
     std::size_t end_idx = std::min(limit_, write_idx_ + buffer_write_idx_);
     if (write_idx_ != end_idx) {
       fn::store_bits(bitmap_, write_idx_, end_idx, buffer_);

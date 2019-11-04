@@ -594,8 +594,6 @@ public:
     first_node_idx_with_1label_ = max_node_cnt_;
     last_node_idx_with_1label_ = max_node_cnt_;
 
-//    const auto it_end = const_breadth_first_end();
-//    for (auto it = const_breadth_first_begin(); it != it_end; ++it) {
     const auto it_end = breadth_first_end();
     for (auto it = breadth_first_begin(); it != it_end; ++it) {
       u64 idx = (*it);

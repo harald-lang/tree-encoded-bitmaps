@@ -42,19 +42,19 @@ struct rank1_logic_word_blocked {
   init_inplace(
       const word_type* const bitmap_begin,
       const word_type* const bitmap_end,
-      size_type* lut) {
+      size_type* lut) noexcept {
     rank_helper::init_inplace(bitmap_begin, bitmap_end, lut);
   }
 
   /// Returns the number of LuT entries for a bitmap of the given size.
   static constexpr u64
-  lut_entry_cnt(u64 bitmap_size) {
+  lut_entry_cnt(u64 bitmap_size) noexcept {
     return rank_helper::lut_entry_cnt(bitmap_size);
   }
 
   /// Returns the size of the rank LuT in bytes for a bitmap of the given size.
   static constexpr u64
-  estimate_size_in_bytes(u64 bitmap_size) {
+  estimate_size_in_bytes(u64 bitmap_size) noexcept {
     return lut_entry_cnt(bitmap_size) * sizeof(size_type);
   }
 

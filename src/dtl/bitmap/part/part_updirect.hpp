@@ -22,7 +22,7 @@ class part_updirect
     : public part<B,P> {
 public:
   /// C'tor (similar to all other implementations)
-  part_updirect(const boost::dynamic_bitset<$u32>& bitmap)
+  explicit part_updirect(const boost::dynamic_bitset<$u32>& bitmap)
       : part<B,P>(bitmap) {}
 
   part_updirect(const part_updirect& other) = delete;

@@ -103,43 +103,43 @@ struct bitmap_fun {
   /// Fetch up to size(word_type)*8 consecutive bits.
   static word_type __forceinline__
   fetch_bits(const word_type* bitmap,
-      u64 bit_idx_begin,
-      u64 bit_idx_end /* non-inclusive */) {
-    assert(bit_idx_end > bit_idx_begin);
-    const auto word_idx_begin = bit_idx_begin / word_bitlength;
-    const auto word_idx_end = (bit_idx_end - 1) / word_bitlength;
+      std::size_t b,
+      std::size_t e /* non-inclusive */) {
+    assert(e > b);
+    const auto word_idx_begin = b / word_bitlength;
+    const auto word_idx_end = (e - 1) / word_bitlength;
     assert(word_idx_end - word_idx_begin <= 1);
-    u64 cnt = bit_idx_end - bit_idx_begin;
+    const std::size_t cnt = e - b;
     if (word_idx_begin == word_idx_end) {
       const auto word_idx = word_idx_begin;
       word_type bitmap_word = bitmap[word_idx];
-      bitmap_word >>= (bit_idx_begin % word_bitlength);
+      bitmap_word >>= (b % word_bitlength);
       bitmap_word &= (~word_type(0)) >> (word_bitlength - cnt);
       return bitmap_word;
     }
     else {
       word_type bitmap_word_0 = bitmap[word_idx_begin];
       word_type bitmap_word_1 = bitmap[word_idx_end];
-      bitmap_word_0 >>= (bit_idx_begin % word_bitlength);
-      bitmap_word_1 &= (~word_type(0)) >> (word_bitlength - ((bit_idx_end % word_bitlength)));
-      return bitmap_word_0 | (bitmap_word_1 << (word_bitlength - (bit_idx_begin % word_bitlength)));
+      bitmap_word_0 >>= (b % word_bitlength);
+      bitmap_word_1 &= (~word_type(0)) >> (word_bitlength - ((e % word_bitlength)));
+      return bitmap_word_0 | (bitmap_word_1 << (word_bitlength - (b % word_bitlength)));
     }
   }
 
   /// Store up to size(word_type)*8 consecutive bits.
   static void __forceinline__
   store_bits(word_type* bitmap,
-      u64 bit_idx_begin,
-      u64 bit_idx_end, /* non-inclusive */
+      std::size_t b,
+      std::size_t e, /* non-inclusive */
       word_type bits_to_store) {
-    assert(bit_idx_end > bit_idx_begin);
-    const auto word_idx_0 = bit_idx_begin / word_bitlength;
-    const auto word_idx_1 = (bit_idx_end - 1) / word_bitlength;
+    assert(e > b);
+    const auto word_idx_0 = b / word_bitlength;
+    const auto word_idx_1 = (e - 1) / word_bitlength;
     assert(word_idx_1 - word_idx_0 <= 1);
     if (word_idx_0 == word_idx_1) {
-      u64 cnt = bit_idx_end - bit_idx_begin;
+      const std::size_t cnt = e - b;
       const auto word_idx = word_idx_0;
-      const auto off = (bit_idx_begin % word_bitlength);
+      const auto off = (b % word_bitlength);
       const word_type store_mask = (cnt == word_bitlength)
           ? ~word_type(0)
           : ((word_type(1) << cnt) - 1) << off;
@@ -153,16 +153,16 @@ struct bitmap_fun {
       return;
     }
     else {
-      const auto off_0 = (bit_idx_begin % word_bitlength);
-      const auto off_1 = u64(0);
+      const auto off_0 = (b % word_bitlength);
+      const auto off_1 = std::size_t(0);
 
-      u64 cnt_0 = word_bitlength - off_0;
-      u64 cnt_1 = (bit_idx_end - bit_idx_begin) - cnt_0;
+      const std::size_t cnt_0 = word_bitlength - off_0;
+      const std::size_t cnt_1 = (e - b) - cnt_0;
       assert(cnt_0 > 0);
       assert(cnt_0 < word_bitlength);
       assert(cnt_1 > 0);
       assert(cnt_1 < word_bitlength);
-      assert(cnt_0 + cnt_1 == (bit_idx_end - bit_idx_begin));
+      assert(cnt_0 + cnt_1 == (e - b));
 
       const word_type store_mask_0 = ((word_type(1) << cnt_0) - 1) << off_0;
       const word_type store_mask_1 = ((word_type(1) << cnt_1) - 1); // offset is always 0
@@ -364,7 +364,6 @@ struct bitmap_fun {
     const word_type X = ~word_type(0) << X_off;
     const word_type Y = ~word_type(0) >> ((word_bitlength - (e % word_bitlength)) % word_bitlength);
 
-
     if (x == y) {
       const word_type w = bitmap[x] & (X & Y);
       return dtl::bits::pop_count(w);
@@ -542,7 +541,8 @@ struct bitmap_fun {
     const word_type Z = ~word_type(0);
 
     const word_type X = Z << (b % word_bitlength);
-    const word_type Y = Z >> ((word_bitlength - (e % word_bitlength)) % word_bitlength);
+    const word_type Y =
+        Z >> ((word_bitlength - (e % word_bitlength)) % word_bitlength);
     if (word_idx_begin == word_idx_end) {
       const word_type w = bitmap[word_idx_begin] & X & Y;
       return to_positions(w, dst_ptr, b - ((b % word_bitlength)));

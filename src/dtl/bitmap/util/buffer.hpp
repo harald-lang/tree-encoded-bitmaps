@@ -117,12 +117,14 @@ public:
     return size_;
   }
 
+  /// Return a pointer to the buffer.
   inline word_type*
   data() noexcept {
     return reinterpret_cast<word_type*>(
         __builtin_assume_aligned(aligned_ptr_, cache_line_size));
   }
 
+  /// Return a const pointer to the buffer.
   inline const word_type*
   data() const noexcept {
     return reinterpret_cast<const word_type*>(

@@ -43,11 +43,11 @@ public: // TODO remove
 
   const word_type* tree_ptr_;
   const size_type tree_bit_cnt_;
-  const dtl::bitmap_view<const word_type> T_;
+  const dtl::bitmap_view<const word_type> T_; // TODO cleanup
 
   const word_type* label_ptr_;
   const size_type label_bit_cnt_;
-  const dtl::bitmap_view<const word_type> L_;
+  const dtl::bitmap_view<const word_type> L_; // TODO cleanup
 
   const size_type* rank_lut_ptr_;
   teb_rank_type rank_;
@@ -358,7 +358,8 @@ public: // TODO revert
   u1 __teb_inline__
   get_label_by_idx(size_type label_idx) const noexcept {
     const auto implicit_leading_label_cnt = implicit_leading_label_cnt_;
-    const auto implicit_trailing_labels_begin = label_bit_cnt_ + implicit_leading_label_cnt;
+    const auto implicit_trailing_labels_begin =
+        label_bit_cnt_ + implicit_leading_label_cnt;
     if (label_idx < implicit_leading_label_cnt) {
       // An implicit leading 0-label.
       return false;

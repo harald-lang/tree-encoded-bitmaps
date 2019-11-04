@@ -29,23 +29,23 @@ struct rank1_logic_linear {
   rank1_logic_linear() = delete;
   ~rank1_logic_linear() = delete;
 
-  // Does nothing. Exists for compatibility reasons.
+  /// Does nothing. Exists for compatibility reasons.
   static void
   init_inplace(
       const word_type* const bitmap_begin,
       const word_type* const bitmap_end,
-      size_type* lut) {
+      size_type* lut) noexcept {
   }
 
-  // Always returns 0. Exists for compatibility reasons.
+  /// Always returns 0. Exists for compatibility reasons.
   static constexpr u64
-  lut_entry_cnt(u64 bitmap_size) {
+  lut_entry_cnt(u64 bitmap_size) noexcept {
     return 0;
   }
 
-  // Always returns 0. Exists for compatibility reasons.
+  /// Always returns 0. Exists for compatibility reasons.
   static constexpr u64
-  estimate_size_in_bytes(u64 bitmap_size) {
+  estimate_size_in_bytes(u64 bitmap_size) noexcept {
     return lut_entry_cnt(bitmap_size) * sizeof(size_type);
   }
 

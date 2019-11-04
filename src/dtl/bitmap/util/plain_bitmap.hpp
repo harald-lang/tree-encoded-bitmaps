@@ -24,11 +24,12 @@ class plain_bitmap {
       "The word type must be an integral type.");
   static_assert(!std::is_same<word_type, bool>::value,
       "The word type must not be a boolean.");
-
+  using fn = dtl::bitmap_fun<word_type>;
   static constexpr auto word_bitlength = sizeof(_word_type) * 8;
 
   /// Returns the number of words required to store a bitmap of length n.
-  static constexpr auto word_cnt(std::size_t n) {
+  static constexpr auto
+  word_cnt(std::size_t n) {
     return (n + word_bitlength - 1) / word_bitlength;
   }
 
@@ -36,17 +37,15 @@ class plain_bitmap {
   std::size_t n_;
   /// The actual bitmap.
   dtl::buffer<word_type, _alloc> bitmap_;
-  /// The allocator.
-  _alloc allocator_; // TODO remove
 
 public:
   /// Construct a bitmap of length n.
   explicit plain_bitmap(std::size_t n, const _alloc& alloc = _alloc())
-      : n_(n), bitmap_(word_cnt(n)), allocator_(alloc) {}
+      : n_(n), bitmap_(word_cnt(n), true, alloc) {}
 
   /// Construct a bitmap of length n.
   explicit plain_bitmap(std::size_t n, u1 init, const _alloc& alloc = _alloc())
-      : n_(n), bitmap_(word_cnt(n), init), allocator_(alloc) {
+      : n_(n), bitmap_(word_cnt(n), init, alloc) {
   }
 
   /// Return the size of the bitmap.
@@ -60,7 +59,7 @@ public:
   operator[](std::size_t i) const {
     assert((i / word_bitlength) < bitmap_.size());
     assert(i <= n_);
-    return bitmap_fun<word_type>::test(bitmap_.data(), i);
+    return fn::test(bitmap_.data(), i);
   }
 
   /// Test the i-th bit.
@@ -68,7 +67,7 @@ public:
   test(std::size_t i) const {
     assert((i / word_bitlength) < bitmap_.size());
     assert(i <= n_);
-    return bitmap_fun<word_type>::test(bitmap_.data(), i);
+    return fn::test(bitmap_.data(), i);
   }
 
   /// Set the i-th bit.
@@ -76,7 +75,7 @@ public:
   set(std::size_t i, u1 val) {
     assert((i / word_bitlength) < bitmap_.size());
     assert(i <= n_);
-    bitmap_fun<word_type>::set(bitmap_.data(), i, val);
+    fn::set(bitmap_.data(), i, val);
   }
 
   /// Set the i-th bit to 1.
@@ -84,7 +83,7 @@ public:
   set(std::size_t i) {
     assert((i / word_bitlength) < bitmap_.size());
     assert(i <= n_);
-    bitmap_fun<word_type>::set(bitmap_.data(), i);
+    fn::set(bitmap_.data(), i);
   }
 
   /// Set the i-th and the i+1-th bit to 1. // TODO remove
@@ -105,7 +104,7 @@ public:
     assert(b <= n_);
     assert(e <= n_);
     assert(b <= e);
-    bitmap_fun<word_type>::set(bitmap_.data(), b, e);
+    fn::set(bitmap_.data(), b, e);
   }
 
   /// Set the i-th bit to 0.
@@ -113,7 +112,7 @@ public:
   clear(std::size_t i) {
     assert((i / word_bitlength) < bitmap_.size());
     assert(i <= n_);
-    bitmap_fun<word_type>::clear(bitmap_.data(), i);
+    fn::clear(bitmap_.data(), i);
   }
 
   /// Set the bits in [b,e) to 0.
@@ -123,7 +122,7 @@ public:
     assert(b <= n_);
     assert(e <= n_);
     assert(b <= e);
-    bitmap_fun<word_type>::clear(bitmap_.data(), b, e);
+    fn::clear(bitmap_.data(), b, e);
   }
 
   /// Returns a pointer to the first word of the bitmap.
@@ -171,7 +170,7 @@ public:
     assert(e <= n_);
     assert(b <= e);
     assert((e - b) <= (sizeof(word_type) * 8));
-    return bitmap_fun<word_type>::fetch_bits(bitmap_.data(), b, e);
+    return fn::fetch_bits(bitmap_.data(), b, e);
   }
 
   void __forceinline__
@@ -181,7 +180,7 @@ public:
     assert(e <= n_);
     assert(b <= e);
     assert((e - b) <= (sizeof(word_type) * 8));
-    return bitmap_fun<word_type>::store_bits(bitmap_.data(), b, e, bits_to_store);
+    return fn::store_bits(bitmap_.data(), b, e, bits_to_store);
   }
 
   /// Bitwise AND
@@ -189,7 +188,7 @@ public:
   operator&(const plain_bitmap& other) const {
     assert(size() == other.size());
     plain_bitmap ret(size(), false);
-    bitmap_fun<word_type>::bitwise_and(
+    fn::bitwise_and(
         ret.data_begin(), ret.data_end(),
         this->data_begin(), this->data_end(),
         other.data_begin(), other.data_end()
@@ -202,7 +201,7 @@ public:
   and_not(const plain_bitmap& other) const {
     assert(size() == other.size());
     plain_bitmap ret(size(), false);
-    bitmap_fun<word_type>::bitwise_and_not(
+    fn::bitwise_and_not(
         ret.data_begin(), ret.data_end(),
         this->data_begin(), this->data_end(),
         other.data_begin(), other.data_end()
@@ -215,7 +214,7 @@ public:
   operator|(const plain_bitmap& other) const {
     assert(size() == other.size());
     plain_bitmap ret(size(), false);
-    bitmap_fun<word_type>::bitwise_or(
+    fn::bitwise_or(
         ret.data_begin(), ret.data_end(),
         this->data_begin(), this->data_end(),
         other.data_begin(), other.data_end()
@@ -228,7 +227,7 @@ public:
   operator^(const plain_bitmap& other) const {
     assert(size() == other.size());
     plain_bitmap ret(size(), false);
-    bitmap_fun<word_type>::bitwise_xor(
+    fn::bitwise_xor(
         ret.data_begin(), ret.data_end(),
         this->data_begin(), this->data_end(),
         other.data_begin(), other.data_end()
@@ -240,7 +239,7 @@ public:
   plain_bitmap __forceinline__
   operator~() const {
     plain_bitmap ret(size(), false);
-    bitmap_fun<word_type>::bitwise_not(
+    fn::bitwise_not(
         ret.data_begin(), ret.data_end(),
         this->data_begin(), this->data_end()
     );
@@ -251,7 +250,7 @@ public:
   /// of the bitmap is returned.
   std::size_t __forceinline__
   find_first() const {
-    const auto ret_val = bitmap_fun<word_type>::find_first(
+    const auto ret_val = fn::find_first(
         bitmap_.data(), bitmap_.data() + bitmap_.size());
     return std::min(ret_val, n_);
   }
@@ -263,10 +262,10 @@ public:
     assert(b <= n_);
     assert(e <= n_);
     assert(b <= e);
-    const auto ret_val = bitmap_fun<word_type>::find_first(bitmap_.data(), b, e);
+    const auto ret_val = fn::find_first(bitmap_.data(), b, e);
     assert(ret_val >= b);
     assert(ret_val <= e);
-    assert(ret_val == bitmap_fun<word_type>::find_first_dense(bitmap_.data(), b, e));
+    assert(ret_val == fn::find_first_dense(bitmap_.data(), b, e));
     return ret_val;
   }
 
@@ -274,7 +273,7 @@ public:
   /// of the bitmap is returned.
   std::size_t __forceinline__
   find_last() const {
-    const auto ret_val = bitmap_fun<word_type>::find_last(
+    const auto ret_val = fn::find_last(
         bitmap_.data(), bitmap_.data() + bitmap_.size());
     return std::min(ret_val, n_);
   }
@@ -286,7 +285,7 @@ public:
     if (b >= (n_ - 1)) {
       return n_;
     }
-    const auto ret_val = bitmap_fun<word_type>::find_next(
+    const auto ret_val = fn::find_next(
         bitmap_.data(), bitmap_.data() + bitmap_.size(), b);
     return std::min(ret_val, n_);
   }
@@ -298,7 +297,7 @@ public:
     if (b >= (n_ - 1)) {
       return n_;
     }
-    const auto ret_val = bitmap_fun<word_type>::find_next_zero(
+    const auto ret_val = fn::find_next_zero(
         bitmap_.data(), b, e);
     return ret_val;
   }
@@ -306,7 +305,7 @@ public:
   /// Counts the number of set bits within the range [b,e).
   std::size_t __attribute__((noinline))
   count(std::size_t b, std::size_t e) const noexcept {
-    const auto ret_val = bitmap_fun<word_type>::count(bitmap_.data(), b, e);
+    const auto ret_val = fn::count(bitmap_.data(), b, e);
 #ifndef NDEBUG
     std::size_t cntr = 0;
     for (std::size_t i = b; i <  e; ++i) {
@@ -324,6 +323,7 @@ public:
     }
   }
 
+  /// Returns a buffered writer.
   inline bitmap_writer<word_type>
   writer(std::size_t start_idx) {
     return bitmap_writer<word_type>(bitmap_.data(), start_idx);

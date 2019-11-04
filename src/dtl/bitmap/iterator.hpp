@@ -23,7 +23,7 @@ struct obtain_run_iterator<bitmap_type, run_iterator_type::SKIP> {
   using type = typename bitmap_type::skip_iter_type;
 
   /// Create and return an instance.
-  static type
+  static inline type
   from(bitmap_type& b) noexcept {
     return std::move(b.it());
   }
@@ -36,7 +36,7 @@ struct obtain_run_iterator<bitmap_type, run_iterator_type::SCAN> {
   using type = typename bitmap_type::scan_iter_type;
 
   /// Create and return an instance.
-  static type
+  static inline type
   from(bitmap_type& b) noexcept {
     return std::move(b.scan_it());
   }

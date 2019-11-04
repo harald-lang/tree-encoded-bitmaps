@@ -19,7 +19,7 @@ namespace dtl {
 class teb_wrapper {
 public: // TODO remove
   /// The serialized TEB.
-  std::vector<teb_word_type> data_;
+  std::vector<teb_word_type> data_; // TODO use dtl::buffer
   /// The TEB logic.
   std::unique_ptr<teb_flat> teb_;
 

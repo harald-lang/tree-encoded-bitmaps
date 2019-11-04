@@ -22,35 +22,35 @@ class part_run {
   static_assert(dtl::is_power_of_two(P),
       "The partition size must be a power of two.");
 
-  /// Encapsulate a partition pointer. Note that partitions that only consist
+  /// Encapsulate a partition pointer. Note that partitions which only consist
   /// of 0's or 1's do not have a bitmap instance on the heap memory. Instead
   /// the pointer is tagged to indicate whether the the partition is 'single-
   /// valued'. In that case the 2nd most significant bit of the tagged pointer
   /// contains the actual (partition-wide) value.
   struct part_ptr_t {
-    static const auto ptr_tag_mask =
+    static constexpr auto ptr_tag_mask =
         uintptr_t(1) << ((sizeof(uintptr_t) * 8) - 1);
-    static const auto value_mask =
+    static constexpr auto value_mask =
         uintptr_t(1) << ((sizeof(uintptr_t) * 8) - 2);
 
     /// The tagged pointer. False by default.
     B* ptr;
 
     /// C'tor
-    part_ptr_t() : ptr(reinterpret_cast<B*>(ptr_tag_mask)) {}
-    part_ptr_t(const part_ptr_t& other) = delete;
-    part_ptr_t(part_ptr_t&& other) noexcept
+    inline part_ptr_t() : ptr(reinterpret_cast<B*>(ptr_tag_mask)) {}
+    inline part_ptr_t(const part_ptr_t& other) = delete;
+    inline part_ptr_t(part_ptr_t&& other) noexcept
         : ptr(std::move(other.ptr)) {
       other.ptr = nullptr;
     }
-    part_ptr_t& operator=(const part_ptr_t& other) = delete;
-    part_ptr_t& operator=(part_ptr_t&& other) noexcept {
+    inline part_ptr_t& operator=(const part_ptr_t& other) = delete;
+    inline part_ptr_t& operator=(part_ptr_t&& other) noexcept {
       ptr = other.ptr;
       other.ptr = nullptr;
     };
 
     /// D'tor
-    ~part_ptr_t() {
+    inline ~part_ptr_t() {
       if (is_pointer() && ptr != nullptr) {
         delete ptr;
       }
@@ -58,20 +58,20 @@ class part_run {
 
     /// Returns true if the tagged pointer actually is a pointer, false
     /// otherwise.
-    u1
+    inline u1
     is_pointer() const noexcept {
       return (reinterpret_cast<uintptr_t>(ptr) & ptr_tag_mask) == 0;
     }
 
     /// Returns the pointer to the partition.
-    B*
+    inline B*
     get_pointer() const noexcept {
       assert(is_pointer());
       return ptr;
     }
 
     /// Sets the pointer. (transfers ownership)
-    void
+    inline void
     set_pointer(B* p) noexcept {
       ptr = p;
       assert(is_pointer());
@@ -79,20 +79,20 @@ class part_run {
 
     /// Returns true if the tagged pointer is actually a boolean value, false
     /// otherwise.
-    u1
+    inline u1
     is_value() const noexcept {
       return !is_pointer();
     }
 
     /// Returns the boolean value (which is encoded in this tagged pointer).
-    u1
+    inline u1
     get_value() const noexcept {
       assert(is_value());
       return (reinterpret_cast<uintptr_t>(ptr) & value_mask) != 0;
     }
 
     /// Sets the boolean value.
-    void
+    inline void
     set_value(u1 val) noexcept {
       assert(is_value() || ptr == nullptr); // otherwise we would leak memory
       if (val == true) {
@@ -114,7 +114,7 @@ public:
   static constexpr std::size_t part_bitlength = P;
 
   /// C'tor (similar to all other implementations)
-  part_run(const boost::dynamic_bitset<$u32>& bitmap)
+  explicit part_run(const boost::dynamic_bitset<$u32>& bitmap)
       : parts_(), n_(bitmap.size()) {
     const std::size_t part_cnt =
         (bitmap.size() + (part_bitlength - 1)) / part_bitlength;

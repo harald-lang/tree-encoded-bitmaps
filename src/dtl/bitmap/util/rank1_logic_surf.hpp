@@ -54,7 +54,8 @@ struct rank1_logic_surf {
     // 'nbits' may or may not fall on a multiple of 64 boundary,
     // so we may need to zero out the right side of the last word
     // (accomplished by shifting it right, since we're just popcounting)
-    uint64_t lastshifted = bits[x + last_word_idx] << (63 - ((nbits - 1) & popcount_mask));
+    uint64_t lastshifted =
+        bits[x + last_word_idx] << (63 - ((nbits - 1) & popcount_mask));
     p += dtl::bits::pop_count(lastshifted);
     return p;
   }
@@ -66,7 +67,7 @@ public:
   init_inplace(
       const word_type* const bitmap_begin,
       const word_type* const bitmap_end,
-      size_type* lut) {
+      size_type* lut) noexcept {
     u64 bitmap_word_cnt = bitmap_end - bitmap_begin;
     u64 bitmap_bitlength = bitmap_word_cnt * word_bitlength;
     u64 block_cnt = (bitmap_bitlength + block_bitlength - 1) / block_bitlength;
@@ -87,8 +88,8 @@ public:
   }
 
   /// Returns the number of LuT entries for a bitmap of the given size.
-  static constexpr u64
-  lut_entry_cnt(u64 bitmap_size) {
+  static constexpr u64 __forceinline__
+  lut_entry_cnt(u64 bitmap_size) noexcept {
     u64 bitmap_bitlength = bitmap_size;
     u64 block_cnt = (bitmap_bitlength + block_bitlength - 1) / block_bitlength;
     u64 lut_entry_cnt = block_cnt + 1;
@@ -96,8 +97,8 @@ public:
   }
 
   /// Returns the size of the rank LuT in bytes for a bitmap of the given size.
-  static constexpr u64
-  estimate_size_in_bytes(u64 bitmap_size) {
+  static constexpr u64 __forceinline__
+  estimate_size_in_bytes(u64 bitmap_size) noexcept {
     return lut_entry_cnt(bitmap_size) * sizeof(size_type);
   }
 

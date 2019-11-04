@@ -27,7 +27,7 @@ struct rank1 {
 
   /// Initializes the rank LuT based on the given bitmap. // TODO remove boost dependency
   void
-  init(const boost::dynamic_bitset<word_type>& bitmap) {
+  init(const boost::dynamic_bitset<word_type>& bitmap) noexcept {
     u64 bitmap_bitlength = bitmap.m_bits.size() * word_bitlength;
     u64 lut_entry_cnt = rank_logic::lut_entry_cnt(bitmap_bitlength);
     lut.resize(lut_entry_cnt, 0);
@@ -40,7 +40,7 @@ struct rank1 {
   /// Initializes the rank LuT based on the given bitmap.
   void
   init(const word_type* const bitmap_begin,
-      const word_type* const bitmap_end) {
+      const word_type* const bitmap_end) noexcept {
     u64 bitmap_word_cnt = bitmap_end - bitmap_begin;
     u64 bitmap_bitlength = bitmap_word_cnt * word_bitlength;
     u64 lut_entry_cnt = rank_logic::lut_entry_cnt(bitmap_bitlength);
@@ -50,7 +50,7 @@ struct rank1 {
 
   /// Returns the size of the rank LuT in bytes for a bitmap of the given size.
   static constexpr u64
-  estimate_size_in_bytes(u64 bitmap_size) {
+  estimate_size_in_bytes(u64 bitmap_size) noexcept {
     return rank_logic::estimate_size_in_bytes(bitmap_size);
   }
 
@@ -94,7 +94,7 @@ struct rank1 {
 
   /// Returns true if the rank is inclusive, false otherwise.
   inline u1
-  is_inclusive() {
+  is_inclusive() noexcept {
     return rank_logic::is_inclusive;
   }
 };

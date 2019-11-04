@@ -110,12 +110,7 @@ public:
   /// Returns the ID of the sibling node.
   static constexpr inline u64
   sibling_of(u64 node_idx) {
-    $u64 n = node_idx;
-    const auto is_left_sibling = node_idx & 1ull;
-    n += is_left_sibling;
-    const auto is_right_sibling = (node_idx & 1ull) == 0 ? 1 : 0;
-    n -= is_right_sibling;
-    return n;
+    return node_idx ^ u64(1);
   }
 
   /// Returns the level of the given node.
@@ -124,11 +119,13 @@ public:
     return log_2(node_idx + 1);
   }
 
+  /// Returns the number of the last tree level.
   inline u64
   last_level() {
     return dtl::log_2(n_);
   }
 
+  /// Returns the idx of first node at the given level.
   static constexpr inline u64
   first_node_idx_at_level(u64 level) {
     return (1ull << level) - 1;
@@ -190,66 +187,14 @@ public:
         == (right_child_of(node_idx) + offset) / (sizeof($u64) * 8));
   }
 
-  /// Returns true if given node is expanded, false otherwise. A tree node is
-  /// expanded iff the parent is an inner node.
-  //  inline u1
-  //  is_expanded(u64 node_idx) const {
-  //    // TODO: why do we not allow to collapse the root?
-  //    if (node_idx == root()) return true;
-  //    return is_inner_node(parent_of(node_idx));
-  //  }
-
-  /// Returns true if the given node is not expanded, false otherwise.
-  //  inline u1
-  //  is_collapsed(u64 node_idx) const {
-  //    return !is_expanded(node_idx);
-  //  }
-
-  /// Alias for 'is_expanded'.
-  //  inline u1 contains(u64 node_idx) const {
-  //    return is_expanded(node_idx);
-  //  }
-
-
-  //===--------------------------------------------------------------------===//
-  struct node_t {
-    $u64 idx_;
-    $u64 level_;
-    $u1 is_inner_;
-
-    inline auto idx() { return idx_; }
-    inline auto level() { return level_; }
-    inline auto is_inner() { return is_inner_; }
-    inline u1
-    operator==(const node_t& other) const {
-      return idx_ == other.idx_; // && level == other.level;
-    }
-  };
-  //===--------------------------------------------------------------------===//
-  struct node_simple_t {
-//    const binary_tree_structure& tree_;
-    $u64 idx_;
-
-    inline auto idx() { return idx_; }
-//    inline auto level() { return tree_.level_of(idx_); }
-//    inline auto is_inner() { return tree_.is_inner_node(idx_); }
-
-    inline u1
-    operator==(const node_t& other) const {
-      return idx_ == other.idx_; // && level == other.level;
-    }
-  };
   //===--------------------------------------------------------------------===//
   class breadth_first_iterator
       : public std::iterator<
             std::input_iterator_tag, // iterator_category
             $u64, // value_type
-//            node_simple_t, // value_type
             u64, // difference_type
             $u64*, // pointer
-//            const node_simple_t*, // pointer
             $u64 // reference
-//            node_simple_t // reference
             > {
     const binary_tree_structure& tree_;
     $u64 idx_;
@@ -293,139 +238,6 @@ public:
     operator*() const {
       assert(idx_ <= tree_.max_node_cnt_);
       return idx_;
-//      return node_simple_t { tree_, idx_ };
-    }
-  };
-  //===--------------------------------------------------------------------===//
-  class const_breadth_first_iterator
-      : public std::iterator<
-            std::input_iterator_tag, // iterator_category
-            node_t, // value_type
-            u64, // difference_type
-            const node_t*, // pointer
-            node_t // reference
-            > {
-    const binary_tree_structure& tree_;
-
-    $u64 idx_;
-
-    static constexpr std::size_t buf_size = 128;
-    std::array<node_t, buf_size> buf_;
-    std::size_t buf_read_idx_ = 0;
-    std::size_t buf_end_ = 0;
-
-  public:
-    explicit inline const_breadth_first_iterator(const binary_tree_structure& tree,
-        u64 start_node_idx)
-        : tree_(tree), idx_(start_node_idx),
-          buf_read_idx_(0), buf_end_(0) {
-      assert(start_node_idx <= tree_.max_node_cnt_);
-      if (start_node_idx < tree_.max_node_cnt_) {
-        assert(tree_.is_active_node(start_node_idx));
-        buf_[0] = node_t { start_node_idx, tree_.level_of(start_node_idx),
-            tree_.is_inner_node(0) };
-        buf_end_ = 1;
-        ++idx_;
-      }
-      else {
-        buf_[0] = node_t { tree_.max_node_cnt_, tree_.height_,
-            false };
-        buf_end_ = 1;
-        ++idx_;
-      }
-    }
-
-//    __forceinline__
-    void __attribute__((noinline))
-    next_batch() {
-//      assert(level_of(idx_) > 0);
-//      // Clear the buffer.
-//      buf_read_idx_ = 0;
-//      buf_end_ = 0;
-//      ++idx_;
-//      while (idx_ < tree_.max_node_cnt_ && buf_end_ < (buf_size - 64)) {
-//        const auto this_level = level_of(idx_);
-////        const auto parent_level = this_level - 1;
-////        const auto parent_idx = tree_.parent_of(idx_);
-//
-//        if (this_level < 6) {
-//          if (tree_.is_active_node(idx_)) {
-//            u1 is_inner = tree_.is_inner_node(idx_);
-//            buf_[buf_end_] = node_t { idx_, this_level, is_inner };
-//            ++buf_end_;
-//          }
-//        }
-//        else {
-//          const auto remaining_bits_at_this_level =
-//              tree_.first_node_idx_at_level(this_level + 1) - idx_;
-//
-//          const auto remaining_bits_at_parent_level =
-//              tree_.first_node_idx_at_level(parent_level + 1) - parent_idx;
-//
-//          const auto buf_size_this_level =
-//              std::min(u64(64), remaining_bits_at_this_level);
-//          $u64 buf_this_level = tree_.is_inner_node_.fetch_bits(idx_ + offset,
-//              idx_ + offset + buf_size_this_level);
-//
-//          const auto buf_size_parent_level =
-//              std::min(u64(32), remaining_bits_at_parent_level);
-//          $u64 buf_parent_level = tree_.is_inner_node_.fetch_bits(parent_idx + offset,
-//              parent_idx + offset + buf_size_parent_level);
-//
-//          assert(buf_size_parent_level * 2 <= buf_size_this_level);
-//
-////          if (buf_parent_level != 0 || buf_this_level != 0) {
-//          if (buf_parent_level != 0) {
-//            for (std::size_t i = 0; i < buf_size_parent_level; ++i) {
-//              u1 parent_is_inner = ((buf_parent_level >> i) & 1) != 0;
-//              if (!parent_is_inner) continue;
-//              u1 left_child_is_inner = ((buf_this_level >> (i * 2)) & 1) != 0;
-//              u1 right_child_is_inner = ((buf_this_level >> (i * 2 + 1)) & 1) != 0;
-//              buf_[buf_end_] =
-//                  node_t { idx_ + (i * 2), this_level, left_child_is_inner };
-//              buf_[buf_end_ + 1] =
-//                  node_t { idx_ + (i * 2 + 1), this_level, right_child_is_inner };
-//              buf_end_ += 2;
-//            }
-//          }
-//          idx_ += buf_size_this_level;
-//        }
-//        ++idx_;
-//      }
-    }
-
-    inline const_breadth_first_iterator&
-    operator++() {
-      ++buf_read_idx_;
-      if (buf_read_idx_ >= buf_end_) {
-        next_batch();
-      }
-      return *this;
-    }
-
-    inline const_breadth_first_iterator
-    operator++(int) {
-      const_breadth_first_iterator ret_val = *this;
-      ++(*this);
-      return ret_val;
-    }
-
-    inline bool
-    operator==(const const_breadth_first_iterator& other) const {
-      return (*(*this)).idx() == (*other).idx();
-    }
-
-    inline bool
-    operator!=(const const_breadth_first_iterator& other) const {
-      return !(*this == other);
-    }
-
-    inline reference
-    operator*() const {
-      if (buf_read_idx_ >= buf_end_) {
-        return node_t { tree_.max_node_cnt_, tree_.height_, false };
-      }
-      return buf_[buf_read_idx_];
     }
   };
   //===--------------------------------------------------------------------===//
@@ -446,25 +258,6 @@ public:
   inline breadth_first_iterator
   breadth_first_end() const {
     return breadth_first_iterator(*this, max_node_cnt_);
-  }
-
-  /// Returns a (const) breadth-first iterator. The iterator internally uses a
-  /// buffer to improve performance.
-  inline const_breadth_first_iterator
-  const_breadth_first_begin() const {
-    return const_breadth_first_iterator(*this, root());
-  }
-
-  /// Returns a (const) breadth-first iterator.
-  inline const_breadth_first_iterator
-  const_breadth_first_begin(std::size_t start_node_idx) const {
-    return const_breadth_first_iterator(*this, start_node_idx);
-  }
-
-  /// Returns a (const) breadth-first iterator that points one past the last node.
-  inline const_breadth_first_iterator
-  const_breadth_first_end() const {
-    return const_breadth_first_iterator(*this, max_node_cnt_);
   }
 
   //===--------------------------------------------------------------------===//
@@ -525,7 +318,6 @@ public:
     }
   }
   //===--------------------------------------------------------------------===//
-
 
 private:
   /// Mark the given node as a leaf node. The function propagates the call
