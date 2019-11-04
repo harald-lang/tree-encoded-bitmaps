@@ -400,6 +400,11 @@ struct bitmap_fun {
     }
     return writer - dst_ptr;
   }
+  // Same as above, but with offset set to 0.
+  static std::size_t __forceinline__
+  to_positions(word_type bitmap_word, $u32* dst_ptr) {
+    return to_positions(bitmap_word, dst_ptr, 0);
+  }
   //  static std::size_t // TODO remove naive implementation)
   //  to_positions(const word_type bitmap_word, $u32* dst_ptr, $u32 offset) {
   //    $u32* writer = dst_ptr;

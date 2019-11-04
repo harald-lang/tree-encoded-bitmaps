@@ -146,6 +146,7 @@ set(TEST_FILES
         test/dtl/bitmap/bitwise_operations_helper.hpp
         test/dtl/bitmap/diff_test.cpp
         test/dtl/bitmap/part_diff_test.cpp
+        test/dtl/bitmap/plain_bitmap_iter_test.cpp
         test/dtl/bitmap/update_test.cpp
         test/dtl/bitmap/teb_scan_util_test.cpp
         )
@@ -187,6 +188,7 @@ set(TEB_SOURCE_FILES
         src/dtl/bitmap/util/buffer.hpp
         src/dtl/bitmap/util/mutable_bitmap_tree.hpp
         src/dtl/bitmap/util/plain_bitmap.hpp
+        src/dtl/bitmap/util/plain_bitmap_iter.hpp
         src/dtl/bitmap/util/rank1_logic_linear.hpp
         src/dtl/bitmap/util/rank1.hpp
         src/dtl/bitmap/util/rank1_logic_surf.hpp

@@ -246,6 +246,18 @@ public:
     return std::move(ret);
   }
 
+  /// Test for equality.
+  $u1
+  operator==(const plain_bitmap& other) const {
+    if (n_ != other.n_) return false;
+    for (std::size_t i = 0; i < bitmap_.size(); ++i) {
+      if (bitmap_.data()[i] != other.bitmap_.data()[i]) {
+        return  false;
+      }
+    }
+    return true;
+  }
+
   /// Returns the position of the first set bit. If no bits are set, the length
   /// of the bitmap is returned.
   std::size_t __forceinline__
