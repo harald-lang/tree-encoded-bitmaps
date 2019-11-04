@@ -273,7 +273,7 @@ public:
   void __attribute__((noinline))
   prune_tree() {
     D(init_counters();)
-    D(std::cout << estimate_encoded_size_in_bytes() << std::endl;)
+//    D(std::cout << estimate_encoded_size_in_bytes() << std::endl;)
     for (auto level = last_level(); level > 0; --level) {
       $u64 collapse_cnt = 0;
       const auto src_node_idx_begin = first_node_idx_at_level(level);
@@ -337,14 +337,14 @@ public:
         }
       }
       D(init_counters();)
-      D(std::cout << "level: " << level << ": " << estimate_encoded_size_in_bytes() << std::endl;)
+//      D(std::cout << "level: " << level << ": " << estimate_encoded_size_in_bytes() << std::endl;)
 
       {
         auto node_cnt_in_next_higher_level = 1ull << (level - 1);
         auto leaf_node_cnt_in_next_higher_level = collapse_cnt;
         auto inner_node_cnt_in_next_higher_level = node_cnt_in_next_higher_level - collapse_cnt;
         if (leaf_node_cnt_in_next_higher_level < inner_node_cnt_in_next_higher_level/2) {
-          D(std::cout << "early stop bottom up pruning at level " << level << std::endl;)
+//          D(std::cout << "early stop bottom up pruning at level " << level << std::endl;)
           break;
         }
       }
@@ -411,7 +411,7 @@ public:
     size_per_pruning_level[last_level() + 1] = compute_size_fast(last_level() + 1);
     D(init_counters();)
     assert(estimate_encoded_size_in_bytes() == size_per_pruning_level[last_level() + 1]);
-    D(std::cout << "uncompressed: " << size_per_pruning_level[last_level() + 1] << std::endl;)
+//    D(std::cout << "uncompressed: " << size_per_pruning_level[last_level() + 1] << std::endl;)
 
     // Prune level by level, bottom up.
     auto level = last_level();
@@ -477,7 +477,7 @@ public:
       size_per_pruning_level[level] = compute_size_fast(level);
       D(init_counters();)
       assert(estimate_encoded_size_in_bytes() == size_per_pruning_level[level]);
-      D(std::cout << "level: " << level << ": " << size_per_pruning_level[level] << std::endl;)
+//      D(std::cout << "level: " << level << ": " << size_per_pruning_level[level] << std::endl;)
 
       // Check termination condition.
       // Note: When only the last level is pruned, then the encoded size is
@@ -485,7 +485,7 @@ public:
       //       at least two levels before we check the termination condition.
       if (level < last_level() // TODO maybe we need to consider more levels
           && size_per_pruning_level[level] >= size_per_pruning_level[level + 1]) {
-        D(std::cout << "stopped pruning at level " << level << std::endl;)
+//        D(std::cout << "stopped pruning at level " << level << std::endl;)
         break;
       }
     }
@@ -1267,10 +1267,10 @@ private:
   run_optimize() {
     // Optimization level 2.
     if (optimization_level_ > 1) {
-      D(std::cout << "run_optimize:" << std::endl);
-      D(std::cout << estimate_encoded_size_in_bytes() << "/" << uncompressed_size << std::endl;)
+//      D(std::cout << "run_optimize:" << std::endl);
+//      D(std::cout << estimate_encoded_size_in_bytes() << "/" << uncompressed_size << std::endl;)
       D(std::size_t expand_cntr = 0;) // TODO remove
-      D(std::cout << "expand " << expand_cntr << ", size " << estimate_encoded_size_in_bytes() << std::endl;)
+//      D(std::cout << "expand " << expand_cntr << ", size " << estimate_encoded_size_in_bytes() << std::endl;)
       // Gradual decompression.
       // Find the tree instance with the minimum size.
       auto min_idx = explicit_node_idxs_.begin;
@@ -1296,7 +1296,7 @@ private:
             {
               auto now_size = cpy.estimate_encoded_size_in_bytes();
               if (now_size > prev_level_size && old_level != min_level) {
-                D(std::cout << "no improvement for the previous level. current level = " << idx_level << std::endl;)
+//                D(std::cout << "no improvement for the previous level. current level = " << idx_level << std::endl;)
                 goto expand_done;
               }
               else {
@@ -1319,7 +1319,7 @@ private:
                 i64 y_zeros = (y_e - y_b) - y_ones;
                 auto r = -(x_zeros + y_zeros) + 2 * x_zeros - (x_ones + y_ones);
                 if (r > 0) {
-                  D(std::cout << "expanding this level will led to a larger tree" << std::endl;)
+//                  D(std::cout << "expanding this level will led to a larger tree" << std::endl;)
                   goto expand_done;
                 }
               }
@@ -1335,7 +1335,7 @@ private:
                 auto zeros = (e - b) - ones;
 //                if (zeros - f > ones) {
                 if (zeros/2 > ones) {
-                  D(std::cout << "expanding this level will led to a larger tree" << std::endl;)
+//                  D(std::cout << "expanding this level will led to a larger tree" << std::endl;)
                   goto expand_done;
                 }
               }
@@ -1345,17 +1345,17 @@ private:
           cpy.template set_inner<true>(idx);
           const auto compressed_size = cpy.estimate_encoded_size_in_bytes();
           D(++expand_cntr;)
-          D(if (compressed_size <= min_size) {)
-          D(std::cout << "expand " << expand_cntr
-              << ", idx "<< idx << "/" << cpy.level_of(idx)
-              << ", trange ["<< cpy.explicit_node_idxs_.begin
-              << "," << cpy.explicit_node_idxs_.end << ")"
-              << ", lrange ["<< cpy.first_node_idx_with_1label_
-              << "," << (cpy.last_node_idx_with_1label_ + 1) << ")"
-              << ", ts: " << cpy.estimate_tree_size_in_bytes()
-              << ", ls: " << cpy.estimate_labels_size_in_bytes()
-              << ", size " << compressed_size << " " << (compressed_size <= min_size ? "*" : "") << std::endl;)
-          D(})
+//          D(if (compressed_size <= min_size) {)
+//          D(std::cout << "expand " << expand_cntr
+//              << ", idx "<< idx << "/" << cpy.level_of(idx)
+//              << ", trange ["<< cpy.explicit_node_idxs_.begin
+//              << "," << cpy.explicit_node_idxs_.end << ")"
+//              << ", lrange ["<< cpy.first_node_idx_with_1label_
+//              << "," << (cpy.last_node_idx_with_1label_ + 1) << ")"
+//              << ", ts: " << cpy.estimate_tree_size_in_bytes()
+//              << ", ls: " << cpy.estimate_labels_size_in_bytes()
+//              << ", size " << compressed_size << " " << (compressed_size <= min_size ? "*" : "") << std::endl;)
+//          D(})
 
           // Estimates the size of a TEB.
           if (compressed_size <= min_size) { // less than or EQUAL because we prefer more balanced trees.
@@ -1364,7 +1364,7 @@ private:
             min_size = compressed_size;
           }
           if (compressed_size > min_size + threshold) {
-            D(std::cout << "above threshold" << std::endl;)
+//            D(std::cout << "above threshold" << std::endl;)
             goto expand_done;
           }
           // Note:
@@ -1403,7 +1403,7 @@ private:
         goto expand_done;
 
         tree_implicit:
-        D(std::cout << "tree become implicit." << std::endl;)
+//        D(std::cout << "tree become implicit." << std::endl;)
         // Take the working copy as is.
         *this = cpy;
         // Fix active node map.
@@ -1416,18 +1416,18 @@ private:
 
         // Check whether the bitmap can be compressed.
         if (min_size > uncompressed_size) {
-          D(std::cout << "unable to compress." << std::endl;)
+//          D(std::cout << "unable to compress." << std::endl;)
           // Restore the initial tree state.
           uncompress();
-          D(std::cout << "final size: " << estimate_encoded_size_in_bytes() << std::endl;)
+//          D(std::cout << "final size: " << estimate_encoded_size_in_bytes() << std::endl;)
           return;
         }
-        D(std::cout << "stop expanding at level " << level_of(idx) << std::endl;)
+//        D(std::cout << "stop expanding at level " << level_of(idx) << std::endl;)
       }
-      D(std::cout << "stop after expanding " << expand_cntr << " nodes" << std::endl;)
+//      D(std::cout << "stop after expanding " << expand_cntr << " nodes" << std::endl;)
 
       D(expand_cntr = 0;)
-      D(std::cout << "min_idx: " << min_idx << std::endl;)
+//      D(std::cout << "min_idx: " << min_idx << std::endl;)
       // Restore the tree instance with the minimum size. Expand the tree down
       // to the node 'min_idx' which identifies the smallest tree instance found
       // in the previous step.
@@ -1444,10 +1444,10 @@ private:
         is_active_node_.set(start_idx + offset, std::min(max_node_cnt_, right_child_of(expand_until_idx) + 1) + offset);
         D(validate_active_nodes();)
       }
-      D(std::cout << "first explicit node is at level " << level_of(explicit_node_idxs_.begin) << std::endl;)
-      D(std::cout << "expanded " << expand_cntr << " nodes" << std::endl;)
-      D(std::cout << "final size: " << estimate_encoded_size_in_bytes() << " bytes" << std::endl;)
-      D(std::cout << std::endl;)
+//      D(std::cout << "first explicit node is at level " << level_of(explicit_node_idxs_.begin) << std::endl;)
+//      D(std::cout << "expanded " << expand_cntr << " nodes" << std::endl;)
+//      D(std::cout << "final size: " << estimate_encoded_size_in_bytes() << " bytes" << std::endl;)
+//      D(std::cout << std::endl;)
     }
   }
 

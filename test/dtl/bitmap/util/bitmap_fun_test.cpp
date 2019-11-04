@@ -372,7 +372,7 @@ TEST(bitmap_fun,
     for (std::size_t e = b; e < n; ++e) {
       bm.clear(0, bm.size());
       bm.set(b, e);
-      std::cout << bm << std::endl;
+//      std::cout << bm << std::endl;
       if (b == e) {
         ASSERT_EQ(bm.find_next_zero(b, n), std::min(b + 1, n))
                       << " with b = " << b << " and e = " << e << std::endl;
