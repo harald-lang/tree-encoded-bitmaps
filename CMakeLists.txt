@@ -163,6 +163,9 @@ set(UTIL_SOURCE_FILES
         src/dtl/bitmap/util/convert.hpp
         )
 
+# The following flag disables the inlining of TEB function.
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTEB_NO_INLINE")
+
 set(TEB_SOURCE_FILES
         src/dtl/bitmap.hpp
         src/dtl/bitmap/diff/diff.hpp

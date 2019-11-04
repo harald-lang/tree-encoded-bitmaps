@@ -1,6 +1,11 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-// TODO remove
+
+#if defined(TEB_NO_INLINE) && !defined(__teb_inline__)
+#define __teb_inline__ __attribute__((noinline))
+#warning Inlining disabled.
+#endif
+
 #if !defined(__teb_inline__)
 #if defined(NDEBUG)
 // Release build.
@@ -94,6 +99,7 @@ public:
   /// Support data structure for rank1 operations on the tree structure.
   static constexpr u1 inclusive = true;
 //  using rank_support = dtl::rank1<dtl::rank1_logic_surf<word_type, inclusive>>;
+//  using rank_support = dtl::rank1<dtl::rank1_logic_surf<word_type, inclusive, 2048>>;
 //  using rank_support = dtl::rank1<dtl::rank1_logic_surf<word_type, inclusive, 256>>;
 //  using rank_support = dtl::rank1<dtl::rank1_logic_surf<word_type, inclusive, 128>>;
 //  using rank_support = dtl::rank1<dtl::rank1_logic_linear<word_type, inclusive>>;

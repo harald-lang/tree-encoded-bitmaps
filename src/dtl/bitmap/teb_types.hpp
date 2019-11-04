@@ -5,6 +5,11 @@
 
 #include <dtl/dtl.hpp>
 //===----------------------------------------------------------------------===//
+#if defined(TEB_NO_INLINE) && !defined(__teb_inline__)
+#define __teb_inline __attribute__((noinline))
+#warning Inlining disabled.
+#endif
+
 #if !defined(__teb_inline__)
 #if defined(NDEBUG)
 // Release build.
