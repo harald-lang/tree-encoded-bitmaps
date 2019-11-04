@@ -1,48 +1,205 @@
-<svg width="123pt" height="83pt" viewBox="0 0 123 83" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 78.5505)">
-<title>markov_process</title>
-<polygon fill="#ffffff" stroke="transparent" points="-4,4 -4,-78.5505 119,-78.5505 119,4 -4,4"></polygon>
-<!-- 0 -->
-<g id="node1" class="node">
-<title>0</title>
-<ellipse fill="none" stroke="#000000" cx="18" cy="-21.7505" rx="18" ry="18"></ellipse>
-<text text-anchor="middle" x="18" y="-17.5505" font-family="Times,serif" font-size="14.00" fill="#000000">0</text>
-</g>
-<!-- 0&#45;&gt;0 -->
-<g id="edge3" class="edge">
-<title>0-&gt;0</title>
-<path fill="none" stroke="#000000" d="M11.2664,-38.7878C9.8922,-48.6084 12.1367,-57.7505 18,-57.7505 21.6646,-57.7505 23.9155,-54.1794 24.7529,-49.1034"></path>
-<polygon fill="#000000" stroke="#000000" points="28.2524,-48.7812 24.7336,-38.7878 21.2524,-48.7944 28.2524,-48.7812"></polygon>
-<text text-anchor="start" x="8.6697" y="-62.9505" font-family="Times,serif" font-size="14.00" fill="#000000">1-</text>
-<text text-anchor="start" x="20.3303" y="-62.9505" font-family="Times,serif" font-style="italic" font-size="14.00" fill="#000000">p</text>
-</g>
-<!-- 1 -->
-<g id="node2" class="node">
-<title>1</title>
-<ellipse fill="none" stroke="#000000" cx="97" cy="-21.7505" rx="18" ry="18"></ellipse>
-<text text-anchor="middle" x="97" y="-17.5505" font-family="Times,serif" font-size="14.00" fill="#000000">1</text>
-</g>
-<!-- 0&#45;&gt;1 -->
-<g id="edge1" class="edge">
-<title>0-&gt;1</title>
-<path fill="none" stroke="#000000" d="M36.3228,-21.7505C45.8947,-21.7505 57.8223,-21.7505 68.5629,-21.7505"></path>
-<polygon fill="#000000" stroke="#000000" points="68.7766,-25.2506 78.7766,-21.7505 68.7766,-18.2506 68.7766,-25.2506"></polygon>
-<text text-anchor="start" x="54" y="-26.9505" font-family="Times,serif" font-style="italic" font-size="14.00" fill="#000000">p</text>
-</g>
-<!-- 1&#45;&gt;0 -->
-<g id="edge4" class="edge">
-<title>1-&gt;0</title>
-<path fill="none" stroke="#000000" d="M82.3655,-10.9571C76.1135,-6.9868 68.5297,-2.9694 61,-.9505 54.0039,.9253 46.7762,-.9002 40.2893,-4.1196"></path>
-<polygon fill="#000000" stroke="#000000" points="38.1157,-1.3473 31.4286,-9.5652 41.7809,-7.311 38.1157,-1.3473"></polygon>
-<text text-anchor="start" x="54" y="-5.9505" font-family="Times,serif" font-style="italic" font-size="14.00" fill="#000000">q</text>
-</g>
-<!-- 1&#45;&gt;1 -->
-<g id="edge2" class="edge">
-<title>1-&gt;1</title>
-<path fill="none" stroke="#000000" d="M90.2664,-38.7878C88.8922,-48.6084 91.1367,-57.7505 97,-57.7505 100.6646,-57.7505 102.9155,-54.1794 103.7529,-49.1034"></path>
-<polygon fill="#000000" stroke="#000000" points="107.2524,-48.7812 103.7336,-38.7878 100.2524,-48.7944 107.2524,-48.7812"></polygon>
-<text text-anchor="start" x="87.6697" y="-62.9505" font-family="Times,serif" font-size="14.00" fill="#000000">1-</text>
-<text text-anchor="start" x="99.3303" y="-62.9505" font-family="Times,serif" font-style="italic" font-size="14.00" fill="#000000">q</text>
-</g>
-</g>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="169.72453pt"
+   height="34.050041pt"
+   viewBox="0 0 169.72454 34.05004"
+   version="1.1"
+   id="svg61"
+   sodipodi:docname="markov_process.svg"
+   inkscape:version="0.92.3 (2405546, 2018-03-11)">
+  <metadata
+     id="metadata67">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs65" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1920"
+     inkscape:window-height="933"
+     id="namedview63"
+     showgrid="false"
+     showguides="true"
+     inkscape:guide-bbox="true"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:zoom="2.1325301"
+     inkscape:cx="105.05679"
+     inkscape:cy="51.628831"
+     inkscape:window-x="0"
+     inkscape:window-y="25"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg61">
+    <sodipodi:guide
+       position="47.322911,43.511066"
+       orientation="0,1"
+       id="guide4655"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="70.886469,21.354286"
+       orientation="0,1"
+       id="guide4657"
+       inkscape:locked="false" />
+    <sodipodi:guide
+       position="59.445375,21.354285"
+       orientation="0,1"
+       id="guide869"
+       inkscape:locked="false" />
+  </sodipodi:namedview>
+  <circle
+     cx="49.979691"
+     cy="13.048729"
+     id="ellipse8"
+     r="12.69606"
+     style="fill:none;stroke:#000000;stroke-width:0.70533669" />
+  <text
+     x="49.979691"
+     y="17.24873"
+     font-size="14.00"
+     id="text10"
+     style="font-size:14px;font-family:Times, serif;text-anchor:middle;fill:#000000">0</text>
+  <g
+     id="g4645"
+     transform="rotate(-90,17.098734,18.046583)">
+    <path
+       style="fill:none;stroke:#000000"
+       inkscape:connector-curvature="0"
+       id="path15"
+       d="M 15.2664,39.7627 C 13.8922,29.9421 16.1367,20.8 22,20.8 c 3.6646,0 5.9155,3.5711 6.7529,8.6471" />
+    <polygon
+       transform="translate(4,78.5505)"
+       style="fill:#000000;stroke:#000000"
+       id="polygon17"
+       points="21.2524,-48.7944 28.2524,-48.7812 24.7336,-38.7878 " />
+  </g>
+  <g
+     id="g4649"
+     transform="translate(-14.2237,0.21059478)">
+    <text
+       style="font-size:14px;font-family:Times, serif;text-anchor:start;fill:#000000"
+       id="text19"
+       font-size="14.00"
+       y="15.599999"
+       x="12.6697">1-</text>
+    <text
+       style="font-style:italic;font-size:14px;font-family:Times, serif;text-anchor:start;fill:#000000"
+       id="text21"
+       font-size="14.00"
+       font-style="italic"
+       y="15.599999"
+       x="24.330299">p</text>
+  </g>
+  <text
+     x="118.42884"
+     y="17.600426"
+     font-size="14.00"
+     id="text28"
+     style="font-size:14px;font-family:Times, serif;text-anchor:middle;fill:#000000">1</text>
+  <g
+     class="edge"
+     id="edge1"
+     transform="translate(26.880113,33.744145)">
+    <title
+       id="title31">0-&gt;1</title>
+    <path
+       style="fill:none;stroke:#000000"
+       inkscape:connector-curvature="0"
+       id="path33"
+       d="m 36.3228,-21.7505 c 9.5719,0 21.4995,0 32.2401,0" />
+    <polygon
+       style="fill:#000000;stroke:#000000"
+       id="polygon35"
+       points="78.7766,-21.7505 68.7766,-18.2506 68.7766,-25.2506 " />
+    <text
+       style="font-style:italic;font-size:14px;font-family:Times, serif;text-anchor:start;fill:#000000"
+       id="text37"
+       font-size="14.00"
+       font-style="italic"
+       y="-26.9505"
+       x="54">p</text>
+  </g>
+  <g
+     class="edge"
+     id="edge4"
+     transform="translate(26.880113,33.744145)">
+    <title
+       id="title40">1-&gt;0</title>
+    <path
+       style="fill:none;stroke:#000000"
+       inkscape:connector-curvature="0"
+       id="path42"
+       d="M 82.3655,-10.9571 C 76.1135,-6.9868 68.5297,-2.9694 61,-0.9505 54.0039,0.9253 46.7762,-0.9002 40.2893,-4.1196" />
+    <polygon
+       style="fill:#000000;stroke:#000000"
+       id="polygon44"
+       points="31.4286,-9.5652 41.7809,-7.311 38.1157,-1.3473 " />
+    <text
+       style="font-style:italic;font-size:14px;font-family:Times, serif;text-anchor:start;fill:#000000"
+       id="text46"
+       font-size="14.00"
+       font-style="italic"
+       y="-5.9505"
+       x="54">q</text>
+  </g>
+  <g
+     id="g4633"
+     transform="rotate(90,128.33199,41.014623)">
+    <path
+       style="fill:none;stroke:#000000"
+       inkscape:connector-curvature="0"
+       id="path51"
+       d="M 94.2664,39.7627 C 92.8922,29.9421 95.1367,20.8 101,20.8 c 3.6646,0 5.9155,3.5711 6.7529,8.6471" />
+    <polygon
+       transform="translate(4,78.5505)"
+       style="fill:#000000;stroke:#000000"
+       id="polygon53"
+       points="103.7336,-38.7878 100.2524,-48.7944 107.2524,-48.7812 " />
+  </g>
+  <g
+     id="g4637"
+     transform="translate(59.632233,0.21059458)">
+    <text
+       style="font-size:14px;font-family:Times, serif;text-anchor:start;fill:#000000"
+       id="text55"
+       font-size="14.00"
+       y="15.599999"
+       x="91.669701">1-</text>
+    <text
+       style="font-style:italic;font-size:14px;font-family:Times, serif;text-anchor:start;fill:#000000"
+       id="text57"
+       font-size="14.00"
+       font-style="italic"
+       y="15.599999"
+       x="103.3303">q</text>
+  </g>
+  <circle
+     cx="118.36528"
+     cy="13.223309"
+     id="ellipse8-9"
+     r="12.69606"
+     style="fill:none;stroke:#000000;stroke-width:0.70533669" />
 </svg>

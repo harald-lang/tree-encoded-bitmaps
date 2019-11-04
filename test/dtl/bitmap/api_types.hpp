@@ -55,6 +55,11 @@ using part_run_8_teb = dtl::part_run<teb_v2, 1ull << 8>;
 using part_run_16_teb = dtl::part_run<teb_v2, 1ull << 16>;
 using part_run_8_wah = dtl::part_run<wah, 1ull << 8>;
 using part_run_16_wah = dtl::part_run<wah, 1ull << 16>;
+
+// Partitioned + Differential (EXPERIMENTAL, using Roaring for diffs)
+using diff_part_8_teb = dtl::diff<part_8_teb, roaring_bitmap>;
+using part_8_diff_teb = dtl::part<diff_teb_roaring, 1ull << 8>;
+
 // EXPERIMENTAL
 using position_list_32 = dtl::position_list<$u32>;
 using partitioned_position_list_32_u8 = dtl::partitioned_position_list<$u32, $u8>;
@@ -73,7 +78,7 @@ using types_under_test = ::testing::Types<
     // teb_o0,
     // teb_o1,
     // teb_o2,
-    // teb_o3,
+    teb_o3,
 
     // Competitors
     plain_bitmap_32,
@@ -86,14 +91,17 @@ using types_under_test = ::testing::Types<
     diff_roaring_roaring,
     diff_roaring_wah,
     diff_wah_roaring,
-    diff_wah_wah
+    diff_wah_wah,
 
     // Partitioned (EXPERIMENTAL)
     part_8_teb,
     part_run_8_teb,
     part_8_wah,
-    part_run_8_wah
+    part_run_8_wah,
 
+    // Partitioned + Differential (EXPERIMENTAL)
+    diff_part_8_teb,
+    part_8_diff_teb
     // EXPERIMENTAL
     // position_list_32,
     // partitioned_position_list_32_u8,

@@ -22,7 +22,7 @@ dispatch(const std::vector<T>& tasks,
   i64 task_cnt = tasks.size();
   i64 min_batch_size = 1;
   f64 t = (task_cnt / 10.0) / thread_cnt;
-  i64 max_batch_size = t > 1 ? static_cast<i64>(t) : 1;
+  i64 max_batch_size = std::min(10l, t > 1 ? static_cast<i64>(t) : 1);
 
   const auto time_start = std::chrono::system_clock::now();
   std::atomic<$i64> cntr { 0 };
