@@ -250,8 +250,19 @@ public:
   $u1
   operator==(const plain_bitmap& other) const {
     if (n_ != other.n_) return false;
-    for (std::size_t i = 0; i < bitmap_.size(); ++i) {
-      if (bitmap_.data()[i] != other.bitmap_.data()[i]) {
+    if (bitmap_.size() > 0) {
+      // Compare all words except the last one, which may contain garbage.
+      for (std::size_t i = 0; i < bitmap_.size() - 1; ++i) {
+        if (bitmap_.data()[i] != other.bitmap_.data()[i]) {
+          return  false;
+        }
+      }
+      // Compare the remaining bits in the last word.
+      const std::size_t i = bitmap_.size() - 1;
+      const word_type mask = (n_ % word_bitlength == 0)
+          ? ~word_type(0)
+          : ~word_type(0) >> (word_bitlength - (n_ % word_bitlength));
+      if ((bitmap_.data()[i] & mask) != (other.bitmap_.data()[i] & mask)) {
         return  false;
       }
     }
