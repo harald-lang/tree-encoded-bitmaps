@@ -5,7 +5,7 @@
 #include <type_traits>
 //===----------------------------------------------------------------------===//
 namespace dtl {
-namespace internal {
+namespace internal { // TODO should be dtl::bitmap::internal
 //===----------------------------------------------------------------------===//
 // Functors for bitwise operations.
 //===----------------------------------------------------------------------===//

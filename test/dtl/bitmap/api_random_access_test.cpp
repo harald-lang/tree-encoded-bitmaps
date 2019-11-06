@@ -19,7 +19,7 @@ TYPED_TEST_CASE(api_random_access_test, types_under_test);
 TYPED_TEST(api_random_access_test, empty_bitmap) {
   using T = TypeParam;
 
-  for (auto n_log2 = 10; n_log2 <= 10; ++n_log2) {
+  for (auto n_log2 = 10; n_log2 <= 12; ++n_log2) {
     std::cout << "n_log2=" << n_log2 << std::endl;
     const auto n = 1ull << n_log2;
     dtl::bitmap bs(n);

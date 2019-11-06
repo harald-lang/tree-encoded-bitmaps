@@ -18,12 +18,14 @@
 #include <dtl/bitmap/teb.hpp>
 #include <dtl/bitmap/teb_wrapper.hpp>
 #include <dtl/bitmap/xah.hpp>
+#include <dtl/bitmap/xah_skip.hpp>
 //===----------------------------------------------------------------------===//
 // Types under test.
 using teb_v2 = dtl::teb_wrapper;
-using teb_o1 = dtl::teb<1>;
-using teb_o2 = dtl::teb<2>;
-using teb_o3 = dtl::teb<3>;
+using teb_o0 = dtl::teb<0>; // DEPRECATED
+using teb_o1 = dtl::teb<1>; // DEPRECATED
+using teb_o2 = dtl::teb<2>; // DEPRECATED
+using teb_o3 = dtl::teb<3>; // DEPRECATED
 
 // Competitors
 using plain_bitmap_32 = dtl::dynamic_bitmap<$u32>;
@@ -106,7 +108,6 @@ using types_under_test = ::testing::Types<
     dtl::xah8,
     dtl::xah16,
     dtl::xah32,
-    dtl::xah64
     dtl::xah64,
     dtl::xah_skip<u8, 2>, // Skip distance is intentionally chosen small, as the bitmaps in the test are also rather small.
     dtl::xah_skip<u16, 2>,
