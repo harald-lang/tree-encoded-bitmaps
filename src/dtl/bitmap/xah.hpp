@@ -15,6 +15,8 @@ namespace dtl {
 /// X-Aligned Hybrid: An RLE compressed representation of a bitmap of length N.
 template<typename _word_type = u32>
 class xah {
+
+protected:
   using word_type = typename std::remove_cv<_word_type>::type;
   static_assert(std::is_integral<word_type>::value,
       "The word type must be an integral type.");

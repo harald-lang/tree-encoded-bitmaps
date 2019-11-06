@@ -5,6 +5,7 @@
 #include <dtl/bitmap/util/plain_bitmap_iter.hpp>
 #include <dtl/bitmap/util/random.hpp>
 #include <dtl/bitmap/xah.hpp>
+#include <dtl/bitmap/xah_skip.hpp>
 //===----------------------------------------------------------------------===//
 // Tests for XAH.
 //===----------------------------------------------------------------------===//
@@ -12,7 +13,11 @@ using types_under_test = ::testing::Types<
     dtl::xah8,
     dtl::xah16,
     dtl::xah32,
-    dtl::xah64
+    dtl::xah64,
+    dtl::xah_skip<u8, 1>,
+    dtl::xah_skip<u16, 1>,
+    dtl::xah_skip<u32, 1>,
+    dtl::xah_skip<u64, 1>
     >;
 //===----------------------------------------------------------------------===//
 // Fixture for the parameterized test case.
@@ -71,7 +76,6 @@ TYPED_TEST(xah_test, encode_decode_non_pow2_length_test) {
           << std::endl;
     }
   }
-
 }
 //===----------------------------------------------------------------------===//
 /// Test random access (bit test).

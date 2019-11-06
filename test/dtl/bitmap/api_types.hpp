@@ -107,6 +107,11 @@ using types_under_test = ::testing::Types<
     dtl::xah16,
     dtl::xah32,
     dtl::xah64
+    dtl::xah64,
+    dtl::xah_skip<u8, 2>, // Skip distance is intentionally chosen small, as the bitmaps in the test are also rather small.
+    dtl::xah_skip<u16, 2>,
+    dtl::xah_skip<u32, 2>,
+    dtl::xah_skip<u64, 2>
     // position_list_32,
     // partitioned_position_list_32_u8,
     // partitioned_position_list_32_u16,

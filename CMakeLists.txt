@@ -231,6 +231,7 @@ set(COMPETITORS_SOURCE_FILES
 
         # XAH
         src/dtl/bitmap/xah.hpp
+        src/dtl/bitmap/xah_skip.hpp
         )
 
 set(SOURCE_FILES
