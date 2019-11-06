@@ -178,6 +178,9 @@ struct position_list {
   /// Returns the value of the bit at the position pos.
   u1 test(const std::size_t pos) const {
     auto it = std::lower_bound(positions_.begin(), positions_.end(), pos);
+    if (it == positions_.end()) {
+      return false;
+    }
     return *it == pos;
   }
 
