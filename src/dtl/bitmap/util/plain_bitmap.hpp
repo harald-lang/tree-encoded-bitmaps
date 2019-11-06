@@ -97,6 +97,17 @@ public:
     bitmap_.data()[block_idx] |= word_type(0b11) << bit_idx;
   }
 
+  /// Set the bits in [b,e) to the given value.
+  void __forceinline__
+  set(std::size_t b, std::size_t e, u1 val) {
+    if (val) {
+      set(b, e);
+    }
+    else {
+      clear(b, e);
+    }
+  }
+
   /// Set the bits in [b,e) to 1.
   void __forceinline__
   set(std::size_t b, std::size_t e) {

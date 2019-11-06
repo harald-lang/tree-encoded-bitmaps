@@ -17,10 +17,10 @@
 #include <dtl/bitmap/range_list.hpp>
 #include <dtl/bitmap/teb.hpp>
 #include <dtl/bitmap/teb_wrapper.hpp>
+#include <dtl/bitmap/xah.hpp>
 //===----------------------------------------------------------------------===//
 // Types under test.
 using teb_v2 = dtl::teb_wrapper;
-using teb_o0 = dtl::teb<0>;
 using teb_o1 = dtl::teb<1>;
 using teb_o2 = dtl::teb<2>;
 using teb_o3 = dtl::teb<3>;
@@ -101,8 +101,12 @@ using types_under_test = ::testing::Types<
 
     // Partitioned + Differential (EXPERIMENTAL)
     diff_part_8_teb,
-    part_8_diff_teb
+    part_8_diff_teb,
     // EXPERIMENTAL
+    dtl::xah8,
+    dtl::xah16,
+    dtl::xah32,
+    dtl::xah64
     // position_list_32,
     // partitioned_position_list_32_u8,
     // partitioned_position_list_32_u16,

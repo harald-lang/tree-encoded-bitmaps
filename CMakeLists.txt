@@ -149,6 +149,7 @@ set(TEST_FILES
         test/dtl/bitmap/plain_bitmap_iter_test.cpp
         test/dtl/bitmap/update_test.cpp
         test/dtl/bitmap/teb_scan_util_test.cpp
+        test/dtl/bitmap/xah_test.cpp
         )
 add_executable(tester ${TEST_FILES})
 target_link_libraries(tester gtest gtest_main fastbit dl)
@@ -226,6 +227,9 @@ set(COMPETITORS_SOURCE_FILES
         # Range list
         repro/src/dtl/bitmap/range_list.hpp
         repro/src/dtl/bitmap/partitioned_range_list.hpp
+
+        # XAH
+        src/dtl/bitmap/xah.hpp
         )
 
 set(SOURCE_FILES
