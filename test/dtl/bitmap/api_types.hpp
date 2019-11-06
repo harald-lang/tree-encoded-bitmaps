@@ -11,8 +11,6 @@
 #include <dtl/bitmap/part/part_run.hpp>
 #include <dtl/bitmap/part/part_updirect.hpp>
 #include <dtl/bitmap/part/part_upforward.hpp>
-#include <dtl/bitmap/partitioned_position_list.hpp>
-#include <dtl/bitmap/partitioned_range_list.hpp>
 #include <dtl/bitmap/position_list.hpp>
 #include <dtl/bitmap/range_list.hpp>
 #include <dtl/bitmap/teb.hpp>
@@ -64,11 +62,12 @@ using part_8_diff_teb = dtl::part<diff_teb_roaring, 1ull << 8>;
 
 // EXPERIMENTAL
 using position_list_32 = dtl::position_list<$u32>;
-using partitioned_position_list_32_u8 = dtl::partitioned_position_list<$u32, $u8>;
-using partitioned_position_list_32_u16 = dtl::partitioned_position_list<$u32, $u16>;
+using part_position_list_8 = dtl::part<dtl::position_list<$u8>, 1ull << 8>;
+using part_position_list_16 = dtl::part<dtl::position_list<$u16>, 1ull << 16>;
+
 using range_list_32 = dtl::range_list<$u32>;
-using partitioned_range_list_32_u8 = dtl::partitioned_range_list<$u32, $u8>;
-using partitioned_range_list_32_u16 = dtl::partitioned_range_list<$u32, $u16>;
+using part_range_list_8 = dtl::part<dtl::range_list<$u8>, 1ull << 8>;
+using part_range_list_16 = dtl::part<dtl::range_list<$u16>, 1ull << 16>;
 //===----------------------------------------------------------------------===//
 // The types for which we want to run the API tests.
 using types_under_test = ::testing::Types<
@@ -112,12 +111,11 @@ using types_under_test = ::testing::Types<
     dtl::xah_skip<u8, 2>, // Skip distance is intentionally chosen small, as the bitmaps in the test are also rather small.
     dtl::xah_skip<u16, 2>,
     dtl::xah_skip<u32, 2>,
-    dtl::xah_skip<u64, 2>
-    // position_list_32,
-    // partitioned_position_list_32_u8,
-    // partitioned_position_list_32_u16,
-    // range_list_32,
-    // partitioned_range_list_32_u8,
-    // partitioned_range_list_32_u16
-    >;
+    dtl::xah_skip<u64, 2>,
+    position_list_32,
+    part_position_list_8,
+    part_position_list_16,
+    range_list_32,
+    part_range_list_8,
+    part_range_list_16>;
 //===----------------------------------------------------------------------===//

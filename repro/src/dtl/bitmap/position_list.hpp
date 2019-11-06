@@ -12,19 +12,20 @@
 namespace dtl {
 //===----------------------------------------------------------------------===//
 /// Position list.
-template<typename _block_type = $u32>
+template<typename _position_t = $u32>
 struct position_list {
-  using position_t = uint32_t;
+  using position_t = _position_t;
 
+  /// The ordered list of positions.
   std::vector<position_t> positions_;
 
-  /// The number of bits.
+  /// The universe [0, n_).
   $u64 n_;
 
   // TODO make private
   position_list() = default;
 
-  explicit position_list(const boost::dynamic_bitset<_block_type>& in)
+  explicit position_list(const boost::dynamic_bitset<$u32>& in)
       : positions_(), n_(in.size()) {
     std::size_t current_pos = in.find_first();
     while (current_pos < in.size()) {
@@ -58,9 +59,9 @@ struct position_list {
   }
 
   /// Conversion to an boost::dynamic_bitset.
-  boost::dynamic_bitset<_block_type>
+  boost::dynamic_bitset<$u32>
   to_bitset() {
-    boost::dynamic_bitset<_block_type> ret(n_);
+    boost::dynamic_bitset<$u32> ret(n_);
     for (position_t p : positions_) {
       ret[p] = true;
     }
@@ -154,18 +155,6 @@ struct position_list {
     auto y = *this & x;
     std::swap(positions_, y.positions_);
     return *this;
-  }
-
-  void
-  print(std::ostream& os) const {
-    os << "[";
-    if (!positions_.empty()) {
-      os << positions_[0];
-      for (std::size_t i = 1; i < positions_.size(); ++i) {
-        os << "," << positions_[i];
-      }
-    }
-    os << "]";
   }
 
   static std::string
@@ -280,14 +269,17 @@ struct position_list {
   };
   //===--------------------------------------------------------------------===//
 
-  iter __forceinline__
+  using skip_iter_type = iter;
+  using scan_iter_type = iter;
+
+  skip_iter_type __forceinline__
   it() const {
-    return iter(*this);
+    return skip_iter_type(*this);
   }
 
-  iter __forceinline__
+  scan_iter_type __forceinline__
   scan_it() const {
-    return iter(*this);
+    return scan_iter_type(*this);
   }
 
   /// Returns the name of the instance including the most important parameters
@@ -299,6 +291,19 @@ struct position_list {
         + ",\"size\":" + std::to_string(size_in_byte())
         + ",\"positions\":" + std::to_string(positions_.size())
         + "}";
+  }
+
+  // For debugging purposes.
+  void
+  print(std::ostream& os) const {
+    os << "[";
+    if (!positions_.empty()) {
+      os << positions_[0];
+      for (std::size_t i = 1; i < positions_.size(); ++i) {
+        os << "," << positions_[i];
+      }
+    }
+    os << "]";
   }
 };
 //===----------------------------------------------------------------------===//

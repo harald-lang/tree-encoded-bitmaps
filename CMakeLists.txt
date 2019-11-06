@@ -28,7 +28,7 @@ include_directories(SYSTEM ../fastbit/src)
 
 #include_directories(../sdsl-lite/include)
 
-add_subdirectory(../dtl dtl)
+#add_subdirectory(../dtl dtl)
 include_directories(SYSTEM ../dtl/src)
 #include_directories(dtl_storage/src)
 include_directories(../) #TODO remove
@@ -223,11 +223,9 @@ set(COMPETITORS_SOURCE_FILES
 
         # Position list
         repro/src/dtl/bitmap/position_list.hpp
-        repro/src/dtl/bitmap/partitioned_position_list.hpp
 
         # Range list
         repro/src/dtl/bitmap/range_list.hpp
-        repro/src/dtl/bitmap/partitioned_range_list.hpp
 
         # XAH
         src/dtl/bitmap/xah.hpp

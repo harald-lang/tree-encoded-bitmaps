@@ -8,8 +8,6 @@
 #include <dtl/bitmap/dynamic_bitmap.hpp>
 #include <dtl/bitmap/dynamic_roaring_bitmap.hpp>
 #include <dtl/bitmap/dynamic_wah.hpp>
-#include <dtl/bitmap/partitioned_position_list.hpp>
-#include <dtl/bitmap/partitioned_range_list.hpp>
 #include <dtl/bitmap/position_list.hpp>
 #include <dtl/bitmap/range_list.hpp>
 #include <dtl/bitmap/teb.hpp>

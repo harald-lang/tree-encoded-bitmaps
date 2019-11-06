@@ -1,8 +1,6 @@
 #include "common.hpp"
 #include "experiments/util/gen.hpp"
 
-#include <dtl/bitmap/partitioned_position_list.hpp>
-#include <dtl/bitmap/partitioned_range_list.hpp>
 #include <dtl/bitmap/position_list.hpp>
 #include <dtl/bitmap/range_list.hpp>
 #include <dtl/bitmap/teb.hpp>

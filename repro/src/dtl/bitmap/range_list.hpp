@@ -11,35 +11,53 @@
 //===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//
-/// Position list.
-template<typename _block_type = $u32>
+/// Range list.
+template<typename _position_t = $u32>
 struct range_list {
-  using position_t = uint32_t;
+  using position_t = _position_t;
 
+  /// Represents an integer range.
   struct range {
-    position_t begin;
-    position_t length;
+  private:
+    position_t begin_;
+    position_t length_; // minus one
 
-    inline bool
-    operator<(const range& other) {
-      return begin < other.begin;
+  public:
+    inline
+    range(std::size_t begin, std::size_t length)
+        : begin_(static_cast<position_t>(begin)),
+          length_(static_cast<position_t>(length - 1)) {
+      assert(length > 0);
+      assert(begin <= std::numeric_limits<position_t>::max());
+      assert(length - 1 <= std::numeric_limits<position_t>::max());
     }
 
+    /// Returns the begin of the range.
+    inline std::size_t
+    begin() const noexcept { return std::size_t(begin_); }
+
+    /// Returns the length of the range.
+    inline std::size_t
+    length() const noexcept { return std::size_t(length_) + 1; }
+
+    // For debugging purposes.
     void
-    print(std::ostream& os) const {
-      os << "[" << begin << "," << length << "]";
+    print(std::ostream& os) const noexcept {
+      os << "[" << begin() << "," << length() << "]";
     }
   };
 
+  /// The ordered list of non-overlapping ranges.
   std::vector<range> ranges_;
 
-  /// The number of bits.
+  /// The universe [0, n_).
   $u64 n_;
 
   // TODO make private
   range_list() = default;
 
-  explicit range_list(const boost::dynamic_bitset<_block_type>& in)
+  /// Constructs a range list from the given bitmap.
+  explicit range_list(const boost::dynamic_bitset<$u32>& in)
       : ranges_(), n_(in.size()) {
     std::size_t current_begin = in.find_first();
     std::size_t current_length = 1;
@@ -48,9 +66,7 @@ struct range_list {
           && in[current_begin + current_length]) {
         ++current_length;
       }
-      ranges_.emplace_back(
-          range { static_cast<position_t>(current_begin),
-              static_cast<position_t>(current_length) });
+      ranges_.emplace_back(current_begin, current_length);
       current_begin = in.find_next(current_begin + current_length);
       current_length = 1;
     }
@@ -70,7 +86,7 @@ struct range_list {
   std::size_t
   size_in_byte() const {
     return ranges_.size() * sizeof(range) /* ranges */
-        + sizeof(position_t) /* number of ranges */
+        + sizeof(std::size_t) /* number of ranges */
         + sizeof(n_) /* bit-length of the original bitmap */;
   }
 
@@ -81,9 +97,9 @@ struct range_list {
   }
 
   /// Conversion to an boost::dynamic_bitset.
-  boost::dynamic_bitset<_block_type>
+  boost::dynamic_bitset<$u32>
   to_bitset() {
-    boost::dynamic_bitset<_block_type> ret(n_);
+    boost::dynamic_bitset<$u32> ret(n_);
     for (range& r : ranges_) {
       for (std::size_t j = r.begin; j < (r.begin + r.length); ++j) {
         ret[j] = true;
@@ -181,30 +197,23 @@ struct range_list {
     return *this;
   }
 
-  void
-  print(std::ostream& os) const {
-    os << "[";
-    if (!ranges_.empty()) {
-      os << ranges_[0];
-      for (std::size_t i = 1; i < ranges_.size(); ++i) {
-        os << "," << ranges_[i];
-      }
-    }
-    os << "]";
-  }
-
   static std::string
   name() {
     return "range_list_"
         + std::to_string(sizeof(position_t) * 8);
-    ;
   }
 
   /// Returns the value of the bit at the position pos.
   u1 test(const std::size_t pos) const {
-    auto it = std::lower_bound(ranges_.begin(), ranges_.end(), pos);
-    const auto rb = (*it).begin;
-    const auto re = rb + (*it).length;
+    auto it = std::lower_bound(ranges_.begin(), ranges_.end(), pos,
+        [](const range& lhs, std::size_t rhs) -> u1 {
+          return (lhs.begin() + lhs.length()) < rhs;
+        });
+    if (it == ranges_.end()) {
+      return false;
+    }
+    const auto rb = (*it).begin();
+    const auto re = rb + (*it).length();
     return pos >= rb && pos < re;
   }
 
@@ -229,11 +238,11 @@ struct range_list {
     iter(const range_list& outer)
         : outer_(outer),
           read_pos_(0),
-          range_begin_(read_pos_ < outer.ranges_.size()
-                  ? outer_.ranges_[0].begin
+          range_begin_(read_pos_ < outer.ranges_.size() // FIXME oO ???
+                  ? outer_.ranges_[0].begin()
                   : outer_.n_),
           range_length_(read_pos_ < outer.ranges_.size()
-                  ? outer_.ranges_[0].length
+                  ? outer_.ranges_[0].length()
                   : 0) {
     }
 
@@ -245,8 +254,8 @@ struct range_list {
     next() {
       ++read_pos_;
       if (read_pos_ < outer_.ranges_.size()) {
-        range_begin_ = outer_.ranges_[read_pos_].begin;
-        range_length_ = outer_.ranges_[read_pos_].length;
+        range_begin_ = outer_.ranges_[read_pos_].begin();
+        range_length_ = outer_.ranges_[read_pos_].length();
       }
       else {
         range_begin_ = outer_.n_;
@@ -263,20 +272,19 @@ struct range_list {
         return;
       }
       auto search = std::lower_bound(
-          outer_.ranges_.begin(), outer_.ranges_.end(),
-          range { to_pos, 1 },
-          [](const range& lhs, const range& rhs) -> bool {
-            return lhs.begin + lhs.length < rhs.begin + rhs.length;
+          outer_.ranges_.begin(), outer_.ranges_.end(), to_pos,
+          [](const range& lhs, const std::size_t rhs) -> bool {
+            return (lhs.begin() + lhs.length()) < rhs + 1;
           });
       if (search != outer_.ranges_.end()) {
         read_pos_ = std::distance(outer_.ranges_.begin(), search);
-        if (to_pos < (*search).begin) {
-          range_begin_ = (*search).begin;
-          range_length_ = (*search).length;
+        if (to_pos < (*search).begin()) {
+          range_begin_ = (*search).begin();
+          range_length_ = (*search).length();
         }
         else {
           range_begin_ = to_pos;
-          range_length_ = (*search).length - (to_pos - (*search).begin);
+          range_length_ = (*search).length() - (to_pos - (*search).begin());
         }
       }
       else {
@@ -302,14 +310,17 @@ struct range_list {
   };
   //===--------------------------------------------------------------------===//
 
-  iter __forceinline__
+  using skip_iter_type = iter;
+  using scan_iter_type = iter;
+
+  skip_iter_type __forceinline__
   it() const {
-    return std::move(iter(*this));
+    return skip_iter_type(*this);
   }
 
-  iter __forceinline__
+  scan_iter_type __forceinline__
   scan_it() const {
-    return std::move(iter(*this));
+    return scan_iter_type(*this);
   }
 
   /// Returns the name of the instance including the most important parameters
@@ -321,6 +332,19 @@ struct range_list {
         + ",\"size\":" + std::to_string(size_in_byte())
         + ",\"ranges\":" + std::to_string(ranges_.size())
         + "}";
+  }
+
+  // For debugging purposes.
+  void
+  print(std::ostream& os) const {
+    os << "[";
+    if (!ranges_.empty()) {
+      os << ranges_[0];
+      for (std::size_t i = 1; i < ranges_.size(); ++i) {
+        os << "," << ranges_[i];
+      }
+    }
+    os << "]";
   }
 };
 //===----------------------------------------------------------------------===//

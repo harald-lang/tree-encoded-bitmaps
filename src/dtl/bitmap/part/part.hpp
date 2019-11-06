@@ -5,6 +5,8 @@
 #include <dtl/math.hpp>
 
 #include <boost/dynamic_bitset.hpp>
+
+#include <iomanip>
 #include <memory>
 //===----------------------------------------------------------------------===//
 namespace dtl {
