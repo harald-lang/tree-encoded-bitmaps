@@ -149,6 +149,7 @@ set(TEST_FILES
         test/dtl/bitmap/plain_bitmap_iter_test.cpp
         test/dtl/bitmap/update_test.cpp
         test/dtl/bitmap/teb_scan_util_test.cpp
+        test/dtl/bitmap/xah_compression_test.cpp
         test/dtl/bitmap/xah_test.cpp
         )
 add_executable(tester ${TEST_FILES})
