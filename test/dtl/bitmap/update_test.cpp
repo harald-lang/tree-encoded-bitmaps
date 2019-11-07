@@ -14,7 +14,10 @@ using updatable_types_under_test = ::testing::Types<
     
     part_run_8_teb,
     roaring_bitmap,
-    wah
+    wah,
+    position_list_32,
+    part_position_list_8,
+    part_position_list_16
 >;
 //===----------------------------------------------------------------------===//
 // Fixture for the parameterized test case.

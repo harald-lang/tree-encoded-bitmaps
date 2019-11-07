@@ -62,8 +62,8 @@ using part_8_diff_teb = dtl::part<diff_teb_roaring, 1ull << 8>;
 
 // EXPERIMENTAL
 using position_list_32 = dtl::position_list<$u32>;
-using part_position_list_8 = dtl::part<dtl::position_list<$u8>, 1ull << 8>;
-using part_position_list_16 = dtl::part<dtl::position_list<$u16>, 1ull << 16>;
+using part_position_list_8 = dtl::part_upforward<dtl::position_list<$u8>, 1ull << 8>;
+using part_position_list_16 = dtl::part_upforward<dtl::position_list<$u16>, 1ull << 16>;
 
 using range_list_32 = dtl::range_list<$u32>;
 using part_range_list_8 = dtl::part<dtl::range_list<$u8>, 1ull << 8>;

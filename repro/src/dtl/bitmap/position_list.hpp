@@ -165,12 +165,40 @@ struct position_list {
   }
 
   /// Returns the value of the bit at the position pos.
-  u1 test(const std::size_t pos) const {
-    auto it = std::lower_bound(positions_.begin(), positions_.end(), pos);
-    if (it == positions_.end()) {
+  u1
+  test(const std::size_t pos) const {
+    auto search = std::lower_bound(positions_.begin(), positions_.end(), pos);
+    if (search == positions_.end()) {
       return false;
     }
-    return *it == pos;
+    return *search == pos;
+  }
+
+  /// Set the i-th bit to the given value.
+  void __forceinline__
+  set(std::size_t i, u1 val) noexcept {
+    auto search = std::lower_bound(positions_.begin(), positions_.end(), i);
+    if (search == positions_.end()) {
+      if (val) {
+        // Append the value to the list.
+        positions_.push_back(i);
+      }
+      return;
+    }
+
+    auto found_pos = *search;
+    if (found_pos == i) {
+      if (!val) {
+        // Remove the value from the list.
+        positions_.erase(search);
+      }
+      return;
+    }
+    else {
+      if (val) {
+        positions_.insert(search, i);
+      }
+    }
   }
 
   //===--------------------------------------------------------------------===//
