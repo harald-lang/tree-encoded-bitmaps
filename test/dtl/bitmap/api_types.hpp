@@ -15,6 +15,8 @@
 #include <dtl/bitmap/range_list.hpp>
 #include <dtl/bitmap/teb.hpp>
 #include <dtl/bitmap/teb_wrapper.hpp>
+#include <dtl/bitmap/uah.hpp>
+#include <dtl/bitmap/uah_skip.hpp>
 #include <dtl/bitmap/xah.hpp>
 #include <dtl/bitmap/xah_skip.hpp>
 //===----------------------------------------------------------------------===//
@@ -104,6 +106,14 @@ using types_under_test = ::testing::Types<
     diff_part_8_teb,
     part_8_diff_teb,
     // EXPERIMENTAL
+    dtl::uah8,
+    dtl::uah16,
+    dtl::uah32,
+    dtl::uah64,
+    dtl::uah_skip<u8, 2>, // Skip distance is intentionally chosen small, as the bitmaps in the test are also rather small.
+    dtl::uah_skip<u16, 2>,
+    dtl::uah_skip<u32, 2>,
+    dtl::uah_skip<u64, 2>,
     dtl::xah8,
     dtl::xah16,
     dtl::xah32,

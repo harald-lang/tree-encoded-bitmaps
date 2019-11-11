@@ -1,6 +1,6 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include "xah.hpp"
+#include "uah.hpp"
 
 #include <dtl/bitmap/util/plain_bitmap.hpp>
 #include <dtl/bitmap/util/plain_bitmap_iter.hpp>
@@ -16,18 +16,19 @@
 namespace dtl {
 //===----------------------------------------------------------------------===//
 /// X-Aligned Hybrid: An RLE compressed representation of a bitmap of length N.
+/// Unlike to WAH or BBC, the encoding is not word or byte aligned.
 /// This implementation maintains a small index that allows for faster skips.
 template<typename _word_type = u32, std::size_t _skip_distance = 1024>
-class xah_skip : public xah<_word_type> {
-  using super = xah<_word_type>;
+class uah_skip : public uah<_word_type> {
+  using super = uah<_word_type>;
   using word_type = typename super::word_type;
 
-  using xah<_word_type>::xah;
-  using xah<_word_type>::is_fill_word;
-  using xah<_word_type>::extract_fill_value;
-  using xah<_word_type>::extract_fill_repetitions;
-  using xah<_word_type>::word_bitlength;
-  using xah<_word_type>::payload_bit_cnt;
+  using uah<_word_type>::uah;
+  using uah<_word_type>::is_fill_word;
+  using uah<_word_type>::extract_fill_value;
+  using uah<_word_type>::extract_fill_length;
+  using uah<_word_type>::word_bitlength;
+  using uah<_word_type>::payload_bit_cnt;
 
   std::vector<$u32> offsets_;
 
@@ -45,7 +46,7 @@ class xah_skip : public xah<_word_type> {
         }
         const auto w = this->data_[word_idx];
         i += super::is_fill_word(w)
-            ? super::extract_fill_repetitions(w) * super::payload_bit_cnt
+            ? super::extract_fill_length(w)
             : super::payload_bit_cnt;
       }
     }
@@ -56,17 +57,17 @@ class xah_skip : public xah<_word_type> {
   }
 
 public:
-  xah_skip() = default;
+  uah_skip() = default;
 
-  explicit xah_skip(const boost::dynamic_bitset<$u32>& in) : super(in), offsets_() {
+  explicit uah_skip(const boost::dynamic_bitset<$u32>& in) : super(in), offsets_() {
     init_skip_offsets();
   }
 
-  ~xah_skip() = default;
-  xah_skip(const xah_skip& other) = default;
-  xah_skip(xah_skip&& other) noexcept = default;
-  xah_skip& operator=(const xah_skip& other) = default;
-  xah_skip& operator=(xah_skip&& other) noexcept = default;
+  ~uah_skip() = default;
+  uah_skip(const uah_skip& other) = default;
+  uah_skip(uah_skip&& other) noexcept = default;
+  uah_skip& operator=(const uah_skip& other) = default;
+  uah_skip& operator=(uah_skip&& other) noexcept = default;
 
   /// Return the size in bytes.
   std::size_t __forceinline__
@@ -77,7 +78,7 @@ public:
 
   static std::string
   name() {
-    return "xah_skip" + std::to_string(super::word_bitlength);
+    return "uah_skip" + std::to_string(super::word_bitlength);
   }
 
   /// Returns the value of the bit at the position pos.
@@ -105,8 +106,7 @@ public:
         }
       }
       else {
-        auto fill_len =
-            this->extract_fill_repetitions(w) * super::payload_bit_cnt;
+        auto fill_len = this->extract_fill_length(w);
         if (pos >= i + fill_len) {
           i += fill_len;
           continue;
@@ -130,7 +130,7 @@ public:
   //===--------------------------------------------------------------------===//
   /// 1-run iterator
   class iter {
-    const xah_skip& outer_;
+    const uah_skip& outer_;
 
     std::size_t word_idx_;
     std::size_t in_word_idx_;
@@ -146,7 +146,7 @@ public:
 
   public:
     explicit __forceinline__
-    iter(const xah_skip& outer)
+    iter(const uah_skip& outer)
         : outer_(outer),
           word_idx_(0),
           in_word_idx_(0),
@@ -157,10 +157,10 @@ public:
         w = outer_.data_[word_idx_];
         if (is_fill_word(w)) {
           if (extract_fill_value(w) == false) {
-            pos_ += extract_fill_repetitions(w) * super::payload_bit_cnt;
+            pos_ += extract_fill_length(w);
           }
           else {
-            length_ = extract_fill_repetitions(w) * super::payload_bit_cnt;
+            length_ = extract_fill_length(w);
             in_word_idx_ = 0;
             break;
           }
@@ -208,10 +208,10 @@ public:
         w = outer_.data_[word_idx_];
         if (is_fill_word(w)) {
           if (extract_fill_value(w) == false) {
-            pos_ += extract_fill_repetitions(w) * super::payload_bit_cnt;
+            pos_ += extract_fill_length(w);
           }
           else {
-            length_ = extract_fill_repetitions(w) * super::payload_bit_cnt;
+            length_ = extract_fill_length(w);
             break;
           }
         }
@@ -341,13 +341,13 @@ public:
   }
 };
 //===----------------------------------------------------------------------===//
-/// XAH compressed representation of a bitmap of length N using 8-bit words.
-using xah8_skip = xah_skip<u8>;
-/// XAH compressed representation of a bitmap of length N using 16-bit words.
-using xah16_skip = xah_skip<u16>;
-/// XAH compressed representation of a bitmap of length N using 32-bit words.
-using xah32_skip = xah_skip<u32>;
-/// XAH compressed representation of a bitmap of length N using 64-bit words.
-using xah64_skip = xah_skip<u64>;
+/// UAH compressed representation of a bitmap of length N using 8-bit words.
+using uah8_skip = uah_skip<u8>;
+/// UAH compressed representation of a bitmap of length N using 16-bit words.
+using uah16_skip = uah_skip<u16>;
+/// UAH compressed representation of a bitmap of length N using 32-bit words.
+using uah32_skip = uah_skip<u32>;
+/// UAH compressed representation of a bitmap of length N using 64-bit words.
+using uah64_skip = uah_skip<u64>;
 //===----------------------------------------------------------------------===//
 } // namespace dtl

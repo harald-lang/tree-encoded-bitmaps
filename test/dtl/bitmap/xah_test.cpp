@@ -1,15 +1,26 @@
 #include "gtest/gtest.h"
 
 #include <dtl/bitmap.hpp>
+#include <dtl/bitmap/traits.hpp>
 #include <dtl/bitmap/util/convert.hpp>
 #include <dtl/bitmap/util/plain_bitmap_iter.hpp>
 #include <dtl/bitmap/util/random.hpp>
+#include <dtl/bitmap/uah.hpp>
+#include <dtl/bitmap/uah_skip.hpp>
 #include <dtl/bitmap/xah.hpp>
 #include <dtl/bitmap/xah_skip.hpp>
 //===----------------------------------------------------------------------===//
 // Tests for XAH.
 //===----------------------------------------------------------------------===//
 using types_under_test = ::testing::Types<
+    dtl::uah8,
+    dtl::uah16,
+    dtl::uah32,
+    dtl::uah64,
+    dtl::uah_skip<u8, 1>,
+    dtl::uah_skip<u16, 1>,
+    dtl::uah_skip<u32, 1>,
+    dtl::uah_skip<u64, 1>,
     dtl::xah8,
     dtl::xah16,
     dtl::xah32,
@@ -78,6 +89,29 @@ TYPED_TEST(xah_test, encode_decode_non_pow2_length_test) {
   }
 }
 //===----------------------------------------------------------------------===//
+/// Test compression with long bitmaps that are either entirely 0 or 1.
+TYPED_TEST(xah_test, encode_decode_long_bitmaps_consisting_of_a_single_run_test) {
+  using T = TypeParam;
+  auto len = 1ull << 12;
+  dtl::bitmap b(len);
+  {
+    // Compress
+    T enc(b);
+    // Decompress and validate it.
+    auto dec = dtl::to_bitmap_using_iterator(enc);
+    ASSERT_EQ(b, dec) << "\n" << enc;
+  }
+
+  b.flip();
+  {
+    // Compress
+    T enc(b);
+    // Decompress and validate it.
+    auto dec = dtl::to_bitmap_using_iterator(enc);
+    ASSERT_EQ(b, dec) << "\n" << enc;
+  }
+}
+//===----------------------------------------------------------------------===//
 /// Test random access (bit test).
 TYPED_TEST(xah_test, random_access_test) {
   using T = TypeParam;
@@ -91,7 +125,6 @@ TYPED_TEST(xah_test, random_access_test) {
           << " at pos k=" << k << " - '" << b
           << "' -> \n" << enc
           << std::endl;
-
     }
   }
 }
@@ -110,7 +143,6 @@ TYPED_TEST(xah_test, run_iterator_test) {
         << "' -> '" << dec << "'\n"
         << enc
         << std::endl;
-
   }
 }
 //===----------------------------------------------------------------------===//

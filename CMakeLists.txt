@@ -227,6 +227,10 @@ set(COMPETITORS_SOURCE_FILES
         # Range list
         repro/src/dtl/bitmap/range_list.hpp
 
+        # UAH
+        src/dtl/bitmap/uah.hpp
+        src/dtl/bitmap/uah_skip.hpp
+
         # XAH
         src/dtl/bitmap/xah.hpp
         src/dtl/bitmap/xah_skip.hpp

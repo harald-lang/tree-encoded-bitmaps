@@ -1,10 +1,9 @@
 #include "gtest/gtest.h"
 
-#include <dtl/bitmap.hpp>
 #include <dtl/bitmap/dynamic_wah.hpp>
-#include <dtl/bitmap/util/convert.hpp>
 #include <dtl/bitmap/util/plain_bitmap_iter.hpp>
 #include <dtl/bitmap/util/random.hpp>
+#include <dtl/bitmap/uah.hpp>
 #include <dtl/bitmap/xah.hpp>
 //===----------------------------------------------------------------------===//
 // AB tests for XAH regarding compression ratios.
@@ -18,6 +17,8 @@ struct ab {
 };
 //===----------------------------------------------------------------------===//
 using types_under_test = ::testing::Types<
+    ab<dtl::uah32, dtl::dynamic_wah32>,
+    ab<dtl::uah64, dtl::dynamic_wah64>,
     ab<dtl::xah32, dtl::dynamic_wah32>,
     ab<dtl::xah64, dtl::dynamic_wah64>
     >;

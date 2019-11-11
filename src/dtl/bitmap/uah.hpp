@@ -12,9 +12,10 @@
 //===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//
-/// X-Aligned Hybrid: An RLE compressed representation of a bitmap of length N.
+/// Un-Aligned Hybrid: An RLE compressed representation of a bitmap of length N.
+/// Unlike to WAH or BBC, the encoding is not word or byte aligned.
 template<typename _word_type = u32>
-class xah {
+class uah {
 
 protected:
   using word_type = typename std::remove_cv<_word_type>::type;
@@ -24,8 +25,7 @@ protected:
       "The word type must not be a boolean.");
   
   static constexpr std::size_t word_bitlength = sizeof(word_type) * 8;
-  static constexpr std::size_t max_fill_repetitions =
-      (1ull << (word_bitlength - 2)) - 1;
+  static constexpr std::size_t max_fill_length = (1ull << (word_bitlength - 2)) - 1;
   /// The number of bits that can be stored in a literal word.
   static constexpr std::size_t payload_bit_cnt = word_bitlength - 1;
   static constexpr word_type all_ones = word_type(~word_type(0));
@@ -58,7 +58,7 @@ protected:
 
   /// Extract the fill length from a fill word.
   static inline constexpr std::size_t
-  extract_fill_repetitions(const word_type w) noexcept {
+  extract_fill_length(const word_type w) noexcept {
     assert(is_fill_word(w));
     return w >> 2;
   }
@@ -66,41 +66,26 @@ protected:
   /// Creates a fill word.
   static inline constexpr word_type
   make_fill_word(u1 val, const std::size_t len) noexcept {
-    assert(len <= max_fill_repetitions);
+    assert(len <= max_fill_length);
     word_type w = val ? word_type(3) : word_type(1);
     w |= len << 2;
     return w;
   }
 
+  /// Initialize the compressed bitmap with a 0- or 1-run of length 0.
+  inline void
+  init(u1 val) noexcept {
+    assert(data_.size() == 0);
+    data_.push_back(make_fill_word(val, 0));
+  }
+
   /// Append a 0- or 1-run of the given length to the compressed bitmap.
   inline void
   append_run(u1 val, std::size_t len) {
-    assert(len > 0);
-    if (data_.size() == 0) {
-      if (len >= payload_bit_cnt) {
-        auto rep = std::min(std::size_t(max_fill_repetitions), len / payload_bit_cnt);
-        data_.emplace_back(make_fill_word(val, rep));
-        encoded_bitmap_length_ += rep * payload_bit_cnt;
-        remaining_bit_cnt_in_last_literal_word_ = 0;
-        len -= rep * payload_bit_cnt;
-      }
-      else {
-        word_type lit = val == true
-            ? (word_type(~0ull) >> (word_bitlength - len)) << 1
-            : 0;
-        data_.emplace_back(lit);
-        encoded_bitmap_length_ += len;
-        remaining_bit_cnt_in_last_literal_word_ = payload_bit_cnt - len;
-        len = 0;
-      }
-      if (len == 0) return; // Done
-    }
-    assert(!data_.empty());
-
+    assert(data_.size() > 0);
     auto& w = data_.back();
-    if (len >= payload_bit_cnt
-        && is_fill_word(w)) {
-      const auto last_fill_rep = extract_fill_repetitions(w);
+    if (is_fill_word(w)) {
+      const auto last_fill_len = extract_fill_length(w);
       const auto last_fill_val = extract_fill_value(w);
       if (last_fill_val == val) {
         //===--------------------------------------------------------------===//
@@ -109,21 +94,52 @@ protected:
         //===--------------------------------------------------------------===//
 
         // Extend the previous fill word.
-        auto extend_by = std::min(max_fill_repetitions - last_fill_rep,
-            len / payload_bit_cnt); // a multiple of the payload size
-        w = make_fill_word(val, last_fill_rep + extend_by);
-        encoded_bitmap_length_ += extend_by * payload_bit_cnt;
-        if (extend_by * payload_bit_cnt == len) {
+        auto extend_by = std::min(max_fill_length - last_fill_len, len);
+        w = make_fill_word(val, last_fill_len + extend_by);
+        encoded_bitmap_length_ += extend_by;
+        if (extend_by == len) {
           return; // Done.
         }
-        len -= extend_by * payload_bit_cnt;
+        // The previous fill word exceeded its max length. Thus, we have to
+        // append a new fill word.
+        len -= extend_by;
+      }
+      else {
+        //===--------------------------------------------------------------===//
+        // The run that is to be appended is of a DIFFERENT KIND than the
+        // previous one.
+        //===--------------------------------------------------------------===//
+
+        // Try to save space by converting the last word into a literal word.
+        if (last_fill_len < payload_bit_cnt) {
+          // Convert the last word into a literal word.
+          auto literal_word = last_fill_val
+              ? (all_ones >> (word_bitlength - last_fill_len)) << 1
+              : word_type(0);
+          auto remaining_bits = payload_bit_cnt - last_fill_len;
+          // Append the current run value.
+          auto extend_by = std::min(remaining_bits, len);
+          auto bits_to_append = val
+              ? all_ones >> (word_bitlength - extend_by)
+              : word_type(0);
+          literal_word |=
+              bits_to_append << (1 + payload_bit_cnt - remaining_bits);
+          w = literal_word;
+          encoded_bitmap_length_ += extend_by;
+          remaining_bit_cnt_in_last_literal_word_ = remaining_bits - extend_by;
+          if (extend_by == len) {
+            return; // Done.
+          }
+          // The previous fill word exceeded its max length. Thus, we have to
+          // append a new fill word.
+          len -= extend_by;
+        }
       }
     }
-    if (is_literal_word(w)) {
+    else {
       // Append to the last literal word.
       if (remaining_bit_cnt_in_last_literal_word_ > 0) {
-        auto extend_by =
-            std::min(remaining_bit_cnt_in_last_literal_word_, len); // # of bits
+        auto extend_by = std::min(remaining_bit_cnt_in_last_literal_word_, len);
         if (val == true) {
           auto bits_to_append = all_ones >> (word_bitlength - extend_by);
           w |= bits_to_append
@@ -131,17 +147,6 @@ protected:
         }
         remaining_bit_cnt_in_last_literal_word_ -= extend_by;
         encoded_bitmap_length_ += extend_by;
-
-        // Check whether we can turn the last word into a fill word.
-        if (remaining_bit_cnt_in_last_literal_word_ == 0) {
-          if (w == (all_ones << 1)) {
-            w = make_fill_word(true, payload_bit_cnt);
-          }
-          else if (w == 0) {
-            w = make_fill_word(false, payload_bit_cnt);
-          }
-        }
-
         if (extend_by == len) {
           return; // Done.
         }
@@ -150,29 +155,14 @@ protected:
       }
     }
 
-    // Append remaining bits of the current run.
+    // Append remaining bits of the current run as a fill word.
     while (len > 0) {
-      if (len >= payload_bit_cnt) {
-        // Append a fill word.
-        auto rep =
-            std::min(std::size_t(max_fill_repetitions), len / payload_bit_cnt);
-        data_.emplace_back(make_fill_word(val, rep));
-        encoded_bitmap_length_ += rep * payload_bit_cnt;
-        len -= rep * payload_bit_cnt;
-      }
-      else {
-        // Append a literal word.
-        if (val == true) {
-          data_.emplace_back((all_ones >> (word_bitlength - len)) << 1);
-        }
-        else {
-          data_.emplace_back(0);
-        }
-        encoded_bitmap_length_ += len;
-        remaining_bit_cnt_in_last_literal_word_ = payload_bit_cnt - len;
-        len = 0;
-      }
+      const auto fill_len = std::min(std::size_t(max_fill_length), len);
+      data_.emplace_back(make_fill_word(val, fill_len));
+      encoded_bitmap_length_ += fill_len;
+      len -= fill_len;
     }
+    remaining_bit_cnt_in_last_literal_word_ = 0;
   }
 
   /// Append a 0-run of the given length to the compressed bitmap.
@@ -188,18 +178,23 @@ protected:
   }
 
 public:
-  xah() = default;
+  uah() = default;
 
-  explicit xah(const boost::dynamic_bitset<$u32>& in) {
+  explicit uah(const boost::dynamic_bitset<$u32>& in) {
     // Obtain a 1-run iterator for the input bitmap.
     dtl::plain_bitmap_iter<boost::dynamic_bitset<$u32>> it(in);
     // Append runs to the compressed bitmap.
     std::size_t i = 0;
     if (it.pos() > 0) {
       // The bitmap starts with a 0-run.
+      init(false);
       auto len = it.pos() - i;
       append_zero_run(len);
       i += len;
+    }
+    else {
+      // The bitmap starts with a 0-run.
+      init(true);
     }
     while (!it.end()) {
       auto len = it.length();
@@ -219,11 +214,11 @@ public:
     shrink();
   }
 
-  ~xah() = default;
-  xah(const xah& other) = default;
-  xah(xah&& other) noexcept = default;
-  xah& operator=(const xah& other) = default;
-  xah& operator=(xah&& other) noexcept = default;
+  ~uah() = default;
+  uah(const uah& other) = default;
+  uah(uah&& other) noexcept = default;
+  uah& operator=(const uah& other) = default;
+  uah& operator=(uah&& other) noexcept = default;
 
   /// Return the size in bytes.
   std::size_t __forceinline__
@@ -247,7 +242,7 @@ public:
       auto& w = data_[word_idx];
       if (is_fill_word(w)) {
         auto val = extract_fill_value(w);
-        auto len = extract_fill_repetitions(w) * payload_bit_cnt;
+        auto len = extract_fill_length(w);
         ret.set(i, i + len, val);
         i += len;
       }
@@ -269,7 +264,7 @@ public:
 
   static std::string
   name() {
-    return "xah" + std::to_string(word_bitlength);
+    return "uah" + std::to_string(word_bitlength);
   }
 
   /// Returns the value of the bit at the position pos.
@@ -290,7 +285,7 @@ public:
         }
       }
       else {
-        auto fill_len = extract_fill_repetitions(w) * payload_bit_cnt;
+        auto fill_len = extract_fill_length(w);
         if (pos >= i + fill_len) {
           i += fill_len;
           continue;
@@ -313,7 +308,7 @@ public:
   //===--------------------------------------------------------------------===//
   /// 1-run iterator
   class iter {
-    const xah& outer_;
+    const uah& outer_;
 
     std::size_t word_idx_;
     std::size_t in_word_idx_;
@@ -329,7 +324,7 @@ public:
 
   public:
     explicit __forceinline__
-    iter(const xah& outer)
+    iter(const uah& outer)
         : outer_(outer),
           word_idx_(0),
           in_word_idx_(0),
@@ -340,10 +335,10 @@ public:
         w = outer_.data_[word_idx_];
         if (is_fill_word(w)) {
           if (extract_fill_value(w) == false) {
-            pos_ += extract_fill_repetitions(w) * payload_bit_cnt;
+            pos_ += extract_fill_length(w);
           }
           else {
-            length_ = extract_fill_repetitions(w) * payload_bit_cnt;
+            length_ = extract_fill_length(w);
             in_word_idx_ = 0;
             break;
           }
@@ -391,10 +386,10 @@ public:
         w = outer_.data_[word_idx_];
         if (is_fill_word(w)) {
           if (extract_fill_value(w) == false) {
-            pos_ += extract_fill_repetitions(w) * payload_bit_cnt;
+            pos_ += extract_fill_length(w);
           }
           else {
-            length_ = extract_fill_repetitions(w) * payload_bit_cnt;
+            length_ = extract_fill_length(w);
             break;
           }
         }
@@ -505,7 +500,7 @@ public:
       auto& w = data_[i];
       if (is_fill_word(w)) {
         os << "fill      | ";
-        os << extract_fill_repetitions(w) << " x ";
+        os << extract_fill_length(w) << " x ";
         os << (extract_fill_value(w) ? "'1'" : "'0'");
         os << std::endl;
       }
@@ -521,13 +516,13 @@ public:
   }
 };
 //===----------------------------------------------------------------------===//
-/// XAH compressed representation of a bitmap of length N using 8-bit words.
-using xah8 = xah<u8>;
-/// XAH compressed representation of a bitmap of length N using 16-bit words.
-using xah16 = xah<u16>;
-/// XAH compressed representation of a bitmap of length N using 32-bit words.
-using xah32 = xah<u32>;
-/// XAH compressed representation of a bitmap of length N using 64-bit words.
-using xah64 = xah<u64>;
+/// UAH compressed representation of a bitmap of length N using 8-bit words.
+using uah8 = uah<u8>;
+/// UAH compressed representation of a bitmap of length N using 16-bit words.
+using uah16 = uah<u16>;
+/// UAH compressed representation of a bitmap of length N using 32-bit words.
+using uah32 = uah<u32>;
+/// UAH compressed representation of a bitmap of length N using 64-bit words.
+using uah64 = uah<u64>;
 //===----------------------------------------------------------------------===//
 } // namespace dtl
