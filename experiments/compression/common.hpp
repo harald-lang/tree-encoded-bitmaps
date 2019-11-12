@@ -94,45 +94,58 @@ run(const config& c, std::ostream& os) {
 static void
 run(config c, std::ostream& os) {
   switch (c.bitmap_type) {
-    case bitmap_t::bitmap:
-      run<dtl::dynamic_bitmap<$u32>>(c, os);
-      break;
-    case bitmap_t::roaring:
-      run<dtl::dynamic_roaring_bitmap>(c, os);
-      break;
-    case bitmap_t::teb:
-      run<dtl::teb<>>(c, os);
-      break;
-    case bitmap_t::teb_wrapper:
-      run<dtl::teb_wrapper>(c, os);
-      break;
-    case bitmap_t::wah:
-      run<dtl::dynamic_wah32>(c, os);
-      break;
-      // clang-format off
-//    case bitmap_t::teb_scan: /* deprecated*/
-//      run<dtl::teb_scan<>>(c, os);
-//      break;
-    // EXPERIMENTAL
-//    case bitmap_t::position_list:
-//      run<dtl::position_list<$u32>>(c, os);
-//      break;
-//    case bitmap_t::partitioned_position_list_u8:
-//      run<dtl::partitioned_position_list<$u32, $u8>>(c, os);
-//      break;
-//    case bitmap_t::partitioned_position_list_u16:
-//      run<dtl::partitioned_position_list<$u32, $u16>>(c, os);
-//      break;
-//    case bitmap_t::range_list:
-//      run<dtl::range_list<$u32>>(c, os);
-//      break;
-//    case bitmap_t::partitioned_range_list_u8:
-//      run<dtl::partitioned_range_list<$u32, $u8>>(c, os);
-//      break;
-//    case bitmap_t::partitioned_range_list_u16:
-//      run<dtl::partitioned_range_list<$u32, $u16>>(c, os);
-//      break;
-      // clang-format on
+#define __GENERATE_CASE(name) \
+  case bitmap_t::name:        \
+    run<type_of<bitmap_t::name>::type>(c, os);
+
+    __GENERATE_CASE(bitmap)
+    __GENERATE_CASE(roaring)
+    __GENERATE_CASE(teb_wrapper)
+    __GENERATE_CASE(partitioned_teb_wrapper)
+    __GENERATE_CASE(wah)
+    __GENERATE_CASE(partitioned_wah)
+
+    __GENERATE_CASE(position_list)
+    __GENERATE_CASE(partitioned_position_list_u8)
+    __GENERATE_CASE(partitioned_position_list_u16)
+    __GENERATE_CASE(range_list)
+    __GENERATE_CASE(partitioned_range_list_u8)
+    __GENERATE_CASE(partitioned_range_list_u16)
+
+    __GENERATE_CASE(uah8)
+    __GENERATE_CASE(uah8_skip)
+    __GENERATE_CASE(uah16)
+    __GENERATE_CASE(uah16_skip)
+    __GENERATE_CASE(uah32)
+    __GENERATE_CASE(uah32_skip)
+    __GENERATE_CASE(uah64)
+    __GENERATE_CASE(uah64_skip)
+    __GENERATE_CASE(partitioned_uah8)
+    __GENERATE_CASE(partitioned_uah8_skip)
+    __GENERATE_CASE(partitioned_uah16)
+    __GENERATE_CASE(partitioned_uah16_skip)
+    __GENERATE_CASE(partitioned_uah32)
+    __GENERATE_CASE(partitioned_uah32_skip)
+    __GENERATE_CASE(partitioned_uah64)
+    __GENERATE_CASE(partitioned_uah64_skip)
+
+    __GENERATE_CASE(xah8)
+    __GENERATE_CASE(xah8_skip)
+    __GENERATE_CASE(xah16)
+    __GENERATE_CASE(xah16_skip)
+    __GENERATE_CASE(xah32)
+    __GENERATE_CASE(xah32_skip)
+    __GENERATE_CASE(xah64)
+    __GENERATE_CASE(xah64_skip)
+    __GENERATE_CASE(partitioned_xah8)
+    __GENERATE_CASE(partitioned_xah8_skip)
+    __GENERATE_CASE(partitioned_xah16)
+    __GENERATE_CASE(partitioned_xah16_skip)
+    __GENERATE_CASE(partitioned_xah32)
+    __GENERATE_CASE(partitioned_xah32_skip)
+    __GENERATE_CASE(partitioned_xah64)
+    __GENERATE_CASE(partitioned_xah64_skip)
+#undef __GENERATE_CASE
   }
 }
 //===----------------------------------------------------------------------===//
