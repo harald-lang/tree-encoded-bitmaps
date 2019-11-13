@@ -145,6 +145,9 @@ run(config c, std::ostream& os) {
     __GENERATE_CASE(partitioned_xah32_skip)
     __GENERATE_CASE(partitioned_xah64)
     __GENERATE_CASE(partitioned_xah64_skip)
+
+    __GENERATE_CASE(bah)
+    __GENERATE_CASE(partitioned_bah)
 #undef __GENERATE_CASE
   }
 }

@@ -1,5 +1,6 @@
 #pragma once
 //===----------------------------------------------------------------------===//
+#include <dtl/bitmap/bah.hpp>
 #include <dtl/bitmap/dynamic_bitmap.hpp>
 #include <dtl/bitmap/dynamic_roaring_bitmap.hpp>
 #include <dtl/bitmap/dynamic_wah.hpp>
@@ -8,11 +9,11 @@
 #include <dtl/bitmap/range_list.hpp>
 #include <dtl/bitmap/teb.hpp>
 #include <dtl/bitmap/teb_wrapper.hpp>
-#include <dtl/dtl.hpp>
-
 #include <dtl/bitmap/uah.hpp>
 #include <dtl/bitmap/uah_skip.hpp>
 #include <dtl/bitmap/xah_skip.hpp>
+#include <dtl/dtl.hpp>
+
 #include <iostream>
 #include <vector>
 //===----------------------------------------------------------------------===//
@@ -69,8 +70,11 @@ enum class bitmap_t {
   partitioned_teb_wrapper,
   partitioned_wah,
 
+  bah,
+  partitioned_bah,
+
   _first = bitmap,
-  _last = partitioned_wah
+  _last = partitioned_bah
 };
 static const std::vector<bitmap_t>
     bitmap_t_list = []() {
@@ -325,5 +329,14 @@ struct type_of<bitmap_t::partitioned_xah64> {
 template<>
 struct type_of<bitmap_t::partitioned_xah64_skip> {
   using type = dtl::part<dtl::xah64_skip, 1ull << 16>;
+};
+
+template<>
+struct type_of<bitmap_t::bah> {
+  using type = dtl::bah;
+};
+template<>
+struct type_of<bitmap_t::partitioned_bah> {
+  using type = dtl::part<dtl::bah, 1ull << 16>;
 };
 //===----------------------------------------------------------------------===//

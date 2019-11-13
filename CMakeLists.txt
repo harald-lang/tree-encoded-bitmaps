@@ -127,35 +127,6 @@ set(BENCHMARK_SOURCE_FILES
         )
 
 ##===----------------------------------------------------------------------===##
-# Test cases.
-##===----------------------------------------------------------------------===##
-set(TEST_FILES
-        ${BENCHMARK_SOURCE_FILES}
-        test/dtl/bitmap/util/bit_buffer_avx2_test.cpp
-        test/dtl/bitmap/util/bit_buffer_avx512_test.cpp
-        test/dtl/bitmap/util/bit_buffer_test.cpp
-        test/dtl/bitmap/util/bitmap_fun_test.cpp
-        test/dtl/bitmap/util/bitmap_seq_reader_test.cpp
-        test/dtl/bitmap/util/rank_test.cpp
-        test/dtl/bitmap/api_types.hpp
-        test/dtl/bitmap/api_encode_decode_test.cpp
-        test/dtl/bitmap/api_random_access_test.cpp
-        test/dtl/bitmap/api_run_iterator_test.cpp
-        test/dtl/bitmap/api_run_iterator_skip_test.cpp
-        test/dtl/bitmap/api_bitwise_operation_test.cpp
-        test/dtl/bitmap/bitwise_operations_helper.hpp
-        test/dtl/bitmap/diff_test.cpp
-        test/dtl/bitmap/part_diff_test.cpp
-        test/dtl/bitmap/plain_bitmap_iter_test.cpp
-        test/dtl/bitmap/update_test.cpp
-        test/dtl/bitmap/teb_scan_util_test.cpp
-        test/dtl/bitmap/xah_compression_test.cpp
-        test/dtl/bitmap/xah_test.cpp
-        )
-add_executable(tester ${TEST_FILES})
-target_link_libraries(tester gtest gtest_main fastbit dl)
-
-##===----------------------------------------------------------------------===##
 # Sources
 ##===----------------------------------------------------------------------===##
 set(UTIL_SOURCE_FILES
@@ -226,6 +197,12 @@ set(COMPETITORS_SOURCE_FILES
 
         # Range list
         repro/src/dtl/bitmap/range_list.hpp
+
+        # BAH
+        src/dtl/bitmap/bah.hpp
+        src/dtl/bitmap/bah_patterns.cpp
+        src/dtl/bitmap/bah_patterns.hpp
+        src/dtl/bitmap/bah_types.hpp
 
         # UAH
         src/dtl/bitmap/uah.hpp
@@ -442,3 +419,35 @@ target_link_libraries(ex_performance_update_tp_varying_merge_threshold fastbit p
 
 ##===----------------------------------------------------------------------===##
 include(CMakeListsLocal.cmake OPTIONAL)
+##===----------------------------------------------------------------------===##
+
+##===----------------------------------------------------------------------===##
+# Test cases.
+##===----------------------------------------------------------------------===##
+set(TEST_FILES
+        ${BENCHMARK_SOURCE_FILES}
+        ${SOURCE_FILES}
+        test/dtl/bitmap/util/bit_buffer_avx2_test.cpp
+        test/dtl/bitmap/util/bit_buffer_avx512_test.cpp
+        test/dtl/bitmap/util/bit_buffer_test.cpp
+        test/dtl/bitmap/util/bitmap_fun_test.cpp
+        test/dtl/bitmap/util/bitmap_seq_reader_test.cpp
+        test/dtl/bitmap/util/rank_test.cpp
+        test/dtl/bitmap/api_types.hpp
+        test/dtl/bitmap/api_encode_decode_test.cpp
+        test/dtl/bitmap/api_random_access_test.cpp
+        test/dtl/bitmap/api_run_iterator_test.cpp
+        test/dtl/bitmap/api_run_iterator_skip_test.cpp
+        test/dtl/bitmap/api_bitwise_operation_test.cpp
+        test/dtl/bitmap/bitwise_operations_helper.hpp
+        test/dtl/bitmap/diff_test.cpp
+        test/dtl/bitmap/part_diff_test.cpp
+        test/dtl/bitmap/plain_bitmap_iter_test.cpp
+        test/dtl/bitmap/update_test.cpp
+        test/dtl/bitmap/teb_scan_util_test.cpp
+        test/dtl/bitmap/xah_compression_test.cpp
+        test/dtl/bitmap/xah_test.cpp
+        )
+add_executable(tester ${TEST_FILES})
+target_link_libraries(tester gtest gtest_main fastbit dl)
+

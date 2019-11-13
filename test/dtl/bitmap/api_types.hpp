@@ -2,6 +2,7 @@
 //===----------------------------------------------------------------------===//
 #include "gtest/gtest.h"
 
+#include <dtl/bitmap/bah.hpp>
 #include <dtl/bitmap/diff/diff.hpp>
 #include <dtl/bitmap/diff/merge.hpp>
 #include <dtl/bitmap/dynamic_bitmap.hpp>
@@ -127,5 +128,9 @@ using types_under_test = ::testing::Types<
     part_position_list_16,
     range_list_32,
     part_range_list_8,
-    part_range_list_16>;
+    part_range_list_16,
+
+    dtl::bah,
+    dtl::part<dtl::bah, 1ull << 16>
+    >;
 //===----------------------------------------------------------------------===//

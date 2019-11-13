@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
 #include <dtl/bitmap.hpp>
-#include <dtl/bitmap/traits.hpp>
+#include <dtl/bitmap/bah.hpp>
 #include <dtl/bitmap/util/convert.hpp>
 #include <dtl/bitmap/util/plain_bitmap_iter.hpp>
 #include <dtl/bitmap/util/random.hpp>
@@ -28,7 +28,8 @@ using types_under_test = ::testing::Types<
     dtl::xah_skip<u8, 1>,
     dtl::xah_skip<u16, 1>,
     dtl::xah_skip<u32, 1>,
-    dtl::xah_skip<u64, 1>
+    dtl::xah_skip<u64, 1>,
+    dtl::bah
     >;
 //===----------------------------------------------------------------------===//
 // Fixture for the parameterized test case.
@@ -92,7 +93,7 @@ TYPED_TEST(xah_test, encode_decode_non_pow2_length_test) {
 /// Test compression with long bitmaps that are either entirely 0 or 1.
 TYPED_TEST(xah_test, encode_decode_long_bitmaps_consisting_of_a_single_run_test) {
   using T = TypeParam;
-  auto len = 1ull << 12;
+  auto len = 1ull << 14;
   dtl::bitmap b(len);
   {
     // Compress
@@ -106,6 +107,7 @@ TYPED_TEST(xah_test, encode_decode_long_bitmaps_consisting_of_a_single_run_test)
   {
     // Compress
     T enc(b);
+    std::cout << enc << std::endl;
     // Decompress and validate it.
     auto dec = dtl::to_bitmap_using_iterator(enc);
     ASSERT_EQ(b, dec) << "\n" << enc;
