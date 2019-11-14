@@ -71,7 +71,7 @@ public:
   /// Return the size in bytes.
   std::size_t __forceinline__
   size_in_byte() const {
-    return super::size()
+    return super::size_in_byte()
         + offsets_.size() * sizeof(u32);
   }
 
