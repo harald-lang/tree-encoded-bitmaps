@@ -19,14 +19,22 @@
 //===----------------------------------------------------------------------===//
 enum class bitmap_t {
   bitmap,
+
   roaring,
+
   teb, /* deprecated */
   teb_scan, /* deprecated */
+
   teb_wrapper,
+  partitioned_teb_wrapper,
+
   wah,
+  partitioned_wah,
+
   position_list,
   partitioned_position_list_u8,
   partitioned_position_list_u16,
+
   range_list,
   partitioned_range_list_u8,
   partitioned_range_list_u16,
@@ -67,9 +75,6 @@ enum class bitmap_t {
   partitioned_xah64,
   partitioned_xah64_skip,
 
-  partitioned_teb_wrapper,
-  partitioned_wah,
-
   bah,
   partitioned_bah,
 
@@ -87,58 +92,59 @@ static const std::vector<bitmap_t>
       return l;
     }();
 //===----------------------------------------------------------------------===//
-std::vector<std::string> bitmap_names { // TODO remove
-  "bitmap",
-  "roaring",
-  "teb",
-  "teb_scan", /* deprecated */
-  "teb_wrapper",
-  "wah",
-  "position_list",
-  "partitioned_position_list_u8",
-  "partitioned_position_list_u16",
-  "range_list",
-  "partitioned_range_list_u8",
-  "partitioned_range_list_u16",
-  "uah8",
-  "uah8_skip",
-  "uah16",
-  "uah16_skip",
-  "uah32",
-  "uah32_skip",
-  "uah64",
-  "uah64_skip",
-  "partitioned_uah8",
-  "partitioned_uah8_skip",
-  "partitioned_uah16",
-  "partitioned_uah16_skip",
-  "partitioned_uah32",
-  "partitioned_uah32_skip",
-  "partitioned_uah64",
-  "partitioned_uah64_skip",
-  "xah8",
-  "xah8_skip",
-  "xah16",
-  "xah16_skip",
-  "xah32",
-  "xah32_skip",
-  "xah64",
-  "xah64_skip",
-  "partitioned_xah8",
-  "partitioned_xah8_skip",
-  "partitioned_xah16",
-  "partitioned_xah16_skip",
-  "partitioned_xah32",
-  "partitioned_xah32_skip",
-  "partitioned_xah64",
-  "partitioned_xah64_skip",
-};
-std::ostream& operator<<(std::ostream& out, const bitmap_t& b) {
-  const auto i = static_cast<int>(b);
-  assert(i < bitmap_names.size());
-  out << bitmap_names[i];
-  return out;
-}
+//std::vector<std::string> bitmap_names {
+//  // TODO remove
+//  "bitmap",
+//  "roaring",
+//  "teb",
+//  "teb_scan", /* deprecated */
+//  "teb_wrapper",
+//  "wah",
+//  "position_list",
+//  "partitioned_position_list_u8",
+//  "partitioned_position_list_u16",
+//  "range_list",
+//  "partitioned_range_list_u8",
+//  "partitioned_range_list_u16",
+//  "uah8",
+//  "uah8_skip",
+//  "uah16",
+//  "uah16_skip",
+//  "uah32",
+//  "uah32_skip",
+//  "uah64",
+//  "uah64_skip",
+//  "partitioned_uah8",
+//  "partitioned_uah8_skip",
+//  "partitioned_uah16",
+//  "partitioned_uah16_skip",
+//  "partitioned_uah32",
+//  "partitioned_uah32_skip",
+//  "partitioned_uah64",
+//  "partitioned_uah64_skip",
+//  "xah8",
+//  "xah8_skip",
+//  "xah16",
+//  "xah16_skip",
+//  "xah32",
+//  "xah32_skip",
+//  "xah64",
+//  "xah64_skip",
+//  "partitioned_xah8",
+//  "partitioned_xah8_skip",
+//  "partitioned_xah16",
+//  "partitioned_xah16_skip",
+//  "partitioned_xah32",
+//  "partitioned_xah32_skip",
+//  "partitioned_xah64",
+//  "partitioned_xah64_skip",
+//};
+//std::ostream& operator<<(std::ostream& out, const bitmap_t& b) {
+//  const auto i = static_cast<int>(b);
+//  assert(i < bitmap_names.size());
+//  out << bitmap_names[i];
+//  return out;
+//}
 //===----------------------------------------------------------------------===//
 template<bitmap_t B>
 struct type_of {
@@ -148,10 +154,12 @@ template<>
 struct type_of<bitmap_t::bitmap> {
   using type = dtl::dynamic_bitmap<$u32>;
 };
+
 template<>
 struct type_of<bitmap_t::roaring> {
   using type = dtl::dynamic_roaring_bitmap;
 };
+
 //template<>
 //struct type_of<bitmap_t::teb> { /* deprecated */
 //  using type = dtl::teb<>;
@@ -166,6 +174,7 @@ template<>
 struct type_of<bitmap_t::partitioned_teb_wrapper> {
   using type = dtl::part<dtl::teb_wrapper, 1ull << 16>;
 };
+
 template<>
 struct type_of<bitmap_t::wah> {
   using type = dtl::dynamic_wah32;
@@ -174,6 +183,7 @@ template<>
 struct type_of<bitmap_t::partitioned_wah> {
   using type = dtl::part<dtl::dynamic_wah32, 1ull << 16>;
 };
+
 template<>
 struct type_of<bitmap_t::position_list> {
   using type = dtl::position_list<$u32>;
@@ -186,6 +196,7 @@ template<>
 struct type_of<bitmap_t::partitioned_position_list_u16> {
   using type = dtl::part<dtl::position_list<$u16>, 1ull << 16>;
 };
+
 template<>
 struct type_of<bitmap_t::range_list> {
   using type = dtl::range_list<$u32>;

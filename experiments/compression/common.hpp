@@ -65,6 +65,7 @@ run(const config& c, std::ostream& os) {
 
   const auto size_in_bytes = enc_bs.size_in_byte();
   std::string type_info = enc_bs.info();
+  std::string type_name = T::name();
 
   // Validation. - Reconstruct the original bitmap.
   auto dec_bs = dtl::to_bitmap_using_iterator(enc_bs);
@@ -77,10 +78,12 @@ run(const config& c, std::ostream& os) {
   }
 
   boost::replace_all(type_info, "\"", "\"\""); // Escape JSON for CSV output.
+  boost::replace_all(type_name, "\"", "\"\""); // Escape JSON for CSV output.
 
   os << RUN_ID
      << "," << c.n
-     << "," << T::name()
+     << ","
+     << "\"" << type_name << "\""
      << "," << c.density
      << "," << dtl::determine_bit_density(bs)
      << "," << c.clustering_factor
@@ -94,20 +97,25 @@ run(const config& c, std::ostream& os) {
 static void
 run(config c, std::ostream& os) {
   switch (c.bitmap_type) {
-#define __GENERATE_CASE(name) \
-  case bitmap_t::name:        \
-    run<type_of<bitmap_t::name>::type>(c, os);
+#define __GENERATE_CASE(name)                  \
+  case bitmap_t::name:                         \
+    run<type_of<bitmap_t::name>::type>(c, os); \
+    break;
 
     __GENERATE_CASE(bitmap)
+
     __GENERATE_CASE(roaring)
+
     __GENERATE_CASE(teb_wrapper)
     __GENERATE_CASE(partitioned_teb_wrapper)
+
     __GENERATE_CASE(wah)
     __GENERATE_CASE(partitioned_wah)
 
     __GENERATE_CASE(position_list)
     __GENERATE_CASE(partitioned_position_list_u8)
     __GENERATE_CASE(partitioned_position_list_u16)
+
     __GENERATE_CASE(range_list)
     __GENERATE_CASE(partitioned_range_list_u8)
     __GENERATE_CASE(partitioned_range_list_u16)
