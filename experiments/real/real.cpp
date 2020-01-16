@@ -13,6 +13,9 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 
+#include <dtl/bitmap/bah.hpp>
+#include <dtl/bitmap/concise.hpp>
+#include <dtl/bitmap/uah.hpp>
 #include <atomic>
 #include <cstddef>
 #include <fstream>
@@ -75,6 +78,11 @@ void run(const std::string& dir, std::ostream& result_out) {
   std::atomic<std::size_t> bytes_wah { 0 };
   std::atomic<std::size_t> bytes_wah64 { 0 };
   std::atomic<std::size_t> bytes_teb { 0 };
+  std::atomic<std::size_t> bytes_uah8 { 0 };
+  std::atomic<std::size_t> bytes_uah16 { 0 };
+  std::atomic<std::size_t> bytes_uah32 { 0 };
+  std::atomic<std::size_t> bytes_bah { 0 };
+  std::atomic<std::size_t> bytes_concise { 0 };
 
   std::vector<dtl::bitmap> bitmaps;
   std::vector<dtl::bitmap> bitmaps_pow2;
@@ -127,6 +135,11 @@ void run(const std::string& dir, std::ostream& result_out) {
     std::size_t t = 0;
     std::size_t w = 0;
     std::size_t w64 = 0;
+    std::size_t uah8 = 0;
+    std::size_t uah16 = 0;
+    std::size_t uah32 = 0;
+    std::size_t bah = 0;
+    std::size_t concise = 0;
     {
       dtl::dynamic_roaring_bitmap roaring(bm);
       r = roaring.size_in_byte();
@@ -144,6 +157,31 @@ void run(const std::string& dir, std::ostream& result_out) {
       t = teb.size_in_byte();
       const auto dec = dtl::to_bitmap_using_iterator(teb);
       if ((bm_pow2 & dec) != bm_pow2) {
+        std::cerr << "Validation failed." << std::endl;
+        std::exit(1);
+      }
+    }
+    {
+      dtl::uah8 uah(bm);
+      uah8 = uah.size_in_byte();
+    }
+    {
+      dtl::uah16 uah(bm);
+      uah16 = uah.size_in_byte();
+    }
+    {
+      dtl::uah32 uah(bm);
+      uah32 = uah.size_in_byte();
+    }
+    {
+      dtl::bah x(bm);
+      bah = x.size_in_byte();
+    }
+    {
+      dtl::concise x(bm);
+      concise = x.size_in_byte();
+      const auto dec = dtl::to_bitmap_using_iterator(x);
+      if ((bm & dec) != bm) {
         std::cerr << "Validation failed." << std::endl;
         std::exit(1);
       }
@@ -174,6 +212,11 @@ void run(const std::string& dir, std::ostream& result_out) {
     bytes_wah += w;
     bytes_wah64 += w64;
     bytes_teb += t;
+    bytes_uah8 += uah8;
+    bytes_uah16 += uah16;
+    bytes_uah32 += uah32;
+    bytes_bah += bah;
+    bytes_concise += concise;
   };
 
   dispatch(0, bitmaps.size(), thread_fn);
@@ -182,6 +225,11 @@ void run(const std::string& dir, std::ostream& result_out) {
   result_out << "teb:     " << std::setw(15) << bytes_teb << " bytes, " << std::setw(15) << std::setprecision(4) << ((bytes_teb * 8.0) / total_bit_cnt) << " bits/int" << std::endl;
   result_out << "wah:     " << std::setw(15) << bytes_wah << " bytes, " << std::setw(15) << std::setprecision(4) << ((bytes_wah * 8.0) / total_bit_cnt) << " bits/int" << std::endl;
   result_out << "wah64:   " << std::setw(15) << bytes_wah64 << " bytes, " << std::setw(15) << std::setprecision(4) << ((bytes_wah64 * 8.0) / total_bit_cnt) << " bits/int" << std::endl;
+  result_out << "uah8 :   " << std::setw(15) << bytes_uah8 << " bytes, " << std::setw(15) << std::setprecision(4) << ((bytes_uah8 * 8.0) / total_bit_cnt) << " bits/int" << std::endl;
+  result_out << "uah16 :  " << std::setw(15) << bytes_uah16 << " bytes, " << std::setw(15) << std::setprecision(4) << ((bytes_uah16 * 8.0) / total_bit_cnt) << " bits/int" << std::endl;
+  result_out << "uah32 :  " << std::setw(15) << bytes_uah32 << " bytes, " << std::setw(15) << std::setprecision(4) << ((bytes_uah32 * 8.0) / total_bit_cnt) << " bits/int" << std::endl;
+  result_out << "bah :    " << std::setw(15) << bytes_bah << " bytes, " << std::setw(15) << std::setprecision(4) << ((bytes_bah * 8.0) / total_bit_cnt) << " bits/int" << std::endl;
+  result_out << "concise: " << std::setw(15) << bytes_concise << " bytes, " << std::setw(15) << std::setprecision(4) << ((bytes_concise * 8.0) / total_bit_cnt) << " bits/int" << std::endl;
 }
 //===----------------------------------------------------------------------===//
 $i32 main() {
