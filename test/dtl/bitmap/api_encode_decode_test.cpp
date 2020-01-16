@@ -66,6 +66,24 @@ TYPED_TEST(api_encode_decode_test, encode_decode_bitmaps_with_a_single_set_bit) 
   }
 }
 //===----------------------------------------------------------------------===//
+TYPED_TEST(api_encode_decode_test, encode_decode_bitmaps_with_a_single_unset_bit) {
+  using T = TypeParam;
+  constexpr std::size_t LEN = 1ull << 10;
+
+  for (auto i = 0; i < LEN; ++i) {
+    dtl::bitmap bs(LEN);
+    bs.set(i); // Set a single bit.
+    bs.flip();
+    T t(bs);
+    dtl::bitmap dec = dtl::to_bitmap_using_iterator(t);
+    ASSERT_EQ(bs, dec)
+        << "Decoding failed for i=" << i
+        << ". - '" << bs << "' -> '" << t
+        << "' -> '" << dec << "'"
+        << std::endl;
+  }
+}
+//===----------------------------------------------------------------------===//
 TYPED_TEST(api_encode_decode_test,
     encode_decode_bitmaps_with_the_lsb_and_msb_set_and_single_bit_in_between) {
   using T = TypeParam;

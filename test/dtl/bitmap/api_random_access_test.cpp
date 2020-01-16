@@ -20,7 +20,6 @@ TYPED_TEST(api_random_access_test, empty_bitmap) {
   using T = TypeParam;
 
   for (auto n_log2 = 10; n_log2 <= 12; ++n_log2) {
-    std::cout << "n_log2=" << n_log2 << std::endl;
     const auto n = 1ull << n_log2;
     dtl::bitmap bs(n);
     T t(bs);
@@ -74,6 +73,40 @@ TYPED_TEST(api_random_access_test, dense_uniform_bitmap) {
           << ". - Expected '" << (a ? "true" : "false")
           << "' but got '" << (b ? "true" : "false") << "'."
           << std::endl;
+    }
+  }
+}
+//===----------------------------------------------------------------------===//
+TYPED_TEST(api_random_access_test, bitmap_with_a_single_set_bit) {
+  // This test aims for finding bugs in WAH variants that perform dirty bit
+  // piggybacking.
+  using T = TypeParam;
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
+  for (auto n_log2 = 10; n_log2 <= 10; ++n_log2) {
+    const auto n = 1ull << n_log2;
+    for (auto k = 0; k < n; ++k) {
+      dtl::bitmap bs(n);
+      bs[k] = 1;
+      T t(bs);
+      for (std::size_t i = 0; i < n; ++i) {
+        u1 a = bs[i];
+        u1 b = t.test(i);
+        if (a != b) {
+          std::cout << t.info() << std::endl;
+          u1 b = t.test(i);
+          std::cout << b << std::endl;
+        }
+        ASSERT_EQ(a, b)
+                      << "Point lookup failed at index i=" << i
+                          << " with k=" << k
+                          << ". - Expected '" << (a ? "true" : "false")
+                          << "' but got '" << (b ? "true" : "false") << "'.\n"
+                          << "Bitmap info:\n"
+                          << t.info()
+                          << std::endl;
+      }
     }
   }
 }

@@ -111,10 +111,8 @@ void skip_next_test(u64 n, u64 bitmap, u64 skip_to_pos,
        << ", expected_pos=" << expected_pos
        << ", expected_len=" << expected_len
        << std::endl;
-  std::cout << info.str();
   dtl::bitmap b(n, bitmap);
   T t(b);
-  std::cout << t << std::endl;
   auto it = t.it();
   it.skip_to(skip_to_pos);
   it.next();

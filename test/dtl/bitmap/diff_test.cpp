@@ -156,7 +156,6 @@ TYPED_TEST(diff_test, random_updates) {
   using T = typename TypeParam::type;
 
   for (auto len = 1024; len <= 8192 * 2; len *= 2) {
-    std::cout << "testing size " << len << std::endl;
     for (std::size_t rep = 0; rep < 10; ++rep) {
       const auto bm_initial = dtl::gen_random_bitmap_markov(len, 8.0, 0.1);
 
