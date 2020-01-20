@@ -3,6 +3,7 @@
 #include "gtest/gtest.h"
 
 #include <dtl/bitmap/bah.hpp>
+#include <dtl/bitmap/bbc.hpp>
 #include <dtl/bitmap/concise.hpp>
 #include <dtl/bitmap/diff/diff.hpp>
 #include <dtl/bitmap/diff/merge.hpp>
@@ -130,6 +131,7 @@ using types_under_test = ::testing::Types<
     range_list_32,
     part_range_list_8,
     part_range_list_16,
+    dtl::bbc,
     dtl::concise,
 
     dtl::bah,

@@ -118,6 +118,7 @@ TYPED_TEST(api_encode_decode_test,
       dtl::bitmap dec = dtl::to_bitmap_using_iterator(t);
       ASSERT_EQ(bs, dec)
           << "Decoding failed: "
+          << " len=" << len << ", "
           << "'" << bs << "' -> '" << t
           << "' -> '" << dec << "'"
           << std::endl;
@@ -129,6 +130,7 @@ TYPED_TEST(api_encode_decode_test,
       dtl::bitmap dec = dtl::to_bitmap_using_iterator(t);
       ASSERT_EQ(bs, dec)
           << "Decoding failed: "
+          << " len=" << len << ", "
           << "'" << bs << "' -> '" << t
           << "' -> '" << dec << "'"
           << std::endl;
@@ -141,6 +143,7 @@ TYPED_TEST(api_encode_decode_test,
         dtl::bitmap dec = dtl::to_bitmap_using_iterator(t);
         ASSERT_EQ(bs, dec)
             << "Decoding failed: "
+            << " len=" << len << ", "
             << "'" << bs << "' -> '" << t
             << "' -> '" << dec << "'"
             << std::endl;

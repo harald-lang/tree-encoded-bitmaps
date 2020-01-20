@@ -1,10 +1,14 @@
 #include "experiments/util/bitmap_db.hpp"
 #include "experiments/util/threading.hpp"
 
+#include <dtl/bitmap/bah.hpp>
+#include <dtl/bitmap/bbc.hpp>
+#include <dtl/bitmap/concise.hpp>
 #include <dtl/bitmap/dynamic_bitmap.hpp>
 #include <dtl/bitmap/dynamic_roaring_bitmap.hpp>
 #include <dtl/bitmap/dynamic_wah.hpp>
 #include <dtl/bitmap/teb_wrapper.hpp>
+#include <dtl/bitmap/uah.hpp>
 #include <dtl/bitmap/util/convert.hpp>
 #include <dtl/bitmap/util/random.hpp>
 #include <dtl/dtl.hpp>
@@ -13,9 +17,6 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 
-#include <dtl/bitmap/bah.hpp>
-#include <dtl/bitmap/concise.hpp>
-#include <dtl/bitmap/uah.hpp>
 #include <atomic>
 #include <cstddef>
 #include <fstream>
@@ -28,7 +29,8 @@
 //===----------------------------------------------------------------------===//
 namespace fs = boost::filesystem;
 //===----------------------------------------------------------------------===//
-void run(const std::string& dir, std::ostream& result_out) {
+void run(const std::string& dir, std::ostream& result_out,
+    std::ostream& result_csv_out) {
   result_out
       << "//===----------------------------------------------------------------------===//"
       << "\ndata set: '" << dir << "'"
@@ -83,6 +85,7 @@ void run(const std::string& dir, std::ostream& result_out) {
   std::atomic<std::size_t> bytes_uah32 { 0 };
   std::atomic<std::size_t> bytes_bah { 0 };
   std::atomic<std::size_t> bytes_concise { 0 };
+  std::atomic<std::size_t> bytes_bbc { 0 };
 
   std::vector<dtl::bitmap> bitmaps;
   std::vector<dtl::bitmap> bitmaps_pow2;
@@ -140,6 +143,7 @@ void run(const std::string& dir, std::ostream& result_out) {
     std::size_t uah32 = 0;
     std::size_t bah = 0;
     std::size_t concise = 0;
+    std::size_t bbc = 0;
     {
       dtl::dynamic_roaring_bitmap roaring(bm);
       r = roaring.size_in_byte();
@@ -157,7 +161,7 @@ void run(const std::string& dir, std::ostream& result_out) {
       t = teb.size_in_byte();
       const auto dec = dtl::to_bitmap_using_iterator(teb);
       if ((bm_pow2 & dec) != bm_pow2) {
-        std::cerr << "Validation failed." << std::endl;
+        std::cerr << "TEB: Validation failed." << std::endl;
         std::exit(1);
       }
     }
@@ -182,7 +186,34 @@ void run(const std::string& dir, std::ostream& result_out) {
       concise = x.size_in_byte();
       const auto dec = dtl::to_bitmap_using_iterator(x);
       if ((bm & dec) != bm) {
-        std::cerr << "Validation failed." << std::endl;
+        std::cerr << "Concise: Validation failed." << std::endl;
+        std::exit(1);
+      }
+    }
+    {
+      dtl::bbc x(bm);
+      bbc = x.size_in_byte();
+      const auto dec = dtl::to_bitmap_using_iterator(x);
+      if (bm != dec) {
+        std::cerr << "BBC: Validation failed." << std::endl;
+        std::cout << "n=" << bm.size() << std::endl;
+        std::cout << "expected: ";
+        auto it_a = dtl::plain_bitmap_iter<dtl::bitmap>(bm);
+        while (!it_a.end()) {
+          std::cout << "[" << it_a.pos() << "," << (it_a.pos() + it_a.length())
+            << "),";
+          it_a.next();
+        }
+        std::cout << std::endl;
+        std::cout << "but got:  ";
+        auto it_b = x.it();
+        while (!it_b.end()) {
+          std::cout << "[" << it_b.pos() << "," << (it_b.pos() + it_b.length())
+              << "),";
+          it_b.next();
+        }
+        std::cout << std::endl;
+        std::cout << x << std::endl;
         std::exit(1);
       }
     }
@@ -217,6 +248,7 @@ void run(const std::string& dir, std::ostream& result_out) {
     bytes_uah32 += uah32;
     bytes_bah += bah;
     bytes_concise += concise;
+    bytes_bbc += bbc;
   };
 
   dispatch(0, bitmaps.size(), thread_fn);
@@ -230,6 +262,16 @@ void run(const std::string& dir, std::ostream& result_out) {
   result_out << "uah32 :  " << std::setw(15) << bytes_uah32 << " bytes, " << std::setw(15) << std::setprecision(4) << ((bytes_uah32 * 8.0) / total_bit_cnt) << " bits/int" << std::endl;
   result_out << "bah :    " << std::setw(15) << bytes_bah << " bytes, " << std::setw(15) << std::setprecision(4) << ((bytes_bah * 8.0) / total_bit_cnt) << " bits/int" << std::endl;
   result_out << "concise: " << std::setw(15) << bytes_concise << " bytes, " << std::setw(15) << std::setprecision(4) << ((bytes_concise * 8.0) / total_bit_cnt) << " bits/int" << std::endl;
+  result_out << "bbc:     " << std::setw(15) << bytes_bbc << " bytes, " << std::setw(15) << std::setprecision(4) << ((bytes_bbc * 8.0) / total_bit_cnt) << " bits/int" << std::endl;
+
+  result_csv_out << "\"" << dir << "\"";
+  result_csv_out << "," << std::setprecision(4) << ((bytes_roaring * 8.0) / total_bit_cnt);
+  result_csv_out << "," << std::setprecision(4) << ((bytes_teb * 8.0) / total_bit_cnt);
+  result_csv_out << "," << std::setprecision(4) << ((bytes_wah * 8.0) / total_bit_cnt);
+  result_csv_out << "," << std::setprecision(4) << ((bytes_bah * 8.0) / total_bit_cnt);
+  result_csv_out << "," << std::setprecision(4) << ((bytes_concise * 8.0) / total_bit_cnt);
+  result_csv_out << "," << std::setprecision(4) << ((bytes_bbc * 8.0) / total_bit_cnt);
+  result_csv_out << std::endl;
 }
 //===----------------------------------------------------------------------===//
 $i32 main() {
@@ -247,10 +289,13 @@ $i32 main() {
   };
 
   std::stringstream results;
+  std::stringstream results_csv;
   for (auto& dir : dirs) {
-    run(dir, results);
+    run(dir, results, results_csv);
   }
   std::cout << "Results" << std::endl;
   std::cout << results.str() << std::endl;
+  std::cout << std::endl;
+  std::cout << results_csv.str() << std::endl;
 }
 //===----------------------------------------------------------------------===//

@@ -214,6 +214,9 @@ set(COMPETITORS_SOURCE_FILES
 
         # CONCISE
         src/dtl/bitmap/concise.hpp
+
+        # BBC
+        src/dtl/bitmap/bbc.hpp
         )
 
 set(SOURCE_FILES
