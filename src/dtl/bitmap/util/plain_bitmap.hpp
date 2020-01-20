@@ -48,6 +48,11 @@ public:
       : n_(n), bitmap_(word_cnt(n), init, alloc) {
   }
 
+  plain_bitmap(const plain_bitmap& other) = default;
+  plain_bitmap(plain_bitmap&& other) noexcept = default;
+  plain_bitmap& operator=(const plain_bitmap& other) = default;
+  plain_bitmap& operator=(plain_bitmap&& other) noexcept = default;
+
   /// Return the size of the bitmap.
   std::size_t
   size() const noexcept {
