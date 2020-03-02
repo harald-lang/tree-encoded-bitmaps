@@ -24,8 +24,8 @@ class teb_builder {
 
 public:
   /// C'tor
-  explicit teb_builder(const boost::dynamic_bitset<$u32>& bitmap, f64 fpr = 0.0)
-      : bitmap_tree_(bitmap, fpr) {
+  explicit teb_builder(const boost::dynamic_bitset<$u32>& bitmap)
+      : bitmap_tree_(bitmap) {
     bitmap_tree_.ensure_counters_are_valid();
   }
 

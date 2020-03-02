@@ -15,8 +15,8 @@
 //===----------------------------------------------------------------------===//
 namespace dtl {
 //===----------------------------------------------------------------------===//
-/// X-Aligned Hybrid: An RLE compressed representation of a bitmap of length N.
-/// Unlike to WAH or BBC, the encoding is not word or byte aligned.
+/// Un-Aligned Hybrid: An RLE compressed representation of a bitmap of length N.
+/// Unlike WAH or BBC, the encoding is not word or byte aligned.
 /// This implementation maintains a small index that allows for faster skips.
 template<typename _word_type = u32, std::size_t _skip_distance = 1024>
 class uah_skip : public uah<_word_type> {

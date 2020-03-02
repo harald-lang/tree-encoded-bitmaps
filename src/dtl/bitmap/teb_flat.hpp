@@ -1,6 +1,5 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include "teb.hpp"
 #include "teb_types.hpp"
 #include "util/binary_tree_structure.hpp"
 #include "util/bitmap_fun.hpp"

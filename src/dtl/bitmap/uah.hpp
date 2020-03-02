@@ -13,7 +13,7 @@
 namespace dtl {
 //===----------------------------------------------------------------------===//
 /// Un-Aligned Hybrid: An RLE compressed representation of a bitmap of length N.
-/// Unlike to WAH or BBC, the encoding is not word or byte aligned.
+/// Unlike WAH or BBC, the encoding is not word or byte aligned.
 template<typename _word_type = u32>
 class uah {
 

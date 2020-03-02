@@ -99,8 +99,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSQLITE_OMIT_LOAD_EXTENSION")
 
 set(OTHER_SOURCE_FILES
         thirdparty/perfevent/PerfEvent.hpp
-        thirdparty/types/Types.cpp
-        thirdparty/types/Types.hpp
         thirdparty/roaring/roaring.c
         )
 
@@ -168,7 +166,7 @@ set(TEB_SOURCE_FILES
         src/dtl/bitmap/util/rank1_logic_word_blocked.hpp
         src/dtl/bitmap/bitwise_operations.hpp
         src/dtl/bitmap/iterator.hpp
-        src/dtl/bitmap/teb.hpp
+#        src/dtl/bitmap/teb.hpp
         src/dtl/bitmap/teb_builder.hpp
         src/dtl/bitmap/teb_flat.hpp
         src/dtl/bitmap/teb_iter.hpp

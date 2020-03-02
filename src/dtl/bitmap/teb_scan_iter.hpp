@@ -1,6 +1,5 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include "teb.hpp"
 #include "teb_flat.hpp"
 #include "teb_iter.hpp"
 #include "teb_scan_util.hpp"
@@ -109,7 +108,7 @@ public:
   explicit __teb_inline__
   teb_scan_iter(const teb_flat& teb, u64 batch_size = DEFAULT_BATCH_SIZE) noexcept
       : teb_(teb),
-        tree_height_(dtl::teb<>::determine_tree_height(teb.n_)),
+        tree_height_(dtl::teb_util::determine_tree_height(teb.n_)),
         perfect_levels_(teb.perfect_level_cnt_),
         top_node_idx_begin_((1ull << (teb.perfect_level_cnt_ - 1)) - 1),
         top_node_idx_end_((1ull << teb.perfect_level_cnt_) - 1),
@@ -278,7 +277,8 @@ public:
     // clang-format on
   }
 
-  void next_batch_from_default_iter() noexcept __attribute__((flatten, hot, noinline)) {
+  void
+  next_batch_from_default_iter() noexcept __attribute__((flatten, hot, noinline)) {
     auto* it = default_iter.get();
     assert(!it->end());
     const auto n = teb_.size();
@@ -347,6 +347,8 @@ public:
     result_cnt_ = result_cnt;
   }
 
+  /// Specialized 'next_batch' function, that is used when the encoded tree
+  /// consists of only two levels.
   void
   next_batch_2levels() noexcept __attribute__((flatten, hot, noinline)) {
     const auto h = tree_height_ + 1;
@@ -442,6 +444,8 @@ public:
     result_cnt_ = result_cnt;
   }
 
+  /// Specialized 'next_batch' function, that is used when the encoded tree
+  /// consists of only three levels.
   void
   next_batch_3levels() noexcept __attribute__((flatten, hot, noinline)) {
     const auto h = tree_height_ + 1;
@@ -556,6 +560,8 @@ public:
     result_cnt_ = result_cnt;
   }
 
+  /// DEPRECATED
+  /// SIMD Within A Register (SWAR) implementation of 'next_batch'.
   void
   next_batch_swar() noexcept __attribute__((flatten, hot, noinline)) {
     const auto h = tree_height_;
@@ -817,6 +823,8 @@ public:
   }
 
 #ifdef __AVX2__
+  /// EXPERIMENTAL - DO NOT USE! - Poor performance.
+  /// Specialized implementation of 'next_batch' using AVX-2 instructions.
   void
   next_batch_avx2() noexcept __attribute__((flatten, hot, noinline)) {
     const auto h = tree_height_;
@@ -984,6 +992,8 @@ public:
 #endif // __AVX2__
 
 #ifdef __AVX512BW__
+  /// Specialized implementation of 'next_batch' using AVX-512 instructions,
+  /// as described in the paper.
   void //__teb_inline__
   next_batch_avx512() noexcept __attribute__((flatten, hot, noinline)) {
     const auto h = tree_height_;
@@ -1143,8 +1153,9 @@ public:
   }
 #endif // __AVX512BW__
 
+  /// EXPERIMENTAL
   /// A simple scalar implementation of the tree scan (without bit buffers).
-  void //__teb_inline__
+  void
   next_batch_scalar() noexcept __attribute__((flatten, hot, noinline)) {
     const auto h = tree_height_;
     const auto n = teb_.size();
@@ -1235,6 +1246,7 @@ public:
     result_cnt_ = result_cnt;
   }
 
+  /// EXPERIMENTAL
   /// A simple scalar implementation of the tree scan (without bit buffers).
   $u1 first_time_stack_ = true;
   void //__teb_inline__
@@ -1301,8 +1313,7 @@ public:
   /// A simple scalar implementation of the tree scan (without bit buffers).
   /// In contrast to next_batch_scalar_stack(), this function respects the
   /// perfect levels.
-
-  void //__teb_inline__
+  void
   next_batch_scalar_stack_perfect() noexcept __attribute__((flatten, hot, noinline)) {
     if (first_time_stack_) {
       first_time_stack_ = false;
@@ -1375,7 +1386,7 @@ public:
 
   /// Forwards the iterator to the given position. - Note: This functions
   /// simply calls next() until the desired position has been reached.
-  void // __teb_inline__ TODO revert
+  void
   skip_to(const std::size_t to_pos) noexcept __attribute__((noinline)) {
     if (to_pos >= teb_.n_) {
       results_[0].pos = teb_.n_;
@@ -1396,20 +1407,20 @@ public:
   }
 
   /// Returns true if the iterator reached the end, false otherwise.
-  u1 __forceinline__ //__teb_inline__
+  u1 __forceinline__
   end() const noexcept {
     return results_[result_read_pos_].pos == teb_.n_;
   }
 
   /// Returns the starting position of the current 1-fill.
-  u64 __forceinline__ //__teb_inline__
+  u64 __forceinline__
   pos() const noexcept {
     assert(result_read_pos_ < result_cnt_);
     return results_[result_read_pos_].pos;
   }
 
   /// Returns the length of the current 1-fill.
-  u64 __forceinline__ //__teb_inline__
+  u64 __forceinline__
   length() const noexcept {
     assert(result_read_pos_ < result_cnt_);
     return results_[result_read_pos_].length;

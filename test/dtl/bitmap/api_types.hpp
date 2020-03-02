@@ -16,7 +16,6 @@
 #include <dtl/bitmap/part/part_upforward.hpp>
 #include <dtl/bitmap/position_list.hpp>
 #include <dtl/bitmap/range_list.hpp>
-#include <dtl/bitmap/teb.hpp>
 #include <dtl/bitmap/teb_wrapper.hpp>
 #include <dtl/bitmap/uah.hpp>
 #include <dtl/bitmap/uah_skip.hpp>
@@ -25,10 +24,10 @@
 //===----------------------------------------------------------------------===//
 // Types under test.
 using teb_v2 = dtl::teb_wrapper;
-using teb_o0 = dtl::teb<0>; // DEPRECATED
-using teb_o1 = dtl::teb<1>; // DEPRECATED
-using teb_o2 = dtl::teb<2>; // DEPRECATED
-using teb_o3 = dtl::teb<3>; // DEPRECATED
+//using teb_o0 = dtl::teb<0>; // DEPRECATED
+//using teb_o1 = dtl::teb<1>; // DEPRECATED
+//using teb_o2 = dtl::teb<2>; // DEPRECATED
+//using teb_o3 = dtl::teb<3>; // DEPRECATED
 
 // Competitors
 using plain_bitmap_32 = dtl::dynamic_bitmap<$u32>;
@@ -84,7 +83,7 @@ using types_under_test = ::testing::Types<
     // teb_o0,
     // teb_o1,
     // teb_o2,
-    teb_o3,
+    // teb_o3,
 
     // Competitors
     plain_bitmap_32,

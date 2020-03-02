@@ -2,7 +2,6 @@
 //===----------------------------------------------------------------------===//
 #include <dtl/bitmap.hpp>
 #include <dtl/bitmap/bitwise_operations.hpp>
-#include <dtl/bitmap/teb.hpp>
 #include <dtl/dtl.hpp>
 //===----------------------------------------------------------------------===//
 template<typename T>
@@ -19,49 +18,6 @@ bitwise_and(const T& bitmap_a, const T& bitmap_b) {
 
     const auto begin_max = (a_begin < b_begin) ? b_begin : a_begin;
     const auto end_min = (a_end < b_end) ? a_end : b_end;
-    u1 overlap = begin_max < end_min;
-
-    if (overlap) {
-      // Produce an output.
-      for (std::size_t i = begin_max; i < end_min; ++i) {
-        // Make sure, no bits are set more than once.
-        assert(ret_val[i] == false);
-        ret_val[i] = true;
-      }
-
-      if (a_end <= b_end) {
-        it_a.next();
-      }
-      if (b_end <= a_end) {
-        it_b.next();
-      }
-    }
-    else {
-      if (a_end < b_end) {
-        it_a.skip_to(b_begin);
-      }
-      else {
-        it_b.skip_to(a_begin);
-      }
-    }
-  }
-  return ret_val;
-}
-//===----------------------------------------------------------------------===//
-template<>
-dtl::bitmap
-bitwise_and<dtl::teb<>>(const dtl::teb<>& bitmap_a, const dtl::teb<>& bitmap_b) {
-  dtl::bitmap ret_val(bitmap_a.size());
-  auto it_a = bitmap_a.scan_it();
-  auto it_b = bitmap_b.it();
-  while (!(it_a.end() || it_b.end())) {
-    const auto a_begin = it_a.pos();
-    const auto a_end = it_a.pos() + it_a.length();
-    const auto b_begin = it_b.pos();
-    const auto b_end = it_b.pos() + it_b.length();
-
-    const auto begin_max = std::max(a_begin, b_begin);
-    const auto end_min = std::min(a_end, b_end);
     u1 overlap = begin_max < end_min;
 
     if (overlap) {

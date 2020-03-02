@@ -25,9 +25,9 @@ public: // TODO remove
 
 public:
   /// C'tor
-  explicit teb_wrapper(const boost::dynamic_bitset<$u32>& bitmap, f64 fpr = 0.0)
+  explicit teb_wrapper(const boost::dynamic_bitset<$u32>& bitmap)
       : data_(0), teb_(nullptr) {
-    dtl::teb_builder builder(bitmap, fpr);
+    dtl::teb_builder builder(bitmap);
     const auto word_cnt = builder.serialized_size_in_words();
     data_.resize(word_cnt);
     builder.serialize(data_.data());
@@ -96,7 +96,7 @@ public:
       auto i = it();
       $u64 height = 0;
       while (!i.end()) {
-        const auto h = dtl::teb<>::determine_level_of(i.path());
+        const auto h = dtl::teb_util::determine_level_of(i.path());
         height = std::max(height, h);
         i.next();
       }
@@ -110,14 +110,16 @@ public:
         + ",\"implicit_inner_nodes\":"
         + std::to_string(teb_->implicit_inner_node_cnt_)
         + ",\"logical_tree_depth\":"
-        + std::to_string(dtl::teb<>::determine_tree_height(teb_->n_))
+        + std::to_string(dtl::teb_util::determine_tree_height(teb_->n_))
         + ",\"encoded_tree_depth\":"
         + std::to_string(determine_compressed_tree_depth())
         + ",\"perfect_levels\":"
-        + std::to_string(dtl::teb<>::determine_perfect_tree_levels(teb_->implicit_inner_node_cnt_))
+        + std::to_string(dtl::teb_util::determine_perfect_tree_levels(
+            teb_->implicit_inner_node_cnt_))
         + ",\"opt_level\":" + std::to_string(3) // default
         + ",\"rank\":" + teb_->rank_.info(teb_->tree_bit_cnt_)
-        + ",\"leading_zero_labels\":" + std::to_string(teb_->implicit_leading_label_cnt_)
+        + ",\"leading_zero_labels\":" + std::to_string(
+            teb_->implicit_leading_label_cnt_)
         + "}";
   }
 

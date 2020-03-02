@@ -1,7 +1,7 @@
 #pragma once
 //===----------------------------------------------------------------------===//
-#include "teb.hpp"
 #include "teb_flat.hpp"
+#include "teb_util.hpp"
 
 #include <dtl/dtl.hpp>
 #include <dtl/static_stack.hpp>
@@ -67,7 +67,7 @@ public:
   explicit __teb_inline__
   teb_iter(const teb_flat& teb) noexcept
       : teb_(teb),
-        tree_height_(dtl::teb<optimization_level_>::determine_tree_height(teb.n_)),
+        tree_height_(dtl::teb_util::determine_tree_height(teb.n_)),
         perfect_levels_(teb.perfect_level_cnt_),
         partition_shift_(tree_height_ - (teb.perfect_level_cnt_ - 1)),
         top_node_idx_begin_((1ull << (teb.perfect_level_cnt_ - 1)) - 1),
@@ -439,7 +439,7 @@ public:
   /// tree, otherwise the behavior is undefined.
   void __teb_inline__
   nav_downwards(const std::size_t to_pos) noexcept {
-    $u64 level = dtl::teb<optimization_level_>::determine_level_of(path_);
+    $u64 level = dtl::teb_util::determine_level_of(path_);
     auto rank = teb_.rank_inclusive(node_idx_);
     std::size_t i = tree_height_ - level - 1;
     while (true) {
@@ -524,7 +524,8 @@ public:
     const path_t from_path = path_;
     path_t common_ancestor_path;
     $u64 common_ancestor_level;
-    dtl::teb<optimization_level_>::determine_common_ancestor_path2(from_path, to_pos, tree_height_,
+    dtl::teb_util::determine_common_ancestor_path2(
+        from_path, to_pos, tree_height_,
         common_ancestor_path, common_ancestor_level);
 
     // Decide whether to start navigating from the current or from the root node.
@@ -670,19 +671,19 @@ public:
   }
 
   /// Returns true if the iterator reached the end, false otherwise.
-  u1 __forceinline__ //__teb_inline__
+  u1 __forceinline__
   end() const noexcept {
     return pos_ == teb_.n_;
   }
 
   /// Returns the starting position of the current 1-fill.
-  u64 __forceinline__ //__teb_inline__
+  u64 __forceinline__
   pos() const noexcept {
     return pos_;
   }
 
   /// Returns the length of the current 1-fill.
-  u64 __forceinline__ //__teb_inline__
+  u64 __forceinline__
   length() const noexcept {
     return length_;
   }
@@ -696,7 +697,7 @@ public:
   /// Returns the level of the current tree node.
   u64 __teb_inline__
   level() const noexcept {
-    return dtl::teb<optimization_level_>::determine_level_of(path_);
+    return dtl::teb_util::determine_level_of(path_);
   }
 
   /// Returns the number of perfect tree levels.
