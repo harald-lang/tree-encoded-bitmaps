@@ -353,13 +353,14 @@ public:
   next_batch_2levels() noexcept __attribute__((flatten, hot, noinline)) {
     const auto h = tree_height_ + 1;
     const auto n = teb_.size();
+    const auto n_pow2 = dtl::next_power_of_two(n);
     const auto u = perfect_levels_ - 1;
     // Note: The path variable does NOT contain a sentinel bit. Instead, we
     //       keep track of the paths' level using a separate variable.
     register auto path = scan_path_;
     register auto path_level = u;
     auto pos = scan_path_;
-    auto length = n >> path_level;
+    auto length = n_pow2 >> path_level;
     auto result_cnt = result_cnt_;
 
     const data_view<const word_type> T {
@@ -450,13 +451,14 @@ public:
   next_batch_3levels() noexcept __attribute__((flatten, hot, noinline)) {
     const auto h = tree_height_ + 1;
     const auto n = teb_.size();
+    const auto n_pow2 = dtl::next_power_of_two(n);
     const auto u = perfect_levels_ - 1;
     // Note: The path variable does NOT contain a sentinel bit. Instead, we
     //       keep track of the paths' level using a separate variable.
     register auto path = scan_path_;
     register auto path_level = u;
     auto pos = scan_path_;
-    auto length = n >> path_level;
+    auto length = n_pow2 >> path_level;
     auto result_cnt = result_cnt_;
 
     const data_view<const word_type> T {
@@ -566,12 +568,13 @@ public:
   next_batch_swar() noexcept __attribute__((flatten, hot, noinline)) {
     const auto h = tree_height_;
     const auto n = teb_.size();
+    const auto n_pow2 = dtl::next_power_of_two(n);
     // Note: The path variable does NOT contain a sentinel bit. Instead, we
     //       keep track of the paths' level using a separate variable.
     register auto path = scan_path_;
     register auto path_level = scan_path_level_;
     auto pos = path << (h - path_level);
-    auto length = n >> path_level;
+    auto length = n_pow2 >> path_level;
     auto result_cnt = result_cnt_;
     auto alpha = 0u;
 
@@ -730,7 +733,7 @@ public:
 
       // Do multiple iteration to consume the bit buffers.
       for ($i32 b = 0; b < 7; ++b) {
-        u64 length = n >> path_level;
+        u64 length = n_pow2 >> path_level;
 
         assert(pos < n);
         assert(pos + length <= n);
@@ -829,12 +832,13 @@ public:
   next_batch_avx2() noexcept __attribute__((flatten, hot, noinline)) {
     const auto h = tree_height_;
     const auto n = teb_.size();
+    const auto n_pow2 = dtl::next_power_of_two(n);
     // Note: The path variable does NOT contain a sentinel bit. Instead, we
     //       keep track of the paths' level using a separate variable.
     register auto path = scan_path_;
     register auto path_level = scan_path_level_;
     auto pos = path << (h - path_level);
-    auto length = n >> path_level;
+    auto length = n_pow2 >> path_level;
     auto result_cnt = result_cnt_;
     auto alpha = 0u;
     auto alpha_la = 0u;
@@ -917,7 +921,7 @@ public:
       // Do multiple iteration to consume the bit buffers.
       $u1 is_not_done = true;
       for ($i32 b = 0; b < 6 && is_not_done; ++b) {
-        u64 length = n >> path_level;
+        u64 length = n_pow2 >> path_level;
 
         assert(pos < n);
         assert(pos + length <= n);
@@ -1000,12 +1004,13 @@ public:
     const auto eth = teb_.encoded_tree_height_;
     const auto u = perfect_levels_ - 1;
     const auto n = teb_.size();
+    const auto n_pow2 = dtl::next_power_of_two(n);
     // Note: The path variable does NOT contain a sentinel bit. Instead, we
     //       keep track of the paths' level using a separate variable.
     register auto path = scan_path_;
     register auto path_level = scan_path_level_;
     auto pos = path << (h - path_level);
-    auto length = n >> path_level;
+    auto length = n_pow2 >> path_level;
     auto result_cnt = result_cnt_;
     auto alpha = 0u;
     auto alpha_la = 0u;
@@ -1081,7 +1086,7 @@ public:
       // Do multiple iteration to consume the bit buffers.
       $u1 is_not_done = true;
       for ($i32 b = 0; b < 15 && is_not_done; ++b) {
-        u64 length = n >> path_level;
+        u64 length = n_pow2 >> path_level;
 
         assert(pos < n);
         assert(pos + length <= n);
@@ -1097,7 +1102,7 @@ public:
 
         // Increment the current position.
         pos += length;
-        is_not_done = pos != n;
+        is_not_done = pos < n;
 
         const auto up_steps = dtl::bits::tz_count(~path);
 
@@ -1141,7 +1146,7 @@ public:
     }
 
   done:
-    if (result_cnt < batch_size && pos == n) {
+    if (result_cnt < batch_size && pos >= n) {
       results_[result_cnt].pos = n;
       results_[result_cnt].length = 0;
       ++result_cnt;
@@ -1159,10 +1164,11 @@ public:
   next_batch_scalar() noexcept __attribute__((flatten, hot, noinline)) {
     const auto h = tree_height_;
     const auto n = teb_.size();
+    const auto n_pow2 = dtl::next_power_of_two(n);
     register auto path = scan_path_;
     register auto path_level = scan_path_level_;
     auto pos = path << (h - path_level);
-    auto length = n >> path_level;
+    auto length = n_pow2 >> path_level;
     auto result_cnt = result_cnt_;
     $u32 alpha = 0u;
 
@@ -1200,7 +1206,7 @@ public:
       // Toggle sentinel bit (= highest bit set) and add offset.
       pos = path << (h - path_level);
       // The length of the 1-fill.
-      length = n >> path_level;
+      length = n_pow2 >> path_level;
 
       const auto label_idx = scanner_states_[path_level].label_idx_;
       if (label_idx >= first_1label_idx_) {
