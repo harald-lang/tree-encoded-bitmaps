@@ -141,8 +141,8 @@ run_intersect(const config_pair& c, std::ostream& os) {
      << "," << dtl::determine_clustering_factor(bs2)
      << "," << c.bitmap_id1
      << "," << c.bitmap_id2
-     << "," << enc_bs1.size_in_byte()
-     << "," << enc_bs2.size_in_byte()
+     << "," << enc_bs1.size_in_bytes()
+     << "," << enc_bs2.size_in_bytes()
      << ","
      << "\"" << type_info1 << "\""
      << ","

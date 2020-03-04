@@ -174,12 +174,12 @@ public:
 
   /// Return the size in bytes.
   std::size_t __forceinline__
-  size_in_byte() const noexcept {
+  size_in_bytes() const noexcept {
     std::size_t s = 0;
     for (std::size_t p = 0; p < parts_.size(); ++p) {
       const auto& part_ptr = parts_[p];
       if (part_ptr.is_pointer()) {
-        s += part_ptr.get_pointer()->size_in_byte();
+        s += part_ptr.get_pointer()->size_in_bytes();
       }
     }
     s += parts_.size() * sizeof(part_ptr_t);
@@ -193,7 +193,7 @@ public:
     return "{\"name\":\"" + name() + "\""
         + ",\"n\":" + std::to_string(n_)
         + ",\"part_cnt\":" + std::to_string(parts_.size())
-        + ",\"size\":" + std::to_string(size_in_byte())
+        + ",\"size\":" + std::to_string(size_in_bytes())
         + "}";
   }
 

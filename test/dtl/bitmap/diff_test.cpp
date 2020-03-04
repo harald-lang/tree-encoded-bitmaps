@@ -126,10 +126,10 @@ TYPED_TEST(diff_test, merge) {
     // Toggle all bits.
     dtl::bitmap bs(LEN, i);
     std::cout << bs << " (" << i << "), diff_size: "
-              << t.get_diff()->size_in_byte();
+              << t.get_diff()->size_in_bytes();
     set(t, ~bs);
     clear(t, bs);
-    std::cout << "/" << t.get_diff()->size_in_byte() << std::endl;
+    std::cout << "/" << t.get_diff()->size_in_bytes() << std::endl;
 
     // Ensure the diff is not empty.
     ASSERT_FALSE(t.get_diff()->it().end());

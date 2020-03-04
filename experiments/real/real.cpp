@@ -33,7 +33,7 @@ template<typename T>
 std::size_t
 get_compressed_size(dtl::bitmap& bm) {
   T enc(bm);
-  std::size_t size = enc.size_in_byte();
+  std::size_t size = enc.size_in_bytes();
   // Validation
   const auto dec = dtl::to_bitmap_using_iterator(enc);
   if ((bm & dec) != bm) {
@@ -48,7 +48,7 @@ template<>
 std::size_t
 get_compressed_size<dtl::dynamic_wah64>(dtl::bitmap& bm) {
   dtl::dynamic_wah64 enc(bm);
-  std::size_t size = enc.size_in_byte();
+  std::size_t size = enc.size_in_bytes();
   return size;
 }
 //===----------------------------------------------------------------------===//
@@ -204,7 +204,7 @@ void run(const std::string& dir, std::ostream& result_out,
       using T = dtl::bbc;
       bbc = get_compressed_size<T>(bm);
 //      dtl::bbc x(bm);
-//      bbc = x.size_in_byte();
+//      bbc = x.size_in_bytes();
 //      const auto dec = dtl::to_bitmap_using_iterator(x);
 //      if (bm != dec) {
 //        std::cerr << "BBC: Validation failed." << std::endl;
@@ -234,7 +234,7 @@ void run(const std::string& dir, std::ostream& result_out,
 //    {
 //      const auto fpr = 0.0001;
 //      dtl::teb_wrapper teb(bm_pow2, fpr);
-//      t = teb.size_in_byte();
+//      t = teb.size_in_bytes();
 //      const auto dec = dtl::to_bitmap_using_iterator(teb);
 //      if ((bm_pow2 & dec) != bm_pow2) {
 //        std::cerr << "Validation failed." << std::endl;

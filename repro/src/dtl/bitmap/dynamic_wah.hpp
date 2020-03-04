@@ -54,7 +54,7 @@ struct dynamic_wah {
 
   /// Return the size in bytes.
   std::size_t __forceinline__
-  size_in_byte() const {
+  size_in_bytes() const {
     return bv.bytes() /* size of the compressed bitmap */
         + sizeof(size_); /* bit-length of the original bitmap */
   }
@@ -286,7 +286,7 @@ struct dynamic_wah {
   info() const {
     return "{\"name\":\"" + name() + "\""
         + ",\"n\":" + std::to_string(size_)
-        + ",\"size\":" + std::to_string(size_in_byte())
+        + ",\"size\":" + std::to_string(size_in_bytes())
         + ",\"word_size\":" + std::to_string(sizeof(typename bitvector_t::word_t))
         + "}";
   }

@@ -37,9 +37,9 @@ TYPED_TEST(xah_compression_test, ensure_xah_size_is_le_to_wah_size) {
       auto bm = dtl::gen_random_bitmap_markov(n, 4.0, d);
       // Compress
       A a(bm);
-      i64 a_size = a.size_in_byte();
+      i64 a_size = a.size_in_bytes();
       B b(bm);
-      i64 b_size = b.size_in_byte();
+      i64 b_size = b.size_in_bytes();
       std::cout
           << std::setw(10) << n << ", "
           << std::setw(5) << d << ", "

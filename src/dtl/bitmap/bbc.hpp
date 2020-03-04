@@ -233,7 +233,7 @@ public:
 
   /// Return the size in bytes.
   std::size_t __forceinline__
-  size_in_byte() const {
+  size_in_bytes() const {
     return data_.size() * sizeof(byte_t) /* size of the compressed bitmap */
         + sizeof(encoded_bitmap_length_); /* bit-length of the original bitmap */
   }
@@ -455,7 +455,7 @@ public:
   info() const {
     return "{\"name\":\"" + name() + "\""
         + ",\"n\":" + std::to_string(encoded_bitmap_length_)
-        + ",\"size\":" + std::to_string(size_in_byte())
+        + ",\"size\":" + std::to_string(size_in_bytes())
         + ",\"word_size\":" + std::to_string(sizeof(byte_t))
         + "}";
   }

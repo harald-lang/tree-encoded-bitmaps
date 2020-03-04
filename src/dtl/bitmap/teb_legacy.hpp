@@ -231,7 +231,7 @@ public:
 
   /// Return the size in bytes.
   std::size_t __teb_inline__
-  size_in_byte() const noexcept {
+  size_in_bytes() const noexcept {
     constexpr u64 block_bitlength = sizeof(_block_type) * 8;
     constexpr u64 block_size = sizeof(_block_type);
     $u64 bytes = 0;
@@ -306,7 +306,7 @@ public:
        << ", opt level = " << optimization_level_
        << ", n = " << n_
        << ", rank size = " << rank_.size_in_bytes()
-       << ", size = " << size_in_byte()
+       << ", size = " << size_in_bytes()
        << "\n | ";
 
     if (implicit_inner_node_cnt_ > 0) {
@@ -527,7 +527,7 @@ public:
     };
     return "{\"name\":\"" + name() + "\""
         + ",\"n\":" + std::to_string(n_)
-        + ",\"size\":" + std::to_string(size_in_byte())
+        + ",\"size\":" + std::to_string(size_in_bytes())
         + ",\"tree_bits\":" + std::to_string(structure_.size())
         + ",\"label_bits\":" + std::to_string(labels_.size())
         + ",\"implicit_inner_nodes\":"

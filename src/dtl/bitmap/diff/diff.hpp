@@ -57,15 +57,15 @@ public:
 
   /// Return the size in bytes.
   std::size_t __forceinline__
-  size_in_byte() const noexcept {
-    return bitmap_->size_in_byte() + diff_->size_in_byte()
+  size_in_bytes() const noexcept {
+    return bitmap_->size_in_bytes() + diff_->size_in_bytes()
         + 16; // two pointers
   }
 
   /// Return the size of the differential data structure in bytes.
   std::size_t __forceinline__
-  diff_size_in_byte() const noexcept {
-    return diff_->size_in_byte();
+  diff_size_in_bytes() const noexcept {
+    return diff_->size_in_bytes();
   }
 
   /// Returns the name of the instance including the most important parameters

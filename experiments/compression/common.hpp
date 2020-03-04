@@ -62,7 +62,7 @@ run(const config& c, std::ostream& os) {
   // Encode the bitmap.
   T enc_bs(bs);
 
-  const auto size_in_bytes = enc_bs.size_in_byte();
+  const auto size_in_bytes = enc_bs.size_in_bytes();
   std::string type_info = enc_bs.info();
   std::string type_name = T::name();
 

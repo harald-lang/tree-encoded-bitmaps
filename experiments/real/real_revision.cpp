@@ -131,20 +131,20 @@ void run(const std::string& dir, std::ostream& result_out) {
     std::size_t w64 = 0;
     {
       dtl::dynamic_roaring_bitmap roaring(bm);
-      r = roaring.size_in_byte();
+      r = roaring.size_in_bytes();
     }
     {
       dtl::dynamic_wah32 wah(bm);
-      w = wah.size_in_byte();
+      w = wah.size_in_bytes();
     }
     {
       dtl::dynamic_wah64 wah(bm);
-      w64 = wah.size_in_byte();
+      w64 = wah.size_in_bytes();
     }
     {
       dtl::teb_wrapper teb(bm_pow2);
 //      dtl::teb<> teb(bm_pow2);
-      t = teb.size_in_byte();
+      t = teb.size_in_bytes();
 //      t_rank = 0; //teb.rank_.size_in_bytes();
       t_rank =
           teb.teb_->get_rank_word_cnt(teb.data_.data()) * sizeof(dtl::teb_word_type);
@@ -159,7 +159,7 @@ void run(const std::string& dir, std::ostream& result_out) {
 //    {
 //      const auto fpr = 0.0001;
 //      dtl::teb_wrapper teb(bm_pow2, fpr);
-//      t = teb.size_in_byte();
+//      t = teb.size_in_bytes();
 //      const auto dec = dtl::to_bitmap_using_iterator(teb);
 //      if ((bm_pow2 & dec) != bm_pow2) {
 //        std::cerr << "Validation failed." << std::endl;

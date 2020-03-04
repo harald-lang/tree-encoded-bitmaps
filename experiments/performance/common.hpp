@@ -194,7 +194,7 @@ run(const config& c, std::ostream& os) {
      << "," << c.clustering_factor
      << "," << dtl::determine_clustering_factor(bs)
      << "," << c.bitmap_id
-     << "," << enc_bs.size_in_byte()
+     << "," << enc_bs.size_in_bytes()
      << ","
      << "\"" << type_info << "\""
      << "," << checksum

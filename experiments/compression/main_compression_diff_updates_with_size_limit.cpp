@@ -70,8 +70,8 @@ void do_measurement(task t, std::ostream& os) {
   using merge_type = dtl::merge_naive<typename T::bitmap_type, typename T::diff_type>;
 
   // Perform the updates.
-  std::size_t diff_size = b.diff_size_in_byte();
-  std::size_t encoded_size = b.size_in_byte() - diff_size;
+  std::size_t diff_size = b.diff_size_in_bytes();
+  std::size_t encoded_size = b.size_in_bytes() - diff_size;
 
   std::size_t performed_updates_cnt = 0;
   std::size_t pending_updates_cnt = 0;
@@ -90,8 +90,8 @@ void do_measurement(task t, std::ostream& os) {
         << "," << total_update_cnt // the total number of updates
         << "," << merge_cnt
         << "," << pending_updates_cnt // the number of updates not yet merged
-        << "," << b.diff_size_in_byte()
-        << "," << b.size_in_byte()
+        << "," << b.diff_size_in_bytes()
+        << "," << b.size_in_bytes()
         << "," << t.limit_bytes
         << "," << dtl::determine_bit_density(bm_expected)
         << "," << dtl::determine_clustering_factor(bm_expected)
@@ -107,13 +107,13 @@ void do_measurement(task t, std::ostream& os) {
     ++pending_updates_cnt;
     ++performed_updates_cnt;
 
-    diff_size = b.diff_size_in_byte();
+    diff_size = b.diff_size_in_bytes();
     if ((diff_size + encoded_size) >= t.limit_bytes) {
       print();
       b.template merge<merge_type>();
       pending_updates_cnt = 0;
       ++merge_cnt;
-      encoded_size = b.size_in_byte() - b.diff_size_in_byte();
+      encoded_size = b.size_in_bytes() - b.diff_size_in_bytes();
     }
 
     if (performed_updates_cnt % 100 == 0 || pending_updates_cnt == 0) {
@@ -152,9 +152,9 @@ std::size_t
 get_max(u64 bitmap_id) {
   const auto plain = db.load_bitmap(bitmap_id);
   const auto plain_size = plain.size() / 8;
-  const auto roaring_size = dtl::dynamic_roaring_bitmap(plain).size_in_byte();
-  const auto teb_size = dtl::teb_wrapper(plain).size_in_byte();
-//  const auto wah_size = dtl::dynamic_wah32(plain).size_in_byte();
+  const auto roaring_size = dtl::dynamic_roaring_bitmap(plain).size_in_bytes();
+  const auto teb_size = dtl::teb_wrapper(plain).size_in_bytes();
+//  const auto wah_size = dtl::dynamic_wah32(plain).size_in_bytes();
   const auto wah_size = roaring_size;
   const auto max = std::max(roaring_size, std::max(teb_size, wah_size));
   return max;

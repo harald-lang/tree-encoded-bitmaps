@@ -66,7 +66,7 @@ run_benchmark(
   res.n = b.size();
   {
     T enc(b);
-    res.encoded_size_before_updates = enc.size_in_byte();
+    res.encoded_size_before_updates = enc.size_in_bytes();
     res.type_name = enc.name();
     res.type_info_before_updates = enc.info();
     res.merge_type_name = M::name();
@@ -133,7 +133,7 @@ run_benchmark(
         ++applied_merge_cnt;
       }
     }
-    res.encoded_size_after_updates = enc.size_in_byte();
+    res.encoded_size_after_updates = enc.size_in_bytes();
     checksum += res.encoded_size_after_updates;
     res.type_info_after_updates = enc.info();
     res.update_cnt = applied_update_cnt;

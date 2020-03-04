@@ -133,7 +133,7 @@ public:
 
   /// Return the size in bytes.
   std::size_t __forceinline__
-  size_in_byte() const {
+  size_in_bytes() const {
     return main_.size() * sizeof(bah_byte_t)
         + data_.size() * sizeof(bah_word_t)
         + index_.size() * sizeof(bah_byte_t)
@@ -576,7 +576,7 @@ public:
   info() const {
     return "{\"name\":\"" + name() + "\""
         + ",\"n\":" + std::to_string(encoded_bitmap_length_)
-        + ",\"size\":" + std::to_string(size_in_byte())
+        + ",\"size\":" + std::to_string(size_in_bytes())
         + ",\"word_size\":" + std::to_string(sizeof(bah_word_t))
         + "}";
   }

@@ -316,7 +316,7 @@ run(const config& conf, std::ostream& os) {
   std::size_t compressed_size = 0;
   for (auto bm : bmi) {
     T bmc(*bm);
-    auto s = bmc.size_in_byte();
+    auto s = bmc.size_in_bytes();
     compressed_size += s;
   }
 
@@ -337,7 +337,7 @@ run(const config& conf, std::ostream& os) {
   std::size_t re_compressed_size = 0;
   for (auto bm : bmi) {
     T bmc(*bm);
-    auto s = bmc.size_in_byte();
+    auto s = bmc.size_in_bytes();
     re_compressed_size += s;
   }
 

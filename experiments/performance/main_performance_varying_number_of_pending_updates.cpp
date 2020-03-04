@@ -43,7 +43,7 @@ run_benchmark(const T& enc_bs, const dtl::bitmap expected, std::ostream& os) {
 
   benchmark_results res;
   res.n = expected.size();
-  res.encoded_size = enc_bs.size_in_byte();
+  res.encoded_size = enc_bs.size_in_bytes();
   res.type_name = enc_bs.name();
   res.type_info = enc_bs.info();
 

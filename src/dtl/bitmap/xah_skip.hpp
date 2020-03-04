@@ -70,8 +70,8 @@ public:
 
   /// Return the size in bytes.
   std::size_t __forceinline__
-  size_in_byte() const {
-    return super::size_in_byte()
+  size_in_bytes() const {
+    return super::size_in_bytes()
         + offsets_.size() * sizeof(u32);
   }
 
@@ -321,7 +321,7 @@ public:
   info() const {
     return "{\"name\":\"" + name() + "\""
         + ",\"n\":" + std::to_string(this->size())
-        + ",\"size\":" + std::to_string(size_in_byte())
+        + ",\"size\":" + std::to_string(size_in_bytes())
         + ",\"word_size\":" + std::to_string(sizeof(_word_type))
         + ",\"skip_distance\":" + std::to_string(_skip_distance)
         + ",\"skip_offsets_size\":" + std::to_string(offsets_.size() * sizeof($u32))

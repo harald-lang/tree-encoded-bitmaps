@@ -46,7 +46,7 @@ struct position_list {
 
   /// Return the size in bytes.
   std::size_t
-  size_in_byte() const {
+  size_in_bytes() const {
     return positions_.size() * sizeof(position_t) /* positions */
         + sizeof(position_t) /* number of positions */
         + sizeof(n_) /* bit-length of the original bitmap */;
@@ -316,7 +316,7 @@ struct position_list {
   info() const {
     return "{\"name\":\"" + name() + "\""
         + ",\"n\":" + std::to_string(n_)
-        + ",\"size\":" + std::to_string(size_in_byte())
+        + ",\"size\":" + std::to_string(size_in_bytes())
         + ",\"positions\":" + std::to_string(positions_.size())
         + "}";
   }

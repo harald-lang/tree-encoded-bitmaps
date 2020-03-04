@@ -258,7 +258,7 @@ public:
 
   /// Return the size in bytes.
   std::size_t __teb_inline__
-  size_in_byte() const noexcept {
+  size_in_bytes() const noexcept {
     std::size_t word_cnt = 0;
     word_cnt += get_header_word_cnt(ptr_);
     word_cnt += get_tree_word_cnt(ptr_);
@@ -283,7 +283,7 @@ public:
        << ", n_actual = " << n_actual_
        << ", encoded tree height = " << encoded_tree_height_
        << ", rank size = " << (get_rank_word_cnt(ptr_) * word_size)
-       << ", size = " << size_in_byte()
+       << ", size = " << size_in_bytes()
        << "\n | ";
 
     if (implicit_inner_node_cnt_ > 0) {

@@ -84,8 +84,8 @@ public:
 
   /// Return the size in bytes.
   std::size_t __teb_inline__
-  size_in_byte() const noexcept {
-    return teb_->size_in_byte();
+  size_in_bytes() const noexcept {
+    return teb_->size_in_bytes();
   }
 
   /// Returns the name of the instance including the most important parameters
@@ -104,7 +104,7 @@ public:
     };
     return "{\"name\":\"" + name() + "\""
         + ",\"n\":" + std::to_string(teb_->n_)
-        + ",\"size\":" + std::to_string(size_in_byte())
+        + ",\"size\":" + std::to_string(size_in_bytes())
         + ",\"tree_bits\":" + std::to_string(teb_->tree_bit_cnt_)
         + ",\"label_bits\":" + std::to_string(teb_->label_bit_cnt_)
         + ",\"implicit_inner_nodes\":"

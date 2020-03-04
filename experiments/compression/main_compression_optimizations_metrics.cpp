@@ -54,12 +54,12 @@ void run(const config_t& config, std::ostream& os) {
         config.bit_density);
 
     dtl::teb<0> teb_o0(bm);
-    size_teb_o0 += teb_o0.size_in_byte();
+    size_teb_o0 += teb_o0.size_in_bytes();
     tree_bit_cnt_o0 += teb_o0._get_tree_bit_cnt();
     label_bit_cnt_o0 += teb_o0._get_label_bit_cnt();
 
     dtl::teb<3> teb_o3(bm);
-    size_teb_o3 += teb_o3.size_in_byte();
+    size_teb_o3 += teb_o3.size_in_bytes();
     tree_bit_cnt_o3 += teb_o3._get_tree_bit_cnt();
     tree_leading_1bit_cnt_o3 += teb_o3._get_tree_leading_1bit_cnt();
     tree_trailing_0bit_cnt_o3 += teb_o3._get_tree_trailing_0bit_cnt();

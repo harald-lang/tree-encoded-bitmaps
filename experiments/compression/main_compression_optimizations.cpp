@@ -47,17 +47,17 @@ void run(const config_t& config, std::ostream& os) {
         config.bit_density);
 
     dtl::dynamic_wah32 wah(bm);
-    size_wah += wah.size_in_byte();
+    size_wah += wah.size_in_bytes();
     dtl::dynamic_roaring_bitmap roaring(bm);
-    size_roaring += roaring.size_in_byte();
+    size_roaring += roaring.size_in_bytes();
     dtl::teb<0> teb_o0(bm);
-    size_teb_o0 += teb_o0.size_in_byte();
+    size_teb_o0 += teb_o0.size_in_bytes();
     //    dtl::teb<1> teb_o1(bm); // deprecated. in the paper we only distinguish between -o0 and -o3
-    //    size_teb_o1 += teb_o1.size_in_byte();
+    //    size_teb_o1 += teb_o1.size_in_bytes();
     //    dtl::teb<2> teb_o2(bm);
-    //    size_teb_o2 += teb_o2.size_in_byte();
+    //    size_teb_o2 += teb_o2.size_in_bytes();
     dtl::teb<3> teb_o3(bm);
-    size_teb_o3 += teb_o3.size_in_byte();
+    size_teb_o3 += teb_o3.size_in_bytes();
 
     // Validation
     {
