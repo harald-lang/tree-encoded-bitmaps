@@ -24,10 +24,6 @@ struct dynamic_bitmap {
   /// one by one, similarly to the other implementations.
   explicit dynamic_bitmap(const boost::dynamic_bitset<_block_type>& in)
       : bitmap_(in.size(), 0), n_(in.size()) {
-    if (!dtl::is_power_of_two(n_)) {
-      throw std::invalid_argument(
-          "The length of the bitmap must be a power of two.");
-    }
     auto i = in.find_first();
     while (i != boost::dynamic_bitset<$u32>::npos) {
       bitmap_[i] = true;

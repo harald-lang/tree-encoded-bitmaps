@@ -152,3 +152,52 @@ TYPED_TEST(api_encode_decode_test,
   }
 }
 //===----------------------------------------------------------------------===//
+// Encode, decode, and compare the results (varying bitmap sizes, where the
+// bitmap sizes are NOT powers of two).
+TYPED_TEST(api_encode_decode_test,
+    encode_decode_varying_bitmap_sizes_non_pow2) {
+  using T = TypeParam;
+
+  for (auto len = 111; len <= 800000; len *= 2) {
+    dtl::bitmap bs(len);
+    // all bits zero
+    bs.reset();
+    {
+      T t(bs);
+      dtl::bitmap dec = dtl::to_bitmap_using_iterator(t);
+      ASSERT_EQ(bs, dec)
+          << "Decoding failed: "
+          << " len=" << len << ", "
+          << "'" << bs << "' -> '" << t
+          << "' -> '" << dec << "'"
+          << std::endl;
+    }
+    // all bits one
+    bs.flip();
+    {
+      T t(bs);
+      dtl::bitmap dec = dtl::to_bitmap_using_iterator(t);
+      ASSERT_EQ(bs, dec)
+          << "Decoding failed: "
+          << " len=" << len << ", "
+          << "'" << bs << "' -> '" << t
+          << "' -> '" << dec << "'"
+          << std::endl;
+    }
+    // random bitmap
+    {
+      for (std::size_t rep = 0; rep < 10; ++rep) {
+        bs = dtl::gen_random_bitmap_markov(len, 4.0, 0.2);
+        T t(bs);
+        dtl::bitmap dec = dtl::to_bitmap_using_iterator(t);
+        ASSERT_EQ(bs, dec)
+            << "Decoding failed: "
+            << " len=" << len << ", "
+            << "'" << bs << "' -> '" << t
+            << "' -> '" << dec << "'"
+            << std::endl;
+      }
+    }
+  }
+}
+//===----------------------------------------------------------------------===//

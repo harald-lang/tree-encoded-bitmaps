@@ -29,6 +29,29 @@
 //===----------------------------------------------------------------------===//
 namespace fs = boost::filesystem;
 //===----------------------------------------------------------------------===//
+template<typename T>
+std::size_t
+get_compressed_size(dtl::bitmap& bm) {
+  T enc(bm);
+  std::size_t size = enc.size_in_byte();
+  // Validation
+  const auto dec = dtl::to_bitmap_using_iterator(enc);
+  if ((bm & dec) != bm) {
+    std::cerr << "Validation failed for type " << enc.name() << std::endl;
+    std::exit(1);
+  }
+  return size;
+}
+// Disable validation for WAH64, since the iterator on that type is not
+// implemented.
+template<>
+std::size_t
+get_compressed_size<dtl::dynamic_wah64>(dtl::bitmap& bm) {
+  dtl::dynamic_wah64 enc(bm);
+  std::size_t size = enc.size_in_byte();
+  return size;
+}
+//===----------------------------------------------------------------------===//
 void run(const std::string& dir, std::ostream& result_out,
     std::ostream& result_csv_out) {
   result_out
@@ -96,17 +119,14 @@ void run(const std::string& dir, std::ostream& result_out,
     std::string token;
 
     dtl::bitmap bm(n);
-    dtl::bitmap bm_pow2(n_pow2);
 
     while (std::getline(is, token, ',')) {
       const auto val = std::stoull(token);
       bm[val] = true;
-      bm_pow2[val] = true;
     }
     is.close();
 
     bitmaps.push_back(bm);
-    bitmaps_pow2.push_back(bm_pow2);
 
     const auto d = dtl::determine_bit_density(bm);
     min_d = std::min(d, min_d);
@@ -145,77 +165,69 @@ void run(const std::string& dir, std::ostream& result_out,
     std::size_t concise = 0;
     std::size_t bbc = 0;
     {
-      dtl::dynamic_roaring_bitmap roaring(bm);
-      r = roaring.size_in_byte();
+      using T = dtl::dynamic_roaring_bitmap;
+      r = get_compressed_size<T>(bm);
     }
     {
-      dtl::dynamic_wah32 wah(bm);
-      w = wah.size_in_byte();
+      using T = dtl::dynamic_wah32;
+      w = get_compressed_size<T>(bm);
     }
     {
-      dtl::dynamic_wah64 wah(bm);
-      w64 = wah.size_in_byte();
+      using T = dtl::dynamic_wah64;
+      w64 = get_compressed_size<T>(bm);
     }
     {
-      dtl::teb_wrapper teb(bm_pow2);
-      t = teb.size_in_byte();
-      const auto dec = dtl::to_bitmap_using_iterator(teb);
-      if ((bm_pow2 & dec) != bm_pow2) {
-        std::cerr << "TEB: Validation failed." << std::endl;
-        std::exit(1);
-      }
+      using T = dtl::teb_wrapper;
+      t = get_compressed_size<T>(bm);
     }
     {
-      dtl::uah8 uah(bm);
-      uah8 = uah.size_in_byte();
+      using T = dtl::uah8;
+      uah8 = get_compressed_size<T>(bm);
     }
     {
-      dtl::uah16 uah(bm);
-      uah16 = uah.size_in_byte();
+      using T = dtl::uah16;
+      uah16 = get_compressed_size<T>(bm);
     }
     {
-      dtl::uah32 uah(bm);
-      uah32 = uah.size_in_byte();
+      using T = dtl::uah32;
+      uah32 = get_compressed_size<T>(bm);
     }
     {
-      dtl::bah x(bm);
-      bah = x.size_in_byte();
+      using T = dtl::bah;
+      bah = get_compressed_size<T>(bm);
     }
     {
-      dtl::concise x(bm);
-      concise = x.size_in_byte();
-      const auto dec = dtl::to_bitmap_using_iterator(x);
-      if ((bm & dec) != bm) {
-        std::cerr << "Concise: Validation failed." << std::endl;
-        std::exit(1);
-      }
+      using T = dtl::concise;
+      concise = get_compressed_size<T>(bm);
     }
     {
-      dtl::bbc x(bm);
-      bbc = x.size_in_byte();
-      const auto dec = dtl::to_bitmap_using_iterator(x);
-      if (bm != dec) {
-        std::cerr << "BBC: Validation failed." << std::endl;
-        std::cout << "n=" << bm.size() << std::endl;
-        std::cout << "expected: ";
-        auto it_a = dtl::plain_bitmap_iter<dtl::bitmap>(bm);
-        while (!it_a.end()) {
-          std::cout << "[" << it_a.pos() << "," << (it_a.pos() + it_a.length())
-            << "),";
-          it_a.next();
-        }
-        std::cout << std::endl;
-        std::cout << "but got:  ";
-        auto it_b = x.it();
-        while (!it_b.end()) {
-          std::cout << "[" << it_b.pos() << "," << (it_b.pos() + it_b.length())
-              << "),";
-          it_b.next();
-        }
-        std::cout << std::endl;
-        std::cout << x << std::endl;
-        std::exit(1);
-      }
+      using T = dtl::bbc;
+      bbc = get_compressed_size<T>(bm);
+//      dtl::bbc x(bm);
+//      bbc = x.size_in_byte();
+//      const auto dec = dtl::to_bitmap_using_iterator(x);
+//      if (bm != dec) {
+//        std::cerr << "BBC: Validation failed." << std::endl;
+//        std::cout << "n=" << bm.size() << std::endl;
+//        std::cout << "expected: ";
+//        auto it_a = dtl::plain_bitmap_iter<dtl::bitmap>(bm);
+//        while (!it_a.end()) {
+//          std::cout << "[" << it_a.pos() << "," << (it_a.pos() + it_a.length())
+//            << "),";
+//          it_a.next();
+//        }
+//        std::cout << std::endl;
+//        std::cout << "but got:  ";
+//        auto it_b = x.it();
+//        while (!it_b.end()) {
+//          std::cout << "[" << it_b.pos() << "," << (it_b.pos() + it_b.length())
+//              << "),";
+//          it_b.next();
+//        }
+//        std::cout << std::endl;
+//        std::cout << x << std::endl;
+//        std::exit(1);
+//      }
     }
     // clang-format off
 // TEB (lossy compressed)

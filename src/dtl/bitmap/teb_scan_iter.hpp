@@ -135,13 +135,13 @@ public:
     if (teb_.encoded_tree_height_ == 1) {
       if (teb_.L_[0]) {
         results_[0].pos = 0;
-        results_[0].length = teb_.n_;
-        results_[1].pos = teb_.n_;
+        results_[0].length = teb_.n_actual_;
+        results_[1].pos = teb_.n_actual_;
         results_[1].length = 0;
         result_cnt_ = 2;
       }
       else {
-        results_[0].pos = teb_.n_;
+        results_[0].pos = teb_.n_actual_;
         results_[0].length = 0;
         result_cnt_ = 1;
       }
@@ -1388,8 +1388,8 @@ public:
   /// simply calls next() until the desired position has been reached.
   void
   skip_to(const std::size_t to_pos) noexcept __attribute__((noinline)) {
-    if (to_pos >= teb_.n_) {
-      results_[0].pos = teb_.n_;
+    if (to_pos >= teb_.n_actual_) {
+      results_[0].pos = teb_.n_actual_;
       results_[0].length = 0;
       result_cnt_ = 1;
       result_read_pos_ = 0;
@@ -1409,7 +1409,7 @@ public:
   /// Returns true if the iterator reached the end, false otherwise.
   u1 __forceinline__
   end() const noexcept {
-    return results_[result_read_pos_].pos == teb_.n_;
+    return results_[result_read_pos_].pos == teb_.n_actual_;
   }
 
   /// Returns the starting position of the current 1-fill.

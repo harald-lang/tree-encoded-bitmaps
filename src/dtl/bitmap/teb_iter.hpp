@@ -334,7 +334,7 @@ public:
       next_node.level = perfect_levels_ - 1;
       next_node.rank = teb_.rank_inclusive(top_node_idx_current_);
     }
-    pos_ = teb_.n_;
+    pos_ = teb_.n_actual_;
     length_ = 0;
   }
 
@@ -409,7 +409,7 @@ public:
       // Push the next top node on the stack (if any).
       next_top_node();
     }
-    pos_ = teb_.n_;
+    pos_ = teb_.n_actual_;
     length_ = 0;
   }
 
@@ -657,8 +657,8 @@ public:
   /// Fast-forwards the iterator to the given position.
   void __teb_inline__
   skip_to(const std::size_t to_pos) noexcept {
-    if (to_pos >= teb_.n_) { // TODO remove condition
-      pos_ = teb_.n_;
+    if (to_pos >= teb_.n_actual_) { // TODO remove condition
+      pos_ = teb_.n_actual_;
       length_ = 0;
       return;
     }
@@ -673,7 +673,7 @@ public:
   /// Returns true if the iterator reached the end, false otherwise.
   u1 __forceinline__
   end() const noexcept {
-    return pos_ == teb_.n_;
+    return pos_ == teb_.n_actual_;
   }
 
   /// Returns the starting position of the current 1-fill.

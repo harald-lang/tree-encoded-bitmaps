@@ -33,7 +33,10 @@ public: // TODO remove
   const word_type* const ptr_;
   const teb_header* const hdr_;
 
+  /// The internal bitmap size. (rounded up to the next power of two)
   const size_type n_;
+  /// The actual bitmap size.
+  const size_type n_actual_;
   const size_type tree_height_;
   const size_type implicit_inner_node_cnt_;
   const size_type implicit_leading_label_cnt_;
@@ -176,8 +179,9 @@ public:
   explicit teb_flat(const word_type* const ptr)
       : ptr_(ptr),
         hdr_(get_header_ptr(ptr)),
-        n_(get_header_ptr(ptr)->n),
-        tree_height_(dtl::log_2(get_header_ptr(ptr)->n)),
+        n_(dtl::next_power_of_two(get_header_ptr(ptr)->n)),
+        n_actual_(get_header_ptr(ptr)->n),
+        tree_height_(dtl::log_2(dtl::next_power_of_two(get_header_ptr(ptr)->n))),
         implicit_inner_node_cnt_(get_header_ptr(ptr)->implicit_inner_node_cnt),
         implicit_leading_label_cnt_(get_header_ptr(ptr)->implicit_leading_label_cnt),
         perfect_level_cnt_(get_header_ptr(ptr)->perfect_level_cnt),
@@ -229,7 +233,7 @@ public:
   /// Returns the length of the original bitmap.
   std::size_t
   size() const noexcept {
-    return hdr_->n;
+    return n_actual_;
   }
 
   /// Returns the value of the bit at the given position.
@@ -276,6 +280,7 @@ public:
        << ", tree bits = " << tree_bit_cnt_
        << ", label bits = " << label_bit_cnt_
        << ", n = " << n_
+       << ", n_actual = " << n_actual_
        << ", encoded tree height = " << encoded_tree_height_
        << ", rank size = " << (get_rank_word_cnt(ptr_) * word_size)
        << ", size = " << size_in_byte()

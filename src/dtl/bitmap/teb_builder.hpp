@@ -103,7 +103,7 @@ inline void
 teb_builder::serialize(word_type* dst) {
   // Prepare the header.
   teb_header hdr;
-  hdr.n = static_cast<u32>(bitmap_tree_.n_);
+  hdr.n = static_cast<u32>(bitmap_tree_.get_n());
   hdr.tree_bit_cnt = static_cast<u32>(explicit_node_cnt());
   hdr.implicit_inner_node_cnt = static_cast<u32>(bitmap_tree_.get_leading_inner_node_cnt());
   hdr.label_bit_cnt = static_cast<u32>(explicit_label_cnt());

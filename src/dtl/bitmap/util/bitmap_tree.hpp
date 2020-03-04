@@ -94,10 +94,14 @@ protected:
 
   std::size_t uncompressed_size = 0;
 
+  /// The actual size of the bitmap. Note, internally we round up to the
+  /// next power of two.
+  std::size_t n_actual_;
+
 public:
   /// C'tor
   explicit bitmap_tree(const bitmap_t& bitmap)
-      : binary_tree_structure(bitmap.size()),
+      : binary_tree_structure(dtl::next_power_of_two(bitmap.size())),
         labels_(max_node_cnt_ + offset),
         inner_node_cnt_(0),
         leading_inner_node_cnt_(0),
@@ -107,7 +111,8 @@ public:
         first_node_idx_with_1label_(0),
         last_node_idx_with_1label_(0),
         first_bit_idx_(0), // first and last bit idx will be initialized in init_tree()
-        last_bit_idx_(0) {
+        last_bit_idx_(0),
+        n_actual_(bitmap.size()) {
     // Init the binary tree.
     init_tree(bitmap);
     uncompressed_size = estimate_encoded_size_in_bytes();
@@ -132,7 +137,7 @@ public:
 protected:
   /// C'tor
   explicit bitmap_tree(const std::size_t n, u1 init = true)
-      : binary_tree_structure(n, init),
+      : binary_tree_structure(dtl::next_power_of_two(n), init),
         labels_(max_node_cnt_ + offset),
         inner_node_cnt_(0),
         leading_inner_node_cnt_(0),
@@ -142,7 +147,8 @@ protected:
         first_node_idx_with_1label_(0),
         last_node_idx_with_1label_(0),
         first_bit_idx_(0), // first and last bit idx will be initialized in init_tree()
-        last_bit_idx_(0) {
+        last_bit_idx_(0),
+        n_actual_(n) {
   }
 
 public:
@@ -158,12 +164,6 @@ public:
   ///  - the leaf nodes are labelled with the given bitmap
   void __attribute__((noinline, hot, flatten))
   init_tree(const boost::dynamic_bitset<$u32>& bitmap) {
-    // TODO: Support arbitrarily sized bitmaps.
-    if (!dtl::is_power_of_two(n_)) {
-      throw std::invalid_argument(
-          "The length of the bitmap must be a power of two.");
-    }
-
     u64 length = max_node_cnt_;
     u64 height = height_;
     // Copy the input bitmap to the last level of the tree.
@@ -851,6 +851,12 @@ public:
   inline u32
   get_last_node_idx_with_1label() const noexcept {
     return last_node_idx_with_1label_;
+  }
+
+  /// Returns the actual size of the bitmap.
+  inline u32
+  get_n() const noexcept {
+    return n_actual_;
   }
 
   void
