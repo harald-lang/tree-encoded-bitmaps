@@ -7,7 +7,6 @@
 #include <dtl/bitmap/part/part.hpp>
 #include <dtl/bitmap/position_list.hpp>
 #include <dtl/bitmap/range_list.hpp>
-#include <dtl/bitmap/teb.hpp>
 #include <dtl/bitmap/teb_wrapper.hpp>
 #include <dtl/bitmap/uah.hpp>
 #include <dtl/bitmap/uah_skip.hpp>
