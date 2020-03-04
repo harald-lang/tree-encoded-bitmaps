@@ -61,7 +61,7 @@ public:
   /// Returns the pointer to the header.
   static constexpr const teb_header* const
   get_header_ptr(const word_type* const ptr) {
-    return reinterpret_cast<const teb_header* const>(ptr);
+    return (const teb_header* const)(void const*)ptr;
   }
 
   /// Returns the length of the header in number of words.
