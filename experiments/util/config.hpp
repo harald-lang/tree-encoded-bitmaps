@@ -25,7 +25,7 @@ struct config {
 
   void
   print(std::ostream& os) const noexcept {
-    os << "config[bitmap_type=" << bitmap_type
+    os << "config[bitmap_type=" << (int)bitmap_type
        << ",n=" << n
        << ",d=" << density
        << ",f=" << clustering_factor
@@ -58,7 +58,7 @@ struct config_pair {
 
   void
   print(std::ostream& os) const noexcept {
-    os << "config_pair[bitmap_type=" << bitmap_type
+    os << "config_pair[bitmap_type=" << (int)bitmap_type
        << ",n=" << n
        << ",d1=" << density1
        << ",d2=" << density2

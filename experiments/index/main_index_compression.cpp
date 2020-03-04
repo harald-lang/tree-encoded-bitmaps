@@ -385,11 +385,8 @@ void bmi_benchmark(const config& conf, std::ostream& os) {
     case bitmap_t::roaring:
       run<type_of<bitmap_t::roaring>::type>(conf, os);
       break;
-    case bitmap_t::teb:
-      run<type_of<bitmap_t::teb>::type>(conf, os);
-      break;
-    case bitmap_t::teb_scan:
-      //      run<type_of<bitmap_t::teb_scan>::type>(conf, os); // TODO remove
+    case bitmap_t::teb_wrapper:
+      run<type_of<bitmap_t::teb_wrapper>::type>(conf, os);
       break;
     case bitmap_t::wah:
       run<type_of<bitmap_t::wah>::type>(conf, os);
