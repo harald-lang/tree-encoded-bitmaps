@@ -3,7 +3,7 @@
 #include "experiments/util/threading.hpp"
 #include "thirdparty/perfevent/PerfEvent.hpp"
 
-#include <dtl/bitmap/teb.hpp>
+#include <dtl/bitmap/teb_legacy.hpp>
 #include <dtl/bitmap/util/convert.hpp>
 #include <dtl/dtl.hpp>
 #include <dtl/env.hpp>

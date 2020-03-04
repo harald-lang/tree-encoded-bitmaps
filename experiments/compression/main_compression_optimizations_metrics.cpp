@@ -3,7 +3,7 @@
 
 #include <dtl/bitmap/position_list.hpp>
 #include <dtl/bitmap/range_list.hpp>
-#include <dtl/bitmap/teb.hpp>
+#include <dtl/bitmap/teb_legacy.hpp>
 #include <dtl/bitmap/teb_wrapper.hpp>
 #include <dtl/bitmap/util/convert.hpp>
 #include <dtl/bitmap/util/random.hpp>

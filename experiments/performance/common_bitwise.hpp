@@ -156,9 +156,6 @@ void run_intersect(config_pair c, std::ostream& os) {
     case bitmap_t::roaring:
       run_intersect<dtl::dynamic_roaring_bitmap>(c, os);
       break;
-    case bitmap_t::teb:
-      run_intersect<dtl::teb<>>(c, os);
-      break;
     case bitmap_t::wah:
       run_intersect<dtl::dynamic_wah32>(c, os);
       break;
