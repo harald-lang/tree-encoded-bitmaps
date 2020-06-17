@@ -10,6 +10,7 @@
 *.so
 *.exe
 .idea
+.vscode
 cmake-build-*
 **/perf.data
 CMakeListsLocal.cmake
