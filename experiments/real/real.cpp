@@ -305,9 +305,13 @@ $i32 main() {
   for (auto& dir : dirs) {
     run(dir, results, results_csv);
   }
-  std::cout << "Results" << std::endl;
+  std::cout << "Results:" << std::endl;
   std::cout << results.str() << std::endl;
   std::cout << std::endl;
+  std::cout << "Results [bits per value]:" << std::endl;
+  std::cout << "=========================" << std::endl;
+  std::cout << std::endl;
+  std::cout << "data_set,roaring,teb,wah,bah,concise,bbc" << std::endl;
   std::cout << results_csv.str() << std::endl;
 }
 //===----------------------------------------------------------------------===//
