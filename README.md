@@ -7,9 +7,9 @@ This repository contains the source code of
 
 ### Check out the code and run the tests
 ```
-git clone https://gitlab.db.in.tum.de/hl/tree-encoded-bitmaps.git teb
+git clone https://github.com/harald-lang/tree-encoded-bitmaps.git teb
 git clone https://github.com/peterboncz/bloomfilter-bsd.git dtl
-git clone https://gitlab.db.in.tum.de/hl/fastbit.git fastbit
+git clone https://github.com/harald-lang/fastbit.git fastbit
 cd teb
 mkdir build-debug
 cd build-debug
