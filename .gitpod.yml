@@ -1,0 +1,13 @@
+image:
+  file: .gitpod.Dockerfile
+
+tasks:
+  - init: |
+      cd ..
+      git clone https://github.com/peterboncz/bloomfilter-bsd.git dtl
+      git clone https://github.com/harald-lang/fastbit.git fastbit
+      cd tree-encoded-bitmaps
+      mkdir cmake-build-debug
+      cd cmake-build-debug
+      cmake -DCMAKE_BUILD_TYPE=Debug ..
+      cd ..
