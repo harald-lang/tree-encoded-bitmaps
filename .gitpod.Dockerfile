@@ -5,4 +5,4 @@ FROM gitpod/workspace-full
 # RUN brew install bastet
 #
 # More information: https://www.gitpod.io/docs/config-docker/
-RUN apt-get update && apt-get install -y libboost-all-dev
+RUN sudo apt-get update && sudo apt-get install -y libboost-all-dev
